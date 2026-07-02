@@ -40,7 +40,15 @@ Third-party skills (e.g. `mattpocock/skills`) are referenced upstream via
 single-skill plugin you can install on its own. Renovate bumps the pinned commit
 whenever upstream changes (automerge enabled).
 
-To add a skill from an external repo:
+The fastest way to add one is the `/add-external-skill` skill, which automates
+every step below. Point it at a skill folder to add one skill, or at a repo /
+parent folder to batch-add every `SKILL.md` under it:
+
+```
+/add-external-skill <owner/repo> [path/to/skill-folder] [name]
+```
+
+To do it by hand instead:
 
 1. Get the current branch SHA:
 
