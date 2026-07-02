@@ -1,39 +1,44 @@
 ---
 name: add-external-skill
-description: Add an external skill from a GitHub repo to this marketplace as a git-subdir plugin entry. Fetches the current upstream SHA, appends a correctly-shaped entry to .claude-plugin/marketplace.json, and validates. Usage: /add-external-skill <owner/repo> <path/to/skill-folder> [name]
+description: Add external skill(s) from a GitHub repo to this marketplace as git-subdir plugin entries. Fetches the current upstream SHA, appends correctly-shaped entries to .claude-plugin/marketplace.json, and validates. Usage: /add-external-skill <owner/repo> [path/to/skill-folder] [name]
 disable-model-invocation: true
 ---
 
-Add an external skill to `.claude-plugin/marketplace.json`.
+Add external skill(s) to `.claude-plugin/marketplace.json`.
 
-Arguments: `$ARGUMENTS` = `<owner/repo> <path/to/skill-folder> [name]`
+Arguments: `$ARGUMENTS` = `<owner/repo> [path] [name]`
 - `<owner/repo>`: e.g. `mattpocock/skills`
-- `<path/to/skill-folder>`: path inside that repo, e.g. `skills/engineering/tdd`
-- `[name]` (optional): plugin/entry name. Default = the last path segment (e.g. `tdd`).
+- `[path]`: folder inside the repo. A **skill folder** (contains `SKILL.md`) →
+  one entry. A **parent folder** or omitted → **batch**: every skill under it.
+- `[name]` (optional, single only): entry name. Default = last path segment.
 
-Steps:
+Each entry pins a `sha` Renovate bumps automatically. Plugin `name` = skill
+folder basename, unique across the whole marketplace.
 
-1. Parse the arguments. If `owner/repo` or `path` is missing, ask for them.
+## Steps
 
-2. Verify the folder is a real skill — it must contain `SKILL.md` at its root:
+1. Parse args. If `owner/repo` missing, ask for it.
+
+2. Discover skills — one call lists every `SKILL.md` in the repo:
    ```bash
-   curl -o /dev/null -s -w "%{http_code}" \
-     "https://raw.githubusercontent.com/<owner>/<repo>/main/<path>/SKILL.md"
+   curl -fsSL "https://api.github.com/repos/<owner>/<repo>/git/trees/main?recursive=1" \
+     | jq -r '.tree[] | select(.path | endswith("/SKILL.md")) | .path | sub("/SKILL.md$";"")'
    ```
-   If not `200`, stop and report — the `path` is wrong or has no `SKILL.md`.
+   - `path` given and it IS a skill folder (in the list) → single entry.
+   - `path` given as a parent → keep only folders under it. Empty → stop, report.
+   - `path` omitted → all discovered folders (batch).
 
-3. Fetch the current branch HEAD SHA:
+3. Fetch the current branch HEAD SHA (shared by all entries):
    ```bash
    curl -fsSL "https://api.github.com/repos/<owner>/<repo>/commits/main" \
      -H "Accept: application/vnd.github.sha"
    ```
 
-4. Determine the entry `name` (arg or last path segment). Read
-   `.claude-plugin/marketplace.json` and confirm no existing plugin uses that
-   `name` — names must be unique. If taken, ask for a different one.
+4. For each folder, entry `name` = arg (single) or folder basename (batch).
+   Read `.claude-plugin/marketplace.json`; confirm **every** name is free —
+   names must be unique. Report collisions and ask before proceeding.
 
-5. Append this entry to the `plugins` array in `.claude-plugin/marketplace.json`
-   (match the existing formatting exactly):
+5. Append each entry to the `plugins` array (match existing formatting exactly):
    ```json
    {
      "name": "<name>",
@@ -48,8 +53,10 @@ Steps:
    }
    ```
 
-6. Validate:
+6. Validate. Report the result. Do not commit — leave that to the user.
    ```bash
    claude plugin validate .
    ```
-   Report the result. Do not commit — leave that to the user.
+
+If `curl` is blocked/redirected in this environment, fetch the same URLs via
+whatever HTTP tool is available — the API endpoints are identical.
