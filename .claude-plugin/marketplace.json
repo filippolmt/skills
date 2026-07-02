@@ -1,0 +1,239 @@
+{
+  "name": "filippo-skills",
+  "description": "A collection of reusable skills for Claude Code",
+  "owner": {
+    "name": "Filippo Merante Caparrotta",
+    "email": "filippolmt@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "example-plugin",
+      "source": "./plugins/example-plugin",
+      "description": "Template plugin with one example skill",
+      "version": "0.1.0",
+      "author": {
+        "name": "Filippo Merante Caparrotta"
+      }
+    },
+    {
+      "name": "ask-matt",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/ask-matt",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — ask-matt"
+    },
+    {
+      "name": "diagnosing-bugs",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/diagnosing-bugs",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — diagnosing-bugs"
+    },
+    {
+      "name": "grill-with-docs",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/grill-with-docs",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — grill-with-docs"
+    },
+    {
+      "name": "triage",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/triage",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — triage"
+    },
+    {
+      "name": "improve-codebase-architecture",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/improve-codebase-architecture",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — improve-codebase-architecture"
+    },
+    {
+      "name": "setup-matt-pocock-skills",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/setup-matt-pocock-skills",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — setup-matt-pocock-skills"
+    },
+    {
+      "name": "tdd",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/tdd",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — tdd"
+    },
+    {
+      "name": "to-issues",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/to-issues",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — to-issues"
+    },
+    {
+      "name": "to-prd",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/to-prd",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — to-prd"
+    },
+    {
+      "name": "implement",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/implement",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — implement"
+    },
+    {
+      "name": "prototype",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/prototype",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — prototype"
+    },
+    {
+      "name": "research",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/research",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — research"
+    },
+    {
+      "name": "domain-modeling",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/domain-modeling",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — domain-modeling"
+    },
+    {
+      "name": "codebase-design",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/codebase-design",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — codebase-design"
+    },
+    {
+      "name": "code-review",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/code-review",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — code-review"
+    },
+    {
+      "name": "grill-me",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/productivity/grill-me",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — grill-me"
+    },
+    {
+      "name": "grilling",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/productivity/grilling",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — grilling"
+    },
+    {
+      "name": "handoff",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/productivity/handoff",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — handoff"
+    },
+    {
+      "name": "teach",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/productivity/teach",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — teach"
+    },
+    {
+      "name": "writing-great-skills",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/productivity/writing-great-skills",
+        "ref": "main",
+        "sha": "1445797da5ee4e4054233878c0029e9276f9986a"
+      },
+      "description": "mattpocock/skills — writing-great-skills"
+    }
+  ]
+}

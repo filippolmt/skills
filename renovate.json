@@ -2,5 +2,29 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/\\.claude-plugin/marketplace\\.json/"
+      ],
+      "matchStrings": [
+        "\"url\":\\s*\"https://github\\.com/(?<depName>[^\"]+)\",\\s*\"path\":\\s*\"[^\"]+\",\\s*\"ref\":\\s*\"(?<currentValue>[^\"]+)\",\\s*\"sha\":\\s*\"(?<currentDigest>[0-9a-f]+)\""
+      ],
+      "datasourceTemplate": "git-refs",
+      "packageNameTemplate": "https://github.com/{{{depName}}}"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchDatasources": [
+        "git-refs"
+      ],
+      "automerge": true
+    }
   ]
 }

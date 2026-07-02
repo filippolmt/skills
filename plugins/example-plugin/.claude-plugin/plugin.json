@@ -1,0 +1,8 @@
+{
+  "name": "example-plugin",
+  "description": "Template plugin with one example skill",
+  "version": "0.1.0",
+  "author": {
+    "name": "Filippo Merante Caparrotta"
+  }
+}
