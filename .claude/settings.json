@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath // empty' | { read -r f; case \"$f\" in *marketplace.json|*plugin.json|*SKILL.md) out=$(claude plugin validate . 2>&1); rc=$?; [ $rc -ne 0 ] && { echo \"$out\" >&2; exit 2; };; *) : ;; esac; }",
+            "statusMessage": "Validating plugin marketplace..."
+          }
+        ]
+      }
+    ]
+  }
+}
