@@ -14,12 +14,21 @@ plugins/
       hello/SKILL.md               # skill (example template)
 ```
 
+## Adding this marketplace
+
+Register it once, then it shows up in `/plugin`:
+
+```
+/plugin marketplace add filippolmt/skills
+```
+
+(Any git remote works too, e.g. `/plugin marketplace add https://github.com/filippolmt/skills`.)
+
 ## Installing skills (individually)
 
 Each skill is its own plugin, so you only install the ones you want:
 
 ```
-/plugin marketplace add <git-url-of-this-repo>
 /plugin install tdd
 /plugin install grill-me
 ```
