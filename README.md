@@ -42,6 +42,25 @@ To refresh after upstream updates:
 /plugin marketplace update filippo-skills
 ```
 
+## Available skills
+
+Snapshot of the catalog — the source of truth is
+[`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
+
+**Local** — `example-plugin`
+
+**[mattpocock/skills](https://github.com/mattpocock/skills)** — `ask-matt`,
+`diagnosing-bugs`, `grill-with-docs`, `triage`, `improve-codebase-architecture`,
+`setup-matt-pocock-skills`, `tdd`, `to-issues`, `to-prd`, `implement`,
+`prototype`, `research`, `domain-modeling`, `codebase-design`, `code-review`,
+`grill-me`, `grilling`, `handoff`, `teach`, `writing-great-skills`
+
+**[Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill)** — `brandkit`,
+`brutalist-skill`, `gpt-tasteskill`, `image-to-code-skill`,
+`imagegen-frontend-mobile`, `imagegen-frontend-web`, `minimalist-skill`,
+`output-skill`, `redesign-skill`, `soft-skill`, `stitch-skill`,
+`taste-skill-v1`, `taste-skill`
+
 ## External skills (auto-updated by Renovate)
 
 Third-party skills (e.g. `mattpocock/skills`) are referenced upstream via
