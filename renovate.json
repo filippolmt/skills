@@ -1,8 +1,13 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    ":dependencyDashboard"
   ],
+  "enabledManagers": [
+    "custom.regex"
+  ],
+  "platformAutomerge": true,
   "customManagers": [
     {
       "customType": "regex",
@@ -24,7 +29,9 @@
       "matchDatasources": [
         "git-refs"
       ],
-      "automerge": true
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
     }
   ]
 }
