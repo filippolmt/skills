@@ -24,8 +24,17 @@ skill reads and flips the control file that picks the mode.
 terse everywhere, regardless of request type), `ponytail` (force minimal-code
 everywhere), `off` (inject nothing). Missing or invalid → `auto`.
 
-The hook stays silent on **slash-command prompts** (the user already dispatched
-to a skill), so an explicit `/skill` invocation is never overridden.
+In `auto`, the hook stays silent on **slash-command prompts** — the user already
+dispatched to a skill, so classification never overrides it. A **forced** mode
+(`caveman`/`ponytail`) is a standing choice and still applies on slash prompts.
+
+## Spec-driven workflows
+
+Auto routing is prompt-based, so it does not reach into a multi-turn spec-driven
+workflow (openspec, bmad, …) launched from a single slash command. Supported
+path: force the mode first — `ponytail` for the coding phase, `caveman` for
+analysis — then reset to `auto`. For direct prompts, the natural `/clear` between
+analysis and coding already re-classifies each phase.
 
 ## Operations
 
