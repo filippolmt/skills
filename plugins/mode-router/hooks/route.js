@@ -1,10 +1,20 @@
 #!/usr/bin/env node
-// mode-router — UserPromptSubmit hook.
+// mode-router — UserPromptSubmit + SessionStart hook (one script, two events).
 //
-// Fires on every prompt. In `auto` mode it emits the ROUTER directive below —
-// the canonical rule lives in that string, not here — making the model classify
-// THIS request and invoke exactly one skill. The hook only ROUTES; the
-// `caveman`/`ponytail` skills own their behavior (declared as dependencies).
+// The mode skills (caveman/ponytail) declare themselves "active every response",
+// so once loaded they persist WITHOUT re-injecting SKILL.md every turn. Reloading
+// is only needed when the context was (re)started or a compaction cleared them.
+//
+// SessionStart (startup|resume|clear|compact) writes a per-session RELOAD FLAG.
+// The next UserPromptSubmit consumes it: flag present => context is fresh, so
+// (re)invoke the skill; flag absent => the skill is still in context, don't
+// reload. This makes compaction detection DETERMINISTIC (SessionStart fires with
+// source=compact after every auto/manual compaction) instead of relying on the
+// model to notice the skill is gone.
+//
+// `auto` is special: the right mode varies per request, so the classifier fires
+// EVERY turn regardless of the flag — the flag only decides whether the chosen
+// skill must be (re)invoked or is already active from an earlier turn.
 //
 // A control file overrides auto for a whole machine (missing/invalid -> "auto"):
 //   $XDG_CONFIG_HOME/mode-router/state.json (or ~/.config/mode-router/state.json)
@@ -13,7 +23,8 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// Force modes assert no classification — they apply regardless of request type.
+// Forced-mode directives — emitted ONLY when a reload is actually needed
+// (fresh/compacted context), so they can assert "invoke now" unconditionally.
 const CAVEMAN =
   'Forced caveman mode: invoke the `caveman` skill (Skill tool) now, before ' +
   'responding, and apply it to this turn — regardless of request type.';
@@ -22,56 +33,90 @@ const PONYTAIL =
   'Forced ponytail mode: invoke the `ponytail` skill (Skill tool) now, before ' +
   'responding, and apply it to this turn — regardless of request type.';
 
-const ROUTER =
-  'MODE ROUTER — pick EXACTLY ONE mode skill for this turn (never both) and ' +
-  'invoke it (Skill tool) before responding, IN ADDITION to any other skill this ' +
-  'turn dispatches:\n' +
+const ROUTER_HEAD =
+  'MODE ROUTER — classify THIS request and keep EXACTLY ONE mode skill active ' +
+  '(never both), IN ADDITION to any other skill this turn dispatches:\n' +
   '- Coding task (writing/editing/refactoring/debugging code, writing tests, ' +
   'choosing a library or dependency, implementing) -> `ponytail`, not caveman.\n' +
   '- Anything else (explaining, answering, planning, discussing, docs) -> ' +
-  '`caveman`, not ponytail.';
+  '`caveman`, not ponytail.\n';
+
+// Reset: context is fresh/compacted, no mode skill is loaded -> invoke now.
+const ROUTER_RESET = ROUTER_HEAD +
+  'Invoke the chosen skill now (Skill tool, before responding): the context was ' +
+  'just (re)started or compacted, so no mode skill is active.';
+
+// No reset: a mode skill may already be active from an earlier turn -> only
+// re-invoke on a mode switch (inherent model judgment; the hook can't know the
+// request type).
+const ROUTER_KEEP = ROUTER_HEAD +
+  'If the needed skill is already the active mode from an earlier turn this ' +
+  'session, do nothing — it persists. Invoke it (Skill tool, before responding) ' +
+  'only when switching modes.';
 
 const VALID = ['auto', 'caveman', 'ponytail', 'off'];
 
-function stateFile() {
-  const dir = process.env.XDG_CONFIG_HOME
+function configDir() {
+  return process.env.XDG_CONFIG_HOME
     ? path.join(process.env.XDG_CONFIG_HOME, 'mode-router')
     : path.join(os.homedir(), '.config', 'mode-router');
-  return path.join(dir, 'state.json');
 }
 
 function readMode() {
   try {
-    const s = JSON.parse(fs.readFileSync(stateFile(), 'utf8'));
+    const s = JSON.parse(fs.readFileSync(path.join(configDir(), 'state.json'), 'utf8'));
     const m = String(s && s.mode).toLowerCase();
     if (VALID.includes(m)) return m;
   } catch (e) { /* missing / unreadable / invalid -> default */ }
   return 'auto';
 }
 
-// In `auto`, classify on every prompt — including slash-command dispatches, so
-// the mode (caveman/ponytail) applies ON TOP of whatever other skill the user
-// launches. Skip only when the dispatched skill IS a mode skill: the user
-// already picked one, so don't re-classify. A FORCED mode is a standing choice
-// and applies regardless.
-function slashModeSkill() {
+// One flag file per session. ponytail: a session that starts but never prompts
+// leaves one empty file behind — harmless, that session_id won't recur.
+function reloadFlag(sessionId) {
+  const id = String(sessionId || 'default').replace(/[^\w.-]/g, '_');
+  return path.join(configDir(), `reload-${id}`);
+}
+
+// Both events carry the common `session_id` + `hook_event_name` fields.
+let input = {};
+try { input = JSON.parse(fs.readFileSync(0, 'utf8')) || {}; } catch (e) { /* no stdin */ }
+
+// SessionStart (any source): mark the skill to be (re)loaded on the next prompt.
+if (input.hook_event_name === 'SessionStart') {
   try {
-    const p = JSON.parse(fs.readFileSync(0, 'utf8')).prompt;
-    if (typeof p !== 'string') return false;
-    const t = p.trimStart();
-    if (!t.startsWith('/')) return false;
-    const cmd = t.slice(1).split(/\s+/)[0].toLowerCase();
-    return cmd.includes('caveman') || cmd.includes('ponytail');
-  } catch (e) { return false; }
+    fs.mkdirSync(configDir(), { recursive: true });
+    fs.writeFileSync(reloadFlag(input.session_id), '');
+  } catch (e) { /* best effort */ }
+  process.exit(0);
+}
+
+// UserPromptSubmit: consume the flag (delete it) to learn whether the context
+// was just reset since the last prompt.
+const flag = reloadFlag(input.session_id);
+let reset = false;
+try { fs.unlinkSync(flag); reset = true; } catch (e) { /* no flag => not reset */ }
+
+// In `auto`, skip re-classifying only when the user explicitly launched a mode
+// skill via /caveman|/ponytail — they already picked one for this turn.
+function slashModeSkill() {
+  const p = typeof input.prompt === 'string' ? input.prompt : input.user_prompt;
+  if (typeof p !== 'string') return false;
+  const t = p.trimStart();
+  if (!t.startsWith('/')) return false;
+  const cmd = t.slice(1).split(/\s+/)[0].toLowerCase();
+  return cmd.includes('caveman') || cmd.includes('ponytail');
 }
 
 const mode = readMode();
 const out =
-  mode === 'caveman' ? CAVEMAN :
-  mode === 'ponytail' ? PONYTAIL :
   mode === 'off' ? '' :
-  slashModeSkill() ? '' : // auto: user already picked a mode via /caveman|/ponytail
-  ROUTER;
+  // Forced modes are deterministic: reload only when the context was reset.
+  mode === 'caveman' ? (reset ? CAVEMAN : '') :
+  mode === 'ponytail' ? (reset ? PONYTAIL : '') :
+  // auto: always classify; the flag picks reset vs keep wording.
+  slashModeSkill() ? '' :
+  reset ? ROUTER_RESET : ROUTER_KEEP;
 
 if (out) process.stdout.write(out);
 process.exit(0);

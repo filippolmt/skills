@@ -1,7 +1,7 @@
 ---
 name: mode-router
 disable-model-invocation: true
-description: Administer the per-prompt caveman/ponytail router — show status, force a mode, or turn routing off. Type /mode-router:mode-router.
+description: Administer the per-prompt caveman/ponytail router — show status, force a mode, or turn routing off.
 ---
 
 # mode-router
