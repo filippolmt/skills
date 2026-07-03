@@ -92,6 +92,12 @@ Snapshot of the catalog — the source of truth is
 | `gpt-tasteskill` | UX/UI + GSAP motion engineering with editorial typography rules. |
 | `output-skill` | Override LLM truncation — enforce complete, placeholder-free output. |
 
+### [juliusbrussee/caveman](https://github.com/juliusbrussee/caveman) — communication mode
+
+| Skill | What it does |
+|---|---|
+| `caveman` | Ultra-compressed communication mode. Cuts token usage ~75% by speaking like caveman while keeping full technical accuracy. |
+
 ## External skills (auto-updated by Renovate)
 
 Third-party skills (e.g. `mattpocock/skills`) are referenced upstream via

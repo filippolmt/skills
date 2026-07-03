@@ -377,6 +377,17 @@
         "sha": "06d6028b5c623016c59ce8536f578e5a1127b499"
       },
       "description": "Leonxlnx/taste-skill — design-taste-frontend"
+    },
+    {
+      "name": "caveman",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/juliusbrussee/caveman",
+        "path": "skills/caveman",
+        "ref": "main",
+        "sha": "25d22f864ad68cc447a4cb93aefde918aa4aec9f"
+      },
+      "description": "juliusbrussee/caveman — caveman"
     }
   ]
 }
