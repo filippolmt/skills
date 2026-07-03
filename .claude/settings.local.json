@@ -1,0 +1,19 @@
+{
+  "enabledPlugins": {
+    "typescript-lsp@claude-plugins-official": true
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/plugins/mode-router/hooks/route.js\"",
+            "timeout": 5,
+            "statusMessage": "Routing mode..."
+          }
+        ]
+      }
+    ]
+  }
+}

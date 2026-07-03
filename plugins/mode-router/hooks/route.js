@@ -49,8 +49,10 @@ function readMode() {
   return 'auto';
 }
 
-// Skip when the user explicitly dispatched to a skill (slash command) — they
-// already chose, so don't route/pin caveman/ponytail on top of it.
+// In `auto`, skip when the user explicitly dispatched to a skill (slash
+// command) — they already chose, so don't classify on top of it. A FORCED
+// mode is a standing choice and still applies (e.g. pin ponytail for a
+// slash-dispatched spec-driven workflow).
 function isSlashCommand() {
   try {
     const p = JSON.parse(fs.readFileSync(0, 'utf8')).prompt;
@@ -59,11 +61,12 @@ function isSlashCommand() {
 }
 
 const mode = readMode();
-const out = isSlashCommand() ? '' :
-  mode === 'auto' ? ROUTER :
+const out =
   mode === 'caveman' ? CAVEMAN :
   mode === 'ponytail' ? PONYTAIL :
-  ''; // off
+  mode === 'off' ? '' :
+  isSlashCommand() ? '' : // auto: don't classify on top of an explicit /skill dispatch
+  ROUTER;
 
 if (out) process.stdout.write(out);
 process.exit(0);
