@@ -8,10 +8,11 @@ via git.
 ```
 .claude-plugin/marketplace.json   # marketplace catalog
 plugins/
-  example-plugin/
+  mode-router/
     .claude-plugin/plugin.json     # plugin manifest
+    hooks/hooks.json               # UserPromptSubmit hook (auto-loaded)
     skills/
-      hello/SKILL.md               # skill (example template)
+      mode-router/SKILL.md         # skill
 ```
 
 ## Adding this marketplace
@@ -47,7 +48,8 @@ To refresh after upstream updates:
 Snapshot of the catalog — the source of truth is
 [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
 
-**Local:** `example-plugin` — template plugin with one example skill.
+**Local:** `mode-router` — per-prompt router that invokes `caveman` (terse
+output) or `ponytail` (minimal code) exclusively; bundles both as dependencies.
 
 ### [mattpocock/skills](https://github.com/mattpocock/skills) — engineering & productivity
 
@@ -92,11 +94,12 @@ Snapshot of the catalog — the source of truth is
 | `gpt-tasteskill` | UX/UI + GSAP motion engineering with editorial typography rules. |
 | `output-skill` | Override LLM truncation — enforce complete, placeholder-free output. |
 
-### [juliusbrussee/caveman](https://github.com/juliusbrussee/caveman) — communication mode
+### Modes (bundled by the local `mode-router` plugin)
 
-| Skill | What it does |
-|---|---|
-| `caveman` | Ultra-compressed communication mode. Cuts token usage ~75% by speaking like caveman while keeping full technical accuracy. |
+| Skill | Source | What it does |
+|---|---|---|
+| `caveman` | [juliusbrussee/caveman](https://github.com/juliusbrussee/caveman) | Ultra-compressed communication mode. Cuts token usage ~75% by speaking like caveman while keeping full technical accuracy. |
+| `ponytail` | [dietrichgebert/ponytail](https://github.com/dietrichgebert/ponytail) | Lazy-senior-dev coding mode. Minimal-diff, YAGNI-first: the smallest change that works. |
 
 ## External skills (auto-updated by Renovate)
 
@@ -157,7 +160,7 @@ The folder pointed to by `path` must be a valid skill (contain `SKILL.md`).
 3. Write the operating instructions in the body. Done — invocable as
    `/<plugin>:<name>`.
 
-Fastest path: copy `plugins/example-plugin/skills/hello/` as a starting point.
+Fastest path: copy `plugins/mode-router/skills/mode-router/` as a starting point.
 
 ## Adding a new plugin
 
@@ -179,6 +182,6 @@ Fastest path: copy `plugins/example-plugin/skills/hello/` as a starting point.
 ## Validating
 
 ```
-claude plugin validate .                        # marketplace + all local plugins
-claude plugin validate ./plugins/example-plugin # single plugin + skill
+claude plugin validate .                     # marketplace + all local plugins
+claude plugin validate ./plugins/mode-router # single plugin + skill
 ```
