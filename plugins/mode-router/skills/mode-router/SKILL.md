@@ -31,6 +31,15 @@ alongside the dispatched skill (e.g. `/improve-codebase-architecture` → also
 (`/caveman`, `/ponytail`) — the user already picked one. A **forced** mode is a
 standing choice and applies on every prompt regardless.
 
+## Precedence over hard constraints
+
+The router only *suggests* a mode; a hard constraint in force overrides it — the
+required output **language/orthography**, or an explicit "be thorough / don't be
+brief" instruction for the turn. This bites `caveman` most (its compression
+clashes with a strict-language or be-verbose rule). On conflict the model applies
+the mode only where compatible, else skips it, and notes the deviation in one
+line — for **forced** modes too, since the hook can't detect the constraint.
+
 ## Spec-driven workflows
 
 Auto classifies the **launching** prompt of a multi-turn spec-driven workflow

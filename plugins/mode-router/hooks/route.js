@@ -23,15 +23,27 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
+// Precedence: a mode skill can conflict with a hard constraint already in force
+// (notably caveman's compression vs a strict output-language/orthography rule, or
+// an explicit "be thorough" instruction). The hook is stateless and can't detect
+// those, so it tells the model how to resolve the clash instead of improvising.
+const PRECEDENCE =
+  ' Precedence: if the mode conflicts with a hard constraint in force — the ' +
+  'required output language/orthography, or an explicit instruction this turn ' +
+  '(e.g. "be thorough / don\'t be brief") — the constraint wins: apply the mode ' +
+  'only where compatible, else skip it, and note the deviation in one line.';
+
 // Forced-mode directives — emitted ONLY when a reload is actually needed
 // (fresh/compacted context), so they can assert "invoke now" unconditionally.
 const CAVEMAN =
   'Forced caveman mode: invoke the `caveman` skill (Skill tool) now, before ' +
-  'responding, and apply it to this turn — regardless of request type.';
+  'responding, and apply it to this turn — regardless of request type.' +
+  PRECEDENCE;
 
 const PONYTAIL =
   'Forced ponytail mode: invoke the `ponytail` skill (Skill tool) now, before ' +
-  'responding, and apply it to this turn — regardless of request type.';
+  'responding, and apply it to this turn — regardless of request type.' +
+  PRECEDENCE;
 
 const ROUTER_HEAD =
   'MODE ROUTER — classify THIS request and keep EXACTLY ONE mode skill active ' +
@@ -39,7 +51,8 @@ const ROUTER_HEAD =
   '- Coding task (writing/editing/refactoring/debugging code, writing tests, ' +
   'choosing a library or dependency, implementing) -> `ponytail`, not caveman.\n' +
   '- Anything else (explaining, answering, planning, discussing, docs) -> ' +
-  '`caveman`, not ponytail.\n';
+  '`caveman`, not ponytail.\n' +
+  PRECEDENCE + '\n';
 
 // Reset: context is fresh/compacted, no mode skill is loaded -> invoke now.
 const ROUTER_RESET = ROUTER_HEAD +

@@ -34,6 +34,7 @@ run('SessionStart');
 let out = run('UserPromptSubmit', 'explain this');
 assert.match(out, /MODE ROUTER/);
 assert.match(out, /just \(re\)started or compacted/, 'first prompt after start => reset wording');
+assert.match(out, /Precedence:/, 'auto reset => precedence clause present');
 
 out = run('UserPromptSubmit', 'explain more');
 assert.match(out, /MODE ROUTER/);
@@ -53,6 +54,7 @@ setMode('caveman');
 run('SessionStart');
 out = run('UserPromptSubmit', 'anything');
 assert.match(out, /Forced caveman mode/, 'reset => invoke forced skill');
+assert.match(out, /Precedence:/, 'forced caveman reset => precedence clause present');
 out = run('UserPromptSubmit', 'anything else');
 assert.strictEqual(out, '', 'no reset => nothing (skill persists)');
 
