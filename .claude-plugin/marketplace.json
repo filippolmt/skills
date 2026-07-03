@@ -411,17 +411,6 @@
       "description": "mvanhorn/cli-printing-press — printing-press"
     },
     {
-      "name": "printing-press-import",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/mvanhorn/cli-printing-press",
-        "path": "skills/printing-press-import",
-        "ref": "main",
-        "sha": "4a2b02329e71e64cc7ffe14ff9af569d0dfa3495"
-      },
-      "description": "mvanhorn/cli-printing-press — printing-press-import"
-    },
-    {
       "name": "printing-press-polish",
       "source": {
         "source": "git-subdir",
@@ -453,50 +442,6 @@
         "sha": "4a2b02329e71e64cc7ffe14ff9af569d0dfa3495"
       },
       "description": "mvanhorn/cli-printing-press — printing-press-output-review"
-    },
-    {
-      "name": "printing-press-publish",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/mvanhorn/cli-printing-press",
-        "path": "skills/printing-press-publish",
-        "ref": "main",
-        "sha": "4a2b02329e71e64cc7ffe14ff9af569d0dfa3495"
-      },
-      "description": "mvanhorn/cli-printing-press — printing-press-publish"
-    },
-    {
-      "name": "printing-press-reprint",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/mvanhorn/cli-printing-press",
-        "path": "skills/printing-press-reprint",
-        "ref": "main",
-        "sha": "4a2b02329e71e64cc7ffe14ff9af569d0dfa3495"
-      },
-      "description": "mvanhorn/cli-printing-press — printing-press-reprint"
-    },
-    {
-      "name": "printing-press-amend",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/mvanhorn/cli-printing-press",
-        "path": "skills/printing-press-amend",
-        "ref": "main",
-        "sha": "4a2b02329e71e64cc7ffe14ff9af569d0dfa3495"
-      },
-      "description": "mvanhorn/cli-printing-press — printing-press-amend"
-    },
-    {
-      "name": "printing-press-retro",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/mvanhorn/cli-printing-press",
-        "path": "skills/printing-press-retro",
-        "ref": "main",
-        "sha": "4a2b02329e71e64cc7ffe14ff9af569d0dfa3495"
-      },
-      "description": "mvanhorn/cli-printing-press — printing-press-retro"
     }
   ]
 }
