@@ -1,0 +1,9 @@
+{
+  "name": "mode-router",
+  "description": "Per-prompt router: analyzes each request and applies caveman (terse output) OR ponytail (minimal code), exclusively. Replaces always-on mode hooks.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Filippo Merante Caparrotta"
+  },
+  "hooks": "./hooks/hooks.json"
+}
