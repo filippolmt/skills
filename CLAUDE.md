@@ -40,14 +40,30 @@ The `/add-external-skill` skill automates all of this.
 shape in `marketplace.json`, update the regex in `renovate.json` to match** —
 otherwise auto-updates silently stop.
 
+## Local plugin hooks gotcha
+
+A local plugin's `hooks/hooks.json` is loaded **automatically**. Do NOT also
+point `manifest.hooks` (in `.claude-plugin/plugin.json`) at it — that loads the
+file twice: `Duplicate hooks file detected`. The `hooks` manifest field is only
+for *additional* hook files beyond the standard path.
+
 ## Validate before committing
 
 ```
 claude plugin validate .    # marketplace + all local plugins
 ```
 
+Output must be **clean** — no errors *and* no warnings. A warning (e.g. a
+`version` that diverges between `plugin.json` and a marketplace entry) is a
+fail here: fix it before committing.
+
+A `PostToolUse` hook (`.claude/settings.json`) auto-runs this validation on
+every edit to `marketplace.json`, `plugin.json`, or a `SKILL.md`, and blocks
+the edit (exit 2) if it fails.
+
 ## Conventions
 
 - Conventional Commits (`feat:`, `fix:`, `chore:`, …).
 - Work on a feature branch (`feat/...`), open a PR to `main` — no direct pushes to `main`.
 - Plugin/skill `name` values must be unique across the whole marketplace.
+- **Bump the `version` (SemVer) only of the plugin you changed** — never touch the others. Edit it in the plugin's own `plugin.json` (the single source of truth; local-plugin `marketplace.json` entries carry no `version`). `fix:` → patch, `feat:` → minor, breaking → major. The bumped version is the release: merging the PR to `main` ships it. Skip only for changes that don't touch a plugin's behaviour (e.g. repo docs, `renovate.json`).
