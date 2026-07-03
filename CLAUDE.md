@@ -46,6 +46,10 @@ otherwise auto-updates silently stop.
 claude plugin validate .    # marketplace + all local plugins
 ```
 
+Output must be **clean** — no errors *and* no warnings. A warning (e.g. a
+`version` that diverges between `plugin.json` and a marketplace entry) is a
+fail here: fix it before committing.
+
 ## Conventions
 
 - Conventional Commits (`feat:`, `fix:`, `chore:`, …).
