@@ -23,13 +23,13 @@ const PONYTAIL =
   'responding, and apply it to this turn — regardless of request type.';
 
 const ROUTER =
-  'MODE ROUTER — classify THIS request and invoke EXACTLY ONE skill, never both:\n' +
+  'MODE ROUTER — pick EXACTLY ONE mode skill for this turn (never both) and ' +
+  'invoke it (Skill tool) before responding, IN ADDITION to any other skill this ' +
+  'turn dispatches:\n' +
   '- Coding task (writing/editing/refactoring/debugging code, writing tests, ' +
-  'choosing a library or dependency, implementing) -> invoke the `ponytail` skill ' +
-  '(Skill tool), not caveman.\n' +
-  '- Anything else (explaining, answering, planning, discussing, docs) -> invoke ' +
-  'the `caveman` skill (Skill tool), not ponytail.\n' +
-  'Invoke the chosen skill before responding; never invoke both.';
+  'choosing a library or dependency, implementing) -> `ponytail`, not caveman.\n' +
+  '- Anything else (explaining, answering, planning, discussing, docs) -> ' +
+  '`caveman`, not ponytail.';
 
 const VALID = ['auto', 'caveman', 'ponytail', 'off'];
 
@@ -49,14 +49,19 @@ function readMode() {
   return 'auto';
 }
 
-// In `auto`, skip when the user explicitly dispatched to a skill (slash
-// command) — they already chose, so don't classify on top of it. A FORCED
-// mode is a standing choice and still applies (e.g. pin ponytail for a
-// slash-dispatched spec-driven workflow).
-function isSlashCommand() {
+// In `auto`, classify on every prompt — including slash-command dispatches, so
+// the mode (caveman/ponytail) applies ON TOP of whatever other skill the user
+// launches. Skip only when the dispatched skill IS a mode skill: the user
+// already picked one, so don't re-classify. A FORCED mode is a standing choice
+// and applies regardless.
+function slashModeSkill() {
   try {
     const p = JSON.parse(fs.readFileSync(0, 'utf8')).prompt;
-    return typeof p === 'string' && p.trimStart().startsWith('/');
+    if (typeof p !== 'string') return false;
+    const t = p.trimStart();
+    if (!t.startsWith('/')) return false;
+    const cmd = t.slice(1).split(/\s+/)[0].toLowerCase();
+    return cmd.includes('caveman') || cmd.includes('ponytail');
   } catch (e) { return false; }
 }
 
@@ -65,7 +70,7 @@ const out =
   mode === 'caveman' ? CAVEMAN :
   mode === 'ponytail' ? PONYTAIL :
   mode === 'off' ? '' :
-  isSlashCommand() ? '' : // auto: don't classify on top of an explicit /skill dispatch
+  slashModeSkill() ? '' : // auto: user already picked a mode via /caveman|/ponytail
   ROUTER;
 
 if (out) process.stdout.write(out);

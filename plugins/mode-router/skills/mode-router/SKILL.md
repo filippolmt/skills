@@ -7,10 +7,11 @@ description: Administer the per-prompt caveman/ponytail router — show status, 
 # mode-router
 
 A `UserPromptSubmit` hook (`hooks/route.js`) fires on every prompt. In `auto`
-mode it makes the model classify the request and invoke exactly one skill:
+mode it makes the model classify the request and invoke exactly one mode skill:
 coding task → **`ponytail`** (minimal code), everything else → **`caveman`**
-(terse output). The hook only routes; the two skills own their behavior. This
-skill reads and flips the control file that picks the mode.
+(terse output). The mode applies **on top of** any other skill the turn
+dispatches — never instead of it. The hook only routes; the two skills own their
+behavior. This skill reads and flips the control file that picks the mode.
 
 ## Control file
 
@@ -24,17 +25,20 @@ skill reads and flips the control file that picks the mode.
 terse everywhere, regardless of request type), `ponytail` (force minimal-code
 everywhere), `off` (inject nothing). Missing or invalid → `auto`.
 
-In `auto`, the hook stays silent on **slash-command prompts** — the user already
-dispatched to a skill, so classification never overrides it. A **forced** mode
-(`caveman`/`ponytail`) is a standing choice and still applies on slash prompts.
+In `auto`, the hook classifies **slash-command prompts** too, so the mode fires
+alongside the dispatched skill (e.g. `/improve-codebase-architecture` → also
+`ponytail`). It stays silent only when the slash command **is** a mode skill
+(`/caveman`, `/ponytail`) — the user already picked one. A **forced** mode is a
+standing choice and applies on every prompt regardless.
 
 ## Spec-driven workflows
 
-Auto routing is prompt-based, so it does not reach into a multi-turn spec-driven
-workflow (openspec, bmad, …) launched from a single slash command. Supported
-path: force the mode first — `ponytail` for the coding phase, `caveman` for
-analysis — then reset to `auto`. For direct prompts, the natural `/clear` between
-analysis and coding already re-classifies each phase.
+Auto classifies the **launching** prompt of a multi-turn spec-driven workflow
+(openspec, bmad, …), but a single slash command spans later turns with no
+`UserPromptSubmit` to re-route — so the phase can't switch mid-workflow. For
+per-phase control, force the mode first — `ponytail` for the coding phase,
+`caveman` for analysis — then reset to `auto`. For direct prompts, the natural
+`/clear` between analysis and coding already re-classifies each phase.
 
 ## Operations
 
