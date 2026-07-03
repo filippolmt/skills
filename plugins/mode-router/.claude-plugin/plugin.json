@@ -1,6 +1,6 @@
 {
   "name": "mode-router",
-  "description": "Per-prompt router: analyzes each request and applies caveman (terse output) OR ponytail (minimal code), exclusively. Replaces always-on mode hooks.",
+  "description": "Per-prompt router: classifies each request and invokes the caveman (terse output) OR ponytail (minimal code) skill, exclusively. Requires both skills installed and enabled.",
   "version": "0.1.0",
   "author": {
     "name": "Filippo Merante Caparrotta"

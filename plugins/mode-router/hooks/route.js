@@ -2,42 +2,40 @@
 // mode-router — UserPromptSubmit hook.
 //
 // Fires on every prompt. Injects a routing directive that makes the model
-// classify THIS request and apply EXACTLY ONE mode — never both:
-//   - coding task  -> ponytail (minimal code)
-//   - anything else -> caveman (terse output)
+// classify THIS request and invoke EXACTLY ONE skill — never both:
+//   - coding task  -> invoke the `ponytail` skill (minimal code)
+//   - anything else -> invoke the `caveman` skill (terse output)
 //
-// The classification is model-decided: the hook injects the rule + both
-// condensed rulesets, the model picks the winner per request.
+// The hook only ROUTES; it carries no ruleset. The `caveman` and `ponytail`
+// skills are the single source of truth for their behavior — the hook names
+// which one the model must invoke, the model calls the Skill tool. Both skills
+// must be installed and enabled for the invocation to land.
 //
 // A control file lets you override the auto behavior for a whole machine:
 //   $XDG_CONFIG_HOME/mode-router/state.json (or ~/.config/mode-router/state.json)
 //   { "mode": "auto" | "caveman" | "ponytail" | "off" }
-// Missing / invalid -> "auto". This is the single source of truth for the
-// rulesets; the /mode-router skill only reads and flips the control file.
+// Missing / invalid -> "auto".
 
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
 const CAVEMAN =
-  'CAVEMAN MODE — respond terse. Drop articles (a/an/the), filler ' +
-  '(just/really/basically/actually/simply), pleasantries, hedging. Fragments OK. ' +
-  'Short synonyms (big not extensive, fix not "implement a solution for"). ' +
-  'Technical terms exact. Code blocks, commit messages, security warnings, and ' +
-  'irreversible-action confirmations: normal prose.';
+  'Non-coding request. Invoke the `caveman` skill (Skill tool) now, before ' +
+  'responding, and apply it to this turn.';
 
 const PONYTAIL =
-  'PONYTAIL MODE — laziest solution that actually works. Question whether the task ' +
-  'needs to exist at all (YAGNI). Standard library / native platform features before ' +
-  'dependencies. One line before fifty. No unrequested abstractions. Shortest correct path.';
+  'Coding request. Invoke the `ponytail` skill (Skill tool) now, before ' +
+  'responding, and apply it to this turn.';
 
 const ROUTER =
-  'MODE ROUTER — classify THIS request and apply EXACTLY ONE mode, never both:\n' +
+  'MODE ROUTER — classify THIS request and invoke EXACTLY ONE skill, never both:\n' +
   '- Coding task (writing/editing/refactoring/debugging code, writing tests, ' +
-  'choosing a library or dependency, implementing) -> apply PONYTAIL, ignore caveman.\n' +
-  '- Anything else (explaining, answering, planning, discussing, docs) -> apply ' +
-  'CAVEMAN, ignore ponytail.\n\n' +
-  CAVEMAN + '\n\n' + PONYTAIL;
+  'choosing a library or dependency, implementing) -> invoke the `ponytail` skill ' +
+  '(Skill tool), not caveman.\n' +
+  '- Anything else (explaining, answering, planning, discussing, docs) -> invoke ' +
+  'the `caveman` skill (Skill tool), not ponytail.\n' +
+  'Invoke the chosen skill before responding; never invoke both.';
 
 const VALID = ['auto', 'caveman', 'ponytail', 'off'];
 

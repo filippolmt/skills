@@ -7,14 +7,17 @@ description: Administer the per-prompt caveman/ponytail router — show status, 
 # mode-router
 
 A `UserPromptSubmit` hook (`hooks/route.js`) fires on every prompt and makes the
-model apply **exactly one** mode per request:
+model **invoke exactly one skill** per request:
 
 - **coding task** (writing/editing/refactoring/debugging code, tests, picking a
-  dependency) → **ponytail** (minimal code)
-- **anything else** (explaining, answering, planning, docs) → **caveman** (terse output)
+  dependency) → invoke the **`ponytail`** skill (minimal code)
+- **anything else** (explaining, answering, planning, docs) → invoke the
+  **`caveman`** skill (terse output)
 
-The rulesets live in `hooks/route.js` — the single source of truth. This skill
-only reads and flips the control file; it never restates the rules.
+The hook only routes — it carries no ruleset. The `caveman` and `ponytail`
+skills are the single source of truth for their own behavior; the hook names
+which one the model must invoke. **Both skills must be installed and enabled**
+for routing to land. This skill only reads and flips the control file.
 
 ## Control file
 
