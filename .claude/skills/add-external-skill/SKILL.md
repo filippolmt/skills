@@ -35,7 +35,10 @@ endpoints are identical.
 3. Fetch the SHA.
 4. `name` = arg (single) or folder basename (batch). Confirm **every** name is
    free in `marketplace.json` — report collisions and ask before proceeding.
-5. Append each entry to the `plugins` array (match existing formatting exactly):
+5. For each skill, fetch its upstream frontmatter `description` (the same source
+   the README uses — first sentence, trimmed to one line) from the pinned
+   `SKILL.md`: `https://raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>/SKILL.md`.
+   Append each entry to the `plugins` array (match existing formatting exactly):
    ```json
    {
      "name": "<name>",
@@ -46,9 +49,12 @@ endpoints are identical.
        "ref": "main",
        "sha": "<sha>"
      },
-     "description": "<owner>/<repo> — <name>"
+     "description": "<first sentence of the upstream description, stating what the skill does>"
    }
    ```
+   Never emit a generic placeholder like `<owner>/<repo> — <name>`: the
+   `description` must say what the skill does. If the upstream description is
+   empty or unusable, write a one-line summary from the SKILL.md body instead.
 6. **Sync the README** (see below), then validate.
 
 ## Update mode
@@ -70,8 +76,9 @@ For each `git-subdir` source repo in `marketplace.json` (or the one named):
 The README **Available skills** section has one `### [owner/repo](url)` table per
 source repo, rows `| \`<name>\` | <one-line> |`. Make it match `marketplace.json`:
 
-- The one-line comes from the skill's frontmatter `description` — first sentence,
-  trimmed to ~one line. Fetch it from the pinned `SKILL.md`:
+- The one-line is the entry's `description` in `marketplace.json` (already the
+  trimmed first sentence of the upstream frontmatter — see add mode step 5). In
+  update mode, re-fetch it from the pinned `SKILL.md` to pick up upstream changes:
   ```
   https://raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>/SKILL.md
   ```
