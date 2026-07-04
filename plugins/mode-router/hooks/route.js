@@ -23,15 +23,19 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// Precedence: a mode skill can conflict with a hard constraint already in force
-// (notably caveman's compression vs a strict output-language/orthography rule, or
-// an explicit "be thorough" instruction). The hook is stateless and can't detect
-// those, so it tells the model how to resolve the clash instead of improvising.
+// Precedence: a mode skill compresses/simplifies STYLE only — it never changes the
+// output language or drops required orthography (caveman preserves the user's
+// language and its accents), so a language/orthography rule is NOT a conflict. A
+// real conflict is only an explicit anti-brevity instruction this turn, or a hard
+// rule banning compression itself. The hook is stateless and can't detect those,
+// so it tells the model how to resolve the clash instead of improvising.
 const PRECEDENCE =
-  ' Precedence: if the mode conflicts with a hard constraint in force — the ' +
-  'required output language/orthography, or an explicit instruction this turn ' +
-  '(e.g. "be thorough / don\'t be brief") — the constraint wins: apply the mode ' +
-  'only where compatible, else skip it, and note the deviation in one line.';
+  ' Precedence: the mode compresses/simplifies STYLE only — it never changes the ' +
+  'output language or drops required orthography (accents, etc.), so a ' +
+  'language/orthography rule is NOT a conflict. It conflicts only with an explicit ' +
+  'anti-brevity instruction this turn (e.g. "be thorough / don\'t be brief") or a ' +
+  'hard rule banning compression itself: then the constraint wins — apply the mode ' +
+  'where compatible, else skip it and note the deviation in one line.';
 
 // Forced-mode directives — emitted ONLY when a reload is actually needed
 // (fresh/compacted context), so they can assert "invoke now" unconditionally.

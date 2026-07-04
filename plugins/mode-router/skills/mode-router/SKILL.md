@@ -33,12 +33,14 @@ standing choice and applies on every prompt regardless.
 
 ## Precedence over hard constraints
 
-The router only *suggests* a mode; a hard constraint in force overrides it — the
-required output **language/orthography**, or an explicit "be thorough / don't be
-brief" instruction for the turn. This bites `caveman` most (its compression
-clashes with a strict-language or be-verbose rule). On conflict the model applies
-the mode only where compatible, else skips it, and notes the deviation in one
-line — for **forced** modes too, since the hook can't detect the constraint.
+The router only *suggests* a mode. A mode compresses/simplifies **style only** —
+it never changes the output language or drops required orthography (`caveman`
+preserves the user's language and its accents), so a **language/orthography rule
+is not a conflict**. A hard constraint overrides the mode only when it is an
+explicit "be thorough / don't be brief" instruction for the turn, or a hard rule
+banning compression itself. On conflict the model applies the mode only where
+compatible, else skips it, and notes the deviation in one line — for **forced**
+modes too, since the hook can't detect the constraint.
 
 ## Spec-driven workflows
 
