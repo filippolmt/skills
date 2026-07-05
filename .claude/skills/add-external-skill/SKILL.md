@@ -1,6 +1,6 @@
 ---
 name: add-external-skill
-description: Add or update external skill(s) from a GitHub repo in this marketplace as git-subdir plugin entries, and keep the README catalog in sync. Add mode fetches the upstream SHA and appends correctly-shaped entries to .claude-plugin/marketplace.json; update mode re-checks every source repo for new, changed, or removed skills. Usage: /add-external-skill <owner/repo> [path] [name] | /add-external-skill update
+description: Add or update external skills in this marketplace as git-subdir entries and keep the README catalog in sync. Usage: /add-external-skill <owner/repo> [path] [name] | /add-external-skill update
 disable-model-invocation: true
 ---
 
@@ -24,6 +24,11 @@ Fetch the current branch HEAD SHA (shared by all entries from a repo):
 curl -fsSL "https://api.github.com/repos/<owner>/<repo>/commits/main" \
   -H "Accept: application/vnd.github.sha"
 ```
+Fetch a skill's upstream `description` (first sentence of its frontmatter — used
+for both the entry and the README row):
+```bash
+curl -fsSL "https://raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>/SKILL.md"
+```
 If `curl` is blocked/redirected here, fetch the same URLs via any HTTP tool — the
 endpoints are identical.
 
@@ -35,10 +40,9 @@ endpoints are identical.
 3. Fetch the SHA.
 4. `name` = arg (single) or folder basename (batch). Confirm **every** name is
    free in `marketplace.json` — report collisions and ask before proceeding.
-5. For each skill, fetch its upstream frontmatter `description` (the same source
-   the README uses — first sentence, trimmed to one line) from the pinned
-   `SKILL.md`: `https://raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>/SKILL.md`.
-   Append each entry to the `plugins` array (match existing formatting exactly):
+5. For each skill, fetch its upstream frontmatter `description` (see the fetch
+   above — first sentence, trimmed to one line). Append each entry to the
+   `plugins` array (match existing formatting exactly):
    ```json
    {
      "name": "<name>",
@@ -76,12 +80,9 @@ For each `git-subdir` source repo in `marketplace.json` (or the one named):
 The README **Available skills** section has one `### [owner/repo](url)` table per
 source repo, rows `| \`<name>\` | <one-line> |`. Make it match `marketplace.json`:
 
-- The one-line is the entry's `description` in `marketplace.json` (already the
-  trimmed first sentence of the upstream frontmatter — see add mode step 5). In
-  update mode, re-fetch it from the pinned `SKILL.md` to pick up upstream changes:
-  ```
-  https://raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>/SKILL.md
-  ```
+- The one-line is the entry's `description` in `marketplace.json` (the trimmed
+  first sentence of the upstream frontmatter — see add mode step 5). In update
+  mode, re-fetch it (same fetch as above) to pick up upstream changes.
 - Add a row for each new entry, drop the row for each removed entry, and refresh
   any row whose upstream description changed.
 - Keep the note that `.claude-plugin/marketplace.json` is the source of truth.
