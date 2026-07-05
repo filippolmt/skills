@@ -11,8 +11,13 @@ Arguments: `$ARGUMENTS`
 - `<owner/repo> [path] [name]` → **add mode** (default).
 - `update` (optionally `update <owner/repo>` to scope to one repo) → **update mode**.
 
-Each entry pins a `sha` Renovate bumps automatically. Plugin `name` = skill
-folder basename, unique across the whole marketplace. One entry per `SKILL.md`.
+Each entry pins a `sha` Renovate bumps automatically. Plugin `name` unique
+across the whole marketplace. **Default: one entry per `SKILL.md`**, `name` =
+skill folder basename. Exception: a cohesive upstream plugin (has its own
+`.claude-plugin/plugin.json`, bundling skills and/or subagents) becomes a
+single **whole-plugin** entry whose `path` is the plugin root — installing it
+brings every artifact (skills + subagents), `name` = the `name` in its
+`plugin.json`. See `api-scaffolding` / `shell-scripting`.
 
 Discover the skills in a repo with one call (reused by both modes):
 ```bash
@@ -35,8 +40,12 @@ endpoints are identical.
 ## Add mode
 
 1. Parse args. If `owner/repo` missing, ask for it.
-2. Discover skills. `path` = a skill folder → single entry; a parent folder →
-   only folders under it (empty → stop, report); omitted → all (batch).
+2. Decide granularity. `path` points at a plugin root (has
+   `.claude-plugin/plugin.json`) and you want its subagents too → one
+   **whole-plugin** entry at that root; skip per-skill discovery, take `name`
+   from the `plugin.json`. Otherwise discover skills: `path` = a skill folder →
+   single entry; a parent folder → only folders under it (empty → stop,
+   report); omitted → all (batch).
 3. Fetch the SHA.
 4. `name` = arg (single) or folder basename (batch). Confirm **every** name is
    free in `marketplace.json` — report collisions and ask before proceeding.
@@ -59,6 +68,9 @@ endpoints are identical.
    Never emit a generic placeholder like `<owner>/<repo> — <name>`: the
    `description` must say what the skill does. If the upstream description is
    empty or unusable, write a one-line summary from the SKILL.md body instead.
+   For a **whole-plugin** entry, list its bundled artifacts (agents + skills),
+   e.g. `"…: bash-pro and posix-shell-pro agents plus the bash-defensive-patterns,
+   bats-testing-patterns, and shellcheck-configuration skills."`.
 6. **Sync the README** (see below), then validate.
 
 ## Update mode
