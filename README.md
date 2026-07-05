@@ -109,6 +109,12 @@ output) or `ponytail` (minimal code) exclusively; bundles both as dependencies.
 |---|---|
 | `api-scaffolding` | REST/GraphQL API scaffolding plugin — `backend-architect`, `fastapi-pro`, `django-pro`, `graphql-architect` agents plus the `fastapi-templates` skill. |
 
+### [antfu/skills](https://github.com/antfu/skills) — Vue/Nuxt ecosystem
+
+| Skill | What it does |
+|---|---|
+| `nuxt` | Nuxt full-stack Vue framework with SSR, auto-imports, and file-based routing. |
+
 ### Modes (bundled by the local `mode-router` plugin)
 
 | Skill | Source | What it does |
