@@ -463,6 +463,17 @@
       "description": "REST and GraphQL API scaffolding: backend-architect, fastapi-pro, django-pro, and graphql-architect agents plus the fastapi-templates skill."
     },
     {
+      "name": "shell-scripting",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/wshobson/agents",
+        "path": "plugins/shell-scripting",
+        "ref": "main",
+        "sha": "5cc2549a50fc672230efd0a0307e2fd27ffba792"
+      },
+      "description": "Production-grade Bash scripting: bash-pro and posix-shell-pro agents plus the bash-defensive-patterns, bats-testing-patterns, and shellcheck-configuration skills."
+    },
+    {
       "name": "nuxt",
       "source": {
         "source": "git-subdir",
