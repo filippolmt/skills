@@ -121,6 +121,27 @@ output) or `ponytail` (minimal code) exclusively; bundles both as dependencies.
 |---|---|
 | `fastify-best-practices` | Guides development of Fastify Node.js backend servers and REST APIs using TypeScript or JavaScript. |
 
+### [Jeffallan/claude-skills](https://github.com/Jeffallan/claude-skills) — React
+
+| Skill | What it does |
+|---|---|
+| `react-expert` | Use when building React 18+ applications in .jsx or .tsx files, Next.js App Router projects, or create-react-app setups. |
+| `wordpress-pro` | Develops custom WordPress themes and plugins, creates and registers Gutenberg blocks and block patterns, configures WooCommerce stores, implements WordPress REST API endpoints, applies security hardening, and optimizes performance through caching and query tuning. |
+| `fastapi-expert` | Use when building high-performance async Python APIs with FastAPI and Pydantic V2. |
+| `kubernetes-specialist` | Use when deploying or managing Kubernetes workloads. |
+| `golang-pro` | Implements concurrent Go patterns using goroutines and channels, designs and builds microservices with gRPC or REST, optimizes Go application performance with pprof, and enforces idiomatic Go with generics, interfaces, and robust error handling. |
+| `cli-developer` | Use when building CLI tools, implementing argument parsing, or adding interactive prompts. |
+| `code-documenter` | Generates, formats, and validates technical documentation — including docstrings, OpenAPI/Swagger specs, JSDoc annotations, doc portals, and user guides. |
+| `database-optimizer` | Optimizes database queries and improves performance across PostgreSQL and MySQL systems. |
+| `playwright-expert` | Use when writing E2E tests with Playwright, setting up test infrastructure, or debugging flaky browser tests. |
+| `sql-pro` | Optimizes SQL queries, designs database schemas, and troubleshoots performance issues. |
+
+### [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) — UI/UX design
+
+| Skill | What it does |
+|---|---|
+| `ui-ux-pro-max` | UI/UX design intelligence for web and mobile. |
+
 ### Modes (bundled by the local `mode-router` plugin)
 
 | Skill | Source | What it does |
