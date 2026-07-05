@@ -11,26 +11,11 @@ skills are installed individually (`/plugin install <name>`), not in bulk.
 ## Adding an external skill (the main workflow)
 
 External skills are **referenced upstream** via `git-subdir` — never copied into
-this repo. Each entry pins a commit `sha` that Renovate bumps automatically. Use
-the exact shape below (one entry per skill):
-
-```json
-{
-  "name": "<skill-name>",
-  "source": {
-    "source": "git-subdir",
-    "url": "https://github.com/<owner>/<repo>",
-    "path": "<path/to/skill-folder>",
-    "ref": "main",
-    "sha": "<current branch HEAD sha>"
-  },
-  "description": "..."
-}
-```
-
-Get the SHA: `curl -fsSL https://api.github.com/repos/<owner>/<repo>/commits/main -H "Accept: application/vnd.github.sha"`.
-The `path` folder must contain a `SKILL.md` at its root (single-skill plugin).
-The `/add-external-skill` skill automates all of this.
+this repo. Each entry is one skill, pins a commit `sha` that Renovate bumps
+automatically, and points at a folder containing a `SKILL.md` at its root. Run
+the `/add-external-skill` skill: it fetches the SHA and appends a
+correctly-shaped entry. For the exact entry shape, see that skill or any existing
+`git-subdir` entry in `marketplace.json`.
 
 ## Renovate sync gotcha
 
