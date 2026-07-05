@@ -461,6 +461,17 @@
         "sha": "5cc2549a50fc672230efd0a0307e2fd27ffba792"
       },
       "description": "REST and GraphQL API scaffolding: backend-architect, fastapi-pro, django-pro, and graphql-architect agents plus the fastapi-templates skill."
+    },
+    {
+      "name": "nuxt",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/antfu/skills",
+        "path": "skills/nuxt",
+        "ref": "main",
+        "sha": "a74f281a27dadc02397bc1a174b0f2c97531b6ae"
+      },
+      "description": "Nuxt full-stack Vue framework with SSR, auto-imports, and file-based routing."
     }
   ]
 }
