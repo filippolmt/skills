@@ -5,8 +5,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this repo is
 
 A Claude Code **plugin marketplace**. `.claude-plugin/marketplace.json` is the
-catalog; each entry is a plugin. **Granularity is one skill per plugin entry** —
-skills are installed individually (`/plugin install <name>`), not in bulk.
+catalog; each entry is a plugin. **Default granularity is one skill per plugin
+entry** — skills are installed individually (`/plugin install <name>`), not in
+bulk.
+
+**Exception — whole-plugin entries.** When an upstream repo ships a cohesive
+plugin that bundles multiple skills and/or subagents (a folder with its own
+`.claude-plugin/plugin.json`), reference it as a **single `git-subdir` entry
+whose `path` points at the plugin root**. Installing it brings all its
+artifacts (skills + subagents) at once. See the `api-scaffolding` and
+`shell-scripting` entries from `wshobson/agents`. Use this only for genuinely
+cohesive upstream plugins; isolated skills stay one-per-entry.
 
 ## Adding an external skill (the main workflow)
 

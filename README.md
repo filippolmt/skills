@@ -108,6 +108,7 @@ output) or `ponytail` (minimal code) exclusively; bundles both as dependencies.
 | Plugin | What it bundles |
 |---|---|
 | `api-scaffolding` | REST/GraphQL API scaffolding plugin — `backend-architect`, `fastapi-pro`, `django-pro`, `graphql-architect` agents plus the `fastapi-templates` skill. |
+| `shell-scripting` | Production-grade Bash plugin — `bash-pro`, `posix-shell-pro` agents plus the `bash-defensive-patterns`, `bats-testing-patterns`, `shellcheck-configuration` skills. |
 
 ### [antfu/skills](https://github.com/antfu/skills) — Vue/Nuxt ecosystem
 
