@@ -483,6 +483,127 @@
         "sha": "5b2a81354b6d10325da0db9decc9ce5ecc714138"
       },
       "description": "Guides development of Fastify Node.js backend servers and REST APIs using TypeScript or JavaScript."
+    },
+    {
+      "name": "react-expert",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/Jeffallan/claude-skills",
+        "path": "skills/react-expert",
+        "ref": "main",
+        "sha": "e8be415bc94d8d6ebddc2fb50e5d03c6e27d4319"
+      },
+      "description": "Use when building React 18+ applications in .jsx or .tsx files, Next.js App Router projects, or create-react-app setups."
+    },
+    {
+      "name": "wordpress-pro",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/Jeffallan/claude-skills",
+        "path": "skills/wordpress-pro",
+        "ref": "main",
+        "sha": "e8be415bc94d8d6ebddc2fb50e5d03c6e27d4319"
+      },
+      "description": "Develops custom WordPress themes and plugins, creates and registers Gutenberg blocks and block patterns, configures WooCommerce stores, implements WordPress REST API endpoints, applies security hardening, and optimizes performance through caching and query tuning."
+    },
+    {
+      "name": "fastapi-expert",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/Jeffallan/claude-skills",
+        "path": "skills/fastapi-expert",
+        "ref": "main",
+        "sha": "e8be415bc94d8d6ebddc2fb50e5d03c6e27d4319"
+      },
+      "description": "Use when building high-performance async Python APIs with FastAPI and Pydantic V2."
+    },
+    {
+      "name": "kubernetes-specialist",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/Jeffallan/claude-skills",
+        "path": "skills/kubernetes-specialist",
+        "ref": "main",
+        "sha": "e8be415bc94d8d6ebddc2fb50e5d03c6e27d4319"
+      },
+      "description": "Use when deploying or managing Kubernetes workloads."
+    },
+    {
+      "name": "golang-pro",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/Jeffallan/claude-skills",
+        "path": "skills/golang-pro",
+        "ref": "main",
+        "sha": "e8be415bc94d8d6ebddc2fb50e5d03c6e27d4319"
+      },
+      "description": "Implements concurrent Go patterns using goroutines and channels, designs and builds microservices with gRPC or REST, optimizes Go application performance with pprof, and enforces idiomatic Go with generics, interfaces, and robust error handling."
+    },
+    {
+      "name": "cli-developer",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/Jeffallan/claude-skills",
+        "path": "skills/cli-developer",
+        "ref": "main",
+        "sha": "e8be415bc94d8d6ebddc2fb50e5d03c6e27d4319"
+      },
+      "description": "Use when building CLI tools, implementing argument parsing, or adding interactive prompts."
+    },
+    {
+      "name": "code-documenter",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/Jeffallan/claude-skills",
+        "path": "skills/code-documenter",
+        "ref": "main",
+        "sha": "e8be415bc94d8d6ebddc2fb50e5d03c6e27d4319"
+      },
+      "description": "Generates, formats, and validates technical documentation — including docstrings, OpenAPI/Swagger specs, JSDoc annotations, doc portals, and user guides."
+    },
+    {
+      "name": "database-optimizer",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/Jeffallan/claude-skills",
+        "path": "skills/database-optimizer",
+        "ref": "main",
+        "sha": "e8be415bc94d8d6ebddc2fb50e5d03c6e27d4319"
+      },
+      "description": "Optimizes database queries and improves performance across PostgreSQL and MySQL systems."
+    },
+    {
+      "name": "playwright-expert",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/Jeffallan/claude-skills",
+        "path": "skills/playwright-expert",
+        "ref": "main",
+        "sha": "e8be415bc94d8d6ebddc2fb50e5d03c6e27d4319"
+      },
+      "description": "Use when writing E2E tests with Playwright, setting up test infrastructure, or debugging flaky browser tests."
+    },
+    {
+      "name": "sql-pro",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/Jeffallan/claude-skills",
+        "path": "skills/sql-pro",
+        "ref": "main",
+        "sha": "e8be415bc94d8d6ebddc2fb50e5d03c6e27d4319"
+      },
+      "description": "Optimizes SQL queries, designs database schemas, and troubleshoots performance issues."
+    },
+    {
+      "name": "ui-ux-pro-max",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+        "path": ".claude/skills/ui-ux-pro-max",
+        "ref": "main",
+        "sha": "4baa399d00da806f83ed93652172f66943205153"
+      },
+      "description": "UI/UX design intelligence for web and mobile."
     }
   ]
 }
