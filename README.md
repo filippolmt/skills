@@ -105,9 +105,9 @@ output) or `ponytail` (minimal code) exclusively; bundles both as dependencies.
 
 ### [wshobson/agents](https://github.com/wshobson/agents) — backend scaffolding
 
-| Skill | What it does |
+| Plugin | What it bundles |
 |---|---|
-| `fastapi-templates` | Create production-ready FastAPI projects with async patterns, dependency injection, and comprehensive error handling. |
+| `api-scaffolding` | REST/GraphQL API scaffolding plugin — `backend-architect`, `fastapi-pro`, `django-pro`, `graphql-architect` agents plus the `fastapi-templates` skill. |
 
 ### Modes (bundled by the local `mode-router` plugin)
 
