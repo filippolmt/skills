@@ -29,7 +29,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/ask-matt",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — ask-matt"
     },
@@ -40,7 +40,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/diagnosing-bugs",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — diagnosing-bugs"
     },
@@ -51,7 +51,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/grill-with-docs",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — grill-with-docs"
     },
@@ -62,7 +62,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/triage",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — triage"
     },
@@ -73,7 +73,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/improve-codebase-architecture",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — improve-codebase-architecture"
     },
@@ -84,7 +84,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/setup-matt-pocock-skills",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — setup-matt-pocock-skills"
     },
@@ -95,7 +95,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/tdd",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — tdd"
     },
@@ -106,7 +106,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/to-issues",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — to-issues"
     },
@@ -117,7 +117,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/to-prd",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — to-prd"
     },
@@ -128,7 +128,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/implement",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — implement"
     },
@@ -139,7 +139,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/prototype",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — prototype"
     },
@@ -150,7 +150,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/research",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — research"
     },
@@ -161,7 +161,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/domain-modeling",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — domain-modeling"
     },
@@ -172,7 +172,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/codebase-design",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — codebase-design"
     },
@@ -183,7 +183,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/code-review",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — code-review"
     },
@@ -194,7 +194,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/productivity/grill-me",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — grill-me"
     },
@@ -205,7 +205,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/productivity/grilling",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — grilling"
     },
@@ -216,7 +216,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/productivity/handoff",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — handoff"
     },
@@ -227,7 +227,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/productivity/teach",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — teach"
     },
@@ -238,7 +238,7 @@
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/productivity/writing-great-skills",
         "ref": "main",
-        "sha": "272f99b22574f50e4266791c86b9302682970e23"
+        "sha": "4691566bbb2744bf56505531f8050102f02a7a12"
       },
       "description": "mattpocock/skills — writing-great-skills"
     },
