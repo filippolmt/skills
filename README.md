@@ -115,6 +115,12 @@ output) or `ponytail` (minimal code) exclusively; bundles both as dependencies.
 |---|---|
 | `nuxt` | Nuxt full-stack Vue framework with SSR, auto-imports, and file-based routing. |
 
+### [mcollina/skills](https://github.com/mcollina/skills) — Node.js backend
+
+| Skill | What it does |
+|---|---|
+| `fastify-best-practices` | Guides development of Fastify Node.js backend servers and REST APIs using TypeScript or JavaScript. |
+
 ### Modes (bundled by the local `mode-router` plugin)
 
 | Skill | Source | What it does |

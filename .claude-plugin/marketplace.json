@@ -472,6 +472,17 @@
         "sha": "a74f281a27dadc02397bc1a174b0f2c97531b6ae"
       },
       "description": "Nuxt full-stack Vue framework with SSR, auto-imports, and file-based routing."
+    },
+    {
+      "name": "fastify-best-practices",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mcollina/skills",
+        "path": "skills/fastify",
+        "ref": "main",
+        "sha": "5b2a81354b6d10325da0db9decc9ce5ecc714138"
+      },
+      "description": "Guides development of Fastify Node.js backend servers and REST APIs using TypeScript or JavaScript."
     }
   ]
 }
