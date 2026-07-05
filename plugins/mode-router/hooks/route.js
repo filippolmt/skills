@@ -63,13 +63,17 @@ const ROUTER_RESET = ROUTER_HEAD +
   'Invoke the chosen skill now (Skill tool, before responding): the context was ' +
   'just (re)started or compacted, so no mode skill is active.';
 
-// No reset: a mode skill may already be active from an earlier turn -> only
-// re-invoke on a mode switch (inherent model judgment; the hook can't know the
-// request type).
+// No reset: any mode skill loaded earlier this session is STILL in context
+// (both caveman and ponytail declare "active every response"), so a switch back
+// to an already-loaded mode needs no reload — re-invoking would just re-inject
+// its body. The model knows from its own transcript which modes it has loaded
+// since the last reset; the hook can't. So: invoke only a mode not yet loaded.
 const ROUTER_KEEP = ROUTER_HEAD +
-  'If the needed skill is already the active mode from an earlier turn this ' +
-  'session, do nothing — it persists. Invoke it (Skill tool, before responding) ' +
-  'only when switching modes.';
+  'A mode skill loaded earlier this session stays in context — both caveman and ' +
+  'ponytail persist once invoked. Invoke the chosen mode\'s skill (Skill tool, ' +
+  'before responding) ONLY if you have not already loaded it since the last ' +
+  'context reset; if it was loaded earlier this session, do NOT re-invoke it — ' +
+  'just apply that mode to this turn. Re-invoking re-injects its body for nothing.';
 
 const VALID = ['auto', 'caveman', 'ponytail', 'off'];
 

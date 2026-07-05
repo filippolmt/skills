@@ -38,7 +38,7 @@ assert.match(out, /Precedence:/, 'auto reset => precedence clause present');
 
 out = run('UserPromptSubmit', 'explain more');
 assert.match(out, /MODE ROUTER/);
-assert.match(out, /only when switching modes/, 'no reset => keep wording');
+assert.match(out, /ONLY if you have not already loaded it/, 'no reset => keep wording (invoke only unloaded modes)');
 
 // compaction fires SessionStart again => next prompt is reset again
 run('SessionStart');
