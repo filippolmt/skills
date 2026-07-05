@@ -94,6 +94,21 @@ output) or `ponytail` (minimal code) exclusively; bundles both as dependencies.
 | `gpt-tasteskill` | UX/UI + GSAP motion engineering with editorial typography rules. |
 | `output-skill` | Override LLM truncation — enforce complete, placeholder-free output. |
 
+### [mvanhorn/cli-printing-press](https://github.com/mvanhorn/cli-printing-press) — CLI generation
+
+| Skill | What it does |
+|---|---|
+| `printing-press` | Generate a ship-ready CLI for an API via a lean research → generate → build → shipcheck loop. |
+| `printing-press-polish` | Polish a generated CLI to pass verification and become publish-ready: runs diagnostics, auto-fixes issues, reports the before/after delta. |
+| `printing-press-score` | Score a generated CLI against the Steinberger bar, or compare two CLIs side-by-side. |
+| `printing-press-output-review` | Internal sub-skill: agentic review of a printed CLI's sampled output; invoked by the other printing-press skills, not for direct use. |
+
+### [wshobson/agents](https://github.com/wshobson/agents) — backend scaffolding
+
+| Skill | What it does |
+|---|---|
+| `fastapi-templates` | Create production-ready FastAPI projects with async patterns, dependency injection, and comprehensive error handling. |
+
 ### Modes (bundled by the local `mode-router` plugin)
 
 | Skill | Source | What it does |

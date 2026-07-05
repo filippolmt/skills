@@ -450,6 +450,17 @@
         "sha": "4a2b02329e71e64cc7ffe14ff9af569d0dfa3495"
       },
       "description": "Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use."
+    },
+    {
+      "name": "fastapi-templates",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/wshobson/agents",
+        "path": "plugins/api-scaffolding/skills/fastapi-templates",
+        "ref": "main",
+        "sha": "5cc2549a50fc672230efd0a0307e2fd27ffba792"
+      },
+      "description": "Create production-ready FastAPI projects with async patterns, dependency injection, and comprehensive error handling."
     }
   ]
 }
