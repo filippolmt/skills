@@ -485,6 +485,17 @@
       "description": "Nuxt full-stack Vue framework with SSR, auto-imports, and file-based routing."
     },
     {
+      "name": "unocss",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/antfu/skills",
+        "path": "skills/unocss",
+        "ref": "main",
+        "sha": "a74f281a27dadc02397bc1a174b0f2c97531b6ae"
+      },
+      "description": "UnoCSS instant atomic CSS engine, superset of Tailwind CSS."
+    },
+    {
       "name": "fastify-best-practices",
       "source": {
         "source": "git-subdir",

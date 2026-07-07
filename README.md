@@ -115,6 +115,7 @@ output) or `ponytail` (minimal code) exclusively; bundles both as dependencies.
 | Skill | What it does |
 |---|---|
 | `nuxt` | Nuxt full-stack Vue framework with SSR, auto-imports, and file-based routing. |
+| `unocss` | UnoCSS instant atomic CSS engine, superset of Tailwind CSS. |
 
 ### [mcollina/skills](https://github.com/mcollina/skills) — Node.js backend
 
