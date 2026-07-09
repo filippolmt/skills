@@ -1,0 +1,9 @@
+{
+  "name": "implement-bundle",
+  "description": "Install implement together with the skills it calls at runtime (tdd, code-review). Bundles them as dependencies.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Filippo Merante Caparrotta"
+  },
+  "dependencies": ["implement", "tdd", "code-review"]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "wayfinder-bundle",
+  "description": "Install wayfinder together with the skills it calls at runtime (grilling, domain-modeling, prototype, research). Bundles them as dependencies.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Filippo Merante Caparrotta"
+  },
+  "dependencies": ["wayfinder", "grilling", "domain-modeling", "prototype", "research"]
+}

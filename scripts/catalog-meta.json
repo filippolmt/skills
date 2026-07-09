@@ -10,5 +10,5 @@
     { "repo": "Jeffallan/claude-skills", "tagline": "React", "kind": "skill" },
     { "repo": "nextlevelbuilder/ui-ux-pro-max-skill", "tagline": "UI/UX design", "kind": "skill" }
   ],
-  "omit": ["improve-codebase-architecture-bundle"]
+  "omit": ["improve-codebase-architecture-bundle", "printing-press-bundle", "implement-bundle", "triage-bundle", "wayfinder-bundle", "grill-with-docs-bundle"]
 }
