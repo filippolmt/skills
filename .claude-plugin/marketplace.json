@@ -67,6 +67,28 @@
       "description": "mattpocock/skills — triage"
     },
     {
+      "name": "resolving-merge-conflicts",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/resolving-merge-conflicts",
+        "ref": "main",
+        "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
+      },
+      "description": "mattpocock/skills — resolving-merge-conflicts"
+    },
+    {
+      "name": "wayfinder",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/wayfinder",
+        "ref": "main",
+        "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
+      },
+      "description": "mattpocock/skills — wayfinder"
+    },
+    {
       "name": "improve-codebase-architecture",
       "source": {
         "source": "git-subdir",
@@ -100,26 +122,26 @@
       "description": "mattpocock/skills — tdd"
     },
     {
-      "name": "to-issues",
+      "name": "to-tickets",
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
-        "path": "skills/engineering/to-issues",
+        "path": "skills/engineering/to-tickets",
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — to-issues"
+      "description": "mattpocock/skills — to-tickets"
     },
     {
-      "name": "to-prd",
+      "name": "to-spec",
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
-        "path": "skills/engineering/to-prd",
+        "path": "skills/engineering/to-spec",
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — to-prd"
+      "description": "mattpocock/skills — to-spec"
     },
     {
       "name": "implement",
