@@ -1,0 +1,8 @@
+{
+  "name": "xquik-x-data",
+  "description": "Source-backed planning for Xquik REST API and remote MCP workflows for X data research, monitoring, exports, and automation.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Xquik"
+  }
+}

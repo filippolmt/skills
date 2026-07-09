@@ -1,6 +1,5 @@
 {
   "name": "filippo-skills",
-  "description": "A collection of reusable skills for Claude Code",
   "owner": {
     "name": "Filippo Merante Caparrotta",
     "email": "filippolmt@gmail.com"
@@ -12,6 +11,14 @@
       "description": "Per-prompt router: classifies each request and invokes the caveman (terse output) or ponytail (minimal code) skill, exclusively. Force a mode or turn it off via control file. Bundles both as dependencies.",
       "author": {
         "name": "Filippo Merante Caparrotta"
+      }
+    },
+    {
+      "name": "xquik-x-data",
+      "source": "./plugins/xquik-x-data",
+      "description": "Source-backed planning for Xquik REST API and remote MCP workflows for X data research, monitoring, exports, and automation.",
+      "author": {
+        "name": "Xquik"
       }
     },
     {
@@ -638,5 +645,8 @@
       },
       "description": "UI/UX design intelligence for web and mobile."
     }
-  ]
+  ],
+  "metadata": {
+    "description": "A collection of reusable skills for Claude Code"
+  }
 }

@@ -49,7 +49,12 @@ Snapshot of the catalog — the source of truth is
 [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
 
 <!-- catalog:start -->
-**Local:** `mode-router` — Per-prompt router: classifies each request and invokes the caveman (terse output) or ponytail (minimal code) skill, exclusively. Force a mode or turn it off via control file. Bundles both as dependencies.
+### Local plugins
+
+| Plugin | What it does |
+|---|---|
+| `mode-router` | Per-prompt router: classifies each request and invokes the caveman (terse output) or ponytail (minimal code) skill, exclusively. Force a mode or turn it off via control file. Bundles both as dependencies. |
+| `xquik-x-data` | Source-backed planning for Xquik REST API and remote MCP workflows for X data research, monitoring, exports, and automation. |
 
 ### [mattpocock/skills](https://github.com/mattpocock/skills) — engineering & productivity
 
