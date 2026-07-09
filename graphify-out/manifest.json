@@ -1,0 +1,102 @@
+{
+  ".claude-plugin/marketplace.json": {
+    "mtime": 1783579695.9804144,
+    "ast_hash": "616f88fd8a8191be85a88f7014fd9194",
+    "semantic_hash": ""
+  },
+  ".claude/settings.json": {
+    "mtime": 1783456749.9588253,
+    "ast_hash": "3a0a5786c27c767f1285147afd225350",
+    "semantic_hash": ""
+  },
+  ".claude/settings.local.json": {
+    "mtime": 1783080594.4614282,
+    "ast_hash": "ef19666feab005d4169e2d73f391522e",
+    "semantic_hash": ""
+  },
+  "plugins/improve-codebase-architecture-bundle/.claude-plugin/plugin.json": {
+    "mtime": 1783088218.4057267,
+    "ast_hash": "849bab40cc1372d2aa62e77ba0f1a4fa",
+    "semantic_hash": ""
+  },
+  "plugins/mode-router/.claude-plugin/plugin.json": {
+    "mtime": 1783288809.7133114,
+    "ast_hash": "8fa591b7d3a7a7d9ff2e8ff062e86389",
+    "semantic_hash": ""
+  },
+  "plugins/mode-router/hooks/hooks.json": {
+    "mtime": 1783089024.7713528,
+    "ast_hash": "ee34a52f4fb1892bb8771b8e1ef9ba21",
+    "semantic_hash": ""
+  },
+  "plugins/mode-router/hooks/route.js": {
+    "mtime": 1783288809.7138867,
+    "ast_hash": "6f8d18474dc468b796e209d63a18a3e4",
+    "semantic_hash": ""
+  },
+  "plugins/mode-router/hooks/route.test.js": {
+    "mtime": 1783288809.7145524,
+    "ast_hash": "7603f137f4a7ce6ca1a2e7072b663516",
+    "semantic_hash": ""
+  },
+  "renovate.json": {
+    "mtime": 1783237623.767114,
+    "ast_hash": "c7080d60d6aab0fb98279527ce0169b7",
+    "semantic_hash": ""
+  },
+  "scripts/catalog-meta.json": {
+    "mtime": 1783579551.9552937,
+    "ast_hash": "8f30195ca70df0633dbef59b86c98fcc",
+    "semantic_hash": ""
+  },
+  "scripts/check-renovate.js": {
+    "mtime": 1783579809.0872898,
+    "ast_hash": "1d4b3b2f316b19a1fe15e86afdadcb22",
+    "semantic_hash": ""
+  },
+  "scripts/gen-readme.js": {
+    "mtime": 1783580231.611581,
+    "ast_hash": "81bb8390bf18abca2eecd121ecd27f22",
+    "semantic_hash": ""
+  },
+  "scripts/gen-readme.test.js": {
+    "mtime": 1783580252.7055397,
+    "ast_hash": "44d996bb8cd00a00012f1afe860d0a51",
+    "semantic_hash": ""
+  },
+  ".claude/skills/add-external-skill/SKILL.md": {
+    "mtime": 1783580317.9658587,
+    "ast_hash": "834665f4ec5610e1e909e23b2240d6b6",
+    "semantic_hash": ""
+  },
+  ".github/workflows/validate.yml": {
+    "mtime": 1783579822.9278162,
+    "ast_hash": "5c257be9623b81a598466e0ea2855722",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1783456749.9593875,
+    "ast_hash": "4ed437d16f790c0e3927573da20e2445",
+    "semantic_hash": ""
+  },
+  "CONTEXT.md": {
+    "mtime": 1783579840.131466,
+    "ast_hash": "7c85365ba20c16115c9a40a08f86fffd",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1783580263.5504978,
+    "ast_hash": "ef75130f7fba16b766691bf37b016ff9",
+    "semantic_hash": ""
+  },
+  "plugins/mode-router/skills/mode-router/ROUTING.md": {
+    "mtime": 1783151122.519236,
+    "ast_hash": "3ec5883b1fb942740fe71395c5775d32",
+    "semantic_hash": ""
+  },
+  "plugins/mode-router/skills/mode-router/SKILL.md": {
+    "mtime": 1783151122.5197003,
+    "ast_hash": "0fdb295cec97e1557e25dde878cd157d",
+    "semantic_hash": ""
+  }
+}
