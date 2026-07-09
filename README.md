@@ -48,8 +48,8 @@ To refresh after upstream updates:
 Snapshot of the catalog — the source of truth is
 [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
 
-**Local:** `mode-router` — per-prompt router that invokes `caveman` (terse
-output) or `ponytail` (minimal code) exclusively; bundles both as dependencies.
+<!-- catalog:start -->
+**Local:** `mode-router` — Per-prompt router: classifies each request and invokes the caveman (terse output) or ponytail (minimal code) skill, exclusively. Force a mode or turn it off via control file. Bundles both as dependencies.
 
 ### [mattpocock/skills](https://github.com/mattpocock/skills) — engineering & productivity
 
@@ -57,58 +57,60 @@ output) or `ponytail` (minimal code) exclusively; bundles both as dependencies.
 |---|---|
 | `ask-matt` | Ask which skill or flow fits your situation. |
 | `diagnosing-bugs` | Diagnosis loop for hard bugs and performance regressions. |
-| `grill-with-docs` | Relentless interview to sharpen a plan, producing ADRs and a glossary as it goes. |
-| `triage` | Move issues and external PRs through a triage state machine into agent-ready briefs. |
-| `improve-codebase-architecture` | Scan a codebase for deepening opportunities and grill through the one you pick. |
-| `setup-matt-pocock-skills` | Configure a repo for these skills — issue tracker, triage labels, domain docs. |
+| `grill-with-docs` | A relentless interview to sharpen a plan or design, which also creates docs (ADR's and glossary) as we go. |
+| `triage` | Move issues and external PRs through a state machine of triage roles — categorise, verify, grill if needed, and write agent-ready briefs. |
+| `resolving-merge-conflicts` | Use when you need to resolve an in-progress git merge/rebase conflict. |
+| `wayfinder` | Plan a huge chunk of work — more than one agent session can hold — as a shared map of investigation tickets on your issue tracker, and resolve them one at a time until the way to the destination is clear. |
+| `improve-codebase-architecture` | Scan a codebase for deepening opportunities, present them as a visual HTML report, then grill through whichever one you pick. |
+| `setup-matt-pocock-skills` | Configure this repo for the engineering skills — set up its issue tracker, triage label vocabulary, and domain doc layout. |
 | `tdd` | Test-driven development. |
-| `to-issues` | Break a plan/spec/PRD into independent issues as tracer-bullet vertical slices. |
-| `to-prd` | Turn the current conversation into a PRD and publish it to the issue tracker. |
-| `implement` | Implement a piece of work based on a PRD or set of issues. |
+| `to-tickets` | Break a plan, spec, or the current conversation into a set of tracer-bullet tickets, each declaring its blocking edges, published to the configured tracker — edges as text in a local file, or native blocking links on a real tracker. |
+| `to-spec` | Turn the current conversation into a spec and publish it to the project issue tracker — no interview, just synthesis of what you've already discussed. |
+| `implement` | Implement a piece of work based on a spec or set of tickets. |
 | `prototype` | Build a throwaway prototype to answer a design question. |
-| `research` | Investigate a question against primary sources; capture findings as Markdown. |
+| `research` | Investigate a question against high-trust primary sources and capture the findings as a Markdown file in the repo. |
 | `domain-modeling` | Build and sharpen a project's domain model. |
 | `codebase-design` | Shared vocabulary for designing deep modules. |
-| `code-review` | Review changes since a fixed point on standards + correctness axes. |
-| `grill-me` | Relentless interview to sharpen a plan or design. |
-| `grilling` | Interview the user relentlessly about a plan or design. |
-| `handoff` | Compact the conversation into a handoff doc for another agent. |
-| `teach` | Teach the user a new skill or concept within the workspace. |
-| `writing-great-skills` | Reference for writing predictable skills — vocabulary and principles. |
+| `code-review` | Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes — Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/PRD asked for?). |
+| `grill-me` | A relentless interview to sharpen a plan or design. |
+| `grilling` | Grill the user relentlessly about a plan or design. |
+| `handoff` | Compact the current conversation into a handoff document for another agent to pick up. |
+| `teach` | Teach the user a new skill or concept, within this workspace. |
+| `writing-great-skills` | Reference for writing and editing skills well — the vocabulary and principles that make a skill predictable. |
 
 ### [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) — frontend design & image-gen
 
 | Skill | What it does |
 |---|---|
+| `brandkit` | Premium brand-kit image generation skill for creating high-end brand-guidelines boards, logo systems, identity decks, and visual-world presentations. |
+| `brutalist-skill` | Raw mechanical interfaces fusing Swiss typographic print with military terminal aesthetics. |
+| `gpt-tasteskill` | Elite UX/UI & Advanced GSAP Motion Engineer. |
+| `image-to-code-skill` | Elite website image-to-code skill for Codex. |
+| `imagegen-frontend-mobile` | Elite mobile app image-generation skill for creating premium, app-native screen concepts and flows. |
+| `imagegen-frontend-web` | Elite frontend image-direction skill for generating premium, conversion-aware website design references. |
+| `minimalist-skill` | Clean editorial-style interfaces. |
+| `output-skill` | Overrides default LLM truncation behavior. |
+| `redesign-skill` | Upgrades existing websites and apps to premium quality. |
+| `soft-skill` | Teaches the AI to design like a high-end agency. |
+| `stitch-skill` | Semantic Design System Skill for Google Stitch. |
+| `taste-skill-v1` | The original v1 taste-skill, preserved for projects depending on its exact behavior. |
 | `taste-skill` | Anti-slop frontend skill for landing pages, portfolios, and redesigns. |
-| `taste-skill-v1` | Original v1 taste-skill, preserved for projects pinned to its behavior. |
-| `redesign-skill` | Upgrade existing sites/apps to premium quality without breaking them. |
-| `soft-skill` | Design like a high-end agency — fonts, spacing, shadows, animations. |
-| `minimalist-skill` | Clean editorial interfaces: warm monochrome, flat bento grids. |
-| `brutalist-skill` | Raw mechanical UI: Swiss print × military terminal aesthetics. |
-| `brandkit` | Generate brand-guideline boards, logo systems, and identity decks. |
-| `stitch-skill` | Semantic design-system `DESIGN.md` files for Google Stitch. |
-| `image-to-code-skill` | Generate a design image, analyze it, then build the site to match. |
-| `imagegen-frontend-web` | Generate premium, conversion-aware website design references. |
-| `imagegen-frontend-mobile` | Generate premium app-native mobile screen concepts and flows. |
-| `gpt-tasteskill` | UX/UI + GSAP motion engineering with editorial typography rules. |
-| `output-skill` | Override LLM truncation — enforce complete, placeholder-free output. |
 
 ### [mvanhorn/cli-printing-press](https://github.com/mvanhorn/cli-printing-press) — CLI generation
 
 | Skill | What it does |
 |---|---|
 | `printing-press` | Generate a ship-ready CLI for an API via a lean research → generate → build → shipcheck loop. |
-| `printing-press-polish` | Polish a generated CLI to pass verification and become publish-ready: runs diagnostics, auto-fixes issues, reports the before/after delta. |
+| `printing-press-polish` | Polish a generated CLI to pass verification and become publish-ready: runs diagnostics (dogfood, verify, scorecard, go vet, gosec), auto-fixes issues, and reports the before/after delta. |
 | `printing-press-score` | Score a generated CLI against the Steinberger bar, or compare two CLIs side-by-side. |
-| `printing-press-output-review` | Internal sub-skill: agentic review of a printed CLI's sampled output; invoked by the other printing-press skills, not for direct use. |
+| `printing-press-output-review` | Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use. |
 
 ### [wshobson/agents](https://github.com/wshobson/agents) — backend scaffolding
 
 | Plugin | What it bundles |
 |---|---|
-| `api-scaffolding` | REST/GraphQL API scaffolding plugin — `backend-architect`, `fastapi-pro`, `django-pro`, `graphql-architect` agents plus the `fastapi-templates` skill. |
-| `shell-scripting` | Production-grade Bash plugin — `bash-pro`, `posix-shell-pro` agents plus the `bash-defensive-patterns`, `bats-testing-patterns`, `shellcheck-configuration` skills. |
+| `api-scaffolding` | REST and GraphQL API scaffolding: backend-architect, fastapi-pro, django-pro, and graphql-architect agents plus the fastapi-templates skill. |
+| `shell-scripting` | Production-grade Bash scripting: bash-pro and posix-shell-pro agents plus the bash-defensive-patterns, bats-testing-patterns, and shellcheck-configuration skills. |
 
 ### [antfu/skills](https://github.com/antfu/skills) — Vue/Nuxt ecosystem
 
@@ -147,8 +149,9 @@ output) or `ponytail` (minimal code) exclusively; bundles both as dependencies.
 
 | Skill | Source | What it does |
 |---|---|---|
-| `caveman` | [juliusbrussee/caveman](https://github.com/juliusbrussee/caveman) | Ultra-compressed communication mode. Cuts token usage ~75% by speaking like caveman while keeping full technical accuracy. |
-| `ponytail` | [dietrichgebert/ponytail](https://github.com/dietrichgebert/ponytail) | Lazy-senior-dev coding mode. Minimal-diff, YAGNI-first: the smallest change that works. |
+| `caveman` | [juliusbrussee/caveman](https://github.com/juliusbrussee/caveman) | Ultra-compressed communication mode. |
+| `ponytail` | [dietrichgebert/ponytail](https://github.com/dietrichgebert/ponytail) | Forces the laziest solution that actually works, simplest, shortest, most minimal. |
+<!-- catalog:end -->
 
 ## External skills (auto-updated by Renovate)
 

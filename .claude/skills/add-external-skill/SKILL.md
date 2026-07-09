@@ -29,8 +29,9 @@ Fetch the current branch HEAD SHA (shared by all entries from a repo):
 curl -fsSL "https://api.github.com/repos/<owner>/<repo>/commits/main" \
   -H "Accept: application/vnd.github.sha"
 ```
-Fetch a skill's upstream `description` (first sentence of its frontmatter — used
-for both the entry and the README row):
+Fetch a skill's upstream `description` (a concise one-liner — usually the
+frontmatter's first sentence): it is stored verbatim in `marketplace.json` and
+rendered as-is into the README row.
 ```bash
 curl -fsSL "https://raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>/SKILL.md"
 ```
@@ -50,7 +51,7 @@ endpoints are identical.
 4. `name` = arg (single) or folder basename (batch). Confirm **every** name is
    free in `marketplace.json` — report collisions and ask before proceeding.
 5. For each skill, fetch its upstream frontmatter `description` (see the fetch
-   above — first sentence, trimmed to one line). Append each entry to the
+   above — a concise one-liner, usually the frontmatter's first sentence). Append each entry to the
    `plugins` array (match existing formatting exactly):
    ```json
    {
@@ -62,7 +63,7 @@ endpoints are identical.
        "ref": "main",
        "sha": "<sha>"
      },
-     "description": "<first sentence of the upstream description, stating what the skill does>"
+     "description": "<concise one-liner from the upstream description, stating what the skill does>"
    }
    ```
    Never emit a generic placeholder like `<owner>/<repo> — <name>`: the
@@ -71,7 +72,7 @@ endpoints are identical.
    For a **whole-plugin** entry, list its bundled artifacts (agents + skills),
    e.g. `"…: bash-pro and posix-shell-pro agents plus the bash-defensive-patterns,
    bats-testing-patterns, and shellcheck-configuration skills."`.
-6. **Sync the README** (see below), then validate.
+6. **Regenerate the README** (see below), then validate.
 
 ## Update mode
 
@@ -84,24 +85,37 @@ For each `git-subdir` source repo in `marketplace.json` (or the one named):
      it, **ask to confirm**, then delete the entry.
    - Bump each surviving entry's `sha` to the latest (Renovate also does this;
      harmless to set now).
-3. **Sync the README** (this also picks up changed upstream descriptions), then
-   validate.
+   - Refresh each entry's `description` from upstream (a concise one-liner,
+     usually the `SKILL.md` frontmatter's first sentence — the fetch above).
+     `marketplace.json` is the source of truth, so this is what the README shows.
+3. **Regenerate the README**, then validate.
 
-## Sync the README
+## Regenerate the README
 
-The README **Available skills** section has one `### [owner/repo](url)` table per
-source repo, rows `| \`<name>\` | <one-line> |`. Make it match `marketplace.json`:
+The README **Available skills** catalog is a **projection** of
+`marketplace.json` produced by `scripts/gen-readme.js` — never hand-edit it. It
+rewrites the section between the `<!-- catalog:start -->` / `<!-- catalog:end -->`
+markers; skill names, descriptions and URLs come from `marketplace.json`, and
+the Modes table is derived from the local `mode-router` plugin's `dependencies`.
 
-- The one-line is the entry's `description` in `marketplace.json` (the trimmed
-  first sentence of the upstream frontmatter — see add mode step 5). In update
-  mode, re-fetch it (same fetch as above) to pick up upstream changes.
-- Add a row for each new entry, drop the row for each removed entry, and refresh
-  any row whose upstream description changed.
-- Keep the note that `.claude-plugin/marketplace.json` is the source of truth.
+- If you referenced a skill from a **new** source repo, add a group to
+  `scripts/catalog-meta.json` (ordered list):
+  ```json
+  { "repo": "<owner>/<repo>", "tagline": "<short label>", "kind": "skill" }
+  ```
+  Use `"kind": "plugin"` for a whole-plugin entry (renders a "What it bundles"
+  column). The generator **throws** if any git-subdir entry's repo has no group
+  (or is not omitted / a mode-router dependency), so this can't be silently
+  missed.
+- Run the generator:
+  ```bash
+  node scripts/gen-readme.js
+  ```
 
 ## Finish
 
 ```bash
+node scripts/gen-readme.js --check   # README catalog is in sync with marketplace.json
 claude plugin validate .
 ```
 Report what changed (added / removed / description updates). Do not commit —

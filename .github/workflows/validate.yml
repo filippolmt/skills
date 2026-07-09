@@ -15,5 +15,11 @@ jobs:
           node-version: 20
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code
+      - name: Test README generator
+        run: node scripts/gen-readme.test.js
+      - name: Check README catalog is in sync
+        run: node scripts/gen-readme.js --check
+      - name: Check Renovate regex covers every git-subdir entry
+        run: node scripts/check-renovate.js
       - name: Validate marketplace and plugins
         run: claude plugin validate .
