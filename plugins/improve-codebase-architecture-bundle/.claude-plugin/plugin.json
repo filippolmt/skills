@@ -1,9 +1,9 @@
 {
   "name": "improve-codebase-architecture-bundle",
-  "description": "Install improve-codebase-architecture together with the mattpocock skills it calls at runtime (grilling, codebase-design). Bundles them as dependencies.",
-  "version": "0.1.1",
+  "description": "Install improve-codebase-architecture together with the mattpocock skills it calls at runtime (grilling, codebase-design, domain-modeling). Bundles them as dependencies.",
+  "version": "0.2.0",
   "author": {
     "name": "Filippo Merante Caparrotta"
   },
-  "dependencies": ["improve-codebase-architecture", "grilling", "codebase-design"]
+  "dependencies": ["improve-codebase-architecture", "grilling", "codebase-design", "domain-modeling"]
 }
