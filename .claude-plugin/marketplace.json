@@ -677,6 +677,17 @@
         "sha": "12b486b22e67f5d887962ef8351c1ac863bfaeb9"
       },
       "description": "UI/UX design intelligence for web and mobile."
+    },
+    {
+      "name": "terraform-skill",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/antonbabenko/terraform-skill",
+        "path": "skills/terraform-skill",
+        "ref": "master",
+        "sha": "0a3a4a66e99001347d36a41e10260a825be3ab62"
+      },
+      "description": "Diagnose-first guidance for writing, reviewing, and debugging Terraform/OpenTofu modules, tests, CI, scans, and state ops — pinpoints the failure mode (identity churn, secrets, blast radius, CI drift, state corruption) with version-aware guards."
     }
   ]
 }
