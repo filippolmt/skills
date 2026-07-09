@@ -17,7 +17,7 @@
     {
       "name": "improve-codebase-architecture-bundle",
       "source": "./plugins/improve-codebase-architecture-bundle",
-      "description": "mattpocock/skills — install improve-codebase-architecture together with the mattpocock skills it calls at runtime (grilling, codebase-design). Bundles them as dependencies.",
+      "description": "Install improve-codebase-architecture together with the mattpocock skills it calls at runtime (grilling, codebase-design). Bundles them as dependencies.",
       "author": {
         "name": "Filippo Merante Caparrotta"
       }
@@ -31,7 +31,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — ask-matt"
+      "description": "Ask which skill or flow fits your situation."
     },
     {
       "name": "diagnosing-bugs",
@@ -42,7 +42,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — diagnosing-bugs"
+      "description": "Diagnosis loop for hard bugs and performance regressions."
     },
     {
       "name": "grill-with-docs",
@@ -53,7 +53,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — grill-with-docs"
+      "description": "A relentless interview to sharpen a plan or design, which also creates docs (ADR's and glossary) as we go."
     },
     {
       "name": "triage",
@@ -64,7 +64,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — triage"
+      "description": "Move issues and external PRs through a state machine of triage roles — categorise, verify, grill if needed, and write agent-ready briefs."
     },
     {
       "name": "resolving-merge-conflicts",
@@ -75,7 +75,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — resolving-merge-conflicts"
+      "description": "Use when you need to resolve an in-progress git merge/rebase conflict."
     },
     {
       "name": "wayfinder",
@@ -86,7 +86,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — wayfinder"
+      "description": "Plan a huge chunk of work — more than one agent session can hold — as a shared map of investigation tickets on your issue tracker, and resolve them one at a time until the way to the destination is clear."
     },
     {
       "name": "improve-codebase-architecture",
@@ -97,7 +97,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — improve-codebase-architecture"
+      "description": "Scan a codebase for deepening opportunities, present them as a visual HTML report, then grill through whichever one you pick."
     },
     {
       "name": "setup-matt-pocock-skills",
@@ -108,7 +108,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — setup-matt-pocock-skills"
+      "description": "Configure this repo for the engineering skills — set up its issue tracker, triage label vocabulary, and domain doc layout."
     },
     {
       "name": "tdd",
@@ -119,7 +119,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — tdd"
+      "description": "Test-driven development."
     },
     {
       "name": "to-tickets",
@@ -130,7 +130,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — to-tickets"
+      "description": "Break a plan, spec, or the current conversation into a set of tracer-bullet tickets, each declaring its blocking edges, published to the configured tracker — edges as text in a local file, or native blocking links on a real tracker."
     },
     {
       "name": "to-spec",
@@ -141,7 +141,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — to-spec"
+      "description": "Turn the current conversation into a spec and publish it to the project issue tracker — no interview, just synthesis of what you've already discussed."
     },
     {
       "name": "implement",
@@ -152,7 +152,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — implement"
+      "description": "Implement a piece of work based on a spec or set of tickets."
     },
     {
       "name": "prototype",
@@ -163,7 +163,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — prototype"
+      "description": "Build a throwaway prototype to answer a design question."
     },
     {
       "name": "research",
@@ -174,7 +174,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — research"
+      "description": "Investigate a question against high-trust primary sources and capture the findings as a Markdown file in the repo."
     },
     {
       "name": "domain-modeling",
@@ -185,7 +185,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — domain-modeling"
+      "description": "Build and sharpen a project's domain model."
     },
     {
       "name": "codebase-design",
@@ -196,7 +196,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — codebase-design"
+      "description": "Shared vocabulary for designing deep modules."
     },
     {
       "name": "code-review",
@@ -207,7 +207,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — code-review"
+      "description": "Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes — Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/PRD asked for?)."
     },
     {
       "name": "grill-me",
@@ -218,7 +218,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — grill-me"
+      "description": "A relentless interview to sharpen a plan or design."
     },
     {
       "name": "grilling",
@@ -229,7 +229,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — grilling"
+      "description": "Grill the user relentlessly about a plan or design."
     },
     {
       "name": "handoff",
@@ -240,7 +240,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — handoff"
+      "description": "Compact the current conversation into a handoff document for another agent to pick up."
     },
     {
       "name": "teach",
@@ -251,7 +251,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — teach"
+      "description": "Teach the user a new skill or concept, within this workspace."
     },
     {
       "name": "writing-great-skills",
@@ -262,7 +262,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "mattpocock/skills — writing-great-skills"
+      "description": "Reference for writing and editing skills well — the vocabulary and principles that make a skill predictable."
     },
     {
       "name": "brandkit",
@@ -273,7 +273,7 @@
         "ref": "main",
         "sha": "b17742737e796305d829b3ad39eda3add0d79060"
       },
-      "description": "Leonxlnx/taste-skill — brandkit"
+      "description": "Premium brand-kit image generation skill for creating high-end brand-guidelines boards, logo systems, identity decks, and visual-world presentations."
     },
     {
       "name": "brutalist-skill",
@@ -284,7 +284,7 @@
         "ref": "main",
         "sha": "b17742737e796305d829b3ad39eda3add0d79060"
       },
-      "description": "Leonxlnx/taste-skill — industrial-brutalist-ui"
+      "description": "Raw mechanical interfaces fusing Swiss typographic print with military terminal aesthetics."
     },
     {
       "name": "gpt-tasteskill",
@@ -295,7 +295,7 @@
         "ref": "main",
         "sha": "b17742737e796305d829b3ad39eda3add0d79060"
       },
-      "description": "Leonxlnx/taste-skill — gpt-taste"
+      "description": "Elite UX/UI & Advanced GSAP Motion Engineer."
     },
     {
       "name": "image-to-code-skill",
@@ -306,7 +306,7 @@
         "ref": "main",
         "sha": "b17742737e796305d829b3ad39eda3add0d79060"
       },
-      "description": "Leonxlnx/taste-skill — image-to-code"
+      "description": "Elite website image-to-code skill for Codex."
     },
     {
       "name": "imagegen-frontend-mobile",
@@ -317,7 +317,7 @@
         "ref": "main",
         "sha": "b17742737e796305d829b3ad39eda3add0d79060"
       },
-      "description": "Leonxlnx/taste-skill — imagegen-frontend-mobile"
+      "description": "Elite mobile app image-generation skill for creating premium, app-native screen concepts and flows."
     },
     {
       "name": "imagegen-frontend-web",
@@ -328,7 +328,7 @@
         "ref": "main",
         "sha": "b17742737e796305d829b3ad39eda3add0d79060"
       },
-      "description": "Leonxlnx/taste-skill — imagegen-frontend-web"
+      "description": "Elite frontend image-direction skill for generating premium, conversion-aware website design references."
     },
     {
       "name": "minimalist-skill",
@@ -339,7 +339,7 @@
         "ref": "main",
         "sha": "b17742737e796305d829b3ad39eda3add0d79060"
       },
-      "description": "Leonxlnx/taste-skill — minimalist-ui"
+      "description": "Clean editorial-style interfaces."
     },
     {
       "name": "output-skill",
@@ -350,7 +350,7 @@
         "ref": "main",
         "sha": "b17742737e796305d829b3ad39eda3add0d79060"
       },
-      "description": "Leonxlnx/taste-skill — full-output-enforcement"
+      "description": "Overrides default LLM truncation behavior."
     },
     {
       "name": "redesign-skill",
@@ -361,7 +361,7 @@
         "ref": "main",
         "sha": "b17742737e796305d829b3ad39eda3add0d79060"
       },
-      "description": "Leonxlnx/taste-skill — redesign-existing-projects"
+      "description": "Upgrades existing websites and apps to premium quality."
     },
     {
       "name": "soft-skill",
@@ -372,7 +372,7 @@
         "ref": "main",
         "sha": "b17742737e796305d829b3ad39eda3add0d79060"
       },
-      "description": "Leonxlnx/taste-skill — high-end-visual-design"
+      "description": "Teaches the AI to design like a high-end agency."
     },
     {
       "name": "stitch-skill",
@@ -383,7 +383,7 @@
         "ref": "main",
         "sha": "b17742737e796305d829b3ad39eda3add0d79060"
       },
-      "description": "Leonxlnx/taste-skill — stitch-design-taste"
+      "description": "Semantic Design System Skill for Google Stitch."
     },
     {
       "name": "taste-skill-v1",
@@ -394,7 +394,7 @@
         "ref": "main",
         "sha": "b17742737e796305d829b3ad39eda3add0d79060"
       },
-      "description": "Leonxlnx/taste-skill — design-taste-frontend-v1"
+      "description": "The original v1 taste-skill, preserved for projects depending on its exact behavior."
     },
     {
       "name": "taste-skill",
@@ -405,7 +405,7 @@
         "ref": "main",
         "sha": "b17742737e796305d829b3ad39eda3add0d79060"
       },
-      "description": "Leonxlnx/taste-skill — design-taste-frontend"
+      "description": "Anti-slop frontend skill for landing pages, portfolios, and redesigns."
     },
     {
       "name": "caveman",
@@ -416,7 +416,7 @@
         "ref": "main",
         "sha": "0d95a81d35a9f2d123a5e9430d1cfc43d55f1bb0"
       },
-      "description": "juliusbrussee/caveman — caveman"
+      "description": "Ultra-compressed communication mode."
     },
     {
       "name": "ponytail",
@@ -427,7 +427,7 @@
         "ref": "main",
         "sha": "8e69b4a55f735e1319999064f82786b838cb3d7b"
       },
-      "description": "dietrichgebert/ponytail — ponytail"
+      "description": "Forces the laziest solution that actually works, simplest, shortest, most minimal."
     },
     {
       "name": "printing-press",
