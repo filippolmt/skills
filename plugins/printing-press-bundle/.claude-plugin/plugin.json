@@ -1,0 +1,9 @@
+{
+  "name": "printing-press-bundle",
+  "description": "Install printing-press with the sibling skills it invokes at runtime (printing-press-polish, printing-press-score, and the internal printing-press-output-review). Bundles them as dependencies.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Filippo Merante Caparrotta"
+  },
+  "dependencies": ["printing-press", "printing-press-polish", "printing-press-score", "printing-press-output-review"]
+}

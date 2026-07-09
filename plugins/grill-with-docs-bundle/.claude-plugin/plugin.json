@@ -1,0 +1,9 @@
+{
+  "name": "grill-with-docs-bundle",
+  "description": "Install grill-with-docs together with the skills it calls at runtime (grilling, domain-modeling). Bundles them as dependencies.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Filippo Merante Caparrotta"
+  },
+  "dependencies": ["grill-with-docs", "grilling", "domain-modeling"]
+}

@@ -23,6 +23,46 @@
       }
     },
     {
+      "name": "printing-press-bundle",
+      "source": "./plugins/printing-press-bundle",
+      "description": "Install printing-press with the sibling skills it invokes at runtime (printing-press-polish, printing-press-score, and the internal printing-press-output-review). Bundles them as dependencies.",
+      "author": {
+        "name": "Filippo Merante Caparrotta"
+      }
+    },
+    {
+      "name": "implement-bundle",
+      "source": "./plugins/implement-bundle",
+      "description": "Install implement together with the skills it calls at runtime (tdd, code-review). Bundles them as dependencies.",
+      "author": {
+        "name": "Filippo Merante Caparrotta"
+      }
+    },
+    {
+      "name": "triage-bundle",
+      "source": "./plugins/triage-bundle",
+      "description": "Install triage together with the skills it calls at runtime (grilling, domain-modeling). Bundles them as dependencies.",
+      "author": {
+        "name": "Filippo Merante Caparrotta"
+      }
+    },
+    {
+      "name": "wayfinder-bundle",
+      "source": "./plugins/wayfinder-bundle",
+      "description": "Install wayfinder together with the skills it calls at runtime (grilling, domain-modeling, prototype, research). Bundles them as dependencies.",
+      "author": {
+        "name": "Filippo Merante Caparrotta"
+      }
+    },
+    {
+      "name": "grill-with-docs-bundle",
+      "source": "./plugins/grill-with-docs-bundle",
+      "description": "Install grill-with-docs together with the skills it calls at runtime (grilling, domain-modeling). Bundles them as dependencies.",
+      "author": {
+        "name": "Filippo Merante Caparrotta"
+      }
+    },
+    {
       "name": "ask-matt",
       "source": {
         "source": "git-subdir",
