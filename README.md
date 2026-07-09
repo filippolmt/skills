@@ -145,6 +145,12 @@ Snapshot of the catalog — the source of truth is
 |---|---|
 | `ui-ux-pro-max` | UI/UX design intelligence for web and mobile. |
 
+### [antonbabenko/terraform-skill](https://github.com/antonbabenko/terraform-skill) — Terraform/OpenTofu IaC
+
+| Skill | What it does |
+|---|---|
+| `terraform-skill` | Diagnose-first guidance for writing, reviewing, and debugging Terraform/OpenTofu modules, tests, CI, scans, and state ops — pinpoints the failure mode (identity churn, secrets, blast radius, CI drift, state corruption) with version-aware guards. |
+
 ### Modes (bundled by the local `mode-router` plugin)
 
 | Skill | Source | What it does |
