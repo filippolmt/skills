@@ -151,6 +151,22 @@ Snapshot of the catalog — the source of truth is
 |---|---|
 | `terraform-skill` | Diagnose-first guidance for writing, reviewing, and debugging Terraform/OpenTofu modules, tests, CI, scans, and state ops — pinpoints the failure mode (identity churn, secrets, blast radius, CI drift, state corruption) with version-aware guards. |
 
+### [cloudflare/skills](https://github.com/cloudflare/skills) — Cloudflare developer platform
+
+| Skill | What it does |
+|---|---|
+| `agents-sdk` | Build AI agents on Cloudflare Workers using the Agents SDK — stateful agents, durable workflows, WebSocket apps, scheduled tasks, MCP servers. |
+| `cloudflare-email-service` | Send and receive transactional emails with Cloudflare Email Service (Email Sending + Email Routing). |
+| `cloudflare-one-migrations` | Plan migrations from Zscaler ZIA/ZPA, Palo Alto, legacy VPN, SWG, or SASE stacks to Cloudflare One. |
+| `cloudflare-one` | Guides Cloudflare One Zero Trust and SASE work across Access, Gateway, WARP, Tunnel, WAN, DLP, CASB, device posture, and identity. |
+| `cloudflare` | Comprehensive Cloudflare platform skill: Workers, Pages, storage (KV, D1, R2), AI, networking, security, and infrastructure-as-code. |
+| `durable-objects` | Create and review Cloudflare Durable Objects — stateful coordination, RPC methods, SQLite storage, alarms, and WebSockets. |
+| `sandbox-sdk` | Build sandboxed applications for secure code execution with the Sandbox SDK — code interpreters, CI/CD, and untrusted code. |
+| `turnstile-spin` | Set up Cloudflare Turnstile end-to-end — scan the codebase, create the widget, deploy the siteverify Worker, and write frontend snippets. |
+| `web-perf` | Analyze web performance via Chrome DevTools MCP — Core Web Vitals, render-blocking resources, layout shifts, and caching. |
+| `workers-best-practices` | Review and author Cloudflare Workers code against production best practices and common anti-patterns. |
+| `wrangler` | Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets. |
+
 ### Modes (bundled by the local `mode-router` plugin)
 
 | Skill | Source | What it does |
