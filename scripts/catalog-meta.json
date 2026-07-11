@@ -9,7 +9,8 @@
     { "repo": "mcollina/skills", "tagline": "Node.js backend", "kind": "skill" },
     { "repo": "Jeffallan/claude-skills", "tagline": "React", "kind": "skill" },
     { "repo": "nextlevelbuilder/ui-ux-pro-max-skill", "tagline": "UI/UX design", "kind": "skill" },
-    { "repo": "antonbabenko/terraform-skill", "tagline": "Terraform/OpenTofu IaC", "kind": "skill" }
+    { "repo": "antonbabenko/terraform-skill", "tagline": "Terraform/OpenTofu IaC", "kind": "skill" },
+    { "repo": "cloudflare/skills", "tagline": "Cloudflare developer platform", "kind": "skill" }
   ],
   "omit": ["improve-codebase-architecture-bundle", "printing-press-bundle", "implement-bundle", "triage-bundle", "wayfinder-bundle", "grill-with-docs-bundle"]
 }

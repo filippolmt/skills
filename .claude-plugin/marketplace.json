@@ -688,6 +688,127 @@
         "sha": "0a3a4a66e99001347d36a41e10260a825be3ab62"
       },
       "description": "Diagnose-first guidance for writing, reviewing, and debugging Terraform/OpenTofu modules, tests, CI, scans, and state ops — pinpoints the failure mode (identity churn, secrets, blast radius, CI drift, state corruption) with version-aware guards."
+    },
+    {
+      "name": "agents-sdk",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/agents-sdk",
+        "ref": "main",
+        "sha": "27ce0c0e159225caa7ed30ebefd4107aa6c52497"
+      },
+      "description": "Build AI agents on Cloudflare Workers using the Agents SDK — stateful agents, durable workflows, WebSocket apps, scheduled tasks, MCP servers."
+    },
+    {
+      "name": "cloudflare-email-service",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/cloudflare-email-service",
+        "ref": "main",
+        "sha": "27ce0c0e159225caa7ed30ebefd4107aa6c52497"
+      },
+      "description": "Send and receive transactional emails with Cloudflare Email Service (Email Sending + Email Routing)."
+    },
+    {
+      "name": "cloudflare-one-migrations",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/cloudflare-one-migrations",
+        "ref": "main",
+        "sha": "27ce0c0e159225caa7ed30ebefd4107aa6c52497"
+      },
+      "description": "Plan migrations from Zscaler ZIA/ZPA, Palo Alto, legacy VPN, SWG, or SASE stacks to Cloudflare One."
+    },
+    {
+      "name": "cloudflare-one",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/cloudflare-one",
+        "ref": "main",
+        "sha": "27ce0c0e159225caa7ed30ebefd4107aa6c52497"
+      },
+      "description": "Guides Cloudflare One Zero Trust and SASE work across Access, Gateway, WARP, Tunnel, WAN, DLP, CASB, device posture, and identity."
+    },
+    {
+      "name": "cloudflare",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/cloudflare",
+        "ref": "main",
+        "sha": "27ce0c0e159225caa7ed30ebefd4107aa6c52497"
+      },
+      "description": "Comprehensive Cloudflare platform skill: Workers, Pages, storage (KV, D1, R2), AI, networking, security, and infrastructure-as-code."
+    },
+    {
+      "name": "durable-objects",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/durable-objects",
+        "ref": "main",
+        "sha": "27ce0c0e159225caa7ed30ebefd4107aa6c52497"
+      },
+      "description": "Create and review Cloudflare Durable Objects — stateful coordination, RPC methods, SQLite storage, alarms, and WebSockets."
+    },
+    {
+      "name": "sandbox-sdk",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/sandbox-sdk",
+        "ref": "main",
+        "sha": "27ce0c0e159225caa7ed30ebefd4107aa6c52497"
+      },
+      "description": "Build sandboxed applications for secure code execution with the Sandbox SDK — code interpreters, CI/CD, and untrusted code."
+    },
+    {
+      "name": "turnstile-spin",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/turnstile-spin",
+        "ref": "main",
+        "sha": "27ce0c0e159225caa7ed30ebefd4107aa6c52497"
+      },
+      "description": "Set up Cloudflare Turnstile end-to-end — scan the codebase, create the widget, deploy the siteverify Worker, and write frontend snippets."
+    },
+    {
+      "name": "web-perf",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/web-perf",
+        "ref": "main",
+        "sha": "27ce0c0e159225caa7ed30ebefd4107aa6c52497"
+      },
+      "description": "Analyze web performance via Chrome DevTools MCP — Core Web Vitals, render-blocking resources, layout shifts, and caching."
+    },
+    {
+      "name": "workers-best-practices",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/workers-best-practices",
+        "ref": "main",
+        "sha": "27ce0c0e159225caa7ed30ebefd4107aa6c52497"
+      },
+      "description": "Review and author Cloudflare Workers code against production best practices and common anti-patterns."
+    },
+    {
+      "name": "wrangler",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/wrangler",
+        "ref": "main",
+        "sha": "27ce0c0e159225caa7ed30ebefd4107aa6c52497"
+      },
+      "description": "Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets."
     }
   ]
 }
