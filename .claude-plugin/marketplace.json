@@ -476,7 +476,7 @@
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press",
         "ref": "main",
-        "sha": "dcc288469fb66ff0b8640f347d9a5ab4c038112a"
+        "sha": "cdf7f4cde83353de2d9389b5b2253e57204ebb9a"
       },
       "description": "Generate a ship-ready CLI for an API via a lean research → generate → build → shipcheck loop."
     },
@@ -487,7 +487,7 @@
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-polish",
         "ref": "main",
-        "sha": "dcc288469fb66ff0b8640f347d9a5ab4c038112a"
+        "sha": "cdf7f4cde83353de2d9389b5b2253e57204ebb9a"
       },
       "description": "Polish a generated CLI to pass verification and become publish-ready: runs diagnostics (dogfood, verify, scorecard, go vet, gosec), auto-fixes issues, and reports the before/after delta."
     },
@@ -498,7 +498,7 @@
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-score",
         "ref": "main",
-        "sha": "dcc288469fb66ff0b8640f347d9a5ab4c038112a"
+        "sha": "cdf7f4cde83353de2d9389b5b2253e57204ebb9a"
       },
       "description": "Score a generated CLI against the Steinberger bar, or compare two CLIs side-by-side."
     },
@@ -509,7 +509,7 @@
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-output-review",
         "ref": "main",
-        "sha": "dcc288469fb66ff0b8640f347d9a5ab4c038112a"
+        "sha": "cdf7f4cde83353de2d9389b5b2253e57204ebb9a"
       },
       "description": "Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use."
     },
