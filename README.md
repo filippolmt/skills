@@ -167,6 +167,12 @@ Snapshot of the catalog — the source of truth is
 | `workers-best-practices` | Review and author Cloudflare Workers code against production best practices and common anti-patterns. |
 | `wrangler` | Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets. |
 
+### [pbakaus/impeccable](https://github.com/pbakaus/impeccable) — frontend design fluency
+
+| Plugin | What it bundles |
+|---|---|
+| `impeccable` | Design fluency for frontend development. 1 skill with 23 commands (/impeccable polish, /impeccable audit, /impeccable critique, etc.) and curated anti-pattern detection. |
+
 ### Modes (bundled by the local `mode-router` plugin)
 
 | Skill | Source | What it does |

@@ -809,6 +809,17 @@
         "sha": "70215303d44a81a0db3219428f4825b604fc6061"
       },
       "description": "Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets."
+    },
+    {
+      "name": "impeccable",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/pbakaus/impeccable",
+        "path": "plugin",
+        "ref": "main",
+        "sha": "08676d575721a2f3f9c30fc4807d1f61e1462b3b"
+      },
+      "description": "Design fluency for frontend development. 1 skill with 23 commands (/impeccable polish, /impeccable audit, /impeccable critique, etc.) and curated anti-pattern detection."
     }
   ]
 }
