@@ -17,6 +17,8 @@ jobs:
         run: npm install -g @anthropic-ai/claude-code
       - name: Test README generator
         run: node scripts/gen-readme.test.js
+      - name: Test mode-router hook
+        run: node plugins/mode-router/hooks/route.test.js
       - name: Check README catalog is in sync
         run: node scripts/gen-readme.js --check
       - name: Check Renovate regex covers every git-subdir entry

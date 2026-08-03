@@ -6,12 +6,14 @@ description: Administer the per-prompt caveman/ponytail router — show status, 
 
 # mode-router
 
-A `UserPromptSubmit` hook (`hooks/route.js`) fires on every prompt. In `auto`
+A hook (`hooks/route.js`) fires on every prompt. In `auto`
 mode it makes the model classify the request and invoke exactly one mode skill:
 coding task → **`ponytail`** (minimal code), everything else → **`caveman`**
 (terse output). The mode applies **on top of** any other skill the turn
-dispatches — never instead of it. The hook only routes; the two skills own their
-behavior. This skill reads and flips the control file that picks the mode.
+dispatches — never instead of it. Exactly one mode lives in a context: a second
+one is **refused**, and switching mode means leaving a handoff note and starting a
+fresh context. The hook only routes; the two skills own their behavior. This skill
+reads and flips the control file that picks the mode.
 
 ## Control file
 
@@ -24,6 +26,15 @@ behavior. This skill reads and flips the control file that picks the mode.
 `mode` is one of: `auto` (default — model routes per request), `caveman` (force
 terse everywhere, regardless of request type), `ponytail` (force minimal-code
 everywhere), `off` (inject nothing). Missing or invalid → `auto`.
+
+This file is **user configuration** and nothing else writes to it. Runtime state
+is kept apart under `$XDG_STATE_HOME/mode-router/` (or
+`~/.local/state/mode-router/`): the loaded-mode set, one file per session. It is
+disposable — deleting it costs at most one redundant skill invocation — and stale
+files are swept on `SessionStart` after 7 days.
+
+A pending **handoff note** is not state but unfinished work, so it lives in the
+project at `.mode-router/handoff.md` (gitignore it) and is never swept.
 
 ## Operations
 

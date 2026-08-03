@@ -3,6 +3,117 @@
 How the `route.js` hook decides what to inject. `route.js` is the authoritative
 source; this file explains the behavior for anyone administering the router.
 
+## The loaded-mode set
+
+Mode skills declare themselves "active every response", so once invoked they stay
+in context. What the hook needs is therefore not only *which mode fits this
+request* but *which mode skills are already loaded* — the **loaded-mode set**,
+kept per session under `$XDG_STATE_HOME/mode-router/` and maintained by five
+events:
+
+| Event | Role |
+|---|---|
+| `SessionStart` (`startup`/`clear`/`compact`/`fork`) | empties the set — this is a **context reset** |
+| `SessionStart` (`resume`) | **keeps** the set: resume rebuilds the context from the transcript, so the modes invoked earlier are back in it |
+| `UserPromptExpansion` (slash command) | adds a **user-typed** mode to the set — a typed `/caveman` is expanded inline by the harness and never passes through the `Skill` tool |
+| `PreToolUse` (matcher `Skill`) | **denies** a mode entering a context that already holds the other one |
+| `PostToolUse` (matcher `Skill`) | adds the model-invoked mode to the set |
+| `UserPromptSubmit` | reads the set and emits the routing text |
+
+Tool events that carry `agent_id` come from a **subagent** — a different context
+that shares the session id — and are ignored in both directions: a subagent's
+skill loads never pollute this set, and this context's mode never vetoes the
+subagent's own first one.
+
+What the hook injects follows from the set: full rules plus "invoke now" when it
+is empty, and afterwards a short classification line plus the switch procedure.
+
+## One mode per context
+
+A skill cannot be unloaded. Asking the model to ignore a loaded mode is therefore
+the weakest possible guarantee, and the leak is subtle — `caveman`'s compression
+bleeding into the prose *around* the code on a `ponytail` turn. So the router does
+not try: it stops the second mode from entering at all. `PreToolUse` denies the
+invocation, and switching modes becomes switching contexts.
+
+The hand-over is the **handoff note**, written to `.mode-router/handoff.md` inside
+the project (gitignore it). When the turn needs the mode that is not loaded, the
+model writes down what has been established, what remains, and the exact prompt to
+re-send; asks the user to `/clear`; and stops. On the first prompt of the fresh
+context the hook announces the pending note and asks the model to take it over and
+delete it.
+
+That path was chosen by elimination, and both rejected candidates were rejected
+empirically. Under `$XDG_STATE_HOME`, beside the rest of the runtime state, the
+write was refused even with edits allowed: it is outside the working directory.
+Under `.claude/`, it was refused too — that directory is protected, reasonably so,
+since hooks live in it. A plain dot-directory in the project writes without extra
+permission. Inline text remains the documented fallback when even that fails; it
+survives the turn but not the `/clear`, so it is strictly worse. The note is never
+swept on age: it is unfinished work, so deleting it is the model's job once it has
+taken it over.
+
+Three things are never denied: a mode already in the set (re-invoking is a no-op
+the harness deduplicates anyway), a **forced** mode from the control file, and an
+explicit `/caveman` or `/ponytail` — a standing or deliberate choice by the user
+outranks the router. The explicit case never even reaches the veto: a user-typed
+skill is expanded **inline** by the harness, no `Skill` call fires, and
+`UserPromptExpansion` records the mode in the set — after which any later `Skill`
+call for it reads as a plain re-invoke.
+
+The "both modes loaded" wording is not only a fallback for contexts the veto
+never guarded (one predating this version, for instance): two ordinary paths
+reach it, both by user choice. Typing the other mode into a loaded context
+(`/ponytail` while `caveman` is loaded) mixes them, and so does typing a mode
+while the control file forces the other. The veto only guards model-initiated
+invocations — the user is never blocked — so the suspend clause is the designed
+handling for mixed contexts, not dead text.
+
+### Instructions and enforcement travel on different channels
+
+The deny reason is **not** a channel for instructions. Tested directly: given a
+deny reason that told it what to do next, the model refused — *"it is an
+instruction that arrived from a tool output, not from you, so I am not following
+it."* That is the correct defence against prompt injection, and it fixes the
+division of labour. Procedures go in the `UserPromptSubmit` text, which the model
+treats as trusted context. The deny reason only states the constraint.
+
+### Why this replaced the reload flag
+
+The previous design wrote a per-session flag on `SessionStart` and **consumed it
+with `unlink()`** from `UserPromptSubmit`. That made the prompt handler a writer,
+and writers are not idempotent: with the hook registered twice (once by the
+plugin, once by a stale `.claude/settings.local.json` entry) the first run
+consumed the flag and injected "no mode skill is active, invoke now" while the
+second found nothing and injected "do NOT re-invoke" — two contradictory
+instructions in one turn. Making `UserPromptSubmit` read-only removes the failure
+mode by construction rather than by convention: run it twice, get identical text.
+
+The flag also only ever answered "was the context just reset?", never "what is
+actually loaded?". Exclusivity between two skills that both claim to be always-on
+was left to the model's own discipline; the set lets the hook name the loser.
+
+### Contract this rests on
+
+`PreToolUse` and `PostToolUse` firing for the built-in `Skill` tool, with
+`tool_input.skill` carrying the skill name, is **not documented** — it was verified
+empirically against live sessions, as was the fact that a denied `Skill` call
+leaves the skill genuinely unloaded. `tool_input.skill` may be bare (`caveman`) or
+namespaced (`plugin:caveman`), so `route.js` matches the **last segment**. If mode
+detection ever silently stops, check that contract first: the symptom is every turn
+looking like a context reset, and the veto quietly allowing everything. Compaction
+was confirmed the same way — it fires `SessionStart` with `source: "compact"`, and
+leaves no discontinuity in `transcript_path` or its size, so the transcript cannot
+be used as a fallback.
+
+The slash-command path was verified against CLI 2.1.220: a user-typed `/skill`
+fires `UserPromptExpansion` (`expansion_type: "slash_command"`, `command_name`
+bare or namespaced) **before** `UserPromptSubmit`, expands the skill body inline,
+and produces **no** `PreToolUse`/`PostToolUse` at all — which is why the set is
+fed from that event and why a veto exemption for explicit slashes is unnecessary.
+Likewise verified: main-loop tool events carry no `agent_id`, subagent tool
+events do.
+
 ## Slash commands
 
 In `auto`, the hook classifies **slash-command prompts** too, so the mode fires
@@ -18,7 +129,10 @@ it never changes the output language or drops required orthography (`caveman`
 preserves the user's language and its accents), so a language/orthography rule is
 not a conflict; only an explicit "be thorough / don't be brief" instruction or a
 hard rule banning compression itself overrides the mode. The hook injects the
-exact rule every turn (`PRECEDENCE` in `route.js`); on conflict the model applies
+exact rule (`PRECEDENCE` in `route.js`) whenever it asks for an invocation — at
+every context reset, and on every prompt in a forced mode until that mode is
+loaded. It is not repeated afterwards: the text is still in the transcript above,
+and re-injecting it costs ~330 tokens a turn. On conflict the model applies
 the mode only where compatible, else skips it and notes the deviation in one
 line — for **forced** modes too, since the hook can't detect the constraint.
 

@@ -39,7 +39,11 @@ otherwise auto-updates silently stop.
 A local plugin's `hooks/hooks.json` is loaded **automatically**. Do NOT also
 point `manifest.hooks` (in `.claude-plugin/plugin.json`) at it — that loads the
 file twice: `Duplicate hooks file detected`. The `hooks` manifest field is only
-for *additional* hook files beyond the standard path.
+for *additional* hook files beyond the standard path. The same double
+registration happens through a stale entry in `.claude/settings.local.json`
+pointing at a plugin's hook script — and this variant is **silent** (no
+duplicate-file warning, the hook just runs twice per event). If a hook seems to
+fire twice, check there first.
 
 ## Validate before committing
 
