@@ -29,12 +29,17 @@ function run(event, payload) {
   return r.stdout;
 }
 
-const prompt = (p, promptId) => run('UserPromptSubmit', { prompt: p, prompt_id: promptId });
+const prompt = (p) => run('UserPromptSubmit', { prompt: p });
 const loadSkill = (skill) => run('PostToolUse', { tool_name: 'Skill', tool_input: { skill } });
+// A user-typed /<name>: the harness expands the skill inline (NO Skill call) and
+// reports it through UserPromptExpansion — the flow verified against CLI 2.1.220.
+const expand = (name) => run('UserPromptExpansion', {
+  expansion_type: 'slash_command', command_name: name, prompt: '/' + name,
+});
 
 // Returns the deny reason, or null when the call is allowed through.
-function veto(skill, promptId) {
-  const out = run('PreToolUse', { tool_name: 'Skill', tool_input: { skill }, prompt_id: promptId });
+function veto(skill, payload) {
+  const out = run('PreToolUse', { tool_name: 'Skill', tool_input: { skill }, ...payload });
   if (!out) return null;
   const d = JSON.parse(out).hookSpecificOutput;
   assert.strictEqual(d.permissionDecision, 'deny');
@@ -75,20 +80,25 @@ assert.ok(out.includes(HANDOFF), 'the handoff path is keyed by cwd and named ver
 // --- the veto: one mode per context, enforced rather than requested ---
 assert.strictEqual(veto('caveman'), null, 'already loaded => re-invoke allowed');
 assert.strictEqual(veto('grilling:grilling'), null, 'non-mode skills are untouched');
+out = run('PreToolUse', { tool_name: 'Bash', tool_input: { skill: 'ponytail' } });
+assert.strictEqual(out, '', 'only the Skill tool is vetoed, whatever the payload');
 let reason = veto('ponytail');
 assert.match(reason, /`caveman` is already loaded in this context/, 'second mode => denied');
 assert.match(reason, /at most one mode skill/, 'the reason states the constraint');
 assert.doesNotMatch(reason, /\/clear/, 'the deny reason gives no orders — tool output is untrusted');
 assert.ok(veto('plugin:ponytail'), 'a namespaced second mode is denied too');
 
-// An explicit /ponytail is the user overruling the router: never denied, but only
-// for the prompt that asked for it.
-assert.strictEqual(prompt('/ponytail go', 'p-1'), '', '/ponytail => no classifier');
-assert.strictEqual(veto('ponytail', 'p-1'), null, 'explicit slash on this prompt => allowed');
-assert.ok(veto('ponytail', 'p-2'), 'the exemption does not leak to another prompt');
+// An explicit /ponytail is the user overruling the router. It never reaches the
+// tool layer — the harness expands the skill inline and no Skill call fires — so
+// it is UserPromptExpansion that records it, and it is never denied.
+assert.strictEqual(prompt('/ponytail go'), '', '/ponytail => no classifier');
+assert.strictEqual(prompt('/caveman:caveman go'), '', 'namespaced mode slash => silent too');
+assert.match(prompt('/anti-caveman go'), /MODE ROUTER/, 'lookalike slash => still classified');
+expand('ponytail');
+assert.strictEqual(veto('ponytail'), null, 'a recorded user-typed mode reads as a re-invoke');
 
-// --- both loaded: the defensive fallback for contexts the veto never guarded ---
-loadSkill('ponytail');
+// --- both loaded (the user typed the second mode in): exclusivity can only be
+// asserted in words ---
 out = prompt('write code');
 assert.match(out, /Both `caveman` and `ponytail` are already in this context/, 'suffix match');
 assert.match(out, /the other one is SUSPENDED for this turn/, 'name the suppressed mode');
@@ -125,6 +135,20 @@ loadSkill('ponytail');
 out = prompt('explain this');
 assert.match(out, /`ponytail` is already in this context/, 'ponytail-only => named as loaded');
 assert.ok(veto('caveman'), 'ponytail-only => caveman denied');
+
+// --- expansion details: namespaced names register, non-modes do not ---
+run('SessionStart');
+expand('caveman:caveman');
+out = prompt('explain this');
+assert.match(out, /`caveman` is already in this context/, 'namespaced command_name registers');
+expand('commit');
+assert.strictEqual(prompt('explain this'), out, 'non-mode expansion => no change');
+
+// --- subagent tool events (`agent_id` set) belong to a DIFFERENT context ---
+run('PostToolUse', { tool_name: 'Skill', tool_input: { skill: 'ponytail' }, agent_id: 'a-1' });
+assert.strictEqual(prompt('explain this'), out, 'a subagent skill load does not pollute the set');
+out = run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'ponytail' }, agent_id: 'a-1' });
+assert.strictEqual(out, '', 'a subagent first mode is not vetoed by this context');
 
 // --- forced caveman: invoke while missing, silent once loaded, never vetoed ---
 setMode('caveman');
@@ -175,6 +199,15 @@ assert.ok(fs.existsSync(fresh), 'recent state survives the sweep');
 assert.ok(fs.existsSync(HANDOFF), 'an old handoff note is NOT swept — it is unfinished work');
 assert.ok(!fs.existsSync(legacy), 'legacy reload flags are removed from the config dir');
 assert.ok(fs.existsSync(path.join(CFG, 'mode-router', 'state.json')), 'the control file survives');
+
+// The CURRENT session's set is never garbage: a resume can arrive past the TTL,
+// and resume must keep the set — the sweep must not undo the resume carve-out.
+const mine = path.join(stateHome, `session-${SID}.json`);
+fs.writeFileSync(mine, JSON.stringify({ modes: ['ponytail'] }));
+fs.utimesSync(mine, old / 1000, old / 1000);
+run('SessionStart', { source: 'resume' });
+assert.match(prompt('after a late resume'), /`ponytail` is already in this context/,
+  'a resume past the TTL still keeps the set');
 
 fs.rmSync(CFG, { recursive: true, force: true });
 fs.rmSync(STATE, { recursive: true, force: true });

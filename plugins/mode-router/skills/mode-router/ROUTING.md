@@ -8,16 +8,22 @@ source; this file explains the behavior for anyone administering the router.
 Mode skills declare themselves "active every response", so once invoked they stay
 in context. What the hook needs is therefore not only *which mode fits this
 request* but *which mode skills are already loaded* — the **loaded-mode set**,
-kept per session under `$XDG_STATE_HOME/mode-router/` and maintained by four
+kept per session under `$XDG_STATE_HOME/mode-router/` and maintained by five
 events:
 
 | Event | Role |
 |---|---|
 | `SessionStart` (`startup`/`clear`/`compact`/`fork`) | empties the set — this is a **context reset** |
 | `SessionStart` (`resume`) | **keeps** the set: resume rebuilds the context from the transcript, so the modes invoked earlier are back in it |
+| `UserPromptExpansion` (slash command) | adds a **user-typed** mode to the set — a typed `/caveman` is expanded inline by the harness and never passes through the `Skill` tool |
 | `PreToolUse` (matcher `Skill`) | **denies** a mode entering a context that already holds the other one |
-| `PostToolUse` (matcher `Skill`) | adds the invoked mode to the set |
+| `PostToolUse` (matcher `Skill`) | adds the model-invoked mode to the set |
 | `UserPromptSubmit` | reads the set and emits the routing text |
+
+Tool events that carry `agent_id` come from a **subagent** — a different context
+that shares the session id — and are ignored in both directions: a subagent's
+skill loads never pollute this set, and this context's mode never vetoes the
+subagent's own first one.
 
 What the hook injects follows from the set: full rules plus "invoke now" when it
 is empty, and afterwards a short classification line plus the switch procedure.
@@ -50,14 +56,18 @@ taken it over.
 Three things are never denied: a mode already in the set (re-invoking is a no-op
 the harness deduplicates anyway), a **forced** mode from the control file, and an
 explicit `/caveman` or `/ponytail` — a standing or deliberate choice by the user
-outranks the router. The explicit case is why `UserPromptSubmit` records a small
-marker: it is the one write left on that event, and it is idempotent by
-construction, a pure function of the prompt and `prompt_id`, not a consuming one
-like the flag it replaced.
+outranks the router. The explicit case never even reaches the veto: a user-typed
+skill is expanded **inline** by the harness, no `Skill` call fires, and
+`UserPromptExpansion` records the mode in the set — after which any later `Skill`
+call for it reads as a plain re-invoke.
 
-The "both modes loaded" wording still exists as a fallback for a context the veto
-never guarded — one predating this version, for instance. With the veto in place
-it should be unreachable.
+The "both modes loaded" wording is not only a fallback for contexts the veto
+never guarded (one predating this version, for instance): two ordinary paths
+reach it, both by user choice. Typing the other mode into a loaded context
+(`/ponytail` while `caveman` is loaded) mixes them, and so does typing a mode
+while the control file forces the other. The veto only guards model-initiated
+invocations — the user is never blocked — so the suspend clause is the designed
+handling for mixed contexts, not dead text.
 
 ### Instructions and enforcement travel on different channels
 
@@ -95,6 +105,14 @@ looking like a context reset, and the veto quietly allowing everything. Compacti
 was confirmed the same way — it fires `SessionStart` with `source: "compact"`, and
 leaves no discontinuity in `transcript_path` or its size, so the transcript cannot
 be used as a fallback.
+
+The slash-command path was verified against CLI 2.1.220: a user-typed `/skill`
+fires `UserPromptExpansion` (`expansion_type: "slash_command"`, `command_name`
+bare or namespaced) **before** `UserPromptSubmit`, expands the skill body inline,
+and produces **no** `PreToolUse`/`PostToolUse` at all — which is why the set is
+fed from that event and why a veto exemption for explicit slashes is unnecessary.
+Likewise verified: main-loop tool events carry no `agent_id`, subagent tool
+events do.
 
 ## Slash commands
 
