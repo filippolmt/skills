@@ -31,6 +31,13 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 
 - **Mode** — one of `auto` / `caveman` / `ponytail` / `off`, chosen by the
   control file `~/.config/mode-router/state.json`.
-- **Reload flag** — the per-session file `route.js` uses to detect a fresh or
-  compacted context, so a mode skill is (re)invoked only when it is actually
-  gone. See `plugins/mode-router/skills/mode-router/ROUTING.md`.
+- **Loaded-mode set** — the mode skills known to be present in the current
+  context. A mode is (re)invoked only when it is missing from the set. See
+  `plugins/mode-router/skills/mode-router/ROUTING.md`.
+- **Context reset** — the event that empties the loaded-mode set: session
+  startup, clear, compaction, or fork. A resume is not one: it rebuilds the same
+  context, so the loaded modes are still in it.
+- **Handoff note** — what a context leaves behind when switching mode requires a
+  context reset: what has been established, what remains, and the prompt to
+  re-send afterwards. Belongs to the project, not to the session it was written
+  in, so it survives the reset.
