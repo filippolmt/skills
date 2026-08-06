@@ -68,7 +68,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/ask-matt",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Ask which skill or flow fits your situation."
@@ -79,7 +79,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/diagnosing-bugs",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Diagnosis loop for hard bugs and performance regressions."
@@ -90,7 +90,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/grill-with-docs",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "A relentless interview to sharpen a plan or design, which also creates docs (ADR's and glossary) as we go."
@@ -101,7 +101,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/triage",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Move issues and external PRs through a state machine of triage roles — categorise, verify, grill if needed, and write agent-ready briefs."
@@ -112,7 +112,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/resolving-merge-conflicts",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Use when you need to resolve an in-progress git merge/rebase conflict."
@@ -123,7 +123,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/wayfinder",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Plan a huge chunk of work — more than one agent session can hold — as a shared map of investigation tickets on your issue tracker, and resolve them one at a time until the way to the destination is clear."
@@ -134,7 +134,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/improve-codebase-architecture",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Scan a codebase for deepening opportunities, present them as a visual HTML report, then grill through whichever one you pick."
@@ -145,7 +145,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/setup-matt-pocock-skills",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Configure this repo for the engineering skills — set up its issue tracker, triage label vocabulary, and domain doc layout."
@@ -156,7 +156,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/tdd",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Test-driven development."
@@ -167,7 +167,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/to-tickets",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Break a plan, spec, or the current conversation into a set of tracer-bullet tickets, each declaring its blocking edges, published to the configured tracker — edges as text in a local file, or native blocking links on a real tracker."
@@ -178,7 +178,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/to-spec",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Turn the current conversation into a spec and publish it to the project issue tracker — no interview, just synthesis of what you've already discussed."
@@ -189,7 +189,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/implement",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Implement a piece of work based on a spec or set of tickets."
@@ -200,7 +200,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/prototype",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Build a throwaway prototype to answer a design question."
@@ -211,7 +211,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/research",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Investigate a question against high-trust primary sources and capture the findings as a Markdown file in the repo."
@@ -222,7 +222,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/domain-modeling",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Build and sharpen a project's domain model."
@@ -233,7 +233,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/codebase-design",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Shared vocabulary for designing deep modules."
@@ -244,7 +244,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/code-review",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes — Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/PRD asked for?)."
@@ -255,7 +255,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/engineering/wizard",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Generate an interactive bash wizard that walks a human through steps only they can perform. Use when provisioning infrastructure, setting up credentials or CI secrets, walking an unfamiliar third-party dashboard, or running a one-off migration or cutover."
@@ -266,7 +266,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/productivity/grill-me",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "A relentless interview to sharpen a plan or design."
@@ -277,7 +277,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/productivity/grilling",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Grill the user relentlessly about a plan or design."
@@ -288,7 +288,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/productivity/handoff",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Compact the current conversation into a handoff document for another agent to pick up."
@@ -299,7 +299,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/productivity/teach",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Teach the user a new skill or concept, within this workspace."
@@ -310,7 +310,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/productivity/writing-for-agents",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Writing documents for agents. Use when creating or editing skills, or modifying AGENTS.md or CLAUDE.md."
@@ -321,7 +321,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/productivity/to-questionnaire",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Turn a decision you can't fully answer into a questionnaire for someone else to fill in."
@@ -332,7 +332,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/misc/setup-pre-commit",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Set up Husky pre-commit hooks with lint-staged (Prettier), type checking, and tests in the current repo."
@@ -343,7 +343,7 @@
         "source": "git-subdir",
         "url": "https://github.com/mattpocock/skills",
         "path": "skills/misc/git-guardrails-claude-code",
-        "ref": "main",
+        "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
       "description": "Set up Claude Code hooks to block dangerous git commands (push, reset --hard, clean, branch -D, etc.) before they execute."

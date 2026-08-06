@@ -15,10 +15,22 @@
         "/\\.claude-plugin/marketplace\\.json/"
       ],
       "matchStrings": [
-        "\"url\":\\s*\"https://github\\.com/(?<depName>[^\"]+)\",\\s*\"path\":\\s*\"[^\"]+\",\\s*\"ref\":\\s*\"(?<currentValue>[^\"]+)\",\\s*\"sha\":\\s*\"(?<currentDigest>[0-9a-f]+)\""
+        "\"url\":\\s*\"https://github\\.com/(?<depName>[^\"]+)\",\\s*\"path\":\\s*\"[^\"]+\",\\s*\"ref\":\\s*\"(?<currentValue>main|master)\",\\s*\"sha\":\\s*\"(?<currentDigest>[0-9a-f]+)\""
       ],
       "datasourceTemplate": "git-refs",
       "packageNameTemplate": "https://github.com/{{{depName}}}"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/\\.claude-plugin/marketplace\\.json/"
+      ],
+      "matchStrings": [
+        "\"url\":\\s*\"https://github\\.com/(?<depName>[^\"]+)\",\\s*\"path\":\\s*\"[^\"]+\",\\s*\"ref\":\\s*\"(?<currentValue>v\\d+\\.\\d+\\.\\d+)\",\\s*\"sha\":\\s*\"(?<currentDigest>[0-9a-f]+)\""
+      ],
+      "datasourceTemplate": "github-tags",
+      "packageNameTemplate": "{{{depName}}}",
+      "versioningTemplate": "semver"
     }
   ],
   "packageRules": [
@@ -28,6 +40,21 @@
       ],
       "matchDatasources": [
         "git-refs"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchDatasources": [
+        "github-tags"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
       ],
       "automerge": true,
       "automergeType": "pr",
