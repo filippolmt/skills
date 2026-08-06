@@ -72,11 +72,15 @@ Snapshot of the catalog — the source of truth is
 | `domain-modeling` | Build and sharpen a project's domain model. |
 | `codebase-design` | Shared vocabulary for designing deep modules. |
 | `code-review` | Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes — Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/PRD asked for?). |
+| `wizard` | Generate an interactive bash wizard that walks a human through steps only they can perform. Use when provisioning infrastructure, setting up credentials or CI secrets, walking an unfamiliar third-party dashboard, or running a one-off migration or cutover. |
 | `grill-me` | A relentless interview to sharpen a plan or design. |
 | `grilling` | Grill the user relentlessly about a plan or design. |
 | `handoff` | Compact the current conversation into a handoff document for another agent to pick up. |
 | `teach` | Teach the user a new skill or concept, within this workspace. |
-| `writing-great-skills` | Reference for writing and editing skills well — the vocabulary and principles that make a skill predictable. |
+| `writing-for-agents` | Writing documents for agents. Use when creating or editing skills, or modifying AGENTS.md or CLAUDE.md. |
+| `to-questionnaire` | Turn a decision you can't fully answer into a questionnaire for someone else to fill in. |
+| `setup-pre-commit` | Set up Husky pre-commit hooks with lint-staged (Prettier), type checking, and tests in the current repo. |
+| `git-guardrails-claude-code` | Set up Claude Code hooks to block dangerous git commands (push, reset --hard, clean, branch -D, etc.) before they execute. |
 
 ### [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) — frontend design & image-gen
 
