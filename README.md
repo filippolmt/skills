@@ -223,10 +223,15 @@ To do it by hand instead:
      "description": "..."
    }
    ```
-3. Done. The `customManager` in `renovate.json` matches every entry of this shape
-   (github `url` + `path` + `ref` + `sha`), tracks the branch via the `git-refs`
-   datasource, and opens SHA-bump PRs that merge themselves (automerge). Entries
-   from the same repo are grouped into a single PR.
+3. Done. The branch `customManager` in `renovate.json` matches every entry of this
+   shape (github `url` + `path` + `ref: "main"`/`"master"` + `sha`), tracks the
+   branch via the `git-refs` datasource, and opens SHA-bump PRs that merge
+   themselves (automerge). Entries from the same repo are grouped into a single PR.
+
+   If the upstream repo publishes semver tags, use the tag instead of the branch
+   (`"ref": "v1.2.3"`, with `sha` set to the commit that tag points at). A second
+   `customManager` picks those up via the `github-tags` datasource: minor/patch
+   bumps automerge, majors wait for review.
 
 The folder pointed to by `path` must be a valid skill (contain `SKILL.md`).
 

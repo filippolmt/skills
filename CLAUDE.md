@@ -28,10 +28,16 @@ correctly-shaped entry. For the exact entry shape, see that skill or any existin
 
 ## Renovate sync gotcha
 
-`renovate.json` has a `customManager` whose `matchStrings` regex matches the
-`git-subdir` entry shape (`url` github + `path` + `ref` + `sha`) and bumps the
-`sha` via the `git-refs` datasource (automerge on). **If you change the source
-shape in `marketplace.json`, update the regex in `renovate.json` to match** —
+`renovate.json` has two mutually exclusive `customManager`s over the `git-subdir`
+entry shape (`url` github + `path` + `ref` + `sha`), told apart by `ref`:
+
+- `ref: "main"`/`"master"` → `git-refs` datasource, bumps the `sha` (automerge on).
+- `ref: "vX.Y.Z"` → `github-tags` datasource, bumps tag + `sha` together
+  (automerge on minor/patch only; majors wait for review).
+
+Together they must cover **every** `git-subdir` entry — an entry matched by
+neither is silently never updated. **If you change the source shape in
+`marketplace.json`, update both regexes in `renovate.json` to match** —
 otherwise auto-updates silently stop.
 
 ## Local plugin hooks gotcha
