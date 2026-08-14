@@ -22,16 +22,36 @@ const expected = (mk.plugins || []).filter(
   (p) => p.source && p.source.source === 'git-subdir'
 ).length;
 
-const manager = (renovate.customManagers || []).find((m) => Array.isArray(m.matchStrings));
-if (!manager) {
+// EVERY customManager counts, not just the first: the entry shape is split
+// across two of them by `ref` (a branch -> git-refs, a tag -> github-tags), and
+// they are only a guard TOGETHER. Reading one alone reports the other's entries
+// as uncovered — which is exactly what this check is supposed to detect, so the
+// false alarm is indistinguishable from the real fault.
+const managers = (renovate.customManagers || []).filter((m) => Array.isArray(m.matchStrings));
+if (!managers.length) {
   console.error('renovate.json: no customManager with matchStrings found');
   process.exit(1);
 }
 
-let matched = 0;
-for (const pattern of manager.matchStrings) {
-  const re = new RegExp(pattern, 'g');
-  matched += (mkText.match(re) || []).length;
+// Track WHERE each match starts, not just how many there are: an entry claimed by
+// two managers and an entry claimed by none cancel out in a plain count, and the
+// uncovered entry is the failure mode this guard exists for.
+const offsets = [];
+for (const manager of managers) {
+  for (const pattern of manager.matchStrings) {
+    const re = new RegExp(pattern, 'g');
+    for (const m of mkText.matchAll(re)) offsets.push(m.index);
+  }
+}
+
+const matched = new Set(offsets).size;
+if (matched !== offsets.length) {
+  console.error(
+    `${offsets.length - matched} marketplace entr${offsets.length - matched === 1 ? 'y is' : 'ies are'} ` +
+      'matched by more than one customManager in renovate.json — two managers would ' +
+      'fight over the same sha. Narrow the regexes so each entry has exactly one.'
+  );
+  process.exit(1);
 }
 
 if (matched !== expected) {
