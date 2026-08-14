@@ -15,9 +15,9 @@ events:
 |---|---|
 | `SessionStart` (`startup`/`clear`/`compact`/`fork`) | empties the set — this is a **context reset** |
 | `SessionStart` (`resume`) | **keeps** the set: resume rebuilds the context from the transcript, so the modes invoked earlier are back in it |
-| `UserPromptExpansion` (slash command) | adds a **user-typed** mode to the set — a typed `/caveman` is expanded inline by the harness and never passes through the `Skill` tool |
+| `UserPromptExpansion` (slash command) | adds a **user-typed** mode to the set — a typed `/caveman` is expanded inline by the harness and never passes through the `Skill` tool — and records any **other** typed skill as `typed` |
 | `PreToolUse` (matcher `Skill`) | **denies** a mode entering a context that already holds the other one |
-| `PostToolUse` (matcher `Skill`) | adds the model-invoked mode to the set |
+| `PostToolUse` (matcher `Skill`) | adds the model-invoked mode to the set, and records any **other** invoked skill as `model` |
 | `UserPromptSubmit` | reads the set and emits the routing text |
 
 Tool events that carry `agent_id` come from a **subagent** — a different context
@@ -27,6 +27,56 @@ subagent's own first one.
 
 What the hook injects follows from the set: full rules plus "invoke now" when it
 is empty, and afterwards a short classification line plus the switch procedure.
+
+## What else entered the context
+
+The same two events record every **non-mode** name they carry, in a second
+per-session file, `session-<id>.skills.json`:
+
+```json
+{ "skills": [{ "name": "grilling", "source": "typed" }] }
+```
+
+`source` is `typed` (a user slash, seen through `UserPromptExpansion`) or `model`
+(a `Skill` call). Names are stored as they arrived, bare or namespaced — that is
+the form to re-type or re-invoke — but deduplicated on the **last segment**, so a
+typed `/grilling` and an invoked `grilling:grilling` are one entry rather than the
+same skill filed under two contradictory sources. First arrival keeps the tag.
+
+Two deliberate limits:
+
+- The list is **capped** (12, oldest dropped). It is injected on every
+  steady-state prompt, so an uncapped list would bill a long session for names
+  that stopped mattering hours ago.
+- It lives in its **own file**, not a second key beside `modes`. Both writers are
+  read-modify-write with no lock; sharing one document would let a racing skill
+  write stomp the mode set with a stale copy, and a lost mode disarms the veto —
+  the one invariant this hook exists to hold. Split files can still lose an add,
+  never a mode. It also makes a pre-`0.6.0` state file forward-compatible: there
+  is no `skills` key to miss, the file is simply absent.
+
+### Why the hook does not filter the list
+
+`UserPromptExpansion` fires for **every** slash command, not only skills, so the
+typed group also holds one-shot actions (`/commit`, `/pr`). The hook has no
+signal to tell them apart — but the model writing the note does, so the injected
+text asks it to keep only what is still shaping the work.
+
+Likewise, `typed` is **not** a synonym for *declarative*. It records how the name
+arrived, not whether the model could reach it: a user is free to type an
+ordinary, model-invocable skill. What holds is the converse — a declarative skill
+(`disable-model-invocation: true`) has no `description` to route on, so it can
+arrive *no other way*, which is why the user is the fallback for that group.
+
+The re-typing is **one slash per message**: a message expands only its leading
+slash and swallows the rest as that command's arguments, so the commands cannot
+be packed onto one line, nor prepended to the prompt itself.
+
+The state files do not survive the reset (and the session id may change), so the
+list travels the only channel that does: the hook injects it into the switch
+procedure, the model copies the relevant part into the handoff note, and on the
+first prompt of the fresh context the pending-note announcement tells the model
+to re-invoke what it can reach and ask the user for the rest.
 
 ## One mode per context
 
