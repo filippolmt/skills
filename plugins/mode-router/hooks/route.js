@@ -13,6 +13,14 @@
 //   PostToolUse         (matcher: Skill)              adds the invoked mode to the set
 //   UserPromptSubmit                                  reads the set, emits the routing text
 //
+// The same two events also record everything ELSE that entered the context, in a
+// second per-session file, tagged by how it got there: `typed` for a user slash,
+// `model` for a Skill call. The tag is what makes the list restorable after a
+// reset — the model can re-invoke what it invoked, but a declarative skill
+// (`disable-model-invocation: true`) has no description to route on, so nothing
+// but the user typing its name brings it back. The handoff note carries the list
+// across the reset; the model, not the hook, decides which entries still matter.
+//
 // UserPromptExpansion exists because a typed /caveman never reaches the tool
 // layer: the harness expands the skill body INLINE into the prompt, so no Skill
 // call — and no PreToolUse/PostToolUse — ever fires (verified against CLI
@@ -60,6 +68,10 @@ const VALID = ['auto', 'caveman', 'ponytail', 'off'];
 // resume. SessionStart already runs once per session, so it is the natural (and
 // only) place to sweep — no extra process, no daemon.
 const TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+// The skills in use are injected on every steady-state prompt, so the list is
+// capped rather than left to grow for the life of a long session.
+const MAX_SKILLS = 12;
 
 // Precedence: a mode skill compresses/simplifies STYLE only — it never changes the
 // output language or drops required orthography (caveman preserves the user's
@@ -126,6 +138,13 @@ const slug = (s) => String(s || 'default').replace(/[^\w.-]/g, '_');
 
 // One file per session, holding the loaded-mode set.
 const loadedModesFile = (sessionId) => path.join(stateDir(), `session-${slug(sessionId)}.json`);
+// The skills in use live in a SEPARATE file, not a second key in the one above.
+// Both are read-modify-write with no lock, so sharing a document would let a
+// racing skill write stomp the mode set with its own stale copy — and a lost mode
+// disarms the veto, which is the one invariant this hook exists to hold. Split
+// files can still lose an add, never a mode. It also keeps the v0.5 state file
+// forward-compatible: no `skills` key to miss, the file is simply absent.
+const skillsFile = (sessionId) => path.join(stateDir(), `session-${slug(sessionId)}.skills.json`);
 // Inside the project, and NOT under .claude/. A reset may hand out a new session
 // id while the project stays the same, so the note cannot be keyed by session —
 // and the path has to be one the model can actually write. Both alternatives were
@@ -134,38 +153,72 @@ const loadedModesFile = (sessionId) => path.join(stateDir(), `session-${slug(ses
 // hooks live there). A plain dot-directory in the project writes fine.
 const handoffFile = (cwd) => path.join(cwd || '.', '.mode-router', 'handoff.md');
 
-function readLoadedModes(sessionId) {
+function readJson(file) {
   try {
-    const s = JSON.parse(fs.readFileSync(loadedModesFile(sessionId), 'utf8'));
-    if (Array.isArray(s && s.modes)) return MODES.filter((m) => s.modes.includes(m));
-  } catch (e) { /* missing / unreadable / invalid -> empty set */ }
-  return [];
+    const s = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (s && typeof s === 'object') return s;
+  } catch (e) { /* missing / unreadable / invalid -> empty */ }
+  return {};
 }
 
-// Write via rename: a reader never observes a half-written file, and two Skill
-// invocations racing in the same turn can lose an add but never corrupt the set.
-function writeLoadedModes(sessionId, modes) {
-  const target = loadedModesFile(sessionId);
-  const tmp = `${target}.${process.pid}.tmp`;
+function readLoadedModes(sessionId) {
+  const s = readJson(loadedModesFile(sessionId));
+  return Array.isArray(s.modes) ? MODES.filter((m) => s.modes.includes(m)) : [];
+}
+
+// Entries are `{ name, source }`; anything malformed is dropped rather than
+// propagated into the handoff text.
+function readSkills(sessionId) {
+  const s = readJson(skillsFile(sessionId));
+  if (!Array.isArray(s.skills)) return [];
+  return s.skills.filter((e) => e && typeof e.name === 'string' &&
+    (e.source === 'typed' || e.source === 'model'));
+}
+
+// Write via rename: a reader never observes a half-written file, and two writes
+// racing in the same turn can lose an add but never corrupt the file.
+function writeJson(file, data) {
+  const tmp = `${file}.${process.pid}.tmp`;
   fs.mkdirSync(stateDir(), { recursive: true });
-  fs.writeFileSync(tmp, JSON.stringify({ modes }));
-  fs.renameSync(tmp, target);
+  fs.writeFileSync(tmp, JSON.stringify(data));
+  fs.renameSync(tmp, file);
 }
 
 function addMode(sessionId, mode) {
   const loaded = readLoadedModes(sessionId);
-  if (!loaded.includes(mode)) {
-    try { writeLoadedModes(sessionId, loaded.concat(mode)); } catch (e) { /* best effort */ }
-  }
+  if (loaded.includes(mode)) return;
+  try { writeJson(loadedModesFile(sessionId), { modes: loaded.concat(mode) }); } catch (e) { /* best effort */ }
+}
+
+// Modes are excluded: the set above already tracks them, and the handoff would
+// name them twice. Stored under the name as it arrived (namespaced or bare) —
+// that is the form the user re-types or the model re-invokes — but deduplicated
+// on the LAST segment, so a `/grilling` typed and a `grilling:grilling` invoked
+// are one entry instead of the same skill listed under two contradictory
+// sources. First arrival wins the tag.
+function addSkill(sessionId, skill, source) {
+  if (typeof skill !== 'string') return;
+  const name = skill.trim();
+  if (!name || skillToMode(name)) return;
+  const skills = readSkills(sessionId);
+  if (skills.some((e) => leaf(e.name) === leaf(name))) return;
+  // The list is injected on every steady-state prompt, so it cannot grow without
+  // bound. Oldest out first: a long session's earliest skills are the least
+  // likely to still be shaping the work being handed off.
+  try {
+    writeJson(skillsFile(sessionId), { skills: skills.concat({ name, source }).slice(-MAX_SKILLS) });
+  } catch (e) { /* best effort */ }
 }
 
 // `tool_input.skill` is bare (`caveman`) or namespaced (`plugin:caveman`,
 // `caveman:caveman`), so compare the LAST segment. Plain endsWith would also
 // match a hypothetical `anti-caveman`.
+const leaf = (s) => String(s).trim().toLowerCase().split(/[:/]/).pop();
+
 function skillToMode(skill) {
   if (typeof skill !== 'string') return null;
-  const leaf = skill.trim().toLowerCase().split(/[:/]/).pop();
-  return MODES.includes(leaf) ? leaf : null;
+  const l = leaf(skill);
+  return MODES.includes(l) ? l : null;
 }
 
 // Sweep stale session state, plus the `reload-<id>` files the flag-based design
@@ -173,13 +226,13 @@ function skillToMode(skill) {
 function sweep(keep) {
   // Handoff notes are deliberately NOT swept: they live in the user's project and
   // hold unfinished work, so removing one is the model's job once it has taken it
-  // over, never a timer's. Ditto `keep` — the CURRENT session's set file: a
-  // resume can arrive after any amount of time, so it is never garbage.
+  // over, never a timer's. Ditto `keep` — the CURRENT session's two state files:
+  // a resume can arrive after any amount of time, so they are never garbage.
   const cutoff = Date.now() - TTL_MS;
   try {
     for (const name of fs.readdirSync(stateDir())) {
       const p = path.join(stateDir(), name);
-      if (p === keep) continue;
+      if (keep.includes(p)) continue;
       try {
         const st = fs.statSync(p);
         if (st.isFile() && st.mtimeMs < cutoff) fs.unlinkSync(p);
@@ -214,9 +267,11 @@ const skillEventHere = input.tool_name === 'Skill' && !input.agent_id;
 // session_id, so its set starts empty anyway. Sweeping runs on every source.
 if (input.hook_event_name === 'SessionStart') {
   if (input.source !== 'resume') {
-    try { fs.unlinkSync(loadedModesFile(input.session_id)); } catch (e) { /* nothing to clear */ }
+    for (const f of [loadedModesFile(input.session_id), skillsFile(input.session_id)]) {
+      try { fs.unlinkSync(f); } catch (e) { /* nothing to clear */ }
+    }
   }
-  sweep(loadedModesFile(input.session_id));
+  sweep([loadedModesFile(input.session_id), skillsFile(input.session_id)]);
   process.exit(0);
 }
 
@@ -225,9 +280,12 @@ if (input.hook_event_name === 'SessionStart') {
 // sees a typed mode enter the context. Recorded, never denied: a deliberate
 // choice by the user outranks the router, and once it is in the set a later
 // Skill call for it (if one ever happens) reads as a plain re-invoke.
+// Every other typed slash is recorded too: this is the ONLY event a declarative
+// skill ever fires, so it is the only chance to learn that it is in the context.
 if (input.hook_event_name === 'UserPromptExpansion') {
   const mode = skillToMode(input.command_name);
   if (mode) addMode(input.session_id, mode);
+  else addSkill(input.session_id, input.command_name, 'typed');
   process.exit(0);
 }
 
@@ -264,11 +322,14 @@ if (input.hook_event_name === 'PreToolUse') {
   process.exit(0);
 }
 
-// PostToolUse on Skill: a mode the MODEL invoked just entered the context.
+// PostToolUse on Skill: a skill the MODEL invoked just entered the context — a
+// mode goes in the set, anything else in the skill list.
 if (input.hook_event_name === 'PostToolUse') {
   if (skillEventHere) {
-    const mode = skillToMode(input.tool_input && input.tool_input.skill);
+    const skill = input.tool_input && input.tool_input.skill;
+    const mode = skillToMode(skill);
     if (mode) addMode(input.session_id, mode);
+    else addSkill(input.session_id, skill, 'model');
   }
   process.exit(0);
 }
@@ -305,21 +366,55 @@ const CODING_IS_PURE =
   ' So a coding turn is pure `ponytail`: the explanations and notes around the ' +
   'code read as normal writing, not as `caveman`.';
 
+// What entered this context, injected as a ready-made list so the note copies it
+// instead of the model reconstructing it from memory. The two sources differ in
+// how the next context gets them back, and neither is filtered here:
+//   - `UserPromptExpansion` fires for EVERY slash command, not only skills, so
+//     the typed list also holds one-shot actions (/commit, /pr). The hook cannot
+//     tell them apart; the model can, and it is the one writing the note.
+//   - `typed` does not mean "declarative". It means the model did not invoke it,
+//     so it may or may not be re-invocable — only the model knows. What is
+//     certain is that a DECLARATIVE skill can arrive no other way, which is why
+//     the user is the fallback for this group.
+// The re-type line is one slash PER MESSAGE: a message expands only its leading
+// slash and swallows the rest as that command's arguments.
+function skillsClause(skills) {
+  if (!skills.length) return '';
+  const named = (s) => skills.filter((e) => e.source === s).map((e) => e.name);
+  const typed = named('typed');
+  const model = named('model');
+  let c = ' Recorded for the note —';
+  if (typed.length) {
+    c += ' TYPED here: ' + typed.map((n) => '/' + n).join(' ') + ' (slash commands, ' +
+      'so one-shot actions are in there too: keep only what still shapes the work, ' +
+      'and put the keepers in the note as commands the user re-types after the ' +
+      'reset, one per message, before the prompt — a declarative skill has no other ' +
+      'way back).';
+  }
+  if (model.length) {
+    c += ' INVOKED here: ' + model.map((n) => '`' + n + '`').join(', ') +
+      ' (the next context re-invokes these itself, so just name them).';
+  }
+  return c;
+}
+
 // The switch procedure. Taught here because this channel is trusted; the veto
 // only enforces it.
-function handoffInstruction(other, cwd) {
+function handoffInstruction(other, cwd, skills) {
   return ' If you classify to `' + other + '`, do NOT invoke it: a context holds ' +
     'at most one mode skill, and the invocation would be denied. Switch contexts ' +
     'instead — write a handoff note to `' + handoffFile(cwd) + '` covering what ' +
-    'has been established so far, what still has to be done, and the exact prompt ' +
-    'to send after the reset; then tell the user to run /clear and send that ' +
-    'prompt; then stop, without doing the task this turn. Creating the note and ' +
-    'saying so IS the whole turn. If writing that file is not possible (plan mode, ' +
+    'has been established so far, what still has to be done, the skills still ' +
+    'shaping the work, and the exact prompt to send after the reset; then tell ' +
+    'the user to run ' +
+    '/clear and send that prompt; then stop, without doing the task this turn. ' +
+    'Creating the note and saying so IS the whole turn.' + skillsClause(skills) +
+    ' If writing that file is not possible (plan mode, ' +
     'restricted permissions), put the same handoff inline in your reply instead — ' +
     'the point is that nothing is lost across the reset, not the file itself.';
 }
 
-function invocationTail(loaded, cwd) {
+function invocationTail(loaded, cwd, skills) {
   if (loaded.length === 0) {
     let tail = RESET_TAIL;
     // A handoff outlives the clear that consumed the context which wrote it.
@@ -328,7 +423,9 @@ function invocationTail(loaded, cwd) {
       if (fs.statSync(note).isFile()) {
         tail += ' A handoff note left before the last reset is waiting at `' +
           note + '`: read it first, continue the work it describes, ' +
-          'and delete the file once you have taken it over.';
+          'and delete the file once you have taken it over. If it names skills, ' +
+          're-invoke the ones you can reach (Skill tool) and ask the user to ' +
+          're-type the rest before you continue.';
       }
     } catch (e) { /* no pending handoff */ }
     return tail;
@@ -336,7 +433,7 @@ function invocationTail(loaded, cwd) {
   if (loaded.length === 1) {
     const other = MODES.find((m) => m !== loaded[0]);
     return '\n`' + loaded[0] + '` is already in this context: if you classify to ' +
-      'it, do NOT re-invoke — just apply it.' + handoffInstruction(other, cwd);
+      'it, do NOT re-invoke — just apply it.' + handoffInstruction(other, cwd, skills);
   }
   return '\nBoth `caveman` and `ponytail` are already in this context — invoke ' +
     'neither. Apply ONLY the mode you classify to; ' +
@@ -353,7 +450,7 @@ const out =
     ? (loaded.includes(mode) ? '' : forced(mode)) :
   // auto: always classify; the set decides what to say about invoking.
   slash ? '' :
-  CLASSIFY + invocationTail(loaded, input.cwd);
+  CLASSIFY + invocationTail(loaded, input.cwd, readSkills(input.session_id));
 
 if (out) process.stdout.write(out);
 process.exit(0);

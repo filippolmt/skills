@@ -29,12 +29,24 @@ everywhere), `off` (inject nothing). Missing or invalid → `auto`.
 
 This file is **user configuration** and nothing else writes to it. Runtime state
 is kept apart under `$XDG_STATE_HOME/mode-router/` (or
-`~/.local/state/mode-router/`): the loaded-mode set, one file per session. It is
-disposable — deleting it costs at most one redundant skill invocation — and stale
+`~/.local/state/mode-router/`), two files per session:
+
+```json
+session-<id>.json         { "modes": ["caveman"] }
+session-<id>.skills.json  { "skills": [{ "name": "grilling", "source": "typed" }] }
+```
+
+The first is the loaded-mode set; the second records everything else that entered
+the context, tagged `typed` (a user slash) or `model` (a `Skill` call) — the tag
+says who can bring it back after a reset. They are kept apart so a skill write can
+never clobber the mode set. Both are disposable — deleting them costs at most one
+redundant skill invocation and the skill list in the next handoff — and stale
 files are swept on `SessionStart` after 7 days.
 
 A pending **handoff note** is not state but unfinished work, so it lives in the
-project at `.mode-router/handoff.md` (gitignore it) and is never swept.
+project at `.mode-router/handoff.md` (gitignore it) and is never swept. It is
+also the only channel that survives a reset, so the skill list is written into
+it rather than left in the state files.
 
 ## Operations
 

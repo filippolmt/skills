@@ -136,19 +136,75 @@ out = prompt('explain this');
 assert.match(out, /`ponytail` is already in this context/, 'ponytail-only => named as loaded');
 assert.ok(veto('caveman'), 'ponytail-only => caveman denied');
 
-// --- expansion details: namespaced names register, non-modes do not ---
+// --- expansion details: namespaced names register ---
 run('SessionStart');
 expand('caveman:caveman');
 out = prompt('explain this');
 assert.match(out, /`caveman` is already in this context/, 'namespaced command_name registers');
-expand('commit');
-assert.strictEqual(prompt('explain this'), out, 'non-mode expansion => no change');
+assert.doesNotMatch(out, /Recorded for the note/, 'nothing else in the context => no skill clause');
 
 // --- subagent tool events (`agent_id` set) belong to a DIFFERENT context ---
 run('PostToolUse', { tool_name: 'Skill', tool_input: { skill: 'ponytail' }, agent_id: 'a-1' });
 assert.strictEqual(prompt('explain this'), out, 'a subagent skill load does not pollute the set');
+run('PostToolUse', { tool_name: 'Skill', tool_input: { skill: 'grilling' }, agent_id: 'a-1' });
+assert.strictEqual(prompt('explain this'), out, "a subagent's non-mode skill is not recorded either");
 out = run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'ponytail' }, agent_id: 'a-1' });
 assert.strictEqual(out, '', 'a subagent first mode is not vetoed by this context');
+
+// --- what entered the context crosses the reset inside the handoff note ---
+const modesFile = path.join(STATE, 'mode-router', `session-${SID}.json`);
+const skillsF = path.join(STATE, 'mode-router', `session-${SID}.skills.json`);
+run('SessionStart');
+loadSkill('caveman');
+expand('grilling');
+loadSkill('implement:implement');
+// Bare and namespaced are the same skill: dedup is on the last segment, or the
+// clause would tell the user to re-type what the model can invoke itself.
+loadSkill('grilling:grilling');
+expand('implement');
+// Modes live in their own file, which a skill write must never touch — losing a
+// mode would disarm the veto.
+assert.deepStrictEqual(JSON.parse(fs.readFileSync(modesFile, 'utf8')), { modes: ['caveman'] },
+  'the mode set survives skill writes and holds no skills');
+assert.deepStrictEqual(JSON.parse(fs.readFileSync(skillsF, 'utf8')), {
+  skills: [
+    { name: 'grilling', source: 'typed' },
+    { name: 'implement:implement', source: 'model' },
+  ],
+}, 'one entry per skill, first arrival keeps the tag, modes excluded');
+
+out = prompt('carry on');
+assert.match(out, /Recorded for the note/, 'the note is asked for what entered the context');
+assert.match(out, /TYPED here: \/grilling/, 'a typed name is listed as the slash to re-type');
+assert.match(out, /INVOKED here: `implement:implement`/, 'an invoked name is listed for re-invocation');
+assert.match(out, /one-shot actions are in there too/, 'the typed list is not only skills, and says so');
+assert.match(out, /one per message/, 'only the leading slash of a message expands');
+
+// The list is injected every steady-state turn, so it must not grow unbounded.
+for (let i = 0; i < 20; i++) loadSkill('filler-' + i);
+const capped = JSON.parse(fs.readFileSync(skillsF, 'utf8')).skills;
+assert.strictEqual(capped.length, 12, 'the recorded list is capped');
+assert.strictEqual(capped[capped.length - 1].name, 'filler-19', 'the cap drops the oldest entries');
+
+// A context reset drops both files, not just the mode set.
+run('SessionStart');
+assert.ok(!fs.existsSync(skillsF), 'a reset clears the recorded skills too');
+assert.ok(!fs.existsSync(modesFile), 'a reset clears the mode set');
+
+// State written before this feature has no skills file at all, and still reads.
+loadSkill('caveman');
+out = prompt('carry on');
+assert.match(out, /`caveman` is already in this context/, 'legacy state still yields the mode');
+assert.doesNotMatch(out, /Recorded for the note/, 'no skills file => no clause');
+
+// The fresh context is told how to get each group back.
+fs.mkdirSync(path.dirname(HANDOFF), { recursive: true });
+fs.writeFileSync(HANDOFF, '# handoff\nskills: /grilling\n');
+run('SessionStart');
+out = prompt('continue');
+assert.match(out, /re-invoke the ones you can reach/, 'reachable skills come back by Skill call');
+assert.match(out, /ask the user to\s+re-type the rest/, 'the rest have to be asked for');
+fs.unlinkSync(HANDOFF);
 
 // --- forced caveman: invoke while missing, silent once loaded, never vetoed ---
 setMode('caveman');
