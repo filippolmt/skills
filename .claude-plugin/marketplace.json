@@ -497,8 +497,8 @@
         "source": "git-subdir",
         "url": "https://github.com/juliusbrussee/caveman",
         "path": "skills/caveman",
-        "ref": "main",
-        "sha": "27d5a3981a347890211bb1bf2439e5c821a63bc9"
+        "ref": "v2.0.0",
+        "sha": "2c67abb9833689b48c7abba88afaa77c39a18657"
       },
       "description": "Ultra-compressed communication mode."
     },
@@ -508,8 +508,8 @@
         "source": "git-subdir",
         "url": "https://github.com/dietrichgebert/ponytail",
         "path": "skills/ponytail",
-        "ref": "main",
-        "sha": "2ed6c52c9d7e5e56942508591085fd45dea277d3"
+        "ref": "v4.9.0",
+        "sha": "0a4dd63ad4541f4f655c4108a295916f3c1d8fda"
       },
       "description": "Forces the laziest solution that actually works, simplest, shortest, most minimal."
     },
@@ -519,8 +519,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press",
-        "ref": "main",
-        "sha": "8b2c361e37e50e6688ce21ac3bcdfd10a47c7432"
+        "ref": "v4.30.2",
+        "sha": "128f67631ef5116dbe382ce2cfc758084675b779"
       },
       "description": "Generate a ship-ready CLI for an API via a lean research → generate → build → shipcheck loop."
     },
@@ -530,8 +530,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-polish",
-        "ref": "main",
-        "sha": "8b2c361e37e50e6688ce21ac3bcdfd10a47c7432"
+        "ref": "v4.30.2",
+        "sha": "128f67631ef5116dbe382ce2cfc758084675b779"
       },
       "description": "Polish a generated CLI to pass verification and become publish-ready: runs diagnostics (dogfood, verify, scorecard, go vet, gosec), auto-fixes issues, and reports the before/after delta."
     },
@@ -541,8 +541,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-score",
-        "ref": "main",
-        "sha": "8b2c361e37e50e6688ce21ac3bcdfd10a47c7432"
+        "ref": "v4.30.2",
+        "sha": "128f67631ef5116dbe382ce2cfc758084675b779"
       },
       "description": "Score a generated CLI against the Steinberger bar, or compare two CLIs side-by-side."
     },
@@ -552,8 +552,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-output-review",
-        "ref": "main",
-        "sha": "8b2c361e37e50e6688ce21ac3bcdfd10a47c7432"
+        "ref": "v4.30.2",
+        "sha": "128f67631ef5116dbe382ce2cfc758084675b779"
       },
       "description": "Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use."
     },
@@ -607,8 +607,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/react-expert",
-        "ref": "main",
-        "sha": "882ef55e377dbf9a4dbe496bb41ac6ccd0e555cf"
+        "ref": "v0.4.16",
+        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
       "description": "Use when building React 18+ applications in .jsx or .tsx files, Next.js App Router projects, or create-react-app setups."
     },
@@ -618,8 +618,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/wordpress-pro",
-        "ref": "main",
-        "sha": "882ef55e377dbf9a4dbe496bb41ac6ccd0e555cf"
+        "ref": "v0.4.16",
+        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
       "description": "Develops custom WordPress themes and plugins, creates and registers Gutenberg blocks and block patterns, configures WooCommerce stores, implements WordPress REST API endpoints, applies security hardening, and optimizes performance through caching and query tuning."
     },
@@ -629,8 +629,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/fastapi-expert",
-        "ref": "main",
-        "sha": "882ef55e377dbf9a4dbe496bb41ac6ccd0e555cf"
+        "ref": "v0.4.16",
+        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
       "description": "Use when building high-performance async Python APIs with FastAPI and Pydantic V2."
     },
@@ -640,8 +640,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/kubernetes-specialist",
-        "ref": "main",
-        "sha": "882ef55e377dbf9a4dbe496bb41ac6ccd0e555cf"
+        "ref": "v0.4.16",
+        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
       "description": "Use when deploying or managing Kubernetes workloads."
     },
@@ -651,8 +651,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/golang-pro",
-        "ref": "main",
-        "sha": "882ef55e377dbf9a4dbe496bb41ac6ccd0e555cf"
+        "ref": "v0.4.16",
+        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
       "description": "Implements concurrent Go patterns using goroutines and channels, designs and builds microservices with gRPC or REST, optimizes Go application performance with pprof, and enforces idiomatic Go with generics, interfaces, and robust error handling."
     },
@@ -662,8 +662,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/cli-developer",
-        "ref": "main",
-        "sha": "882ef55e377dbf9a4dbe496bb41ac6ccd0e555cf"
+        "ref": "v0.4.16",
+        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
       "description": "Use when building CLI tools, implementing argument parsing, or adding interactive prompts."
     },
@@ -673,8 +673,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/code-documenter",
-        "ref": "main",
-        "sha": "882ef55e377dbf9a4dbe496bb41ac6ccd0e555cf"
+        "ref": "v0.4.16",
+        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
       "description": "Generates, formats, and validates technical documentation — including docstrings, OpenAPI/Swagger specs, JSDoc annotations, doc portals, and user guides."
     },
@@ -684,8 +684,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/database-optimizer",
-        "ref": "main",
-        "sha": "882ef55e377dbf9a4dbe496bb41ac6ccd0e555cf"
+        "ref": "v0.4.16",
+        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
       "description": "Optimizes database queries and improves performance across PostgreSQL and MySQL systems."
     },
@@ -695,8 +695,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/playwright-expert",
-        "ref": "main",
-        "sha": "882ef55e377dbf9a4dbe496bb41ac6ccd0e555cf"
+        "ref": "v0.4.16",
+        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
       "description": "Use when writing E2E tests with Playwright, setting up test infrastructure, or debugging flaky browser tests."
     },
@@ -706,8 +706,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/sql-pro",
-        "ref": "main",
-        "sha": "882ef55e377dbf9a4dbe496bb41ac6ccd0e555cf"
+        "ref": "v0.4.16",
+        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
       "description": "Optimizes SQL queries, designs database schemas, and troubleshoots performance issues."
     },
@@ -717,7 +717,7 @@
         "source": "git-subdir",
         "url": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
         "path": ".claude/skills/ui-ux-pro-max",
-        "ref": "main",
+        "ref": "v2.15.0",
         "sha": "a38d04c3d5c298c851dbe5e6ee1965ee3de42cb5"
       },
       "description": "UI/UX design intelligence for web and mobile."
@@ -728,8 +728,8 @@
         "source": "git-subdir",
         "url": "https://github.com/antonbabenko/terraform-skill",
         "path": "skills/terraform-skill",
-        "ref": "master",
-        "sha": "0a3a4a66e99001347d36a41e10260a825be3ab62"
+        "ref": "v1.17.1",
+        "sha": "b59d2be9ff4db8f835c8459e05e325ba11e3a21f"
       },
       "description": "Diagnose-first guidance for writing, reviewing, and debugging Terraform/OpenTofu modules, tests, CI, scans, and state ops — pinpoints the failure mode (identity churn, secrets, blast radius, CI drift, state corruption) with version-aware guards."
     },
