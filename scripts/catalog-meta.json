@@ -11,7 +11,8 @@
     { "repo": "nextlevelbuilder/ui-ux-pro-max-skill", "tagline": "UI/UX design", "kind": "skill" },
     { "repo": "antonbabenko/terraform-skill", "tagline": "Terraform/OpenTofu IaC", "kind": "skill" },
     { "repo": "cloudflare/skills", "tagline": "Cloudflare developer platform", "kind": "skill" },
-    { "repo": "pbakaus/impeccable", "tagline": "frontend design fluency", "kind": "plugin" }
+    { "repo": "pbakaus/impeccable", "tagline": "frontend design fluency", "kind": "plugin" },
+    { "repo": "mvanhorn/last30days-skill", "tagline": "multi-source trend research", "kind": "skill" }
   ],
   "omit": ["improve-codebase-architecture-bundle", "printing-press-bundle", "implement-bundle", "triage-bundle", "wayfinder-bundle", "grill-with-docs-bundle"]
 }

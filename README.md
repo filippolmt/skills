@@ -177,6 +177,12 @@ Snapshot of the catalog — the source of truth is
 |---|---|
 | `impeccable` | Design fluency for frontend development. 1 skill with 23 commands (/impeccable polish, /impeccable audit, /impeccable critique, etc.) and curated anti-pattern detection. |
 
+### [mvanhorn/last30days-skill](https://github.com/mvanhorn/last30days-skill) — multi-source trend research
+
+| Skill | What it does |
+|---|---|
+| `last30days` | Research what people actually say about any topic in the last 30 days. Pulls posts and engagement from Reddit, X, YouTube, TikTok, Hacker News, Polymarket, GitHub, and the web. Includes a doctor health check to diagnose broken or missing sources. |
+
 ### Modes (bundled by the local `mode-router` plugin)
 
 | Skill | Source | What it does |
