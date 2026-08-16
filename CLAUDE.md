@@ -32,8 +32,11 @@ correctly-shaped entry. For the exact entry shape, see that skill or any existin
 entry shape (`url` github + `path` + `ref` + `sha`), told apart by `ref`:
 
 - `ref: "main"`/`"master"` → `git-refs` datasource, bumps the `sha` (automerge on).
-- `ref: "vX.Y.Z"` → `github-tags` datasource, bumps tag + `sha` together
-  (automerge on minor/patch only; majors wait for review).
+- `ref: "vX.Y.Z"` (optionally prefixed, e.g. `skill-v4.1.1`) → `github-tags`
+  datasource, bumps tag + `sha` together (automerge on minor/patch only;
+  majors wait for review). The prefix is captured as the regex-versioning
+  `compatibility` group, so a repo publishing several tag series
+  (`cli-v*`, `ext-v*`, `skill-v*`) only ever bumps within its own series.
 
 Together they must cover **every** `git-subdir` entry — an entry matched by
 neither is silently never updated. **If you change the source shape in
