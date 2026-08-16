@@ -26,11 +26,11 @@
         "/\\.claude-plugin/marketplace\\.json/"
       ],
       "matchStrings": [
-        "\"url\":\\s*\"https://github\\.com/(?<depName>[^\"]+)\",\\s*\"path\":\\s*\"[^\"]+\",\\s*\"ref\":\\s*\"(?<currentValue>v\\d+\\.\\d+\\.\\d+)\",\\s*\"sha\":\\s*\"(?<currentDigest>[0-9a-f]+)\""
+        "\"url\":\\s*\"https://github\\.com/(?<depName>[^\"]+)\",\\s*\"path\":\\s*\"[^\"]+\",\\s*\"ref\":\\s*\"(?<currentValue>(?:[a-z][a-z0-9]*-)?v\\d+\\.\\d+\\.\\d+)\",\\s*\"sha\":\\s*\"(?<currentDigest>[0-9a-f]+)\""
       ],
       "datasourceTemplate": "github-tags",
       "packageNameTemplate": "{{{depName}}}",
-      "versioningTemplate": "semver"
+      "versioningTemplate": "regex:^(?<compatibility>[a-z][a-z0-9]*-)?v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
     }
   ],
   "packageRules": [
