@@ -597,7 +597,7 @@
         "url": "https://github.com/mcollina/skills",
         "path": "skills/fastify",
         "ref": "main",
-        "sha": "a88a866db5dc07f74d6dcef530a3b639158bdc97"
+        "sha": "856efd268ae85482d882f3d0bed869fd020b5c06"
       },
       "description": "Guides development of Fastify Node.js backend servers and REST APIs using TypeScript or JavaScript."
     },
