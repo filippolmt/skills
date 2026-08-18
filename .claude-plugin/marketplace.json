@@ -355,7 +355,7 @@
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/brandkit",
         "ref": "main",
-        "sha": "e988add20dab0fa97d7a76781c48961c8184288e"
+        "sha": "dfb6f9f9e93a39f673b1827c0889cc28326d1800"
       },
       "description": "Premium brand-kit image generation skill for creating high-end brand-guidelines boards, logo systems, identity decks, and visual-world presentations."
     },
@@ -366,7 +366,7 @@
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/brutalist-skill",
         "ref": "main",
-        "sha": "e988add20dab0fa97d7a76781c48961c8184288e"
+        "sha": "dfb6f9f9e93a39f673b1827c0889cc28326d1800"
       },
       "description": "Raw mechanical interfaces fusing Swiss typographic print with military terminal aesthetics."
     },
@@ -377,7 +377,7 @@
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/gpt-tasteskill",
         "ref": "main",
-        "sha": "e988add20dab0fa97d7a76781c48961c8184288e"
+        "sha": "dfb6f9f9e93a39f673b1827c0889cc28326d1800"
       },
       "description": "Elite UX/UI & Advanced GSAP Motion Engineer."
     },
@@ -388,7 +388,7 @@
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/image-to-code-skill",
         "ref": "main",
-        "sha": "e988add20dab0fa97d7a76781c48961c8184288e"
+        "sha": "dfb6f9f9e93a39f673b1827c0889cc28326d1800"
       },
       "description": "Elite website image-to-code skill for Codex."
     },
@@ -399,7 +399,7 @@
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/imagegen-frontend-mobile",
         "ref": "main",
-        "sha": "e988add20dab0fa97d7a76781c48961c8184288e"
+        "sha": "dfb6f9f9e93a39f673b1827c0889cc28326d1800"
       },
       "description": "Elite mobile app image-generation skill for creating premium, app-native screen concepts and flows."
     },
@@ -410,7 +410,7 @@
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/imagegen-frontend-web",
         "ref": "main",
-        "sha": "e988add20dab0fa97d7a76781c48961c8184288e"
+        "sha": "dfb6f9f9e93a39f673b1827c0889cc28326d1800"
       },
       "description": "Elite frontend image-direction skill for generating premium, conversion-aware website design references."
     },
@@ -421,7 +421,7 @@
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/minimalist-skill",
         "ref": "main",
-        "sha": "e988add20dab0fa97d7a76781c48961c8184288e"
+        "sha": "dfb6f9f9e93a39f673b1827c0889cc28326d1800"
       },
       "description": "Clean editorial-style interfaces."
     },
@@ -432,7 +432,7 @@
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/output-skill",
         "ref": "main",
-        "sha": "e988add20dab0fa97d7a76781c48961c8184288e"
+        "sha": "dfb6f9f9e93a39f673b1827c0889cc28326d1800"
       },
       "description": "Overrides default LLM truncation behavior."
     },
@@ -443,7 +443,7 @@
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/redesign-skill",
         "ref": "main",
-        "sha": "e988add20dab0fa97d7a76781c48961c8184288e"
+        "sha": "dfb6f9f9e93a39f673b1827c0889cc28326d1800"
       },
       "description": "Upgrades existing websites and apps to premium quality."
     },
@@ -454,7 +454,7 @@
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/soft-skill",
         "ref": "main",
-        "sha": "e988add20dab0fa97d7a76781c48961c8184288e"
+        "sha": "dfb6f9f9e93a39f673b1827c0889cc28326d1800"
       },
       "description": "Teaches the AI to design like a high-end agency."
     },
@@ -465,7 +465,7 @@
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/stitch-skill",
         "ref": "main",
-        "sha": "e988add20dab0fa97d7a76781c48961c8184288e"
+        "sha": "dfb6f9f9e93a39f673b1827c0889cc28326d1800"
       },
       "description": "Semantic Design System Skill for Google Stitch."
     },
@@ -476,7 +476,7 @@
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/taste-skill-v1",
         "ref": "main",
-        "sha": "e988add20dab0fa97d7a76781c48961c8184288e"
+        "sha": "dfb6f9f9e93a39f673b1827c0889cc28326d1800"
       },
       "description": "The original v1 taste-skill, preserved for projects depending on its exact behavior."
     },
@@ -487,7 +487,7 @@
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/taste-skill",
         "ref": "main",
-        "sha": "e988add20dab0fa97d7a76781c48961c8184288e"
+        "sha": "dfb6f9f9e93a39f673b1827c0889cc28326d1800"
       },
       "description": "Anti-slop frontend skill for landing pages, portfolios, and redesigns."
     },
