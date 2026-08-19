@@ -519,8 +519,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press",
-        "ref": "v4.30.3",
-        "sha": "5d86945b112d80e80a126641c8d086d5ca8d6e76"
+        "ref": "v4.31.0",
+        "sha": "994ea3d2859203d211c9e92a7d801cb8a345efcd"
       },
       "description": "Generate a ship-ready CLI for an API via a lean research → generate → build → shipcheck loop."
     },
@@ -530,8 +530,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-polish",
-        "ref": "v4.30.3",
-        "sha": "5d86945b112d80e80a126641c8d086d5ca8d6e76"
+        "ref": "v4.31.0",
+        "sha": "994ea3d2859203d211c9e92a7d801cb8a345efcd"
       },
       "description": "Polish a generated CLI to pass verification and become publish-ready: runs diagnostics (dogfood, verify, scorecard, go vet, gosec), auto-fixes issues, and reports the before/after delta."
     },
@@ -541,8 +541,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-score",
-        "ref": "v4.30.3",
-        "sha": "5d86945b112d80e80a126641c8d086d5ca8d6e76"
+        "ref": "v4.31.0",
+        "sha": "994ea3d2859203d211c9e92a7d801cb8a345efcd"
       },
       "description": "Score a generated CLI against the Steinberger bar, or compare two CLIs side-by-side."
     },
@@ -552,8 +552,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-output-review",
-        "ref": "v4.30.3",
-        "sha": "5d86945b112d80e80a126641c8d086d5ca8d6e76"
+        "ref": "v4.31.0",
+        "sha": "994ea3d2859203d211c9e92a7d801cb8a345efcd"
       },
       "description": "Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use."
     },
