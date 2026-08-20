@@ -49,7 +49,7 @@ Snapshot of the catalog — the source of truth is
 [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
 
 <!-- catalog:start -->
-**Local:** `mode-router` — Per-prompt router: classifies each request and invokes the caveman (terse output) or ponytail (minimal code) skill, exclusively. Force a mode or turn it off via control file. Bundles both as dependencies.
+**Local:** `agent-report-guard` — Drops `name`/`team_name` from Agent tool calls so the subagent's report comes back inline as the tool result, instead of the parent waiting on a mailbox teammate that never reports. Unblocks fan-out skills (code-review, research, wayfinder). Set ALLOW_NAMED_AGENTS=1 to spawn a named teammate on purpose.; `mode-router` — Per-prompt router: classifies each request and invokes the caveman (terse output) or ponytail (minimal code) skill, exclusively. Force a mode or turn it off via control file. Bundles both as dependencies.
 
 ### [mattpocock/skills](https://github.com/mattpocock/skills) — engineering & productivity
 

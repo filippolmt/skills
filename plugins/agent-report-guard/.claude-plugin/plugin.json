@@ -1,0 +1,8 @@
+{
+  "name": "agent-report-guard",
+  "description": "Drops `name`/`team_name` from Agent tool calls so the subagent's report comes back inline as the tool result, instead of the parent waiting on a mailbox teammate that never reports. Unblocks fan-out skills (code-review, research, wayfinder). Set ALLOW_NAMED_AGENTS=1 to spawn a named teammate on purpose.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Filippo Merante Caparrotta"
+  }
+}
