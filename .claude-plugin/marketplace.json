@@ -497,8 +497,8 @@
         "source": "git-subdir",
         "url": "https://github.com/juliusbrussee/caveman",
         "path": "skills/caveman",
-        "ref": "v2.1.0",
-        "sha": "f8b6bfc7c7d3db38acae062070bf5d89f4d49ebf"
+        "ref": "v2.2.0",
+        "sha": "9aa63945a349bef17206540650db48c30fafbdf2"
       },
       "description": "Ultra-compressed communication mode."
     },
