@@ -10,10 +10,11 @@ A hook (`hooks/route.js`) fires on every prompt. In `auto`
 mode it makes the model classify the request and invoke exactly one mode skill:
 coding task → **`ponytail`** (minimal code), everything else → **`caveman`**
 (terse output). The mode applies **on top of** any other skill the turn
-dispatches — never instead of it. Exactly one mode lives in a context: a second
-one is **refused**, and switching mode means leaving a handoff note and starting a
-fresh context. The hook only routes; the two skills own their behavior. This skill
-reads and flips the control file that picks the mode.
+dispatches — never instead of it. Exactly one mode applies **per turn**: a second
+one entering the context is not refused, it is **suspended** on every turn it is
+not the one classified to. Switching mode therefore needs no context reset. The
+hook only routes; the two skills own their behavior. This skill reads and flips
+the control file that picks the mode.
 
 ## Control file
 
@@ -47,6 +48,8 @@ A pending **handoff note** is not state but unfinished work, so it lives in the
 project at `.mode-router/handoff.md` (gitignore it) — **one** file, overwritten
 rather than appended to, four fixed sections, about 30 lines. Its presence *is*
 its state: pending while the file is there, absorbed once the model deletes it.
+The user asks for one by typing `/handoff` before a deliberate `/clear`; the
+router only announces a pending note to the fresh context.
 
 Deleting it is the model's job, since only the model knows when it has taken the
 note over; the hook backstops the case where it forgets. Past **24 hours** the

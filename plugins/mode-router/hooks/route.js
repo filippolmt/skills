@@ -1,50 +1,69 @@
 #!/usr/bin/env node
-// mode-router — one script, five hook events.
+// mode-router — one script, four hook events.
 //
 // The mode skills (caveman/ponytail) declare themselves "active every response",
-// and a skill cannot be unloaded. So the only way to guarantee ONE mode per
-// context is to stop the second one from ever entering it. That is what this hook
-// does, and the LOADED-MODE SET is what makes it decidable:
+// and a skill cannot be unloaded. So exclusivity cannot be one mode per CONTEXT;
+// it is one mode per TURN: the injected text applies the mode this request
+// classifies to and SUSPENDS the other one for the turn. The LOADED-MODE SET is
+// what makes the rest decidable — it says what is already here, and therefore
+// what still has to be invoked:
 //
 //   SessionStart        (startup|clear|compact|fork)  clears the set — a context reset
 //   SessionStart        (resume)                      keeps it: the context comes back
 //   UserPromptExpansion (slash command)               adds a user-TYPED mode to the set
-//   PreToolUse          (matcher: Skill)              DENIES a second mode
 //   PostToolUse         (matcher: Skill)              adds the invoked mode to the set
 //   UserPromptSubmit                                  reads the set, emits the routing text
 //
-// The same two events also record everything ELSE that entered the context, in a
-// second per-session file, tagged by how it got there: `typed` for a user slash,
-// `model` for a Skill call. The tag is what makes the list restorable after a
-// reset — the model can re-invoke what it invoked, but a declarative skill
-// (`disable-model-invocation: true`) has no description to route on, so nothing
-// but the user typing its name brings it back. The handoff note carries the list
-// across the reset; the model, not the hook, decides which entries still matter.
+// One rule holds the design: the SET decides what to INVOKE, the SUSPENSION
+// decides who SPEAKS. Hence two branches in invocationTail() and not three —
+// with one mode loaded or with both, the model answers with every body that is
+// in the context, so the only difference is whether an invocation is still being
+// asked for.
+//
+// A PreToolUse branch used to DENY a second mode entering the context (0.5.0 to
+// 0.7.0), which made switching mode mean switching contexts. Removed in 0.8.0:
+// the leak it guarded was measured and does not happen, and it cost ~62% of the
+// text injected on every steady-state turn — docs/adr/0001-drop-the-skill-veto.md
+// carries the numbers. Two things to know before adding any event back here: the
+// registration in hooks.json is half the change (an event registered but not
+// handled falls through to the UserPromptSubmit tail), and the guard below the
+// PostToolUse branch is what stops that fall-through.
+//
+// The two set-feeding events also record everything ELSE that entered the
+// context, in a second per-session file, tagged by how it got there: `typed` for
+// a user slash, `model` for a Skill call. The tag is what makes the list
+// restorable after a reset — the model can re-invoke what it invoked, but a
+// declarative skill (`disable-model-invocation: true`) has no description to
+// route on, so nothing but the user typing its name brings it back. The list is
+// emitted on the /handoff turn, not every turn; the model, not the hook, decides
+// which entries still matter.
 //
 // UserPromptExpansion exists because a typed /caveman never reaches the tool
 // layer: the harness expands the skill body INLINE into the prompt, so no Skill
-// call — and no PreToolUse/PostToolUse — ever fires (verified against CLI
-// 2.1.220, which is also where this event fires BEFORE UserPromptSubmit).
-// Without it the set would miss exactly the loads the user asks for by name.
-// Typing a mode is also the user overruling the router, so the expansion is
-// recorded, never denied.
+// call — and no PostToolUse — ever fires (verified against CLI 2.1.220 and
+// re-confirmed on 2.1.237, which is also where this event fires BEFORE
+// UserPromptSubmit). Without it the set would miss exactly the loads the user
+// asks for by name.
 //
 // Tool events carry `agent_id` when they come from a SUBAGENT (main-loop events
 // never do — same empirical verification). A subagent is a different context that
-// happens to share the session id: its skill loads must not pollute this set, and
-// this context's mode must not veto the subagent's own first one, so subagent
-// tool events are ignored wholesale.
+// happens to share the session id, so its skill loads must not pollute this set:
+// subagent tool events are ignored wholesale.
 //
-// Switching modes therefore means switching CONTEXTS: the model writes a handoff
-// note and asks the user to /clear, and the next context starts with one mode and
-// the note. That note goes in the project (.mode-router/handoff.md) rather
-// than in the state directory below — a reset may hand out a new session id, and
-// writing outside the working directory is a permission the model often lacks.
+// Switching mode no longer requires switching contexts, so this hook no longer
+// asks for a handoff note. The /clear between planning and implementation stays
+// as something the USER wants, and the note that carries work across it is
+// written on demand by the /handoff command (commands/handoff.md). The split is
+// forced by one fact: the model does not know its own session id, so it cannot
+// find the skills file by name — the command carries the static schema, the hook
+// contributes the list and stays silent about routing that turn. See
+// docs/adr/0002-handoff-note-as-typed-command.md.
 //
-// That note is ONE file, OVERWRITTEN, with four fixed sections and a ~30-line
-// budget. Free prose lost something different every time, and with nothing
-// saying overwrite-or-append the model sometimes grew the file into a log of the
-// whole discussion. Its presence IS its state: pending while the file is there,
+// This hook keeps only the READ side of the note: it lives in the project
+// (.mode-router/handoff.md) rather than in the state directory below — a reset
+// may hand out a new session id, and writing outside the working directory is a
+// permission the model often lacks — and the empty-set branch announces it to the
+// fresh context. Its presence IS its state: pending while the file is there,
 // absorbed once the model deletes it — no status field to keep in sync.
 //
 // The model owns that deletion, because only it knows when it has taken the note
@@ -54,12 +73,6 @@
 // that branch writes nothing, by the rule below — and SessionStart non-resume is
 // both the only other event that already writes and the exact moment a stale note
 // becomes dangerous: a fresh context is about to be told what is pending.
-//
-// Two channels, deliberately not interchangeable. Instructions go through
-// UserPromptSubmit, which the model treats as trusted context. A PreToolUse deny
-// reason does NOT work for that: it arrives as tool output, and the model rightly
-// refuses to take orders from tool output (verified — it said so out loud). So the
-// deny reason only states the constraint; the procedure is taught in the prompt.
 //
 // UserPromptSubmit performs no writes at all. The retired design deleted a flag
 // from here, which made a double registration inject "invoke now" and "do NOT
