@@ -283,23 +283,25 @@ function addSkill(sessionId, skill, source) {
 // match a hypothetical `anti-caveman`.
 const leaf = (s) => String(s).trim().toLowerCase().split(/[:/]/).pop();
 
-// Deliberately NOT the leaf() rule the modes use, and the rename did not change
-// that: `leaf()` would capture `X:carryover` for any X, suppressing routing on a
-// turn this plugin has no part in and injecting a list aimed at a note somebody
-// else's command does not write. Matching bare-or-own-namespace is correct however
-// unique the name happens to be today, so it does not depend on staying unique.
-// What the rename removed is the defect the old name carried INTO this function:
-// "bare stays ours" called the bare form irreducibly ambiguous without measuring
-// it, and measured it is not ambiguous at all — the harness exposes no bare
-// `/handoff`, so this matched a name that always expanded somebody else's body.
-// What is settled now is only that no other plugin answers to `carryover`; whether
-// a bare `/carryover` is exposed at all is itself unmeasured — ADR-0004 says so
-// out loud rather than repeating the mistake above.
-function isCarryoverCommand(name) {
-  if (typeof name !== 'string') return false;
-  const t = name.trim().toLowerCase();
-  return t === CARRYOVER_COMMAND || t === PLUGIN + ':' + CARRYOVER_COMMAND;
-}
+// The FULL namespaced name, and nothing else — not the leaf() rule the modes use,
+// and not the bare name either. Both exclusions are measured (ADR-0004):
+//
+//   leaf()  would capture `X:carryover` for any X, suppressing routing on a turn
+//           this plugin has no part in and injecting a list aimed at a note
+//           somebody else's command does not write.
+//   bare    cannot arrive. The harness exposes plugin commands namespaced only
+//           (`mode-router:carryover`), a typed bare form dies as `Unknown command`
+//           before UserPromptSubmit fires, and UserPromptExpansion delivers
+//           `command_name` namespaced. Every path was measured; none carries it.
+//
+// Through 0.8.0 this accepted the bare name too, on the reasoning that a bare
+// `/handoff` was "irreducibly ambiguous" and so might as well be claimed. It was
+// not ambiguous — it resolved to another plugin's skill every time — which is the
+// defect ADR-0004 exists for. Accepting a form that cannot arrive is the same
+// mistake with the sign flipped: it asserts something about dispatch instead of
+// measuring it.
+const isCarryoverCommand = (name) => typeof name === 'string' &&
+  name.trim().toLowerCase() === PLUGIN + ':' + CARRYOVER_COMMAND;
 
 function skillToMode(skill) {
   if (typeof skill !== 'string') return null;

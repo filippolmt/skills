@@ -205,19 +205,20 @@ recorded, since it is the half that cannot be allowed to drift.
 
 ### Whose turn it is
 
-The command is `/carryover`, and through `0.8.0` it was `/handoff` — a name another
+The command is `/mode-router:carryover` — namespaced, that being the only form the
+harness exposes. Through `0.8.0` it was `/handoff`, a name another
 plugin in this marketplace also answers to, which made the hook claim turns that
 expanded somebody else's body. `docs/adr/0004-rename-the-handoff-command.md` carries
-the measurement, the rejected alternative, and the one assumption still unmeasured;
-it is not restated here.
+the measurements — of the old name and of the new one — and the rejected
+alternative; they are not restated here.
 
-The match is **not** the last-segment rule the modes use: a bare `/carryover`
-counts as this plugin's, and a namespaced one only as `/mode-router:carryover`.
-Matching `X:carryover` for any `X` would suppress routing on a turn this plugin has
-no part in, and inject a list aimed at a note somebody else's command does not
-write. That rule is correct however unique the name is today, so it does not depend
-on staying unique — which is the whole reason it survived the rename unchanged. The
-namespaced form is the canonical one to type.
+The match is the **full namespaced name and nothing else**: `/mode-router:carryover`.
+Not the last-segment rule the modes use, which would capture any `X:carryover` and
+suppress routing on a turn this plugin has no part in; and not the bare
+`/carryover`, which no path can deliver — the harness exposes plugin commands
+namespaced only, so a bare one typed anyway dies as `Unknown command` before this
+hook runs. `/mode-router:carryover` is therefore not merely the canonical form to
+type, it is the only one that works.
 
 The note goes to `.mode-router/handoff.md` inside the project (gitignore it). The
 router keeps only the **read** side: on the first prompt of a fresh context, the

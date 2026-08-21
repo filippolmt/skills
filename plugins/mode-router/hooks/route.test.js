@@ -11,6 +11,9 @@ const path = require('path');
 const SCRIPT = path.join(__dirname, 'route.js');
 // The static half of the handoff design lives here now, not in a string in the
 // hook — but the contract is the same one, so it is checked at its new address.
+// The only form that can reach the hook: the harness exposes plugin commands
+// namespaced only, and a bare `/carryover` dies as `Unknown command` (ADR-0004).
+const CARRYOVER = '/mode-router:carryover';
 const CARRYOVER_MD = path.join(__dirname, '..', 'commands', 'carryover.md');
 // Isolate BOTH XDG roots: config holds state.json, state holds the loaded-mode
 // set. Leaking either would write into the developer's real home.
@@ -227,7 +230,7 @@ assert.deepStrictEqual(JSON.parse(fs.readFileSync(skillsF, 'utf8')), {
 // The list is emitted once, on the turn the user asks for a note — not on every
 // prompt. That is the per-turn saving 0.8.0 adds on top of dropping the veto.
 assert.doesNotMatch(prompt('carry on'), /Recorded for the note/, 'a steady turn says nothing about the list');
-out = prompt('/carryover');
+out = prompt(CARRYOVER);
 assert.doesNotMatch(out, /MODE ROUTER/, 'the note has no prose to style, so no classification');
 assert.doesNotMatch(out, /SUSPENDED/, 'and no suspension clause either');
 assert.match(out, /TYPED here: \/grilling/, 'a typed name is listed as the slash to re-type');
@@ -240,24 +243,27 @@ assert.doesNotMatch(out, /one per message/, 'nor the re-typing rule');
 // relative one, and the read side resolves it against cwd.
 assert.ok(out.includes(HANDOFF), 'the /carryover turn names the resolved path the hook reads back');
 assert.match(out, /Write the note to/, 'and says what to do with it');
-assert.match(prompt('/carryover-notes go'), /MODE ROUTER/, 'a lookalike command is still classified');
+assert.match(prompt(CARRYOVER + '-notes go'), /MODE ROUTER/, 'a lookalike command is still classified');
 // The command that WRITES the note stays out of the list, or the note cites itself.
-expand('carryover');
+// Only the namespaced form is expanded, because that is the only form the harness
+// exposes — measured, and the reason the bare one is not accepted below.
 expand('mode-router:carryover');
-assert.strictEqual(prompt('/carryover'), out, "our /carryover is never recorded as a typed skill");
+assert.strictEqual(prompt(CARRYOVER), out, 'this command is never recorded as a typed skill');
 
-// --- whose turn it is. Through 0.8.0 this command was named `/handoff`, and a
-// bare `/handoff` is resolved by the harness to the UNRELATED `handoff` skill
-// this marketplace also ships (measured — ADR-0004). The hook read the raw
-// prompt, matched its own name, and injected the note's path and the list onto a
-// turn that had expanded somebody else's body, which says to write a different
-// document somewhere else entirely. Renaming is what fixes that: a bare
-// `/handoff` is now a foreign command like any other, and the strict
-// bare-or-own-namespace match keeps `X:carryover` foreign too — the leaf() rule
-// the modes use would capture it and suppress routing on a turn this plugin has
-// no part in. ---
-assert.strictEqual(prompt('/mode-router:carryover'), out, 'this plugin, namespaced => the same turn');
-for (const foreign of ['/handoff', '/handoff:handoff', '/productivity:carryover']) {
+// --- whose turn it is. Three names this hook must NOT claim, each for its own
+// measured reason (ADR-0004):
+//
+//   /carryover          the bare form. Not exposed by the harness at all: typed,
+//                       it dies as `Unknown command` before UserPromptSubmit
+//                       fires. Through 0.8.0 the equivalent bare name WAS claimed,
+//                       which is how a turn that expanded another plugin's body
+//                       got this one's note path injected into it.
+//   /handoff…           another plugin's command, named what this one used to be.
+//   /productivity:…     the leaf() rule the modes use would capture any
+//                       `X:carryover` and suppress routing on a turn this plugin
+//                       has no part in.
+// ---
+for (const foreign of ['/carryover', '/handoff', '/handoff:handoff', '/productivity:carryover']) {
   const o = prompt(foreign);
   assert.match(o, /MODE ROUTER/, foreign + ' is not this command => still classified');
   assert.doesNotMatch(o, /Recorded for the note/, 'and gets no list aimed at a note it does not write');
@@ -266,12 +272,12 @@ for (const foreign of ['/handoff', '/handoff:handoff', '/productivity:carryover'
 // BARE form included, which is the consequence the rename exists for: `handoff` is
 // somebody else's name now, not one this plugin swallows as its own.
 expand('handoff');
-assert.match(prompt('/carryover'), /TYPED here: [^.]*\/handoff\b/,
+assert.match(prompt(CARRYOVER), /TYPED here: [^.]*\/handoff\b/,
   'a bare /handoff is recorded, not filtered out as this plugin\'s command');
 // And the namespaced form is the same skill, so it dedups onto the entry already
 // there rather than filing it twice under contradictory names.
 expand('handoff:handoff');
-const bothForms = prompt('/carryover');
+const bothForms = prompt(CARRYOVER);
 assert.match(bothForms, /TYPED here: [^.]*\/handoff\b/, 'still recorded');
 assert.doesNotMatch(bothForms, /\/handoff:handoff/,
   'the namespaced form dedups onto the bare one: one skill, one entry, first arrival keeps the tag');
@@ -288,7 +294,7 @@ assert.ok(!fs.existsSync(skillsF), 'a reset clears the recorded skills too');
 assert.ok(!fs.existsSync(modesFile), 'a reset clears the mode set');
 // Nothing recorded => the list is empty, but the path is not optional, and the
 // turn must NOT fall through to the classifier.
-out = prompt('/carryover');
+out = prompt(CARRYOVER);
 assert.ok(out.includes(HANDOFF), 'an empty list still leaves the resolved path');
 assert.doesNotMatch(out, /Recorded for the note/, 'and nothing else');
 assert.doesNotMatch(out, /MODE ROUTER/, 'an empty list does not fall through to the classifier');
@@ -297,7 +303,7 @@ assert.doesNotMatch(out, /MODE ROUTER/, 'an empty list does not fall through to 
 loadSkill('caveman');
 out = prompt('carry on');
 assert.match(out, /`caveman` is already in this context/, 'legacy state still yields the mode');
-out = prompt('/carryover');
+out = prompt(CARRYOVER);
 assert.ok(out.includes(HANDOFF), 'no skills file => still the path');
 assert.doesNotMatch(out, /Recorded for the note/, 'no skills file => no clause');
 
@@ -320,7 +326,7 @@ assert.strictEqual(prompt('anything'), out, 'forced mode is idempotent too');
 // A forced mode is a standing choice about style; the /carryover turn has no prose
 // to style, and needs the one half the command file cannot carry.
 expand('grilling');
-out = prompt('/carryover');
+out = prompt(CARRYOVER);
 assert.match(out, /Recorded for the note/, 'forced mode => /carryover still gets the list');
 assert.doesNotMatch(out, /Forced caveman/, 'and nothing about routing');
 loadSkill('caveman');
@@ -339,7 +345,7 @@ run('SessionStart');
 assert.strictEqual(prompt('anything'), '', 'off => empty even with an empty set');
 expand('grilling');
 // SKILL.md: `off` means "inject nothing". Not the list, and not the path either.
-assert.strictEqual(prompt('/carryover'), '', 'off => not even the skill list: inject nothing means nothing');
+assert.strictEqual(prompt(CARRYOVER), '', 'off => not even the skill list: inject nothing means nothing');
 loadSkill('caveman');
 assert.strictEqual(prompt('anything'), '', 'off => the router gets out of the way entirely');
 

@@ -76,28 +76,54 @@ however unique the name is today, so the matcher is correct by construction rath
 than by the name staying free. What the rename removed is the unmeasured bet the
 old name smuggled *into* it: `handoff` was a name another plugin answered to.
 
-## What is still unmeasured
+## Then the new name was measured too
 
-One assumption survives, and naming it is the point of this section — the defect
-above was born of an unmeasured claim stated as settled, so this ADR does not get
-to close on another one.
+A first draft of this ADR closed with a section admitting that nobody had checked
+whether the harness exposes a bare `/carryover` either, and guessing at what would
+happen if it did not. That is the same move this document was written to condemn, so
+it was measured instead — `--plugin-dir` loads a local plugin for one session, which
+makes the measurement possible without installing anything:
 
-**Nobody has verified that the harness exposes a bare `/carryover` at all.** The
-plugin-command case is undocumented upstream, and it could not be measured from
-here: `mode-router` is not among the author's enabled plugins, so `claude -p
-"/carryover"` answers `Unknown command`. If the harness turns out to namespace
-plugin commands the way it namespaces plugin skills — exposing only
-`mode-router:carryover` — then a bare `/carryover` reaches `UserPromptSubmit` as
-raw text the hook still recognises, while no command body expands: the note's path
-and the skill list arrive without the four-section schema that tells the model what
-to write. Quieter than the collision, and the same shape.
+```
+$ claude -p ping --plugin-dir …/plugins/mode-router \
+      --plugin-dir …/caveman --plugin-dir …/ponytail \
+      --output-format stream-json --verbose
+  plugin_errors: none
+  slash_commands: […,"mode-router:carryover","caveman:caveman",…]   # namespaced only
 
-Two things bound it. It is not new — the old name had the identical exposure, and
-worse, since something else answered — and the fix is known if it appears: type the
-namespaced form, which is verified to work for plugin skills and is what
-`ROUTING.md` documents as this command's canonical form. It is recorded here rather
-than fixed because a fix for an unmeasured failure is speculative generality, and
-because the measurement is one `claude -p` away for anyone who enables the plugin.
+$ claude -p "/carryover" …
+  "Unknown command: /carryover"     # no turn, no hook, no note
+
+$ # with isCarryoverCommand patched to exclude nothing, so the arriving form is recorded:
+$ claude -p "/mode-router:carryover" …
+  session-<id>.skills.json: {"skills":[{"name":"mode-router:carryover","source":"typed"}]}
+```
+
+Three facts, and together they close the question:
+
+1. Plugin commands are exposed **namespaced only** — there is no bare `/carryover`.
+2. A bare one typed anyway dies as `Unknown command` **before** `UserPromptSubmit`,
+   so the hook never sees it. The failure the draft imagined — the note's path
+   arriving without the schema — cannot happen.
+3. `UserPromptExpansion` delivers `command_name` **namespaced**.
+
+So the bare form cannot arrive by any path, and `isCarryoverCommand` no longer
+accepts it. Through `0.8.0` it did, on the reasoning that the bare name "might as
+well" be claimed since it was ambiguous anyway; accepting a form that cannot arrive
+is the same error as claiming one that belongs to somebody else — both assert
+something about dispatch instead of measuring it. What the matcher requires now is
+the one thing measured to arrive: `mode-router:carryover`, exactly.
+
+Two smaller things the measurement turned up, recorded because both cost time:
+
+- The plugin declares `dependencies: ["caveman", "ponytail"]`, and an unsatisfied
+  dependency makes the whole plugin fail to load (`plugin_errors:
+  dependency-unsatisfied`) — silently, as far as routing is concerned. Loading it
+  for a measurement means loading all three.
+- `--plugin-dir` takes a plugin's **name from the directory basename**, so the
+  marketplace cache's hashed directory names load as plugins named after the hash,
+  and dependency resolution fails. Symlinking the cache dirs under their real names
+  is what makes it work.
 
 The note keeps every property `0002` gave it, its filename included:
 `.mode-router/handoff.md`, four sections, presence as status, the two-level 24h
