@@ -35,7 +35,7 @@
 // restorable after a reset — the model can re-invoke what it invoked, but a
 // declarative skill (`disable-model-invocation: true`) has no description to
 // route on, so nothing but the user typing its name brings it back. The list is
-// emitted on the /handoff turn, not every turn; the model, not the hook, decides
+// emitted on the /carryover turn, not every turn; the model, not the hook, decides
 // which entries still matter.
 //
 // UserPromptExpansion exists because a typed /caveman never reaches the tool
@@ -53,7 +53,7 @@
 // Switching mode no longer requires switching contexts, so this hook no longer
 // asks for a handoff note. The /clear between planning and implementation stays
 // as something the USER wants, and the note that carries work across it is
-// written on demand by the /handoff command (commands/handoff.md). The split is
+// written on demand by the /carryover command (commands/carryover.md). The split is
 // forced by one fact: the model does not know its own session id, so it cannot
 // find the skills file by name — the command carries the static schema, the hook
 // contributes the list and stays silent about routing that turn. The note's
@@ -61,9 +61,11 @@
 // carry a relative one, and a session that did not start at the project root would
 // then write where nothing reads. See docs/adr/0002-handoff-note-as-typed-command.md.
 //
-// `/handoff` means THIS plugin's command. The marketplace ships an unrelated
-// `handoff` skill, so matching on the last segment alone would hand its turn to
-// this hook: routing suppressed, and a list aimed at a note it does not write.
+// The command is `/carryover`, not `/handoff`: the note keeps the domain name,
+// the command does not. Through 0.8.0 it was `/handoff` and collided with an
+// unrelated `handoff` skill this marketplace also ships — one leaf name, two
+// bodies, and `claude plugin validate` blind to it. See
+// docs/adr/0004-rename-the-handoff-command.md.
 //
 // This hook keeps only the READ side of the note: it lives in the project
 // (.mode-router/handoff.md) rather than in the state directory below — a reset
@@ -96,9 +98,11 @@ const os = require('os');
 
 const MODES = ['caveman', 'ponytail'];
 const VALID = ['auto', 'caveman', 'ponytail', 'off'];
-// The command that writes the handoff note (commands/handoff.md). Two places need
-// it: the turn it is typed on, and the skill list it must stay out of.
-const HANDOFF_COMMAND = 'handoff';
+// The command that writes the handoff note (commands/carryover.md). Two places need
+// it: the turn it is typed on, and the skill list it must stay out of. The name
+// comes from the FILENAME — a command file carries no `name` frontmatter — so
+// renaming the file is what renames the command, and this constant has to follow.
+const CARRYOVER_COMMAND = 'carryover';
 const PLUGIN = 'mode-router';
 
 // Session state files older than this are garbage from sessions that will never
@@ -111,7 +115,7 @@ const TTL_MS = 7 * 24 * 60 * 60 * 1000;
 // model forgot to delete than one still waiting to be picked up.
 const HANDOFF_TTL_MS = 24 * 60 * 60 * 1000;
 
-// The list is emitted once, on the /handoff turn, so growing it no longer costs a
+// The list is emitted once, on the /carryover turn, so growing it no longer costs a
 // per-turn injection. The cap survives for the note's sake: it has a ~30-line
 // budget, and a `## Skills` block naming forty names is one nobody re-types. In a
 // long session the earliest skills are also the least likely to still be shaping
@@ -228,7 +232,7 @@ function readLoadedModes(sessionId) {
 }
 
 // Entries are `{ name, source }`; anything malformed is dropped rather than
-// propagated into the handoff text.
+// propagated into the note.
 function readSkills(sessionId) {
   const s = readJson(skillsFile(sessionId));
   if (!Array.isArray(s.skills)) return [];
@@ -251,8 +255,8 @@ function addMode(sessionId, mode) {
   try { writeJson(loadedModesFile(sessionId), { modes: loaded.concat(mode) }); } catch (e) { /* best effort */ }
 }
 
-// Modes are excluded: the set above already tracks them, and the handoff would
-// name them twice. Stored under the name as it arrived (namespaced or bare) —
+// Modes are excluded: the set above already tracks them, and the note would name
+// them twice. Stored under the name as it arrived (namespaced or bare) —
 // that is the form the user re-types or the model re-invokes — but deduplicated
 // on the LAST segment, so a `/grilling` typed and a `grilling:grilling` invoked
 // are one entry instead of the same skill listed under two contradictory
@@ -260,10 +264,11 @@ function addMode(sessionId, mode) {
 function addSkill(sessionId, skill, source) {
   if (typeof skill !== 'string') return;
   const name = skill.trim();
-  // Our own `/handoff` is excluded for the same reason the modes are: it is the
-  // command that WRITES the note, so filing it would make the note cite itself.
-  // Somebody else's `handoff` is an ordinary skill and gets recorded.
-  if (!name || skillToMode(name) || isOurHandoff(name)) return;
+  // `/carryover` is excluded for the same reason the modes are: it is the command
+  // that WRITES the note, so filing it would make the note cite itself. Any other
+  // skill is ordinary and gets recorded — `handoff` included, which is now a
+  // third-party name this plugin no longer shares.
+  if (!name || skillToMode(name) || isCarryoverCommand(name)) return;
   const skills = readSkills(sessionId);
   if (skills.some((e) => leaf(e.name) === leaf(name))) return;
   // Capped for the note's line budget, not for a per-turn cost. Oldest out first,
@@ -278,16 +283,25 @@ function addSkill(sessionId, skill, source) {
 // match a hypothetical `anti-caveman`.
 const leaf = (s) => String(s).trim().toLowerCase().split(/[:/]/).pop();
 
-// Deliberately NOT the leaf() rule the modes use. `handoff` is a common enough
-// name that the marketplace already carries another one, and capturing `X:handoff`
-// for any X would suppress routing on a turn this plugin has no part in. Bare
-// stays ours — the ambiguity there is irreducible, and the router is the half that
-// needs the turn — but a namespace has to be this plugin's.
-function isOurHandoff(name) {
-  if (typeof name !== 'string') return false;
-  const t = name.trim().toLowerCase();
-  return t === HANDOFF_COMMAND || t === PLUGIN + ':' + HANDOFF_COMMAND;
-}
+// The FULL namespaced name, and nothing else — not the leaf() rule the modes use,
+// and not the bare name either. Both exclusions are measured (ADR-0004):
+//
+//   leaf()  would capture `X:carryover` for any X, suppressing routing on a turn
+//           this plugin has no part in and injecting a list aimed at a note
+//           somebody else's command does not write.
+//   bare    cannot arrive. The harness exposes plugin commands namespaced only
+//           (`mode-router:carryover`), a typed bare form dies as `Unknown command`
+//           before UserPromptSubmit fires, and UserPromptExpansion delivers
+//           `command_name` namespaced. Every path was measured; none carries it.
+//
+// Through 0.8.0 this accepted the bare name too, on the reasoning that a bare
+// `/handoff` was "irreducibly ambiguous" and so might as well be claimed. It was
+// not ambiguous — it resolved to another plugin's skill every time — which is the
+// defect ADR-0004 exists for. Accepting a form that cannot arrive is the same
+// mistake with the sign flipped: it asserts something about dispatch instead of
+// measuring it.
+const isCarryoverCommand = (name) => typeof name === 'string' &&
+  name.trim().toLowerCase() === PLUGIN + ':' + CARRYOVER_COMMAND;
 
 function skillToMode(skill) {
   if (typeof skill !== 'string') return null;
@@ -420,11 +434,11 @@ const slash = slashCommand();
 // classifier stays silent instead of second-guessing them. Last-segment rule, as
 // for tool names: `/anti-caveman` is not `/caveman`.
 const slashIsMode = skillToMode(slash) !== null;
-// `/handoff` writes the note, and the note has an imposed shape and no prose to
+// `/carryover` writes the note, and the note has an imposed shape and no prose to
 // style: a mode there could only argue with the schema. So the turn gets the one
-// half commands/handoff.md cannot carry — the skill list, keyed by a session id
+// half commands/carryover.md cannot carry — the skill list, keyed by a session id
 // the model does not know — and nothing about routing.
-const handoffTurn = isOurHandoff(slash);
+const carryoverTurn = isCarryoverCommand(slash);
 
 // A skill cannot be unloaded, and nothing stops the second mode from entering any
 // more, so a context holding both is the normal steady state of a long session and
@@ -443,10 +457,10 @@ const CODING_IS_PURE =
   ' So a coding turn is pure `ponytail`: the explanations and notes around the ' +
   'code read as normal writing, not as `caveman`.';
 
-// What entered this context, emitted on the /handoff turn so the note copies it
+// What entered this context, emitted on the /carryover turn so the note copies it
 // instead of the model reconstructing it from memory. DATA only, split by how it
 // arrived: what to do with each group is static text and lives in
-// commands/handoff.md, per ADR-0002 — restating it here would be the same
+// commands/carryover.md, per ADR-0002 — restating it here would be the same
 // instruction maintained in two places, drifting apart on the first edit.
 function skillsClause(skills) {
   if (!skills.length) return '';
@@ -477,7 +491,7 @@ const SUSPEND_TAIL = ' Apply ONLY the mode you classify to; ' +
 function invocationTail(loaded, cwd) {
   if (loaded.length === 0) {
     let tail = RESET_TAIL;
-    // A handoff outlives the clear that consumed the context which wrote it —
+    // A note outlives the clear that consumed the context which wrote it —
     // but only for a day. Past the TTL it is likelier a note the model forgot to
     // delete than work still waiting, so it is not offered as current: the read
     // half of the two-level expiry. Retiring it is SessionStart's job, because
@@ -513,7 +527,7 @@ const out =
   // Ahead of the mode cases, forced ones included: what this turn needs is the
   // note's missing half, not a style for prose the note does not contain. Only
   // `off` outranks it, that being a standing instruction to inject nothing.
-  handoffTurn
+  carryoverTurn
     ? [handoffTarget(input.cwd), skillsClause(readSkills(input.session_id))]
         .filter(Boolean).join(' ') :
   // Forced modes: invoke when missing from the set, stay silent once it is in.

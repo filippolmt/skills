@@ -48,8 +48,9 @@ A pending **handoff note** is not state but unfinished work, so it lives in the
 project at `.mode-router/handoff.md` (gitignore it) — **one** file, overwritten
 rather than appended to, four fixed sections, about 30 lines. Its presence *is*
 its state: pending while the file is there, absorbed once the model deletes it.
-The user asks for one by typing `/handoff` before a deliberate `/clear`; the
-router only announces a pending note to the fresh context.
+The user asks for one by typing `/mode-router:carryover` before a deliberate
+`/clear` — namespaced, that being the only form the harness exposes. The router
+only announces a pending note to the fresh context.
 
 Deleting it is the model's job, since only the model knows when it has taken the
 note over; the hook backstops the case where it forgets. Past **24 hours** the
@@ -75,6 +76,13 @@ Changes take effect on the **next prompt** — the hook re-reads the file every 
 ## Routing behavior
 
 `route.js` is the single source of truth for the exact routing and precedence
-rules, and injects them into every turn. For how slash commands, precedence over
-hard constraints, and multi-turn spec-driven workflows are handled, see
-[`ROUTING.md`](ROUTING.md).
+rules, and injects them into every turn.
+
+Two files explain that behavior for whoever administers it:
+
+- [`ROUTING.md`](ROUTING.md) — the loaded-mode set and the four events that
+  maintain it, per-turn suspension, the harness contracts the whole design rests on
+  and how to check them when routing goes quiet, slash commands, precedence over
+  hard constraints, and multi-turn spec-driven workflows.
+- [`HANDOFF-NOTE.md`](HANDOFF-NOTE.md) — the note: whose turn writes it, what it
+  holds, what fills its `## Skills` section, and its two-level expiry.

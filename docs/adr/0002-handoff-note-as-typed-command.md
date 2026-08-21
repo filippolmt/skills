@@ -4,6 +4,8 @@ status: accepted
 
 # The handoff note is written by a typed `/handoff`, not by injected text
 
+> **Amended by [ADR-0004](0004-rename-the-handoff-command.md).** The command this ADR calls `/handoff` was renamed to `/carryover` in `0.9.0`. Every decision below stands as written; only the command's name changed.
+
 The handoff note's schema used to be injected into every steady-state turn, as
 part of the instruction teaching the model to switch contexts when the veto would
 block a mode. With the veto gone (`0001-drop-the-skill-veto.md`) nothing asks for

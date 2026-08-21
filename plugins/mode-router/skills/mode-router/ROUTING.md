@@ -6,6 +6,11 @@ source; this file explains the behavior for anyone administering the router.
 One line holds the whole design: **the set decides what to invoke, the suspension
 decides who speaks.**
 
+The handoff note is the router's other half and has its own file,
+[`HANDOFF-NOTE.md`](HANDOFF-NOTE.md): whose turn writes it, what it holds, what
+fills its `## Skills`, and when it expires. Nothing about it is repeated here —
+what appears below is only where a routing event touches it.
+
 ## The loaded-mode set
 
 Mode skills declare themselves "active every response", so once invoked they stay
@@ -20,7 +25,7 @@ events:
 | `SessionStart` (`resume`) | **keeps** the set: resume rebuilds the context from the transcript, so the modes invoked earlier are back in it |
 | `UserPromptExpansion` (slash command) | adds a **user-typed** mode to the set — a typed `/caveman` is expanded inline by the harness and never passes through the `Skill` tool — and records any **other** typed skill as `typed` |
 | `PostToolUse` (matcher `Skill`) | adds the model-invoked mode to the set, and records any **other** invoked skill as `model` |
-| `UserPromptSubmit` | reads the set and emits the routing text — except on a `/handoff` prompt, where it emits the note's resolved path plus the skill list, and says nothing about routing |
+| `UserPromptSubmit` | reads the set and emits the routing text — except on a `/carryover` prompt, where it emits the note's resolved path plus the skill list, and says nothing about routing |
 
 Tool events that carry `agent_id` come from a **subagent** — a different context
 that shares the session id — and are ignored: a subagent's skill loads never
@@ -29,7 +34,7 @@ pollute this set.
 What the hook injects follows from the set, in two branches:
 
 - **Empty set** — the full rules plus "invoke now", and the announcement of a
-  pending handoff note if one is waiting.
+  pending handoff note if one is waiting ([`HANDOFF-NOTE.md`](HANDOFF-NOTE.md)).
 - **Non-empty set** — the short classification line, a *conditional* invocation
   ("invoke the one that is missing if you classify to it; do not re-invoke the one
   already here"), and the suspension clause aimed at the other mode.
@@ -38,68 +43,6 @@ There is no third branch. Whether one mode is loaded or both, the state the mode
 answers in is the same — every body in the context is in it — so the same text
 governs both, and the only thing that varies is whether an invocation is still
 being asked for.
-
-### What else entered the context
-
-The same two events record every **non-mode** name they carry, in a second
-per-session file, `session-<id>.skills.json`:
-
-```json
-{ "skills": [{ "name": "grilling", "source": "typed" }] }
-```
-
-`source` is `typed` (a user slash, seen through `UserPromptExpansion`) or `model`
-(a `Skill` call). Names are stored as they arrived, bare or namespaced — that is
-the form to re-type or re-invoke — but deduplicated on the **last segment**, so a
-typed `/grilling` and an invoked `grilling:grilling` are one entry rather than the
-same skill filed under two contradictory sources. First arrival keeps the tag.
-This plugin's `/handoff` is excluded, exactly as the modes are: it is the command
-that *writes* the note, and recording it would make the note cite itself. Only this
-plugin's — see **Whose `/handoff`** below; somebody else's `handoff` is an ordinary
-skill and is recorded like any other.
-
-The list is emitted **once**, on the turn the user types `/handoff` — not on every
-prompt. Two deliberate limits survive that:
-
-- The list is **capped** (12, oldest dropped). The note it feeds has a ~30-line
-  budget, and a `## Skills` section naming forty names is one nobody re-types. In
-  a long session the earliest skills are also the least likely to still be shaping
-  the work being handed off.
-- It lives in its **own file**, not a second key beside `modes`. Both writers are
-  read-modify-write with no lock; sharing one document would let a racing skill
-  write stomp the mode set with a stale copy. A lost mode is no longer a broken
-  invariant — it costs one redundant invocation of a mode already in the context,
-  which the harness deduplicates anyway — but the set is what every turn's text is
-  computed from, so it is the half worth protecting. Split files can still lose an
-  add, never a mode. It also makes a pre-`0.6.0` state file forward-compatible:
-  there is no `skills` key to miss, the file is simply absent.
-
-### Why the hook does not filter the list
-
-`UserPromptExpansion` fires for **every** slash command, not only skills, so the
-typed group also holds one-shot actions (`/commit`, `/pr`). The hook has no
-signal to tell them apart — but the model writing the note does, so the **command**
-asks it to keep only what is still shaping the work. What the hook emits is data:
-the names and how each arrived. What to do with them is static text, and lives in
-`commands/handoff.md` rather than in a string inside the hook, so that one
-instruction is maintained in one place.
-
-Likewise, `typed` is **not** a synonym for *declarative*. It records how the name
-arrived, not whether the model could reach it: a user is free to type an
-ordinary, model-invocable skill. What holds is the converse — a declarative skill
-(`disable-model-invocation: true`) has no `description` to route on, so it can
-arrive *no other way*, which is why the user is the fallback for that group.
-
-The re-typing is **one slash per message**: a message expands only its leading
-slash and swallows the rest as that command's arguments, so the commands cannot
-be packed onto one line, nor prepended to the prompt itself. That rule is stated
-where it is acted on, in the command file.
-
-The state files do not survive the reset (and the session id may change), so the
-list travels the only channel that does: `/handoff` injects it into the note the
-model writes, and on the first prompt of the fresh context the pending-note
-announcement tells the model to re-invoke what it can reach and ask the user for
-the rest.
 
 ## One mode per turn
 
@@ -179,105 +122,18 @@ The flag also only ever answered "was the context just reset?", never "what is
 actually loaded?" — and the second question is the one every turn's text now
 depends on.
 
-## The handoff note
-
-Switching mode no longer requires a context reset, so the router no longer asks
-for one. The `/clear` between planning and implementation survives as something
-the **user** wants — the point of it is a fresh context, not a mode change — and
-the note that carries work across it is written on demand by the **`/handoff`
-command** (`commands/handoff.md`), never by injected text.
-
-The split between command and hook follows from one fact: the model does not know
-its own session id, so it cannot find `session-<id>.skills.json` by name. So the
-command body carries the static half — the schema below — and the hook, which does
-know the session id, emits the skill list on that turn and stays silent about
-routing. The note has an imposed shape and no prose to style; a mode there could
-only argue with the schema. That silence covers a **forced** mode too: the hook
-asks for no invocation on this turn. A forced mode already in the context still
-applies — a loaded skill cannot be told to stop — it simply is not requested here.
-
-The **resolved path** travels the same channel, for the same kind of reason. A file
-can only carry a relative path, and the read side resolves `.mode-router/handoff.md`
-against `cwd`; a session started outside the project root would then write one
-place and be read another, losing the note in silence. So the hook names the
-absolute path on the `/handoff` turn — and it is emitted even when nothing was
-recorded, since it is the half that cannot be allowed to drift.
-
-### Whose `/handoff`
-
-`handoff` is a common name, and this marketplace already carries an unrelated
-skill by it. So the match is **not** the last-segment rule the modes use: a bare
-`/handoff` counts as this plugin's (the ambiguity is irreducible there, and the
-router is the half that needs the turn), and a namespaced one only as
-`/mode-router:handoff`. Matching `X:handoff` for any `X` would suppress routing on
-a turn this plugin has no part in, and inject a list aimed at a note the other
-skill does not write.
-
-The note goes to `.mode-router/handoff.md` inside the project (gitignore it). The
-router keeps only the **read** side: on the first prompt of a fresh context, the
-empty-set branch announces the pending note and asks the model to take it over and
-delete it.
-
-### What the note holds
-
-The shape is **imposed by the command**, not left to the model. Free prose lost
-something different every time, and — with nothing saying whether to overwrite or
-append — sometimes grew the file into a replay of the whole discussion. So: **one**
-note, **overwritten**, and exactly four sections in this order.
-
-| Section | Holds |
-|---|---|
-| `## Prompt to send` | the exact text to re-send, verbatim and self-contained |
-| `## Skills` | the commands the user re-types as one copy-paste block, each with a clause saying what is lost by skipping it, then the names the next context re-invokes itself |
-| `## Decided` | bullets — only the decisions that *constrain* the next step |
-| `## Next step` | one |
-
-The actionable part comes first: the prompt is the only thing the user acts on,
-so it is copyable without reading the rest. There is deliberately **no** fifth
-section for constraints or risks — it would become the new place to pour the
-history the other four exclude. The budget is about **30 lines** for the whole
-file, and history, discussion replay and superseded reasoning are banned
-outright. Two pending handoffs at once are two half-finished jobs: that is a
-problem for the user to resolve, not something the file should represent.
-
-### When the note expires
-
-Presence is the only status: pending while the file exists, absorbed once it is
-gone. Deleting it belongs to the **model** — only the model knows when it has
-actually taken the note over — and that is level one of a two-level expiry.
-
-Level two is the hook, for the observed case where the model forgets. Past **24
-hours** a note is likelier forgotten than pending, so it stops being served as
-current, and `SessionStart` moves it to `.mode-router/handoff-<stamp>.md`
-(stamped with the note's own mtime). Only on a real reset: a `resume` walks back
-into the context that wrote the note, where it is the work in hand.
-
-Archives are **not** pruned: the state sweep only reads `stateDir()` and
-`configDir()`, so nothing in the project is in its reach, and deleting the user's
-unfinished work on a timer is the failure the whole mechanism exists to avoid.
-They cost gitignored disk.
-
-That path was chosen by elimination, and both rejected candidates were rejected
-empirically. Under `$XDG_STATE_HOME`, beside the rest of the runtime state, the
-write was refused even with edits allowed: it is outside the working directory.
-Under `.claude/`, it was refused too — that directory is protected, reasonably so,
-since hooks live in it. A plain dot-directory in the project writes without extra
-permission. Inline text remains the documented fallback when even that fails; it
-survives the turn but not the `/clear`, so it is strictly worse — and it carries
-the same four sections.
-
 ## Slash commands
 
 In `auto`, the hook classifies **slash-command prompts** too, so the mode fires
 alongside the dispatched skill (e.g. `/improve-codebase-architecture` → also
 `ponytail`). It stays silent only when the slash command **is** a mode skill
 (`/caveman`, `/ponytail`) — the user already picked one — or this plugin's
-`/handoff`, which gets the note's path and the skill list instead. A **forced**
+`/carryover`, which gets the note's path and the skill list instead. A **forced**
 mode is a standing choice and applies on every prompt regardless — with the same
-one exception: on a `/handoff` turn the hook asks for no invocation, because that
+one exception: on a `/carryover` turn the hook asks for no invocation, because that
 turn produces a file of imposed shape and no prose to style. A forced mode already
 loaded still applies to it; it is just not requested there. `off` outranks
-everything, `/handoff` included: it means inject nothing.
+everything, `/carryover` included: it means inject nothing.
 
 ## Precedence over hard constraints
 

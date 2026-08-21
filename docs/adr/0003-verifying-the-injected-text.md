@@ -4,6 +4,8 @@ status: accepted
 
 # Verify the injected text on two layers, and keep the stochastic one out of CI
 
+> **Amended by [ADR-0004](0004-rename-the-handoff-command.md).** The command this ADR calls `/handoff` was renamed to `/carryover` in `0.9.0`. Every decision below stands as written; only the command's name changed.
+
 What `route.js` emits is a pure function of the hook event and the loaded-mode
 set; what the **model** does with that text is not. The two halves get different
 machinery: `route.test.js` asserts the exact text emitted for every state — free,

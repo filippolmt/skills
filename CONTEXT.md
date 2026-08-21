@@ -65,6 +65,8 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   context, so the loaded modes are still in it.
 - **Handoff note** — what a context leaves behind for the one that replaces it:
   what has been established, what remains, and the prompt to re-send afterwards.
-  The user asks for it with `/handoff` before a deliberate `/clear` — the router
-  never demands one. Belongs to the project, not to the session it was written
-  in, so it survives the reset.
+  The user asks for it explicitly before a deliberate `/clear` — the router never
+  demands one. Belongs to the project, not to the session it was written in, so it
+  survives the reset. The artifact, not the act of producing it.
+- **Carryover** — the act of having the pending handoff note written. Named apart
+  from the note so that one word does not stand for both.
