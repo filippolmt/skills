@@ -13,7 +13,7 @@ events:
 
 | Event | Role |
 |---|---|
-| `SessionStart` (`startup`/`clear`/`compact`/`fork`) | empties the set — this is a **context reset** |
+| `SessionStart` (`startup`/`clear`/`compact`/`fork`) | empties the set — this is a **context reset** — and archives a handoff note older than 24h |
 | `SessionStart` (`resume`) | **keeps** the set: resume rebuilds the context from the transcript, so the modes invoked earlier are back in it |
 | `UserPromptExpansion` (slash command) | adds a **user-typed** mode to the set — a typed `/caveman` is expanded inline by the harness and never passes through the `Skill` tool — and records any **other** typed skill as `typed` |
 | `PreToolUse` (matcher `Skill`) | **denies** a mode entering a context that already holds the other one |
@@ -88,10 +88,52 @@ invocation, and switching modes becomes switching contexts.
 
 The hand-over is the **handoff note**, written to `.mode-router/handoff.md` inside
 the project (gitignore it). When the turn needs the mode that is not loaded, the
-model writes down what has been established, what remains, and the exact prompt to
-re-send; asks the user to `/clear`; and stops. On the first prompt of the fresh
-context the hook announces the pending note and asks the model to take it over and
-delete it.
+model writes the note, asks the user to `/clear`, and stops. On the first prompt
+of the fresh context the hook announces the pending note and asks the model to
+take it over and delete it.
+
+### What the note holds
+
+The shape is **imposed by the injected text**, not left to the model. Free prose
+lost something different every time, and — with nothing saying whether to
+overwrite or append — sometimes grew the file into a replay of the whole
+discussion. So: **one** note, **overwritten**, and exactly four sections in this
+order.
+
+| Section | Holds |
+|---|---|
+| `## Prompt to send` | the exact text to re-send, verbatim and self-contained |
+| `## Skills` | the commands the user re-types as one copy-paste block, each with a clause saying what is lost by skipping it, then the names the next context re-invokes itself |
+| `## Decided` | bullets — only the decisions that *constrain* the next step |
+| `## Next step` | one |
+
+The actionable part comes first: the prompt is the only thing the user acts on,
+so it is copyable without reading the rest. There is deliberately **no** fifth
+section for constraints or risks — it would become the new place to pour the
+history the other four exclude. The budget is about **30 lines** for the whole
+file, and history, discussion replay and superseded reasoning are banned
+outright. Two pending handoffs at once are two half-finished jobs: that is a
+problem for the user to resolve, not something the file should represent.
+
+### When the note expires
+
+Presence is the only status: pending while the file exists, absorbed once it is
+gone. Deleting it belongs to the **model** — only the model knows when it has
+actually taken the note over — and that is level one of a two-level expiry.
+
+Level two is the hook, for the observed case where the model forgets. Past **24
+hours** a note is likelier forgotten than pending, so it stops being served as
+current, and `SessionStart` moves it to `.mode-router/handoff-<stamp>.md`
+(stamped with the note's own mtime). Only on a real reset: a `resume` walks back
+into the context that wrote the note, where it is the work in hand.
+
+Archiving has to happen there. `UserPromptSubmit` performs no writes by design,
+and `SessionStart` non-resume is both the only other event that already writes and
+the exact moment a stale note turns dangerous — a fresh context is about to be
+told what is pending. Archives are **not** pruned: the state sweep only reads
+`stateDir()` and `configDir()`, so nothing in the project is in its reach, and
+deleting the user's unfinished work on a timer is the failure the whole mechanism
+exists to avoid. They cost gitignored disk.
 
 That path was chosen by elimination, and both rejected candidates were rejected
 empirically. Under `$XDG_STATE_HOME`, beside the rest of the runtime state, the
@@ -99,9 +141,8 @@ write was refused even with edits allowed: it is outside the working directory.
 Under `.claude/`, it was refused too — that directory is protected, reasonably so,
 since hooks live in it. A plain dot-directory in the project writes without extra
 permission. Inline text remains the documented fallback when even that fails; it
-survives the turn but not the `/clear`, so it is strictly worse. The note is never
-swept on age: it is unfinished work, so deleting it is the model's job once it has
-taken it over.
+survives the turn but not the `/clear`, so it is strictly worse — and it carries
+the same four sections.
 
 Three things are never denied: a mode already in the set (re-invoking is a no-op
 the harness deduplicates anyway), a **forced** mode from the control file, and an

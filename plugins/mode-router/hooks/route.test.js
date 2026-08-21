@@ -46,6 +46,22 @@ function veto(skill, payload) {
   return d.permissionDecisionReason;
 }
 
+// Backdate the note and return the archive path the hook will move it to. The
+// stamp is read back from the filesystem rather than recomputed: utimes takes
+// float seconds, and the expected name has to match the mtime that actually
+// landed, not the one requested.
+function ageHandoff(ageMs) {
+  const t = (Date.now() - ageMs) / 1000;
+  fs.utimesSync(HANDOFF, t, t);
+  const stamp = new Date(fs.statSync(HANDOFF).mtimeMs).toISOString().replace(/[:.]/g, '-');
+  return path.join(CWD, '.mode-router', 'handoff-' + stamp + '.md');
+}
+
+function writeHandoff(body) {
+  fs.mkdirSync(path.dirname(HANDOFF), { recursive: true });
+  fs.writeFileSync(HANDOFF, body);
+}
+
 function setMode(mode) {
   fs.mkdirSync(path.join(CFG, 'mode-router'), { recursive: true });
   fs.writeFileSync(path.join(CFG, 'mode-router', 'state.json'), JSON.stringify({ mode }));
@@ -76,6 +92,18 @@ assert.doesNotMatch(out, /Precedence:/, 'steady state => precedence not repeated
 assert.match(out, /do NOT invoke it/, 'switching => the other mode is not invoked');
 assert.match(out, /run \/clear/, 'switching => the user is asked to clear');
 assert.ok(out.includes(HANDOFF), 'the handoff path is keyed by cwd and named verbatim');
+
+// The note's shape is imposed, not left to the model: free prose lost something
+// different every time, and sometimes grew into a log of the discussion.
+assert.match(out, /OVERWRITE that file, never append/, 'one note at a time, overwritten');
+assert.match(out, /About 30 lines/, 'the note has a hard line budget');
+assert.match(out, /no history/, 'history is banned outright, not discouraged');
+assert.match(out, /no fifth section/, 'no spare section to pour the history into');
+const sections = ['## Prompt to send', '## Skills', '## Decided', '## Next step']
+  .map((h) => out.indexOf(h));
+assert.ok(sections.every((i) => i > 0), 'all four sections are named');
+assert.deepStrictEqual(sections, [...sections].sort((a, b) => a - b),
+  'the actionable section comes first and the order is fixed');
 
 // --- the veto: one mode per context, enforced rather than requested ---
 assert.strictEqual(veto('caveman'), null, 'already loaded => re-invoke allowed');
@@ -128,6 +156,30 @@ assert.ok(out.includes(HANDOFF), 'the note is named by path');
 assert.match(out, /delete the file once you have taken it over/, 'the model is told to consume it');
 fs.unlinkSync(HANDOFF);
 assert.doesNotMatch(prompt('continue'), /handoff note left/, 'no note => nothing announced');
+
+// --- two-level expiry: the model deletes an absorbed note, the hook backstops ---
+// Level two exists because level one is the observed failure: the model forgets,
+// and a day-old note gets served to a fresh context as work in progress.
+writeHandoff('# handoff\nnext: finish the parser\n');
+const archive = ageHandoff(25 * 60 * 60 * 1000);
+assert.doesNotMatch(prompt('continue'), /handoff note left/,
+  'a note past 24h is not served as current');
+// A resume walks back into the context that wrote the note: nothing is retired.
+run('SessionStart', { source: 'resume' });
+assert.ok(fs.existsSync(HANDOFF), 'resume retires nothing — it is not a reset');
+run('SessionStart');
+assert.ok(!fs.existsSync(HANDOFF), 'a real reset moves the stale note out of the way');
+assert.strictEqual(fs.readFileSync(archive, 'utf8'), '# handoff\nnext: finish the parser\n',
+  'the stale note is archived verbatim, never deleted');
+// Just inside the window: still current, so still served and still left alone.
+writeHandoff('still pending');
+ageHandoff(23 * 60 * 60 * 1000);
+run('SessionStart');
+assert.ok(fs.existsSync(HANDOFF), 'a note inside the window survives the reset');
+assert.match(prompt('continue'), /A handoff note left before the last reset is waiting/,
+  'a note inside the window is served as current');
+fs.unlinkSync(HANDOFF);
+fs.unlinkSync(archive);
 
 // --- mirror image: a ponytail-only set must read the same way round ---
 run('SessionStart');
@@ -242,17 +294,21 @@ fs.writeFileSync(stale, JSON.stringify({ modes: ['caveman'] }));
 fs.writeFileSync(fresh, JSON.stringify({ modes: ['caveman'] }));
 const old = Date.now() - 8 * 24 * 60 * 60 * 1000;
 fs.utimesSync(stale, old / 1000, old / 1000);
-// A handoff note is unfinished work in the user's project: age must not delete it.
-fs.mkdirSync(path.dirname(HANDOFF), { recursive: true });
-fs.writeFileSync(HANDOFF, 'still pending');
-fs.utimesSync(HANDOFF, old / 1000, old / 1000);
+// The TTL sweep reads stateDir() and configDir() only, so nothing in the user's
+// project is in its reach — neither a pending note nor an archive, however old.
+// Retiring a note is the 24h backstop's job, and it archives instead of deleting.
+writeHandoff('still pending');
+const oldArchive = path.join(CWD, '.mode-router', 'handoff-2020-01-01T00-00-00-000Z.md');
+fs.writeFileSync(oldArchive, 'archived');
+fs.utimesSync(oldArchive, old / 1000, old / 1000);
 // Leftovers from the retired reload-flag design landed in the CONFIG dir.
 const legacy = path.join(CFG, 'mode-router', 'reload-sess-9');
 fs.writeFileSync(legacy, '');
 run('SessionStart');
 assert.ok(!fs.existsSync(stale), 'state older than the TTL is swept');
 assert.ok(fs.existsSync(fresh), 'recent state survives the sweep');
-assert.ok(fs.existsSync(HANDOFF), 'an old handoff note is NOT swept — it is unfinished work');
+assert.ok(fs.existsSync(HANDOFF), "a current handoff note is out of the sweep's reach");
+assert.ok(fs.existsSync(oldArchive), 'archives are never swept, however old');
 assert.ok(!fs.existsSync(legacy), 'legacy reload flags are removed from the config dir');
 assert.ok(fs.existsSync(path.join(CFG, 'mode-router', 'state.json')), 'the control file survives');
 
