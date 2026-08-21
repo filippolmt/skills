@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Self-check for route.js. Run: node route.test.js
-// Drives the loaded-mode set, the one-mode-per-context veto and the handoff
-// hand-over end to end via real subprocess runs.
+// Drives the loaded-mode set, per-turn exclusivity and the handoff hand-over end
+// to end via real subprocess runs.
 const assert = require('assert');
 const { spawnSync } = require('child_process');
 const fs = require('fs');
@@ -9,6 +9,9 @@ const os = require('os');
 const path = require('path');
 
 const SCRIPT = path.join(__dirname, 'route.js');
+// The static half of the handoff design lives here now, not in a string in the
+// hook — but the contract is the same one, so it is checked at its new address.
+const COMMAND = path.join(__dirname, '..', 'commands', 'handoff.md');
 // Isolate BOTH XDG roots: config holds state.json, state holds the loaded-mode
 // set. Leaking either would write into the developer's real home.
 const CFG = fs.mkdtempSync(path.join(os.tmpdir(), 'mode-router-cfg-'));
@@ -36,15 +39,6 @@ const loadSkill = (skill) => run('PostToolUse', { tool_name: 'Skill', tool_input
 const expand = (name) => run('UserPromptExpansion', {
   expansion_type: 'slash_command', command_name: name, prompt: '/' + name,
 });
-
-// Returns the deny reason, or null when the call is allowed through.
-function veto(skill, payload) {
-  const out = run('PreToolUse', { tool_name: 'Skill', tool_input: { skill }, ...payload });
-  if (!out) return null;
-  const d = JSON.parse(out).hookSpecificOutput;
-  assert.strictEqual(d.permissionDecision, 'deny');
-  return d.permissionDecisionReason;
-}
 
 // Backdate the note and return the archive path the hook will move it to. The
 // stamp is read back from the filesystem rather than recomputed: utimes takes
@@ -79,59 +73,55 @@ assert.match(out, /Precedence:/, 'empty set => full precedence clause');
 // the direct regression test for the bug that motivated the redesign.
 assert.strictEqual(prompt('explain this'), out, 'double execution => identical stdout');
 
-// An empty context takes any mode: nothing to conflict with.
-assert.strictEqual(veto('caveman'), null, 'empty set => first mode allowed');
+// --- only UserPromptSubmit reaches the routing text ---
+// Every other branch exits on its own, so the tail used to be guarded by nothing
+// but the order of the branches above it: an event registered in hooks.json and
+// not handled here fell straight through and printed routing text on, say, every
+// Skill call. Dropping the veto's branch is exactly what made that reachable, so
+// the guard is tested rather than assumed.
+for (const ev of ['PreToolUse', 'PreCompact', 'Stop']) {
+  assert.strictEqual(run(ev, { tool_name: 'Skill', tool_input: { skill: 'ponytail' } }), '',
+    ev + ' is not handled here, so it emits nothing at all');
+}
 
-// --- PostToolUse on Skill populates the set ---
+// --- PostToolUse on Skill populates the set => the non-empty branch, one mode in ---
 loadSkill('caveman');
 out = prompt('explain more');
 assert.match(out, /MODE ROUTER/, 'classifier still fires every turn');
 assert.match(out, /`caveman` is already in this context/, 'loaded mode => no re-invocation');
 assert.doesNotMatch(out, /Precedence:/, 'steady state => precedence not repeated');
-// The switch procedure is taught here, in the channel the model trusts.
-assert.match(out, /do NOT invoke it/, 'switching => the other mode is not invoked');
-assert.match(out, /run \/clear/, 'switching => the user is asked to clear');
-assert.ok(out.includes(HANDOFF), 'the handoff path is keyed by cwd and named verbatim');
-
-// The note's shape is imposed, not left to the model: free prose lost something
-// different every time, and sometimes grew into a log of the discussion.
-assert.match(out, /OVERWRITE that file, never append/, 'one note at a time, overwritten');
-assert.match(out, /About 30 lines/, 'the note has a hard line budget');
-assert.match(out, /no history/, 'history is banned outright, not discouraged');
-assert.match(out, /no fifth section/, 'no spare section to pour the history into');
-const sections = ['## Prompt to send', '## Skills', '## Decided', '## Next step']
-  .map((h) => out.indexOf(h));
-assert.ok(sections.every((i) => i > 0), 'all four sections are named');
-assert.deepStrictEqual(sections, [...sections].sort((a, b) => a - b),
-  'the actionable section comes first and the order is fixed');
-
-// --- the veto: one mode per context, enforced rather than requested ---
-assert.strictEqual(veto('caveman'), null, 'already loaded => re-invoke allowed');
-assert.strictEqual(veto('grilling:grilling'), null, 'non-mode skills are untouched');
-out = run('PreToolUse', { tool_name: 'Bash', tool_input: { skill: 'ponytail' } });
-assert.strictEqual(out, '', 'only the Skill tool is vetoed, whatever the payload');
-let reason = veto('ponytail');
-assert.match(reason, /`caveman` is already loaded in this context/, 'second mode => denied');
-assert.match(reason, /at most one mode skill/, 'the reason states the constraint');
-assert.doesNotMatch(reason, /\/clear/, 'the deny reason gives no orders — tool output is untrusted');
-assert.ok(veto('plugin:ponytail'), 'a namespaced second mode is denied too');
+// The set decides invoke from do-not-re-invoke and nothing else. The mode that is
+// missing is asked for the turn it is classified to — it is no longer refused, and
+// no switch ceremony is imposed to reach it.
+assert.match(out, /if you classify to `ponytail`, invoke it now/, 'the missing mode is invoked on demand');
+assert.doesNotMatch(out, /do NOT invoke it/, 'nothing is refused any more');
+assert.doesNotMatch(out, /run \/clear/, 'the steady state asks for no context switch');
+assert.doesNotMatch(out, /OVERWRITE that file/, "the note's schema left the injected text");
+assert.ok(!out.includes(HANDOFF), 'a steady-state turn does not name the note at all');
+// One branch, so the suspension reads the same with one mode loaded as with two.
+assert.match(out, /the other one is SUSPENDED for this turn/, 'the suspension covers this shape too');
+assert.match(out, /not\s+even to prose/, 'suspension denies prose influence too');
+assert.match(out, /a coding turn is pure `ponytail`/, 'the concrete leak is named');
 
 // An explicit /ponytail is the user overruling the router. It never reaches the
 // tool layer — the harness expands the skill inline and no Skill call fires — so
-// it is UserPromptExpansion that records it, and it is never denied.
+// it is UserPromptExpansion that records it.
 assert.strictEqual(prompt('/ponytail go'), '', '/ponytail => no classifier');
 assert.strictEqual(prompt('/caveman:caveman go'), '', 'namespaced mode slash => silent too');
 assert.match(prompt('/anti-caveman go'), /MODE ROUTER/, 'lookalike slash => still classified');
-expand('ponytail');
-assert.strictEqual(veto('ponytail'), null, 'a recorded user-typed mode reads as a re-invoke');
 
-// --- both loaded (the user typed the second mode in): exclusivity can only be
-// asserted in words ---
+// --- both loaded: a mixed context is the normal steady state, not a fallback ---
+// The second mode enters by an ordinary path — here a typed slash — and nothing
+// intercepts it. Exclusivity is then asserted in words, and these are the words
+// that were measured (ADR-0001): they are not rephrased casually.
+expand('ponytail');
 out = prompt('write code');
 assert.match(out, /Both `caveman` and `ponytail` are already in this context/, 'suffix match');
+assert.match(out, /invoke\s+neither/, 'both loaded => no invocation is asked for');
 assert.match(out, /the other one is SUSPENDED for this turn/, 'name the suppressed mode');
 assert.match(out, /not\s+even to prose/, 'suspension denies prose influence too');
 assert.match(out, /a coding turn is pure `ponytail`/, 'the concrete leak is named');
+assert.doesNotMatch(out, /no stub/, 'no mirror clause: the stub it would prevent does not occur');
 
 // Non-Skill tools never touch the set.
 run('PostToolUse', { tool_name: 'Bash', tool_input: { command: 'ls' } });
@@ -148,6 +138,8 @@ run('SessionStart', { source: 'startup' });
 assert.match(prompt('after startup'), /no mode skill is\s+in this context/, 'startup clears the set');
 
 // --- the handoff survives the reset that discarded the context which wrote it ---
+// The router keeps only the READ side of the note: the write side is the /handoff
+// command the user types.
 fs.mkdirSync(path.dirname(HANDOFF), { recursive: true });
 fs.writeFileSync(HANDOFF, '# handoff\nnext: finish the parser\n');
 out = prompt('continue');
@@ -186,22 +178,25 @@ run('SessionStart');
 loadSkill('ponytail');
 out = prompt('explain this');
 assert.match(out, /`ponytail` is already in this context/, 'ponytail-only => named as loaded');
-assert.ok(veto('caveman'), 'ponytail-only => caveman denied');
+assert.match(out, /if you classify to `caveman`, invoke it now/, 'ponytail-only => caveman is the missing one');
+// The other ordinary path into a mixed context: a Skill call for the second mode,
+// which the router records instead of intercepting.
+loadSkill('caveman');
+assert.match(prompt('explain this'), /Both `caveman` and `ponytail` are already/,
+  'a Skill call for the second mode is recorded, not refused');
 
 // --- expansion details: namespaced names register ---
 run('SessionStart');
 expand('caveman:caveman');
 out = prompt('explain this');
 assert.match(out, /`caveman` is already in this context/, 'namespaced command_name registers');
-assert.doesNotMatch(out, /Recorded for the note/, 'nothing else in the context => no skill clause');
+assert.doesNotMatch(out, /Recorded for the note/, 'the list never rides a steady-state turn');
 
 // --- subagent tool events (`agent_id` set) belong to a DIFFERENT context ---
 run('PostToolUse', { tool_name: 'Skill', tool_input: { skill: 'ponytail' }, agent_id: 'a-1' });
 assert.strictEqual(prompt('explain this'), out, 'a subagent skill load does not pollute the set');
 run('PostToolUse', { tool_name: 'Skill', tool_input: { skill: 'grilling' }, agent_id: 'a-1' });
 assert.strictEqual(prompt('explain this'), out, "a subagent's non-mode skill is not recorded either");
-out = run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'ponytail' }, agent_id: 'a-1' });
-assert.strictEqual(out, '', 'a subagent first mode is not vetoed by this context');
 
 // --- what entered the context crosses the reset inside the handoff note ---
 const modesFile = path.join(STATE, 'mode-router', `session-${SID}.json`);
@@ -214,8 +209,8 @@ loadSkill('implement:implement');
 // clause would tell the user to re-type what the model can invoke itself.
 loadSkill('grilling:grilling');
 expand('implement');
-// Modes live in their own file, which a skill write must never touch — losing a
-// mode would disarm the veto.
+// Modes live in their own file, which a skill write must never touch: the set is
+// what every turn's text is computed from.
 assert.deepStrictEqual(JSON.parse(fs.readFileSync(modesFile, 'utf8')), { modes: ['caveman'] },
   'the mode set survives skill writes and holds no skills');
 assert.deepStrictEqual(JSON.parse(fs.readFileSync(skillsF, 'utf8')), {
@@ -225,14 +220,27 @@ assert.deepStrictEqual(JSON.parse(fs.readFileSync(skillsF, 'utf8')), {
   ],
 }, 'one entry per skill, first arrival keeps the tag, modes excluded');
 
-out = prompt('carry on');
-assert.match(out, /Recorded for the note/, 'the note is asked for what entered the context');
+// --- the /handoff turn: the list, and nothing about routing ---
+// The list is emitted once, on the turn the user asks for a note — not on every
+// prompt. That is the per-turn saving 0.8.0 adds on top of dropping the veto.
+assert.doesNotMatch(prompt('carry on'), /Recorded for the note/, 'a steady turn says nothing about the list');
+out = prompt('/handoff');
+assert.match(out, /^Recorded for the note/, 'the /handoff turn opens with the list');
+assert.doesNotMatch(out, /MODE ROUTER/, 'the note has no prose to style, so no classification');
+assert.doesNotMatch(out, /SUSPENDED/, 'and no suspension clause either');
 assert.match(out, /TYPED here: \/grilling/, 'a typed name is listed as the slash to re-type');
 assert.match(out, /INVOKED here: `implement:implement`/, 'an invoked name is listed for re-invocation');
 assert.match(out, /one-shot actions are in there too/, 'the typed list is not only skills, and says so');
 assert.match(out, /one per message/, 'only the leading slash of a message expands');
+// Same last-segment rule as everywhere else.
+assert.strictEqual(prompt('/mode-router:handoff'), out, 'a namespaced /handoff is the same turn');
+assert.match(prompt('/handoff-notes go'), /MODE ROUTER/, 'a lookalike command is still classified');
+// The command that WRITES the note stays out of the list, or the note cites itself.
+expand('handoff');
+expand('mode-router:handoff');
+assert.strictEqual(prompt('/handoff'), out, '/handoff is never recorded as a typed skill');
 
-// The list is injected every steady-state turn, so it must not grow unbounded.
+// The list feeds a note with a ~30-line budget, so it must not grow unbounded.
 for (let i = 0; i < 20; i++) loadSkill('filler-' + i);
 const capped = JSON.parse(fs.readFileSync(skillsF, 'utf8')).skills;
 assert.strictEqual(capped.length, 12, 'the recorded list is capped');
@@ -242,12 +250,14 @@ assert.strictEqual(capped[capped.length - 1].name, 'filler-19', 'the cap drops t
 run('SessionStart');
 assert.ok(!fs.existsSync(skillsF), 'a reset clears the recorded skills too');
 assert.ok(!fs.existsSync(modesFile), 'a reset clears the mode set');
+// Nothing recorded => the turn is silent, and must NOT fall through to the classifier.
+assert.strictEqual(prompt('/handoff'), '', 'an empty list => an empty /handoff turn');
 
 // State written before this feature has no skills file at all, and still reads.
 loadSkill('caveman');
 out = prompt('carry on');
 assert.match(out, /`caveman` is already in this context/, 'legacy state still yields the mode');
-assert.doesNotMatch(out, /Recorded for the note/, 'no skills file => no clause');
+assert.strictEqual(prompt('/handoff'), '', 'no skills file => no clause');
 
 // The fresh context is told how to get each group back.
 fs.mkdirSync(path.dirname(HANDOFF), { recursive: true });
@@ -258,15 +268,19 @@ assert.match(out, /re-invoke the ones you can reach/, 'reachable skills come bac
 assert.match(out, /ask the user to\s+re-type the rest/, 'the rest have to be asked for');
 fs.unlinkSync(HANDOFF);
 
-// --- forced caveman: invoke while missing, silent once loaded, never vetoed ---
+// --- forced caveman: invoke while missing, silent once loaded ---
 setMode('caveman');
 run('SessionStart');
 out = prompt('anything');
 assert.match(out, /Forced caveman mode/, 'not in set => invoke forced skill');
 assert.match(out, /Precedence:/, 'forced caveman => precedence clause present');
 assert.strictEqual(prompt('anything'), out, 'forced mode is idempotent too');
-loadSkill('ponytail');
-assert.strictEqual(veto('caveman'), null, 'a standing forced choice outranks the veto');
+// A forced mode is a standing choice about style; the /handoff turn has no prose
+// to style, and needs the one half the command file cannot carry.
+expand('grilling');
+out = prompt('/handoff');
+assert.match(out, /^Recorded for the note/, 'forced mode => /handoff still gets the list');
+assert.doesNotMatch(out, /Forced caveman/, 'and nothing about routing');
 loadSkill('caveman');
 assert.strictEqual(prompt('anything else'), '', 'in set => nothing (skill persists)');
 
@@ -277,12 +291,14 @@ assert.match(prompt('anything'), /Forced ponytail mode/, 'not in set => invoke f
 loadSkill('plugin:ponytail');
 assert.strictEqual(prompt('anything else'), '', 'in set => nothing');
 
-// --- off: never emits, never vetoes ---
+// --- off: never emits, whatever the turn ---
 setMode('off');
 run('SessionStart');
 assert.strictEqual(prompt('anything'), '', 'off => empty even with an empty set');
+expand('grilling');
+assert.strictEqual(prompt('/handoff'), '', 'off => not even the skill list: inject nothing means nothing');
 loadSkill('caveman');
-assert.strictEqual(veto('ponytail'), null, 'off => the router gets out of the way entirely');
+assert.strictEqual(prompt('anything'), '', 'off => the router gets out of the way entirely');
 
 // --- TTL sweep on SessionStart: stale state goes, fresh state stays ---
 setMode('auto');
@@ -320,6 +336,25 @@ fs.utimesSync(mine, old / 1000, old / 1000);
 run('SessionStart', { source: 'resume' });
 assert.match(prompt('after a late resume'), /`ponytail` is already in this context/,
   'a resume past the TTL still keeps the set');
+
+// --- the note's shape, at its new address ---
+// The schema left the hook for commands/handoff.md: static text belongs in a file.
+// The four sections and the line budget are what stop the dumping BY CONSTRUCTION
+// ("keep it short" does not), so the contract is still covered here.
+const cmd = fs.readFileSync(COMMAND, 'utf8');
+assert.match(cmd, /^disable-model-invocation: true$/m,
+  'a note exists because the USER asked for one — the router no longer collects it');
+const sections = ['## Prompt to send', '## Skills', '## Decided', '## Next step']
+  .map((h) => cmd.indexOf(h));
+assert.ok(sections.every((i) => i > 0), 'all four sections are named');
+assert.deepStrictEqual(sections, [...sections].sort((a, b) => a - b),
+  'the actionable section comes first and the order is fixed');
+assert.match(cmd, /OVERWRITE/, 'one note at a time, overwritten');
+assert.match(cmd, /About 30 lines/, 'the note has a hard line budget');
+assert.match(cmd, /No history/, 'history is banned outright, not discouraged');
+assert.match(cmd, /no fifth section/, 'no spare section to pour the history into');
+// The two halves have to meet: the command consumes what the hook emits.
+assert.match(cmd, /Recorded for the note/, "the command reads the hook's half by name");
 
 fs.rmSync(CFG, { recursive: true, force: true });
 fs.rmSync(STATE, { recursive: true, force: true });

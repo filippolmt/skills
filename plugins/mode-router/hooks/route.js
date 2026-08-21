@@ -90,6 +90,10 @@ const os = require('os');
 
 const MODES = ['caveman', 'ponytail'];
 const VALID = ['auto', 'caveman', 'ponytail', 'off'];
+// The command that writes the handoff note (commands/handoff.md). Named here
+// because two places need it: the turn it is typed on, and the skill list it must
+// stay out of.
+const HANDOFF_COMMAND = 'handoff';
 
 // Session state files older than this are garbage from sessions that will never
 // resume. SessionStart already runs once per session, so it is the natural (and
@@ -101,8 +105,11 @@ const TTL_MS = 7 * 24 * 60 * 60 * 1000;
 // model forgot to delete than one still waiting to be picked up.
 const HANDOFF_TTL_MS = 24 * 60 * 60 * 1000;
 
-// The skills in use are injected on every steady-state prompt, so the list is
-// capped rather than left to grow for the life of a long session.
+// The list is emitted once, on the /handoff turn, so growing it no longer costs a
+// per-turn injection. The cap survives for the note's sake: it has a ~30-line
+// budget, and a `## Skills` block naming forty names is one nobody re-types. In a
+// long session the earliest skills are also the least likely to still be shaping
+// the work being handed off.
 const MAX_SKILLS = 12;
 
 // Precedence: a mode skill compresses/simplifies STYLE only — it never changes the
@@ -172,8 +179,10 @@ const slug = (s) => String(s || 'default').replace(/[^\w.-]/g, '_');
 const loadedModesFile = (sessionId) => path.join(stateDir(), `session-${slug(sessionId)}.json`);
 // The skills in use live in a SEPARATE file, not a second key in the one above.
 // Both are read-modify-write with no lock, so sharing a document would let a
-// racing skill write stomp the mode set with its own stale copy — and a lost mode
-// disarms the veto, which is the one invariant this hook exists to hold. Split
+// racing skill write stomp the mode set with its own stale copy. A lost mode is no
+// longer a broken invariant — it costs one redundant invocation of a mode already
+// in the context, which the harness deduplicates anyway — but the set is what
+// every turn's text is computed from, so it is the half worth protecting. Split
 // files can still lose an add, never a mode. It also keeps the v0.5 state file
 // forward-compatible: no `skills` key to miss, the file is simply absent.
 const skillsFile = (sessionId) => path.join(stateDir(), `session-${slug(sessionId)}.skills.json`);
@@ -245,12 +254,13 @@ function addMode(sessionId, mode) {
 function addSkill(sessionId, skill, source) {
   if (typeof skill !== 'string') return;
   const name = skill.trim();
-  if (!name || skillToMode(name)) return;
+  // `/handoff` is excluded for the same reason the modes are: it is the command
+  // that WRITES the note, so filing it would make the note cite itself.
+  if (!name || skillToMode(name) || leaf(name) === HANDOFF_COMMAND) return;
   const skills = readSkills(sessionId);
   if (skills.some((e) => leaf(e.name) === leaf(name))) return;
-  // The list is injected on every steady-state prompt, so it cannot grow without
-  // bound. Oldest out first: a long session's earliest skills are the least
-  // likely to still be shaping the work being handed off.
+  // Capped for the note's line budget, not for a per-turn cost. Oldest out first,
+  // for the reason given at MAX_SKILLS.
   try {
     writeJson(skillsFile(sessionId), { skills: skills.concat({ name, source }).slice(-MAX_SKILLS) });
   } catch (e) { /* best effort */ }
@@ -315,12 +325,11 @@ function archiveStaleHandoff(cwd) {
 let input = {};
 try { input = JSON.parse(fs.readFileSync(0, 'utf8')) || {}; } catch (e) { /* no stdin */ }
 
-// Both tool branches apply the same two filters. Only the built-in Skill tool
-// carries a skill — the matcher narrows this already, but a regex matcher also
-// matches tool names merely CONTAINING "Skill". And a tool event from a subagent
-// (`agent_id` set) describes a DIFFERENT context that shares the session id:
-// ignored both ways — no set pollution from its skill loads, no vetoing its own
-// first mode with this context's one.
+// Two filters on the one tool branch left. Only the built-in Skill tool carries a
+// skill — the matcher narrows this already, but a regex matcher also matches tool
+// names merely CONTAINING "Skill". And a tool event from a subagent (`agent_id`
+// set) describes a DIFFERENT context that happens to share the session id, so its
+// skill loads must not enter this set.
 const skillEventHere = input.tool_name === 'Skill' && !input.agent_id;
 
 // SessionStart: a context reset, EXCEPT on resume. Resume rebuilds the context
@@ -355,39 +364,6 @@ if (input.hook_event_name === 'UserPromptExpansion') {
   process.exit(0);
 }
 
-// --- PreToolUse: the veto. One mode per context, enforced rather than requested.
-if (input.hook_event_name === 'PreToolUse') {
-  const mode = skillEventHere ? skillToMode(input.tool_input && input.tool_input.skill) : null;
-  const loaded = mode ? readLoadedModes(input.session_id) : [];
-  const other = mode ? MODES.find((m) => m !== mode) : null;
-
-  // Deny only the case that actually pollutes: a mode entering a context that
-  // already holds the other one. Everything else — non-mode skills, a re-invoke
-  // of what is already loaded, a first mode, `off`, or a standing forced
-  // choice — goes through untouched.
-  let allowed = true;
-  if (mode && !loaded.includes(mode) && loaded.includes(other)) {
-    const cfg = readMode();
-    allowed = cfg === 'off' || cfg === mode;
-  }
-
-  if (!allowed) {
-    // Purely descriptive. The model does not act on instructions coming from tool
-    // output, so the procedure lives in the UserPromptSubmit text instead.
-    process.stdout.write(JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: 'PreToolUse',
-        permissionDecision: 'deny',
-        permissionDecisionReason:
-          'mode-router: `' + other + '` is already loaded in this context, and a ' +
-          'context holds at most one mode skill, so `' + mode + '` was not loaded. ' +
-          'Switching modes means switching contexts.',
-      },
-    }));
-  }
-  process.exit(0);
-}
-
 // PostToolUse on Skill: a skill the MODEL invoked just entered the context — a
 // mode goes in the set, anything else in the skill list.
 if (input.hook_event_name === 'PostToolUse') {
@@ -402,26 +378,43 @@ if (input.hook_event_name === 'PostToolUse') {
 
 // --- UserPromptSubmit ---
 
-// In `auto`, an explicit /caveman|/ponytail means the user already picked a mode
-// for this turn — UserPromptExpansion has already recorded it in the set — so
-// the classifier stays silent instead of second-guessing them.
-function slashMode() {
+// Everything below belongs to this one event, and now says so. Each branch above
+// exits, so before 0.8.0 the tail was reachable only by convention — an event
+// registered in hooks.json but not handled here fell straight through and printed
+// routing text on, say, every `Skill` call. Removing the veto's branch made that
+// one line of distance between working and broken; the guard closes it for good.
+if (input.hook_event_name !== 'UserPromptSubmit') process.exit(0);
+
+// The leading slash command of this prompt, or null when there is none. Only the
+// leading one: a message expands its first slash and swallows the rest as that
+// command's arguments.
+function slashCommand() {
   const p = typeof input.prompt === 'string' ? input.prompt : input.user_prompt;
   if (typeof p !== 'string') return null;
   const t = p.trimStart();
   if (!t.startsWith('/')) return null;
-  // Same last-segment rule as tool names: `/anti-caveman` is not `/caveman`.
-  const cmd = t.slice(1).split(/\s+/)[0];
-  return skillToMode(cmd);
+  return t.slice(1).split(/\s+/)[0];
 }
 
-const slash = slashMode();
+const slash = slashCommand();
+// An explicit /caveman|/ponytail means the user already picked a mode for this
+// turn — UserPromptExpansion has already recorded it in the set — so the
+// classifier stays silent instead of second-guessing them. Last-segment rule, as
+// for tool names: `/anti-caveman` is not `/caveman`.
+const slashIsMode = skillToMode(slash) !== null;
+// `/handoff` writes the note, and the note has an imposed shape and no prose to
+// style: a mode there could only argue with the schema. So the turn gets the one
+// half commands/handoff.md cannot carry — the skill list, keyed by a session id
+// the model does not know — and nothing about routing.
+const handoffTurn = slash !== null && leaf(slash) === HANDOFF_COMMAND;
 
-// A skill cannot be unloaded, so if both modes ever do end up in one context —
-// a context predating this hook, or one where the veto never ran — exclusivity
-// can only be asserted in words. "Apply one, not the other" is too weak: the leak
-// is subtle, caveman's compression bleeding into the prose *around* code, so the
-// clause denies the suspended mode any influence at all.
+// A skill cannot be unloaded, and nothing stops the second mode from entering any
+// more, so a context holding both is the normal steady state of a long session and
+// exclusivity can only be asserted in words. These are the words that were
+// measured (ADR-0001): "apply one, not the other" leaves room for the leak the
+// clause exists for — caveman's compression bleeding into the prose *around* code
+// — so it denies the suspended mode any influence at all. Wording in here has
+// measurable and counter-intuitive effects; it is not rephrased casually.
 function suspendClause(subject) {
   return subject + ' is SUSPENDED for this turn and contributes NOTHING — not ' +
     'even to prose: no compression, no dropped articles, no borrowed phrasing. ' +
@@ -432,9 +425,11 @@ const CODING_IS_PURE =
   ' So a coding turn is pure `ponytail`: the explanations and notes around the ' +
   'code read as normal writing, not as `caveman`.';
 
-// What entered this context, injected as a ready-made list so the note copies it
-// instead of the model reconstructing it from memory. The two sources differ in
-// how the next context gets them back, and neither is filtered here:
+// What entered this context, emitted on the /handoff turn as a ready-made list so
+// the note copies it instead of the model reconstructing it from memory. It is the
+// whole output of that turn, so it opens the text rather than continuing a
+// sentence. The two sources differ in how the next context gets them back, and
+// neither is filtered here:
 //   - `UserPromptExpansion` fires for EVERY slash command, not only skills, so
 //     the typed list also holds one-shot actions (/commit, /pr). The hook cannot
 //     tell them apart; the model can, and it is the one writing the note.
@@ -449,7 +444,7 @@ function skillsClause(skills) {
   const named = (s) => skills.filter((e) => e.source === s).map((e) => e.name);
   const typed = named('typed');
   const model = named('model');
-  let c = ' Recorded for the note —';
+  let c = 'Recorded for the note —';
   if (typed.length) {
     c += ' TYPED here: ' + typed.map((n) => '/' + n).join(' ') + ' (slash commands, ' +
       'so one-shot actions are in there too: keep only what still shapes the work, ' +
@@ -463,39 +458,14 @@ function skillsClause(skills) {
   return c;
 }
 
-// The note's shape, stated rather than left to the model. Four sections and a
-// line budget are what stop the dumping BY CONSTRUCTION; "keep it short" does not.
-// Actionable first — the prompt is the only part the user acts on, so it sits at
-// the top where it can be copied without reading the rest. And there is
-// deliberately NO fifth section for constraints or risks: it would become the new
-// place to pour the history the other four exclude.
-const HANDOFF_SCHEMA =
-  ' OVERWRITE that file, never append: one pending handoff at a time. Exactly ' +
-  'four sections, in this order, and no others — `## Prompt to send` (the exact ' +
-  'text to re-send, verbatim and self-contained); `## Skills` (the commands the ' +
-  'user re-types as one copy-paste block, each with a clause saying what is lost ' +
-  'by skipping it, then the names the next context re-invokes itself); ' +
-  '`## Decided` (bullets, only the decisions that constrain the next step); ' +
-  '`## Next step` (one). About 30 lines for the whole file, and no history, no ' +
-  'replay of the discussion, no superseded reasoning, no fifth section: what fits ' +
-  'none of the four is not carried across.';
+// The mode not classified to is inert for the turn, whichever way the
+// classification went, so both shapes of the non-empty branch end the same way:
+// with one mode loaded "the other one" is whichever of the two the turn did not
+// pick, with both loaded it is the one left sitting in the context unused.
+const SUSPEND_TAIL = ' Apply ONLY the mode you classify to; ' +
+  suspendClause('the other one') + CODING_IS_PURE;
 
-// The switch procedure. Taught here because this channel is trusted; the veto
-// only enforces it.
-function handoffInstruction(other, cwd, skills) {
-  return ' If you classify to `' + other + '`, do NOT invoke it: a context holds ' +
-    'at most one mode skill, and the invocation would be denied. Switch contexts ' +
-    'instead — write a handoff note to `' + handoffFile(cwd) + '`, then tell the ' +
-    'user to run /clear and send the prompt that note names; then stop, without ' +
-    'doing the task this turn. Creating the note and saying so IS the whole turn.' +
-    HANDOFF_SCHEMA + skillsClause(skills) +
-    ' If writing that file is not possible (plan mode, ' +
-    'restricted permissions), put the same four sections inline in your reply ' +
-    'instead — the point is that nothing is lost across the reset, not the file ' +
-    'itself.';
-}
-
-function invocationTail(loaded, cwd, skills) {
+function invocationTail(loaded, cwd) {
   if (loaded.length === 0) {
     let tail = RESET_TAIL;
     // A handoff outlives the clear that consumed the context which wrote it —
@@ -513,14 +483,17 @@ function invocationTail(loaded, cwd, skills) {
     }
     return tail;
   }
-  if (loaded.length === 1) {
-    const other = MODES.find((m) => m !== loaded[0]);
-    return '\n`' + loaded[0] + '` is already in this context: if you classify to ' +
-      'it, do NOT re-invoke — just apply it.' + handoffInstruction(other, cwd, skills);
+  // Non-empty. The set decides invoke from do-not-re-invoke and nothing else, so
+  // one loaded mode and two are the same state to answer in — the only difference
+  // is whether an invocation is still being asked for.
+  const missing = MODES.find((m) => !loaded.includes(m));
+  if (!missing) {
+    return '\nBoth `caveman` and `ponytail` are already in this context — invoke ' +
+      'neither.' + SUSPEND_TAIL;
   }
-  return '\nBoth `caveman` and `ponytail` are already in this context — invoke ' +
-    'neither. Apply ONLY the mode you classify to; ' +
-    suspendClause('the other one') + CODING_IS_PURE;
+  return '\n`' + loaded[0] + '` is already in this context: if you classify to it, ' +
+    'do NOT re-invoke — just apply it; if you classify to `' + missing + '`, ' +
+    'invoke it now (Skill tool, before responding).' + SUSPEND_TAIL;
 }
 
 const mode = readMode();
@@ -528,12 +501,16 @@ const loaded = readLoadedModes(input.session_id);
 
 const out =
   mode === 'off' ? '' :
+  // Ahead of the mode cases, forced ones included: what this turn needs is the
+  // note's missing half, not a style for prose the note does not contain. Only
+  // `off` outranks it, that being a standing instruction to inject nothing.
+  handoffTurn ? skillsClause(readSkills(input.session_id)) :
   // Forced modes: invoke when missing from the set, stay silent once it is in.
   mode === 'caveman' || mode === 'ponytail'
     ? (loaded.includes(mode) ? '' : forced(mode)) :
   // auto: always classify; the set decides what to say about invoking.
-  slash ? '' :
-  CLASSIFY + invocationTail(loaded, input.cwd, readSkills(input.session_id));
+  slashIsMode ? '' :
+  CLASSIFY + invocationTail(loaded, input.cwd);
 
 if (out) process.stdout.write(out);
 process.exit(0);
