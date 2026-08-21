@@ -255,7 +255,8 @@ function addMode(sessionId, mode) {
   try { writeJson(loadedModesFile(sessionId), { modes: loaded.concat(mode) }); } catch (e) { /* best effort */ }
 }
 
-// Modes are excluded: the set above already tracks them, and the note would // name them twice. Stored under the name as it arrived (namespaced or bare) —
+// Modes are excluded: the set above already tracks them, and the note would name
+// them twice. Stored under the name as it arrived (namespaced or bare) —
 // that is the form the user re-types or the model re-invokes — but deduplicated
 // on the LAST segment, so a `/grilling` typed and a `grilling:grilling` invoked
 // are one entry instead of the same skill listed under two contradictory
@@ -287,9 +288,13 @@ const leaf = (s) => String(s).trim().toLowerCase().split(/[:/]/).pop();
 // turn this plugin has no part in and injecting a list aimed at a note somebody
 // else's command does not write. Matching bare-or-own-namespace is correct however
 // unique the name happens to be today, so it does not depend on staying unique.
-// What the rename removed is the risk the old name carried INTO this function: a
-// bare `/handoff` was genuinely ambiguous, so "bare stays ours" was a bet on
-// resolution order nobody had measured. A bare `/carryover` can only be ours.
+// What the rename removed is the defect the old name carried INTO this function:
+// "bare stays ours" called the bare form irreducibly ambiguous without measuring
+// it, and measured it is not ambiguous at all — the harness exposes no bare
+// `/handoff`, so this matched a name that always expanded somebody else's body.
+// What is settled now is only that no other plugin answers to `carryover`; whether
+// a bare `/carryover` is exposed at all is itself unmeasured — ADR-0004 says so
+// out loud rather than repeating the mistake above.
 function isCarryoverCommand(name) {
   if (typeof name !== 'string') return false;
   const t = name.trim().toLowerCase();

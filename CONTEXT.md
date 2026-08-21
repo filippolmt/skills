@@ -67,10 +67,6 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   what has been established, what remains, and the prompt to re-send afterwards.
   The user asks for it explicitly before a deliberate `/clear` — the router never
   demands one. Belongs to the project, not to the session it was written in, so it
-  survives the reset. The note is the artifact; the command that writes it is a
-  separate thing and is named separately (see **Carryover command**).
-
-- **Carryover command** — the command a user types to have the pending handoff
-  note written. Named apart from the note on purpose: the note is the domain term
-  and keeps it, so the command cannot also be `handoff` without the one word
-  standing for both the artifact and the act of producing it.
+  survives the reset. The artifact, not the act of producing it.
+- **Carryover** — the act of having the pending handoff note written. Named apart
+  from the note so that one word does not stand for both.

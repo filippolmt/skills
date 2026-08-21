@@ -205,22 +205,19 @@ recorded, since it is the half that cannot be allowed to drift.
 
 ### Whose turn it is
 
-The command is `/carryover`, and through `0.8.0` it was `/handoff`. That name was
-also an unrelated skill this marketplace ships, and the collision was not a tie the
-router got to break: the harness exposes no bare `/handoff` at all, only
-`handoff:handoff`, so typing `/handoff` expanded the **other** plugin's body while
-this hook — which reads the raw prompt text, not the resolved command — recognised
-its own name and injected the note's path and the skill list onto that turn. Two
-documents, two destinations, one turn, and `claude plugin validate` silent about it.
-Renaming was the fix; `docs/adr/0004-rename-the-handoff-command.md` carries the
-measurement.
+The command is `/carryover`, and through `0.8.0` it was `/handoff` — a name another
+plugin in this marketplace also answers to, which made the hook claim turns that
+expanded somebody else's body. `docs/adr/0004-rename-the-handoff-command.md` carries
+the measurement, the rejected alternative, and the one assumption still unmeasured;
+it is not restated here.
 
-The match is still **not** the last-segment rule the modes use: a bare `/carryover`
+The match is **not** the last-segment rule the modes use: a bare `/carryover`
 counts as this plugin's, and a namespaced one only as `/mode-router:carryover`.
 Matching `X:carryover` for any `X` would suppress routing on a turn this plugin has
 no part in, and inject a list aimed at a note somebody else's command does not
 write. That rule is correct however unique the name is today, so it does not depend
-on staying unique — which is the whole reason it survived the rename unchanged.
+on staying unique — which is the whole reason it survived the rename unchanged. The
+namespaced form is the canonical one to type.
 
 The note goes to `.mode-router/handoff.md` inside the project (gitignore it). The
 router keeps only the **read** side: on the first prompt of a fresh context, the

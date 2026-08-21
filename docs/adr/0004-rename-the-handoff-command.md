@@ -34,6 +34,12 @@ splits the string the user typed, it never sees which command the harness resolv
 — so it matched its own name and did what a `/handoff` turn asks for: suppress
 routing, emit the note's resolved path, emit the recorded skill list.
 
+The defect was **latent, not firing**: the upstream `handoff` skill is enabled in
+the author's config, `mode-router` is not, and the contradiction needs both halves
+loaded. That is a fact about one machine on one day, not a mitigation — it would
+have fired on the first turn after enabling the plugin, which is precisely when
+nobody would be looking for it.
+
 So the turn held both halves of a contradiction, every time:
 
 | Injected by the hook | Expanded as the body |
@@ -68,7 +74,30 @@ for any `X`, suppressing routing on a turn this plugin has no part in and inject
 a list aimed at a note somebody else's command does not write. That argument holds
 however unique the name is today, so the matcher is correct by construction rather
 than by the name staying free. What the rename removed is the unmeasured bet the
-old name smuggled *into* it — a bare `/carryover` can only be ours.
+old name smuggled *into* it: `handoff` was a name another plugin answered to.
+
+## What is still unmeasured
+
+One assumption survives, and naming it is the point of this section — the defect
+above was born of an unmeasured claim stated as settled, so this ADR does not get
+to close on another one.
+
+**Nobody has verified that the harness exposes a bare `/carryover` at all.** The
+plugin-command case is undocumented upstream, and it could not be measured from
+here: `mode-router` is not among the author's enabled plugins, so `claude -p
+"/carryover"` answers `Unknown command`. If the harness turns out to namespace
+plugin commands the way it namespaces plugin skills — exposing only
+`mode-router:carryover` — then a bare `/carryover` reaches `UserPromptSubmit` as
+raw text the hook still recognises, while no command body expands: the note's path
+and the skill list arrive without the four-section schema that tells the model what
+to write. Quieter than the collision, and the same shape.
+
+Two things bound it. It is not new — the old name had the identical exposure, and
+worse, since something else answered — and the fix is known if it appears: type the
+namespaced form, which is verified to work for plugin skills and is what
+`ROUTING.md` documents as this command's canonical form. It is recorded here rather
+than fixed because a fix for an unmeasured failure is speculative generality, and
+because the measurement is one `claude -p` away for anyone who enables the plugin.
 
 The note keeps every property `0002` gave it, its filename included:
 `.mode-router/handoff.md`, four sections, presence as status, the two-level 24h

@@ -262,10 +262,19 @@ for (const foreign of ['/handoff', '/handoff:handoff', '/productivity:carryover'
   assert.match(o, /MODE ROUTER/, foreign + ' is not this command => still classified');
   assert.doesNotMatch(o, /Recorded for the note/, 'and gets no list aimed at a note it does not write');
 }
-// Foreign commands are ordinary skills, so they are recorded like any other.
+// Foreign commands are ordinary skills, so they are recorded like any other — the
+// BARE form included, which is the consequence the rename exists for: `handoff` is
+// somebody else's name now, not one this plugin swallows as its own.
+expand('handoff');
+assert.match(prompt('/carryover'), /TYPED here: [^.]*\/handoff\b/,
+  'a bare /handoff is recorded, not filtered out as this plugin\'s command');
+// And the namespaced form is the same skill, so it dedups onto the entry already
+// there rather than filing it twice under contradictory names.
 expand('handoff:handoff');
-assert.match(prompt('/carryover'), /TYPED here: [^.]*\/handoff:handoff/,
-  "another plugin's handoff is recorded, not filtered out");
+const bothForms = prompt('/carryover');
+assert.match(bothForms, /TYPED here: [^.]*\/handoff\b/, 'still recorded');
+assert.doesNotMatch(bothForms, /\/handoff:handoff/,
+  'the namespaced form dedups onto the bare one: one skill, one entry, first arrival keeps the tag');
 
 // The list feeds a note with a ~30-line budget, so it must not grow unbounded.
 for (let i = 0; i < 20; i++) loadSkill('filler-' + i);
