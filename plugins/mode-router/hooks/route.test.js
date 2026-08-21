@@ -175,12 +175,24 @@ out = prompt('continue');
 assert.match(out, /A handoff note left before the last reset is waiting/,
   'after a reset the same note is announced again');
 assert.match(out, /delete the file once you have taken it over/, 'and handed over for deletion');
-// A resume is not a reset, so the writing context keeps its silence.
-writeHandoff('# handoff\nwork in hand\n');
+// A resume is not a reset, so the writing context keeps its silence. Order
+// matters and mirrors reality: the command is typed, THEN the note is written.
 expand('mode-router:carryover');
+writeHandoff('# handoff\nwork in hand\n');
 run('SessionStart', { source: 'resume' });
 assert.doesNotMatch(prompt('carry on'), /handoff note left/,
   'resume walks back into the context that wrote it: still not announced');
+
+// The marker qualifies the NOTE, not the session. A note already waiting when the
+// command was typed is older than the marker, so it is still somebody else's —
+// otherwise one /carryover would blind a session to every note in the project,
+// and typing the command without writing anything would blind it to all of them.
+run('SessionStart');
+writeHandoff('# handoff\nleft by another context\n');
+ageHandoff(60 * 1000);
+expand('mode-router:carryover');
+assert.match(prompt('carry on'), /A handoff note left before the last reset is waiting/,
+  'a note older than the marker stays announced: typing the command claims nothing');
 run('SessionStart');
 fs.unlinkSync(HANDOFF);
 
