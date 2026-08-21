@@ -29,8 +29,15 @@ const MODES = ['caveman', 'ponytail'];
 
 test('renders local line verbatim, omitting the omit list', () => {
   const md = renderCatalog(MARKETPLACE, META, MODES);
-  assert.match(md, /\*\*Local:\*\* `mode-router` — Routes stuff\. And more\./);
+  assert.match(md, /\*\*Local:\*\*\n- `mode-router` — Routes stuff\. And more\./);
   assert.doesNotMatch(md, /the-bundle/, 'omitted local plugin is not rendered');
+});
+
+test('several local plugins render one per line, not joined into one sentence', () => {
+  const two = { plugins: [...MARKETPLACE.plugins, { name: 'guard', source: './plugins/guard', description: 'Guards things.' }] };
+  const md = renderCatalog(two, META, MODES);
+  assert.match(md, /\*\*Local:\*\*\n- `mode-router` — Routes stuff\. And more\.\n- `guard` — Guards things\./);
+  assert.doesNotMatch(md, /\.; /, 'no full-stop-semicolon collision');
 });
 
 test('skill group uses "What it does", plugin group uses "What it bundles"', () => {

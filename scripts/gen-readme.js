@@ -51,8 +51,9 @@ function renderCatalog(marketplace, meta, modes) {
   // Local plugins (source is a path), minus anything explicitly omitted.
   const locals = plugins.filter((p) => isLocal(p) && !omit.has(p.name));
   if (locals.length) {
-    const bullets = locals.map((p) => `\`${p.name}\` — ${p.description}`).join('; ');
-    out.push(`**Local:** ${bullets}`);
+    // One per line: descriptions end in a full stop, so joining them inline
+    // produced `…on purpose.; \`mode-router\` — …`.
+    out.push(['**Local:**', ...locals.map((p) => `- \`${p.name}\` — ${p.description}`)].join('\n'));
   }
 
   // Grouped git-subdir entries, in the editorial order from catalog-meta.json.
@@ -120,6 +121,21 @@ if (require.main === module) {
   const meta = JSON.parse(read('scripts/catalog-meta.json'));
   const routerManifest = JSON.parse(read('plugins/mode-router/.claude-plugin/plugin.json'));
   const modes = routerManifest.dependencies || [];
+
+  // Each local plugin's description is copied verbatim into the catalog, so it can
+  // drift from the manifest it was copied from. Catch that here, not in review.
+  const drifted = (marketplace.plugins || [])
+    .filter((e) => typeof e.source === 'string')
+    .filter((e) => JSON.parse(read(path.join(e.source, '.claude-plugin/plugin.json'))).description !== e.description);
+  if (drifted.length) {
+    for (const e of drifted) {
+      console.error(
+        `description drift for \`${e.name}\`: marketplace.json and ` +
+          `${e.source}/.claude-plugin/plugin.json disagree.`
+      );
+    }
+    process.exit(1);
+  }
 
   const catalog = renderCatalog(marketplace, meta, modes);
   const readmePath = path.join(root, 'README.md');

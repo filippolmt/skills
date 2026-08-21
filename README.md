@@ -43,13 +43,32 @@ To refresh after upstream updates:
 /plugin marketplace update filippo-skills
 ```
 
+### Fan-out skills need `agent-report-guard`
+
+Skills that spawn sibling sub-agents and then read their reports — `code-review`,
+`research`, `codebase-design`, `improve-codebase-architecture`, `printing-press`,
+`wayfinder`, `impeccable` — stall when those sub-agents are spawned with a
+`name`: a named agent becomes a mailbox teammate that notifies idle without a
+report body, so the parent waits, then has to chase the report with
+`SendMessage`. The local `agent-report-guard` plugin drops the name, so they
+report back on their own:
+
+```
+/plugin install agent-report-guard
+```
+
+Every bundle that ships a fan-out skill already depends on it — install it
+yourself if you install one of those skills individually.
+
 ## Available skills
 
 Snapshot of the catalog — the source of truth is
 [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
 
 <!-- catalog:start -->
-**Local:** `mode-router` — Per-prompt router: classifies each request and invokes the caveman (terse output) or ponytail (minimal code) skill, exclusively. Force a mode or turn it off via control file. Bundles both as dependencies.
+**Local:**
+- `agent-report-guard` — Drops `name` from Agent tool calls so the subagent reports back on its own: a named agent becomes a mailbox teammate that notifies idle without a report body, leaving fan-out skills (code-review, research, printing-press) chasing the report with SendMessage. Opt out per call with `[mailbox]` in the description, or session-wide with ALLOW_NAMED_AGENTS=1.
+- `mode-router` — Per-prompt router: classifies each request and invokes the caveman (terse output) or ponytail (minimal code) skill, exclusively. Force a mode or turn it off via control file. Bundles both as dependencies.
 
 ### [mattpocock/skills](https://github.com/mattpocock/skills) — engineering & productivity
 

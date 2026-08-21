@@ -1,0 +1,8 @@
+{
+  "name": "agent-report-guard",
+  "description": "Drops `name` from Agent tool calls so the subagent reports back on its own: a named agent becomes a mailbox teammate that notifies idle without a report body, leaving fan-out skills (code-review, research, printing-press) chasing the report with SendMessage. Opt out per call with `[mailbox]` in the description, or session-wide with ALLOW_NAMED_AGENTS=1.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Filippo Merante Caparrotta"
+  }
+}

@@ -7,6 +7,14 @@
   },
   "plugins": [
     {
+      "name": "agent-report-guard",
+      "source": "./plugins/agent-report-guard",
+      "description": "Drops `name` from Agent tool calls so the subagent reports back on its own: a named agent becomes a mailbox teammate that notifies idle without a report body, leaving fan-out skills (code-review, research, printing-press) chasing the report with SendMessage. Opt out per call with `[mailbox]` in the description, or session-wide with ALLOW_NAMED_AGENTS=1.",
+      "author": {
+        "name": "Filippo Merante Caparrotta"
+      }
+    },
+    {
       "name": "mode-router",
       "source": "./plugins/mode-router",
       "description": "Per-prompt router: classifies each request and invokes the caveman (terse output) or ponytail (minimal code) skill, exclusively. Force a mode or turn it off via control file. Bundles both as dependencies.",
@@ -17,7 +25,7 @@
     {
       "name": "improve-codebase-architecture-bundle",
       "source": "./plugins/improve-codebase-architecture-bundle",
-      "description": "Install improve-codebase-architecture together with the mattpocock skills it calls at runtime (grilling, codebase-design, domain-modeling). Bundles them as dependencies.",
+      "description": "Install improve-codebase-architecture together with the mattpocock skills it calls at runtime (grilling, codebase-design, domain-modeling) and agent-report-guard, the hook that keeps their sub-agents reporting back. Bundles them as dependencies.",
       "author": {
         "name": "Filippo Merante Caparrotta"
       }
@@ -25,7 +33,15 @@
     {
       "name": "printing-press-bundle",
       "source": "./plugins/printing-press-bundle",
-      "description": "Install printing-press with the sibling skills it invokes at runtime (printing-press-polish, printing-press-score, and the internal printing-press-output-review). Bundles them as dependencies.",
+      "description": "Install printing-press with the sibling skills it invokes at runtime (printing-press-polish, printing-press-score, and the internal printing-press-output-review) and agent-report-guard, the hook that keeps its subagents reporting back. Bundles them as dependencies.",
+      "author": {
+        "name": "Filippo Merante Caparrotta"
+      }
+    },
+    {
+      "name": "code-review-bundle",
+      "source": "./plugins/code-review-bundle",
+      "description": "Install code-review together with agent-report-guard, the hook that keeps its two axis sub-agents reporting back instead of stalling. Bundles them as dependencies.",
       "author": {
         "name": "Filippo Merante Caparrotta"
       }
@@ -33,7 +49,7 @@
     {
       "name": "implement-bundle",
       "source": "./plugins/implement-bundle",
-      "description": "Install implement together with the skills it calls at runtime (tdd, code-review). Bundles them as dependencies.",
+      "description": "Install implement together with the skills it calls at runtime (tdd, code-review) and agent-report-guard, the hook that keeps code-review's sub-agents reporting back. Bundles them as dependencies.",
       "author": {
         "name": "Filippo Merante Caparrotta"
       }
@@ -49,7 +65,7 @@
     {
       "name": "wayfinder-bundle",
       "source": "./plugins/wayfinder-bundle",
-      "description": "Install wayfinder together with the skills it calls at runtime (grilling, domain-modeling, prototype, research, setup-matt-pocock-skills). Bundles them as dependencies.",
+      "description": "Install wayfinder together with the skills it calls at runtime (grilling, domain-modeling, prototype, research, setup-matt-pocock-skills) and agent-report-guard, the hook that keeps its research subagents reporting back. Bundles them as dependencies.",
       "author": {
         "name": "Filippo Merante Caparrotta"
       }

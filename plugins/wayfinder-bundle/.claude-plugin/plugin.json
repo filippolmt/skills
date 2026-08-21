@@ -1,9 +1,17 @@
 {
   "name": "wayfinder-bundle",
-  "description": "Install wayfinder together with the skills it calls at runtime (grilling, domain-modeling, prototype, research, setup-matt-pocock-skills). Bundles them as dependencies.",
-  "version": "0.2.0",
+  "description": "Install wayfinder together with the skills it calls at runtime (grilling, domain-modeling, prototype, research, setup-matt-pocock-skills) and agent-report-guard, the hook that keeps its research subagents reporting back. Bundles them as dependencies.",
+  "version": "0.3.0",
   "author": {
     "name": "Filippo Merante Caparrotta"
   },
-  "dependencies": ["wayfinder", "grilling", "domain-modeling", "prototype", "research", "setup-matt-pocock-skills"]
+  "dependencies": [
+    "wayfinder",
+    "grilling",
+    "domain-modeling",
+    "prototype",
+    "research",
+    "setup-matt-pocock-skills",
+    "agent-report-guard"
+  ]
 }
