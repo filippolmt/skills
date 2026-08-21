@@ -17,6 +17,8 @@ jobs:
         run: npm install -g @anthropic-ai/claude-code
       - name: Test README generator
         run: node scripts/gen-readme.test.js
+      - name: Test name-collision checker
+        run: node scripts/check-name-collisions.test.js
       - name: Test local plugin hooks
         # Glob, not one step per plugin: a new hook test is picked up by adding
         # the test file, without a second edit in this file.
@@ -30,5 +32,7 @@ jobs:
         run: node scripts/gen-readme.js --check
       - name: Check Renovate regex covers every git-subdir entry
         run: node scripts/check-renovate.js
+      - name: Check no local command or skill name is already taken
+        run: node scripts/check-name-collisions.js
       - name: Validate marketplace and plugins
         run: claude plugin validate .

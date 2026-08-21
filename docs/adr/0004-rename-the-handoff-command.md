@@ -145,7 +145,13 @@ expiry. Only the command moved.
 - `CONTEXT.md` gains **Carryover command** as a term distinct from **Handoff
   note**, and the note's entry no longer names the command that writes it — a
   glossary is not the place for that.
-- The collision class is not closed, only this instance of it. Nothing in
-  `claude plugin validate` or in CI compares the leaf names of local commands and
-  skills against the catalog's entries, so the next one will be found the same way
-  this one was: by noticing.
+- The collision **class** is closed too, not just this instance.
+  `scripts/check-name-collisions.js` compares every local command and skill name
+  against each other and against every catalog entry, and runs in CI and in the
+  `PostToolUse` hook — which now also fires on `commands/*.md`, the file type whose
+  creation caused this. Its first test case is this defect's exact shape, because a
+  checker that only ever agrees with the current tree guards nothing.
+- Only **local** names are checked. What an upstream `git-subdir` entry contains is
+  not knowable without fetching it, so the comparison uses its catalog `name` —
+  which is what this collision was against anyway. An upstream plugin that adds a
+  skill colliding with a local command is still found by noticing.

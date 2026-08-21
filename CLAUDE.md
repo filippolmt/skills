@@ -57,20 +57,27 @@ fire twice, check there first.
 ## Validate before committing
 
 ```
-claude plugin validate .    # marketplace + all local plugins
+claude plugin validate .              # marketplace + all local plugins
+node scripts/check-name-collisions.js # what validate does NOT cover
 ```
 
 Output must be **clean** — no errors *and* no warnings. A warning (e.g. a
 `version` that diverges between `plugin.json` and a marketplace entry) is a
 fail here: fix it before committing.
 
-A `PostToolUse` hook (`.claude/settings.json`) auto-runs this validation on
-every edit to `marketplace.json`, `plugin.json`, or a `SKILL.md`, and blocks
-the edit (exit 2) if it fails.
+`validate` checks that catalog `name` values are unique. It says nothing about a
+**command** in one plugin against a **skill** in another, which is a real collision
+the harness resolves to one of them while a hook reading the raw prompt text can
+act as if it were the other — that gap shipped a defect
+(`docs/adr/0004-rename-the-handoff-command.md`), so the second command closes it.
+
+A `PostToolUse` hook (`.claude/settings.json`) runs **both** on every edit to
+`marketplace.json`, `plugin.json`, a `SKILL.md`, or a `commands/*.md`, and blocks
+the edit (exit 2) if either fails.
 
 ## Conventions
 
 - Conventional Commits (`feat:`, `fix:`, `chore:`, …).
 - Work on a feature branch (`feat/...`), open a PR to `main` — no direct pushes to `main`.
-- Plugin/skill `name` values must be unique across the whole marketplace.
+- Plugin/skill `name` values must be unique across the whole marketplace — and so must a local plugin's command and skill names, against each other and against every catalog entry. `scripts/check-name-collisions.js` is what enforces the second half.
 - **Bump the `version` (SemVer) only of the plugin you changed** — never touch the others. Edit it in the plugin's own `plugin.json` (the single source of truth; local-plugin `marketplace.json` entries carry no `version`). `fix:` → patch, `feat:` → minor, breaking → major. **Below `1.0.0` a breaking change is a minor**, not a major — every local plugin is still pre-1.0. The bumped version is the release: merging the PR to `main` ships it. Skip only for changes that don't touch a plugin's behaviour (e.g. repo docs, `renovate.json`).
