@@ -9,7 +9,7 @@
     {
       "name": "agent-report-guard",
       "source": "./plugins/agent-report-guard",
-      "description": "Drops `name`/`team_name` from Agent tool calls so the subagent's report comes back inline as the tool result, instead of the parent waiting on a mailbox teammate that never reports. Unblocks fan-out skills (code-review, research, wayfinder). Set ALLOW_NAMED_AGENTS=1 to spawn a named teammate on purpose.",
+      "description": "Drops `name` from Agent tool calls so the subagent reports back on its own: a named agent becomes a mailbox teammate that notifies idle without a report body, leaving fan-out skills (code-review, research, printing-press) chasing the report with SendMessage. Opt out per call with `[mailbox]` in the description, or session-wide with ALLOW_NAMED_AGENTS=1.",
       "author": {
         "name": "Filippo Merante Caparrotta"
       }
@@ -39,9 +39,17 @@
       }
     },
     {
+      "name": "code-review-bundle",
+      "source": "./plugins/code-review-bundle",
+      "description": "Install code-review together with agent-report-guard, the hook that keeps its two axis sub-agents reporting back instead of stalling. Bundles them as dependencies.",
+      "author": {
+        "name": "Filippo Merante Caparrotta"
+      }
+    },
+    {
       "name": "implement-bundle",
       "source": "./plugins/implement-bundle",
-      "description": "Install implement together with the skills it calls at runtime (tdd, code-review). Bundles them as dependencies.",
+      "description": "Install implement together with the skills it calls at runtime (tdd, code-review) and agent-report-guard, the hook that keeps code-review's sub-agents reporting back. Bundles them as dependencies.",
       "author": {
         "name": "Filippo Merante Caparrotta"
       }

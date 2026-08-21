@@ -14,5 +14,5 @@
     { "repo": "pbakaus/impeccable", "tagline": "frontend design fluency", "kind": "plugin" },
     { "repo": "mvanhorn/last30days-skill", "tagline": "multi-source trend research", "kind": "skill" }
   ],
-  "omit": ["improve-codebase-architecture-bundle", "printing-press-bundle", "implement-bundle", "triage-bundle", "wayfinder-bundle", "grill-with-docs-bundle"]
+  "omit": ["code-review-bundle", "improve-codebase-architecture-bundle", "printing-press-bundle", "implement-bundle", "triage-bundle", "wayfinder-bundle", "grill-with-docs-bundle"]
 }

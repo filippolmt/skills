@@ -33,16 +33,25 @@ const named = run(agent({ name: 'standards-review' }));
 assert.deepStrictEqual(named.hookSpecificOutput.updatedInput, agent().tool_input);
 assert.strictEqual(named.hookSpecificOutput.hookEventName, 'PreToolUse');
 assert.ok(/standards-review/.test(named.systemMessage), 'says which name it dropped');
+assert.ok(/\[mailbox\]/.test(named.systemMessage), 'points at the per-call opt-out');
 // No permissionDecision: the call keeps its normal permission flow.
 assert.ok(!('permissionDecision' in named.hookSpecificOutput));
 
-// team_name alone still registers the mailbox, so it goes too.
-const team = run(agent({ team_name: 'reviewers' }));
-assert.deepStrictEqual(team.hookSpecificOutput.updatedInput, agent().tool_input);
+// Unrelated fields survive the rewrite.
+const extra = run(agent({ name: 'spec', model: 'haiku', isolation: 'worktree' }));
+assert.deepStrictEqual(
+  extra.hookSpecificOutput.updatedInput,
+  agent({ model: 'haiku', isolation: 'worktree' }).tool_input
+);
 
-// Both at once, and unrelated fields survive.
-const both = run(agent({ name: 'spec', team_name: 'reviewers', model: 'haiku' }));
-assert.deepStrictEqual(both.hookSpecificOutput.updatedInput, agent({ model: 'haiku' }).tool_input);
+// `team_name` is deprecated and ignored by the harness, so it is not touched —
+// on its own it is not a mailbox, and alongside `name` it survives the rewrite.
+assert.strictEqual(run(agent({ team_name: 'reviewers' })), null);
+const withTeam = run(agent({ name: 'spec', team_name: 'reviewers' }));
+assert.deepStrictEqual(
+  withTeam.hookSpecificOutput.updatedInput,
+  agent({ team_name: 'reviewers' }).tool_input
+);
 
 // Already unnamed: silent.
 assert.strictEqual(run(agent()), null);
@@ -53,8 +62,20 @@ assert.strictEqual(run(agent({ name: '' })), null);
 // Another tool that happens to carry a `name`: not ours.
 assert.strictEqual(run({ tool_name: 'Skill', tool_input: { name: 'whatever' } }), null);
 
-// Escape hatch.
-assert.strictEqual(run(agent({ name: 'standards-review' }), { ALLOW_NAMED_AGENTS: '1' }), null);
+// Per-call opt-out: a deliberate teammate keeps its name, anywhere in the
+// description and whatever the case.
+assert.strictEqual(run(agent({ name: 'watcher', description: '[mailbox] long-lived watcher' })), null);
+assert.strictEqual(run(agent({ name: 'watcher', description: 'watcher [MAILBOX]' })), null);
+// …and only that marker: a description merely talking about mailboxes still gets rewritten.
+assert.ok(run(agent({ name: 'watcher', description: 'reads the mailbox' })));
+
+// Session opt-out takes explicit values only — "0"/"false"/junk must not disable it.
+for (const on of ['1', 'true', 'yes', 'TRUE']) {
+  assert.strictEqual(run(agent({ name: 'x' }), { ALLOW_NAMED_AGENTS: on }), null, on + ' disables the guard');
+}
+for (const off of ['0', 'false', 'no', 'off', 'nope']) {
+  assert.ok(run(agent({ name: 'x' }), { ALLOW_NAMED_AGENTS: off }), off + ' leaves the guard on');
+}
 
 // Garbage stdin must not crash the tool call.
 const junk = spawnSync(process.execPath, [SCRIPT], { input: 'not json', encoding: 'utf8' });

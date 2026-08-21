@@ -49,7 +49,9 @@ Snapshot of the catalog — the source of truth is
 [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
 
 <!-- catalog:start -->
-**Local:** `agent-report-guard` — Drops `name`/`team_name` from Agent tool calls so the subagent's report comes back inline as the tool result, instead of the parent waiting on a mailbox teammate that never reports. Unblocks fan-out skills (code-review, research, wayfinder). Set ALLOW_NAMED_AGENTS=1 to spawn a named teammate on purpose.; `mode-router` — Per-prompt router: classifies each request and invokes the caveman (terse output) or ponytail (minimal code) skill, exclusively. Force a mode or turn it off via control file. Bundles both as dependencies.
+**Local:**
+- `agent-report-guard` — Drops `name` from Agent tool calls so the subagent reports back on its own: a named agent becomes a mailbox teammate that notifies idle without a report body, leaving fan-out skills (code-review, research, printing-press) chasing the report with SendMessage. Opt out per call with `[mailbox]` in the description, or session-wide with ALLOW_NAMED_AGENTS=1.
+- `mode-router` — Per-prompt router: classifies each request and invokes the caveman (terse output) or ponytail (minimal code) skill, exclusively. Force a mode or turn it off via control file. Bundles both as dependencies.
 
 ### [mattpocock/skills](https://github.com/mattpocock/skills) — engineering & productivity
 

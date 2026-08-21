@@ -1,0 +1,12 @@
+{
+  "name": "code-review-bundle",
+  "description": "Install code-review together with agent-report-guard, the hook that keeps its two axis sub-agents reporting back instead of stalling. Bundles them as dependencies.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Filippo Merante Caparrotta"
+  },
+  "dependencies": [
+    "code-review",
+    "agent-report-guard"
+  ]
+}

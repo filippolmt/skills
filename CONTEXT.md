@@ -27,6 +27,24 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   configured in catalog-meta: derived from the local `mode-router` plugin's
   `dependencies`.
 
+## Agent spawns
+
+- **Named spawn** — an `Agent` tool call that passes `name`. The harness
+  registers it as a **mailbox teammate**; the tool result carries no report.
+- **Unnamed spawn** — an `Agent` call without `name`. It **reports back** on its
+  own: the report arrives as the tool result, or in the completion notification.
+- **Mailbox teammate** — a subagent addressable by name via `SendMessage`
+  (`"taskKind": "in_process_teammate"` in its `.meta.json`). When it finishes it
+  emits an **idle notification** — an envelope with no report body — so the
+  report has to be chased with `SendMessage`.
+- **Fan-out skill** — a skill that spawns sibling subagents and then reads their
+  reports (`code-review`'s two axes, `research`, `printing-press`). It assumes an
+  unnamed spawn; a named one leaves it waiting. The local `agent-report-guard`
+  plugin is what enforces that assumption.
+- **Mailbox opt-out** — how a deliberate teammate survives the guard:
+  `[mailbox]` in the call's `description` (per call), or
+  `ALLOW_NAMED_AGENTS=1` (session-wide).
+
 ## Mode router
 
 - **Mode** — one of `auto` / `caveman` / `ponytail` / `off`, chosen by the
