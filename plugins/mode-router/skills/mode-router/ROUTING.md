@@ -58,7 +58,7 @@ that *writes* the note, and recording it would make the note cite itself. Only t
 plugin's — see **Whose turn it is** below; anything else, `handoff` included, is an
 ordinary skill and is recorded like any other.
 
-The list is emitted **once**, on the turn the user types `/carryover` — not on every
+The list is emitted **once**, on the turn that command is typed — not on every
 prompt. Two deliberate limits survive that:
 
 - The list is **capped** (12, oldest dropped). The note it feeds has a ~30-line
@@ -230,22 +230,16 @@ delete it.
 The shape is **imposed by the command**, not left to the model. Free prose lost
 something different every time, and — with nothing saying whether to overwrite or
 append — sometimes grew the file into a replay of the whole discussion. So: **one**
-note, **overwritten**, and exactly four sections in this order.
+note, **overwritten**, four fixed sections, about **30 lines**.
 
-| Section | Holds |
-|---|---|
-| `## Prompt to send` | the exact text to re-send, verbatim and self-contained |
-| `## Skills` | the commands the user re-types as one copy-paste block, each with a clause saying what is lost by skipping it, then the names the next context re-invokes itself |
-| `## Decided` | bullets — only the decisions that *constrain* the next step |
-| `## Next step` | one |
-
-The actionable part comes first: the prompt is the only thing the user acts on,
-so it is copyable without reading the rest. There is deliberately **no** fifth
-section for constraints or risks — it would become the new place to pour the
-history the other four exclude. The budget is about **30 lines** for the whole
-file, and history, discussion replay and superseded reasoning are banned
-outright. Two pending handoffs at once are two half-finished jobs: that is a
-problem for the user to resolve, not something the file should represent.
+The sections themselves are named in `commands/carryover.md`, which is where the
+model reads them; naming them here too would be one schema maintained in two
+places, drifting apart on the first edit. What belongs here is why the shape is
+closed. The actionable part comes first: the prompt is the only thing the user acts
+on, so it is copyable without reading the rest. And there is deliberately **no**
+fifth section for constraints or risks — it would become the new place to pour the
+history the other four leave out. Two pending handoffs at once are two half-finished
+jobs: a problem for the user to resolve, not something the file should represent.
 
 ### When the note expires
 

@@ -20,7 +20,7 @@ something this file should represent.
 
 ## The four sections
 
-Exactly these four, in this order, and no others:
+Exactly these four, in this order:
 
 | Section | Holds |
 |---|---|
@@ -32,10 +32,11 @@ Exactly these four, in this order, and no others:
 The actionable part comes first on purpose: the prompt is the only thing the user
 acts on, so it has to be copyable without reading the rest.
 
-**About 30 lines for the whole file.** No history, no replay of the discussion, no
-superseded reasoning, and no fifth section for constraints or risks — that section
-would just become the new place to pour the history the other four exclude. What
-fits none of the four is not carried across.
+**About 30 lines for the whole file.** Every line earns its place by doing one of
+two jobs: it is the prompt the user re-sends, or it constrains what the next
+context does. A line doing neither — the story of how the work got here, reasoning
+already superseded, a fifth section for constraints or risks — belongs to the
+context being left behind, not the one being started.
 
 ## Filling `## Skills`
 
@@ -59,6 +60,9 @@ memory. It is data, and deciding what to do with each group is this file's job:
 
 If no such line was injected, nothing else entered this context: say so in one
 line and keep the section.
+
+Done when every name the router emitted is accounted for — in the section with its
+clause, or judged spent and left out on purpose.
 
 ## Then stop
 

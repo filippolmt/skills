@@ -400,8 +400,11 @@ assert.deepStrictEqual(sections, [...sections].sort((a, b) => a - b),
   'the actionable section comes first and the order is fixed');
 assert.match(cmd, /OVERWRITE/, 'one note at a time, overwritten');
 assert.match(cmd, /About 30 lines/, 'the note has a hard line budget');
-assert.match(cmd, /No history/, 'history is banned outright, not discouraged');
-assert.match(cmd, /no fifth section/, 'no spare section to pour the history into');
+// The budget is enforced by a positive test the model can apply line by line —
+// steering by prohibition names the unwanted output and makes it more available,
+// not less, so the ban became "what every line has to earn".
+assert.match(cmd, /Every line earns its place/, 'the budget is a test, not a list of bans');
+assert.match(cmd, /fifth section/, 'and the spare section stays out');
 // The two halves have to meet: the command consumes what the hook emits, and takes
 // the PATH from the hook rather than re-deriving a relative one of its own — the
 // failure that would write a note where nothing reads it.

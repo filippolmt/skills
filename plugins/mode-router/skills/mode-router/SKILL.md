@@ -76,6 +76,10 @@ Changes take effect on the **next prompt** — the hook re-reads the file every 
 ## Routing behavior
 
 `route.js` is the single source of truth for the exact routing and precedence
-rules, and injects them into every turn. For how slash commands, precedence over
-hard constraints, and multi-turn spec-driven workflows are handled, see
-[`ROUTING.md`](ROUTING.md).
+rules, and injects them into every turn.
+
+[`ROUTING.md`](ROUTING.md) explains that behavior for whoever administers it: the
+loaded-mode set and the four events that maintain it, per-turn suspension, the
+harness contracts the whole design rests on and how to check them when routing goes
+quiet, the handoff note and its two-level expiry, slash commands, precedence over
+hard constraints, and multi-turn spec-driven workflows.
