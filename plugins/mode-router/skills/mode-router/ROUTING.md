@@ -20,7 +20,7 @@ events:
 | `SessionStart` (`resume`) | **keeps** the set: resume rebuilds the context from the transcript, so the modes invoked earlier are back in it |
 | `UserPromptExpansion` (slash command) | adds a **user-typed** mode to the set — a typed `/caveman` is expanded inline by the harness and never passes through the `Skill` tool — and records any **other** typed skill as `typed` |
 | `PostToolUse` (matcher `Skill`) | adds the model-invoked mode to the set, and records any **other** invoked skill as `model` |
-| `UserPromptSubmit` | reads the set and emits the routing text — except on a `/handoff` prompt, where it emits the note's resolved path plus the skill list, and says nothing about routing |
+| `UserPromptSubmit` | reads the set and emits the routing text — except on a `/carryover` prompt, where it emits the note's resolved path plus the skill list, and says nothing about routing |
 
 Tool events that carry `agent_id` come from a **subagent** — a different context
 that shares the session id — and are ignored: a subagent's skill loads never
@@ -53,12 +53,12 @@ per-session file, `session-<id>.skills.json`:
 the form to re-type or re-invoke — but deduplicated on the **last segment**, so a
 typed `/grilling` and an invoked `grilling:grilling` are one entry rather than the
 same skill filed under two contradictory sources. First arrival keeps the tag.
-This plugin's `/handoff` is excluded, exactly as the modes are: it is the command
+This plugin's `/carryover` is excluded, exactly as the modes are: it is the command
 that *writes* the note, and recording it would make the note cite itself. Only this
-plugin's — see **Whose `/handoff`** below; somebody else's `handoff` is an ordinary
-skill and is recorded like any other.
+plugin's — see **Whose turn it is** below; anything else, `handoff` included, is an
+ordinary skill and is recorded like any other.
 
-The list is emitted **once**, on the turn the user types `/handoff` — not on every
+The list is emitted **once**, on the turn the user types `/carryover` — not on every
 prompt. Two deliberate limits survive that:
 
 - The list is **capped** (12, oldest dropped). The note it feeds has a ~30-line
@@ -81,7 +81,7 @@ typed group also holds one-shot actions (`/commit`, `/pr`). The hook has no
 signal to tell them apart — but the model writing the note does, so the **command**
 asks it to keep only what is still shaping the work. What the hook emits is data:
 the names and how each arrived. What to do with them is static text, and lives in
-`commands/handoff.md` rather than in a string inside the hook, so that one
+`commands/carryover.md` rather than in a string inside the hook, so that one
 instruction is maintained in one place.
 
 Likewise, `typed` is **not** a synonym for *declarative*. It records how the name
@@ -96,7 +96,7 @@ be packed onto one line, nor prepended to the prompt itself. That rule is stated
 where it is acted on, in the command file.
 
 The state files do not survive the reset (and the session id may change), so the
-list travels the only channel that does: `/handoff` injects it into the note the
+list travels the only channel that does: `/carryover` injects it into the note the
 model writes, and on the first prompt of the fresh context the pending-note
 announcement tells the model to re-invoke what it can reach and ask the user for
 the rest.
@@ -184,8 +184,8 @@ depends on.
 Switching mode no longer requires a context reset, so the router no longer asks
 for one. The `/clear` between planning and implementation survives as something
 the **user** wants — the point of it is a fresh context, not a mode change — and
-the note that carries work across it is written on demand by the **`/handoff`
-command** (`commands/handoff.md`), never by injected text.
+the note that carries work across it is written on demand by the **`/carryover`
+command** (`commands/carryover.md`), never by injected text.
 
 The split between command and hook follows from one fact: the model does not know
 its own session id, so it cannot find `session-<id>.skills.json` by name. So the
@@ -200,18 +200,27 @@ The **resolved path** travels the same channel, for the same kind of reason. A f
 can only carry a relative path, and the read side resolves `.mode-router/handoff.md`
 against `cwd`; a session started outside the project root would then write one
 place and be read another, losing the note in silence. So the hook names the
-absolute path on the `/handoff` turn — and it is emitted even when nothing was
+absolute path on the `/carryover` turn — and it is emitted even when nothing was
 recorded, since it is the half that cannot be allowed to drift.
 
-### Whose `/handoff`
+### Whose turn it is
 
-`handoff` is a common name, and this marketplace already carries an unrelated
-skill by it. So the match is **not** the last-segment rule the modes use: a bare
-`/handoff` counts as this plugin's (the ambiguity is irreducible there, and the
-router is the half that needs the turn), and a namespaced one only as
-`/mode-router:handoff`. Matching `X:handoff` for any `X` would suppress routing on
-a turn this plugin has no part in, and inject a list aimed at a note the other
-skill does not write.
+The command is `/carryover`, and through `0.8.0` it was `/handoff`. That name was
+also an unrelated skill this marketplace ships, and the collision was not a tie the
+router got to break: the harness exposes no bare `/handoff` at all, only
+`handoff:handoff`, so typing `/handoff` expanded the **other** plugin's body while
+this hook — which reads the raw prompt text, not the resolved command — recognised
+its own name and injected the note's path and the skill list onto that turn. Two
+documents, two destinations, one turn, and `claude plugin validate` silent about it.
+Renaming was the fix; `docs/adr/0004-rename-the-handoff-command.md` carries the
+measurement.
+
+The match is still **not** the last-segment rule the modes use: a bare `/carryover`
+counts as this plugin's, and a namespaced one only as `/mode-router:carryover`.
+Matching `X:carryover` for any `X` would suppress routing on a turn this plugin has
+no part in, and inject a list aimed at a note somebody else's command does not
+write. That rule is correct however unique the name is today, so it does not depend
+on staying unique — which is the whole reason it survived the rename unchanged.
 
 The note goes to `.mode-router/handoff.md` inside the project (gitignore it). The
 router keeps only the **read** side: on the first prompt of a fresh context, the
@@ -272,12 +281,12 @@ In `auto`, the hook classifies **slash-command prompts** too, so the mode fires
 alongside the dispatched skill (e.g. `/improve-codebase-architecture` → also
 `ponytail`). It stays silent only when the slash command **is** a mode skill
 (`/caveman`, `/ponytail`) — the user already picked one — or this plugin's
-`/handoff`, which gets the note's path and the skill list instead. A **forced**
+`/carryover`, which gets the note's path and the skill list instead. A **forced**
 mode is a standing choice and applies on every prompt regardless — with the same
-one exception: on a `/handoff` turn the hook asks for no invocation, because that
+one exception: on a `/carryover` turn the hook asks for no invocation, because that
 turn produces a file of imposed shape and no prose to style. A forced mode already
 loaded still applies to it; it is just not requested there. `off` outranks
-everything, `/handoff` included: it means inject nothing.
+everything, `/carryover` included: it means inject nothing.
 
 ## Precedence over hard constraints
 

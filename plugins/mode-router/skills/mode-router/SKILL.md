@@ -48,7 +48,7 @@ A pending **handoff note** is not state but unfinished work, so it lives in the
 project at `.mode-router/handoff.md` (gitignore it) — **one** file, overwritten
 rather than appended to, four fixed sections, about 30 lines. Its presence *is*
 its state: pending while the file is there, absorbed once the model deletes it.
-The user asks for one by typing `/handoff` before a deliberate `/clear`; the
+The user asks for one by typing `/carryover` before a deliberate `/clear`; the
 router only announces a pending note to the fresh context.
 
 Deleting it is the model's job, since only the model knows when it has taken the
