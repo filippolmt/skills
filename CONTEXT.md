@@ -52,10 +52,19 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Loaded-mode set** — the mode skills known to be present in the current
   context. A mode is (re)invoked only when it is missing from the set. See
   `plugins/mode-router/skills/mode-router/ROUTING.md`.
+- **Mixed context** — a context holding both mode skills. Once the second one is
+  invoked it stays, so any long session becomes one. Not a failure state:
+  per-turn suspension is how a mixed context still answers in exactly one mode.
+- **Per-turn suspension** — how exclusivity is kept: the turn's routing text
+  applies the mode the request classifies to and declares the other one to
+  contribute nothing that turn, not even to the prose. Words rather than
+  enforcement, and per turn rather than per context — the suspended mode is still
+  loaded, just inert.
 - **Context reset** — the event that empties the loaded-mode set: session
   startup, clear, compaction, or fork. A resume is not one: it rebuilds the same
   context, so the loaded modes are still in it.
-- **Handoff note** — what a context leaves behind when switching mode requires a
-  context reset: what has been established, what remains, and the prompt to
-  re-send afterwards. Belongs to the project, not to the session it was written
+- **Handoff note** — what a context leaves behind for the one that replaces it:
+  what has been established, what remains, and the prompt to re-send afterwards.
+  The user asks for it with `/handoff` before a deliberate `/clear` — the router
+  never demands one. Belongs to the project, not to the session it was written
   in, so it survives the reset.
