@@ -52,6 +52,16 @@ router keeps only the **read** side: on the first prompt of a fresh context, the
 empty-set branch announces the pending note and asks the model to take it over and
 delete it.
 
+It announces only a note **somebody else** left. A context is not told to take over
+and delete the note it just wrote itself — which is what an empty mode set used to
+mean here, and does not: a session where no mode has loaded yet has one too, and
+the turn that writes the note is exactly such a turn, because the hook invokes no
+mode there. So the writing session leaves a marker (`session-<id>.wrote-note`, next
+to the rest of the session state) and the announcement skips it while that marker
+lives. A reset clears it along with everything else per-session, which is where
+"somebody else" comes from; a `resume` keeps it, being the same context walking
+back in.
+
 ## What the note holds
 
 The shape is **imposed by the command**, not left to the model. Free prose lost

@@ -30,11 +30,12 @@ everywhere), `off` (inject nothing). Missing or invalid → `auto`.
 
 This file is **user configuration** and nothing else writes to it. Runtime state
 is kept apart under `$XDG_STATE_HOME/mode-router/` (or
-`~/.local/state/mode-router/`), two files per session:
+`~/.local/state/mode-router/`), three files per session:
 
 ```json
 session-<id>.json         { "modes": ["caveman"] }
 session-<id>.skills.json  { "skills": [{ "name": "grilling", "source": "typed" }] }
+session-<id>.wrote-note   (empty — its presence is the state)
 ```
 
 The first is the loaded-mode set; the second records everything else that entered

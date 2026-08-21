@@ -34,7 +34,8 @@ pollute this set.
 What the hook injects follows from the set, in two branches:
 
 - **Empty set** — the full rules plus "invoke now", and the announcement of a
-  pending handoff note if one is waiting ([`HANDOFF-NOTE.md`](HANDOFF-NOTE.md)).
+  pending handoff note if one is waiting — unless this session is the one that
+  wrote it ([`HANDOFF-NOTE.md`](HANDOFF-NOTE.md)).
 - **Non-empty set** — the short classification line, a *conditional* invocation
   ("invoke the one that is missing if you classify to it; do not re-invoke the one
   already here"), and the suspension clause aimed at the other mode.

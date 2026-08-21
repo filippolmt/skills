@@ -70,8 +70,8 @@
 // This hook keeps only the READ side of the note: it lives in the project
 // (.mode-router/handoff.md) rather than in the state directory below — a reset
 // may hand out a new session id, and writing outside the working directory is a
-// permission the model often lacks — and the empty-set branch announces it to the
-// fresh context. Its presence IS its state: pending while the file is there,
+// permission the model often lacks — and the empty-set branch announces it to a
+// fresh context, but never back to the session that wrote it (noteWrittenFile). Its presence IS its state: pending while the file is there,
 // absorbed once the model deletes it — no status field to keep in sync.
 //
 // The model owns that deletion, because only it knows when it has taken the note
@@ -196,6 +196,16 @@ const loadedModesFile = (sessionId) => path.join(stateDir(), `session-${slug(ses
 // files can still lose an add, never a mode. It also keeps the v0.5 state file
 // forward-compatible: no `skills` key to miss, the file is simply absent.
 const skillsFile = (sessionId) => path.join(stateDir(), `session-${slug(sessionId)}.skills.json`);
+
+// This session wrote the note. Presence IS the state, as it is for the note
+// itself — there is nothing to record but the fact, so there is no document to
+// race over and no key to keep in sync. It exists so the announcement below can
+// ask the question it actually means: "did somebody ELSE leave this for me?" An
+// empty mode set was standing in for that, and is not the same thing — a session
+// where no mode has loaded yet has one too, and the carryover turn is precisely
+// such a turn, since the hook invokes no mode there. Cleared by the same reset
+// that clears the rest of the session state, which is where "else" comes from.
+const noteWrittenFile = (sessionId) => path.join(stateDir(), `session-${slug(sessionId)}.wrote-note`);
 // Inside the project, and NOT under .claude/. A reset may hand out a new session
 // id while the project stays the same, so the note cannot be keyed by session —
 // and the path has to be one the model can actually write. Both alternatives were
@@ -371,14 +381,16 @@ const skillEventHere = input.tool_name === 'Skill' && !input.agent_id;
 // session_id, so its set starts empty anyway. Sweeping runs on every source.
 if (input.hook_event_name === 'SessionStart') {
   if (input.source !== 'resume') {
-    for (const f of [loadedModesFile(input.session_id), skillsFile(input.session_id)]) {
+    for (const f of [loadedModesFile(input.session_id), skillsFile(input.session_id),
+                     noteWrittenFile(input.session_id)]) {
       try { fs.unlinkSync(f); } catch (e) { /* nothing to clear */ }
     }
     // Only on a real reset: a resume walks back into the context that wrote the
     // note, where it is not a leftover but the work in hand.
     archiveStaleHandoff(input.cwd);
   }
-  sweep([loadedModesFile(input.session_id), skillsFile(input.session_id)]);
+  sweep([loadedModesFile(input.session_id), skillsFile(input.session_id),
+         noteWrittenFile(input.session_id)]);
   process.exit(0);
 }
 
@@ -392,7 +404,14 @@ if (input.hook_event_name === 'SessionStart') {
 if (input.hook_event_name === 'UserPromptExpansion') {
   const mode = skillToMode(input.command_name);
   if (mode) addMode(input.session_id, mode);
-  else addSkill(input.session_id, input.command_name, 'typed');
+  // The one command whose typing is itself state: what follows it is a note this
+  // context wrote, which the announcement below must not hand back to it.
+  else if (isCarryoverCommand(input.command_name)) {
+    try {
+      fs.mkdirSync(stateDir(), { recursive: true });
+      fs.writeFileSync(noteWrittenFile(input.session_id), '');
+    } catch (e) { /* best effort: worst case the note is announced once too often */ }
+  } else addSkill(input.session_id, input.command_name, 'typed');
   process.exit(0);
 }
 
@@ -497,7 +516,8 @@ function invocationTail(loaded, cwd) {
     // half of the two-level expiry. Retiring it is SessionStart's job, because
     // this branch performs no writes at all.
     const mtime = handoffMtime(cwd);
-    if (mtime !== null && Date.now() - mtime <= HANDOFF_TTL_MS) {
+    const mine = fs.existsSync(noteWrittenFile(input.session_id));
+    if (!mine && mtime !== null && Date.now() - mtime <= HANDOFF_TTL_MS) {
       tail += ' A handoff note left before the last reset is waiting at `' +
         handoffFile(cwd) + '`: read it first, continue the work it describes, ' +
         'and delete the file once you have taken it over. If it names skills, ' +
