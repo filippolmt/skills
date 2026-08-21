@@ -155,6 +155,54 @@ assert.match(out, /delete the file once you have taken it over/, 'the model is t
 fs.unlinkSync(HANDOFF);
 assert.doesNotMatch(prompt('continue'), /handoff note left/, 'no note => nothing announced');
 
+// --- and is NOT announced back to the context that wrote it ---
+// The announcement means "somebody else left this for you", but it used to be
+// gated on the mode set being EMPTY, which is not the same thing as a reset: a
+// session where no mode has loaded yet — a plugin installed mid-session, or the
+// first prompts of any session — has an empty set too. The turn that writes the
+// note is exactly such a turn, because the hook stays silent about routing there
+// and so invokes no mode. The next prompt then told the model to take over and
+// DELETE the note it had just written: the user's unfinished work, destroyed by
+// the mechanism that exists to carry it.
+run('SessionStart');
+expand('mode-router:carryover');
+writeHandoff('# handoff\nwork in hand\n');
+assert.doesNotMatch(prompt('carry on'), /handoff note left/,
+  'a note this session wrote is not announced back to it');
+// The gate is the session, not the note: a real reset still hands it over.
+run('SessionStart');
+out = prompt('continue');
+assert.match(out, /A handoff note left before the last reset is waiting/,
+  'after a reset the same note is announced again');
+assert.match(out, /delete the file once you have taken it over/, 'and handed over for deletion');
+// A resume is not a reset, so the writing context keeps its silence. Order
+// matters and mirrors reality: the command is typed, THEN the note is written.
+expand('mode-router:carryover');
+writeHandoff('# handoff\nwork in hand\n');
+run('SessionStart', { source: 'resume' });
+assert.doesNotMatch(prompt('carry on'), /handoff note left/,
+  'resume walks back into the context that wrote it: still not announced');
+
+// A second /carryover in one session is still this command's turn, not an
+// ordinary typed skill: it must never reach the recorded list.
+expand('mode-router:carryover');
+expand('mode-router:carryover');
+assert.doesNotMatch(prompt(CARRYOVER), /TYPED here: [^.]*carryover/,
+  'a repeated /carryover is never recorded as a skill');
+
+// The marker qualifies the NOTE, not the session. A note already waiting when the
+// command was typed is older than the marker, so it is still somebody else's —
+// otherwise one /carryover would blind a session to every note in the project,
+// and typing the command without writing anything would blind it to all of them.
+run('SessionStart');
+writeHandoff('# handoff\nleft by another context\n');
+ageHandoff(60 * 1000);
+expand('mode-router:carryover');
+assert.match(prompt('carry on'), /A handoff note left before the last reset is waiting/,
+  'a note older than the marker stays announced: typing the command claims nothing');
+run('SessionStart');
+fs.unlinkSync(HANDOFF);
+
 // --- two-level expiry: the model deletes an absorbed note, the hook backstops ---
 // Level two exists because level one is the observed failure: the model forgets,
 // and a day-old note gets served to a fresh context as work in progress.

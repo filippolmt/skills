@@ -52,6 +52,41 @@ router keeps only the **read** side: on the first prompt of a fresh context, the
 empty-set branch announces the pending note and asks the model to take it over and
 delete it.
 
+It announces only a note **somebody else** left. A context is not told to take over
+and delete the note it just wrote itself — which is what an empty mode set used to
+mean here, and does not: a session where no mode has loaded yet has one too, and
+the turn that writes the note is exactly such a turn, because the hook invokes no
+mode there. So typing the command drops a marker (`session-<id>.wrote-note`, next to
+the rest of the session state) and the announcement skips a note **newer than that
+marker's mtime**. A reset clears the marker along with everything else per-session,
+which is where "somebody else" comes from; a `resume` keeps it, being the same
+context walking back in.
+
+The mtime is what makes the marker qualify the *note* rather than the whole
+session. A note already waiting when the command was typed is older than the
+marker, so it stays somebody else's and is still handed over — otherwise one
+`/carryover` would blind a session to every note in the project, and typing the
+command and then writing nothing would blind it to all of them. The marker is
+written once per session for the same reason: a second write would move its mtime
+past a note already written here and hand that note back to its own author.
+
+### The limit: notes are project-scoped, sessions are not
+
+The marker keys on the session id, so it answers "did *this session* write it",
+which is narrower than "is its author still working". Two consequences, both
+predating this gate and neither closed by it:
+
+- A **second session** in the same project has no marker, so it is told to take
+  over and delete a note the first session is still using.
+- A **fork** is a new session id, so the same applies — even though the forked
+  context is a continuation rather than somebody else.
+
+Closing these needs a liveness signal the hook does not have; the plausible
+substitutes trade one silent failure for another, so the mismatch is recorded here
+rather than patched. Two contexts working one project on one pending note is the
+same "two half-finished jobs" the note's one-file rule already refuses to
+represent.
+
 ## What the note holds
 
 The shape is **imposed by the command**, not left to the model. Free prose lost

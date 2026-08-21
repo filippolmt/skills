@@ -30,19 +30,26 @@ everywhere), `off` (inject nothing). Missing or invalid → `auto`.
 
 This file is **user configuration** and nothing else writes to it. Runtime state
 is kept apart under `$XDG_STATE_HOME/mode-router/` (or
-`~/.local/state/mode-router/`), two files per session:
+`~/.local/state/mode-router/`), three files per session:
 
 ```json
 session-<id>.json         { "modes": ["caveman"] }
 session-<id>.skills.json  { "skills": [{ "name": "grilling", "source": "typed" }] }
+session-<id>.wrote-note   {}  (its mtime is the payload)
 ```
 
 The first is the loaded-mode set; the second records everything else that entered
 the context, tagged `typed` (a user slash) or `model` (a `Skill` call) — the tag
 says who can bring it back after a reset. They are kept apart so a skill write can
-never clobber the mode set. Both are disposable — deleting them costs at most one
-redundant skill invocation and the skill list in the next handoff — and stale
-files are swept on `SessionStart` after 7 days.
+never clobber the mode set. Those two are disposable — deleting them costs at most
+one redundant skill invocation and the skill list in the next handoff.
+
+The third is dropped when `/mode-router:carryover` is typed, and its **mtime** is
+what matters: a note newer than it was written here, so the router never hands a
+note back to its own author. That one is **not** disposable — deleting it re-opens
+exactly that.
+
+Stale files are swept on `SessionStart` after 7 days.
 
 A pending **handoff note** is not state but unfinished work, so it lives in the
 project at `.mode-router/handoff.md` (gitignore it) — **one** file, overwritten
