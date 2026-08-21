@@ -425,13 +425,19 @@ if (input.hook_event_name === 'UserPromptExpansion') {
   // only failure in this file that costs the USER something — losing this write
   // means the next turn is told to delete the note about to be written — so it is
   // the one that does not stay silent.
-  else if (isCarryoverCommand(input.command_name) &&
-           !fs.existsSync(noteWrittenFile(input.session_id))) {
-    try { writeJson(noteWrittenFile(input.session_id), {}); }
-    catch (e) {
-      process.stderr.write('mode-router: could not mark this session as the note\'s ' +
-        'author (' + e.message + '). The next prompt may ask for the note to be ' +
-        'deleted — keep it.\n');
+  // The write-once check is nested rather than folded into this condition: with it
+  // in the `else if`, a SECOND /carryover in one session falls through to the
+  // `else` and is recorded as an ordinary typed skill — harmless today only
+  // because addSkill filters it again, which makes a guard two functions away
+  // load-bearing. This branch owns the command outright instead.
+  else if (isCarryoverCommand(input.command_name)) {
+    if (!fs.existsSync(noteWrittenFile(input.session_id))) {
+      try { writeJson(noteWrittenFile(input.session_id), {}); }
+      catch (e) {
+        process.stderr.write('mode-router: could not mark this session as the note\'s ' +
+          'author (' + e.message + '). The next prompt may ask for the note to be ' +
+          'deleted — keep it.\n');
+      }
     }
   } else addSkill(input.session_id, input.command_name, 'typed');
   process.exit(0);

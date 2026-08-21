@@ -183,6 +183,13 @@ run('SessionStart', { source: 'resume' });
 assert.doesNotMatch(prompt('carry on'), /handoff note left/,
   'resume walks back into the context that wrote it: still not announced');
 
+// A second /carryover in one session is still this command's turn, not an
+// ordinary typed skill: it must never reach the recorded list.
+expand('mode-router:carryover');
+expand('mode-router:carryover');
+assert.doesNotMatch(prompt(CARRYOVER), /TYPED here: [^.]*carryover/,
+  'a repeated /carryover is never recorded as a skill');
+
 // The marker qualifies the NOTE, not the session. A note already waiting when the
 // command was typed is older than the marker, so it is still somebody else's —
 // otherwise one /carryover would blind a session to every note in the project,
