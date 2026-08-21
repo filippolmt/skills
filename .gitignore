@@ -3,3 +3,6 @@ graphify-out/
 
 # mode-router handoff notes: work in progress being carried across a /clear
 .mode-router/
+
+# wayfinder: mappa e ticket locali (non versionati)
+.wayfinder/
