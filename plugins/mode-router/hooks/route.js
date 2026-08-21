@@ -41,6 +41,20 @@
 // than in the state directory below — a reset may hand out a new session id, and
 // writing outside the working directory is a permission the model often lacks.
 //
+// That note is ONE file, OVERWRITTEN, with four fixed sections and a ~30-line
+// budget. Free prose lost something different every time, and with nothing
+// saying overwrite-or-append the model sometimes grew the file into a log of the
+// whole discussion. Its presence IS its state: pending while the file is there,
+// absorbed once the model deletes it — no status field to keep in sync.
+//
+// The model owns that deletion, because only it knows when it has taken the note
+// over. The hook is the backstop for when it forgets: past 24h the note is no
+// longer SERVED as current, and SessionStart ARCHIVES it to
+// .mode-router/handoff-<stamp>.md. Archiving cannot live in UserPromptSubmit —
+// that branch writes nothing, by the rule below — and SessionStart non-resume is
+// both the only other event that already writes and the exact moment a stale note
+// becomes dangerous: a fresh context is about to be told what is pending.
+//
 // Two channels, deliberately not interchangeable. Instructions go through
 // UserPromptSubmit, which the model treats as trusted context. A PreToolUse deny
 // reason does NOT work for that: it arrives as tool output, and the model rightly
@@ -68,6 +82,11 @@ const VALID = ['auto', 'caveman', 'ponytail', 'off'];
 // resume. SessionStart already runs once per session, so it is the natural (and
 // only) place to sweep — no extra process, no daemon.
 const TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+// A handoff note is served to a fresh context as work in progress, so it has a
+// far shorter shelf life than session state: a day out, it is likelier one the
+// model forgot to delete than one still waiting to be picked up.
+const HANDOFF_TTL_MS = 24 * 60 * 60 * 1000;
 
 // The skills in use are injected on every steady-state prompt, so the list is
 // capped rather than left to grow for the life of a long session.
@@ -152,6 +171,20 @@ const skillsFile = (sessionId) => path.join(stateDir(), `session-${slug(sessionI
 // (outside the working directory) and one under .claude/ (protected, reasonably —
 // hooks live there). A plain dot-directory in the project writes fine.
 const handoffFile = (cwd) => path.join(cwd || '.', '.mode-router', 'handoff.md');
+// Where a note goes when the backstop fires. Keyed by the note's own mtime, not
+// by "now": the name then says when the work inside it was last touched, and
+// archiving the same note twice is impossible anyway — the first rename moves it.
+const handoffArchive = (cwd, mtimeMs) => path.join(cwd || '.', '.mode-router',
+  'handoff-' + new Date(mtimeMs).toISOString().replace(/[:.]/g, '-') + '.md');
+
+// The note's mtime, or null when there is no note. Callers compare it against
+// HANDOFF_TTL_MS: the file existing is not enough, it has to be current.
+function handoffMtime(cwd) {
+  try {
+    const st = fs.statSync(handoffFile(cwd));
+    return st.isFile() ? st.mtimeMs : null;
+  } catch (e) { return null; }
+}
 
 function readJson(file) {
   try {
@@ -226,7 +259,10 @@ function skillToMode(skill) {
 function sweep(keep) {
   // Handoff notes are deliberately NOT swept: they live in the user's project and
   // hold unfinished work, so removing one is the model's job once it has taken it
-  // over, never a timer's. Ditto `keep` — the CURRENT session's two state files:
+  // over, never a timer's. Their archives are not swept either — this loop only
+  // reads stateDir() and configDir(), never the project, so both are out of reach
+  // by construction rather than by a filter. Ditto `keep` — the CURRENT
+  // session's two state files:
   // a resume can arrive after any amount of time, so they are never garbage.
   const cutoff = Date.now() - TTL_MS;
   try {
@@ -246,6 +282,20 @@ function sweep(keep) {
       }
     }
   } catch (e) { /* no config dir */ }
+}
+
+// The backstop half of the note's two-level expiry. The model is the primary
+// owner and deletes the note once it has absorbed it; this catches the notes it
+// forgot. Archiving rather than deleting: it is the user's unfinished work, so it
+// moves aside and stays readable. Nothing prunes the archives — they cost disk in
+// an already-gitignored directory, and deleting the user's work on a timer is the
+// thing this whole mechanism exists to avoid.
+function archiveStaleHandoff(cwd) {
+  const mtime = handoffMtime(cwd);
+  if (mtime === null || Date.now() - mtime <= HANDOFF_TTL_MS) return;
+  try {
+    fs.renameSync(handoffFile(cwd), handoffArchive(cwd, mtime));
+  } catch (e) { /* vanished, or the project directory is not writable */ }
 }
 
 // All five events carry `session_id`, `hook_event_name` and `cwd`.
@@ -270,6 +320,9 @@ if (input.hook_event_name === 'SessionStart') {
     for (const f of [loadedModesFile(input.session_id), skillsFile(input.session_id)]) {
       try { fs.unlinkSync(f); } catch (e) { /* nothing to clear */ }
     }
+    // Only on a real reset: a resume walks back into the context that wrote the
+    // note, where it is not a leftover but the work in hand.
+    archiveStaleHandoff(input.cwd);
   }
   sweep([loadedModesFile(input.session_id), skillsFile(input.session_id)]);
   process.exit(0);
@@ -387,9 +440,8 @@ function skillsClause(skills) {
   if (typed.length) {
     c += ' TYPED here: ' + typed.map((n) => '/' + n).join(' ') + ' (slash commands, ' +
       'so one-shot actions are in there too: keep only what still shapes the work, ' +
-      'and put the keepers in the note as commands the user re-types after the ' +
-      'reset, one per message, before the prompt — a declarative skill has no other ' +
-      'way back).';
+      'and put the keepers in `## Skills` as commands the user re-types, one per ' +
+      'message, before the prompt — a declarative skill has no other way back).';
   }
   if (model.length) {
     c += ' INVOKED here: ' + model.map((n) => '`' + n + '`').join(', ') +
@@ -398,36 +450,54 @@ function skillsClause(skills) {
   return c;
 }
 
+// The note's shape, stated rather than left to the model. Four sections and a
+// line budget are what stop the dumping BY CONSTRUCTION; "keep it short" does not.
+// Actionable first — the prompt is the only part the user acts on, so it sits at
+// the top where it can be copied without reading the rest. And there is
+// deliberately NO fifth section for constraints or risks: it would become the new
+// place to pour the history the other four exclude.
+const HANDOFF_SCHEMA =
+  ' OVERWRITE that file, never append: one pending handoff at a time. Exactly ' +
+  'four sections, in this order, and no others — `## Prompt to send` (the exact ' +
+  'text to re-send, verbatim and self-contained); `## Skills` (the commands the ' +
+  'user re-types as one copy-paste block, each with a clause saying what is lost ' +
+  'by skipping it, then the names the next context re-invokes itself); ' +
+  '`## Decided` (bullets, only the decisions that constrain the next step); ' +
+  '`## Next step` (one). About 30 lines for the whole file, and no history, no ' +
+  'replay of the discussion, no superseded reasoning, no fifth section: what fits ' +
+  'none of the four is not carried across.';
+
 // The switch procedure. Taught here because this channel is trusted; the veto
 // only enforces it.
 function handoffInstruction(other, cwd, skills) {
   return ' If you classify to `' + other + '`, do NOT invoke it: a context holds ' +
     'at most one mode skill, and the invocation would be denied. Switch contexts ' +
-    'instead — write a handoff note to `' + handoffFile(cwd) + '` covering what ' +
-    'has been established so far, what still has to be done, the skills still ' +
-    'shaping the work, and the exact prompt to send after the reset; then tell ' +
-    'the user to run ' +
-    '/clear and send that prompt; then stop, without doing the task this turn. ' +
-    'Creating the note and saying so IS the whole turn.' + skillsClause(skills) +
+    'instead — write a handoff note to `' + handoffFile(cwd) + '`, then tell the ' +
+    'user to run /clear and send the prompt that note names; then stop, without ' +
+    'doing the task this turn. Creating the note and saying so IS the whole turn.' +
+    HANDOFF_SCHEMA + skillsClause(skills) +
     ' If writing that file is not possible (plan mode, ' +
-    'restricted permissions), put the same handoff inline in your reply instead — ' +
-    'the point is that nothing is lost across the reset, not the file itself.';
+    'restricted permissions), put the same four sections inline in your reply ' +
+    'instead — the point is that nothing is lost across the reset, not the file ' +
+    'itself.';
 }
 
 function invocationTail(loaded, cwd, skills) {
   if (loaded.length === 0) {
     let tail = RESET_TAIL;
-    // A handoff outlives the clear that consumed the context which wrote it.
-    const note = handoffFile(cwd);
-    try {
-      if (fs.statSync(note).isFile()) {
-        tail += ' A handoff note left before the last reset is waiting at `' +
-          note + '`: read it first, continue the work it describes, ' +
-          'and delete the file once you have taken it over. If it names skills, ' +
-          're-invoke the ones you can reach (Skill tool) and ask the user to ' +
-          're-type the rest before you continue.';
-      }
-    } catch (e) { /* no pending handoff */ }
+    // A handoff outlives the clear that consumed the context which wrote it —
+    // but only for a day. Past the TTL it is likelier a note the model forgot to
+    // delete than work still waiting, so it is not offered as current: the read
+    // half of the two-level expiry. Retiring it is SessionStart's job, because
+    // this branch performs no writes at all.
+    const mtime = handoffMtime(cwd);
+    if (mtime !== null && Date.now() - mtime <= HANDOFF_TTL_MS) {
+      tail += ' A handoff note left before the last reset is waiting at `' +
+        handoffFile(cwd) + '`: read it first, continue the work it describes, ' +
+        'and delete the file once you have taken it over. If it names skills, ' +
+        're-invoke the ones you can reach (Skill tool) and ask the user to ' +
+        're-type the rest before you continue.';
+    }
     return tail;
   }
   if (loaded.length === 1) {

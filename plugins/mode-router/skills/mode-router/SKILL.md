@@ -44,9 +44,19 @@ redundant skill invocation and the skill list in the next handoff — and stale
 files are swept on `SessionStart` after 7 days.
 
 A pending **handoff note** is not state but unfinished work, so it lives in the
-project at `.mode-router/handoff.md` (gitignore it) and is never swept. It is
-also the only channel that survives a reset, so the skill list is written into
-it rather than left in the state files.
+project at `.mode-router/handoff.md` (gitignore it) — **one** file, overwritten
+rather than appended to, four fixed sections, about 30 lines. Its presence *is*
+its state: pending while the file is there, absorbed once the model deletes it.
+
+Deleting it is the model's job, since only the model knows when it has taken the
+note over; the hook backstops the case where it forgets. Past **24 hours** the
+note is no longer served as current, and `SessionStart` (on a real reset, not a
+resume) archives it to `.mode-router/handoff-<stamp>.md`. The state sweep never
+reaches the project, so neither notes nor archives are ever deleted on age —
+archives accumulate as gitignored disk.
+
+The note is also the only channel that survives a reset, so the skill list is
+written into it rather than left in the state files.
 
 ## Operations
 
