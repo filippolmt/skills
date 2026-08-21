@@ -43,6 +43,23 @@ To refresh after upstream updates:
 /plugin marketplace update filippo-skills
 ```
 
+### Fan-out skills need `agent-report-guard`
+
+Skills that spawn sibling sub-agents and then read their reports — `code-review`,
+`research`, `codebase-design`, `improve-codebase-architecture`, `printing-press`,
+`wayfinder`, `impeccable` — stall when those sub-agents are spawned with a
+`name`: a named agent becomes a mailbox teammate that notifies idle without a
+report body, so the parent waits, then has to chase the report with
+`SendMessage`. The local `agent-report-guard` plugin drops the name, so they
+report back on their own:
+
+```
+/plugin install agent-report-guard
+```
+
+Every bundle that ships a fan-out skill already depends on it — install it
+yourself if you install one of those skills individually.
+
 ## Available skills
 
 Snapshot of the catalog — the source of truth is
