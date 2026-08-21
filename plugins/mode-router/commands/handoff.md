@@ -8,10 +8,15 @@ disable-model-invocation: true
 The user is about to `/clear`. Write the note that carries this work into the
 fresh context — everything the next context needs to continue, and nothing else.
 
-Write it to `.mode-router/handoff.md` in the project root (create the directory if
-needed) and **OVERWRITE** it, never append: one pending handoff at a time. Two
-pending notes are two half-finished jobs, which is the user's problem to resolve,
-not something this file should represent.
+The router names the exact path on this turn — a line reading `Write the note to
+...`. Use **that** path, verbatim, creating the directory if needed: it is
+`.mode-router/handoff.md` resolved against the directory this session started in,
+and it is the only path the router reads back. Do not re-derive it from the project
+root, which is not always the same directory.
+
+**OVERWRITE** the file, never append: one pending handoff at a time. Two pending
+notes are two half-finished jobs, which is the user's problem to resolve, not
+something this file should represent.
 
 ## The four sections
 
@@ -38,15 +43,18 @@ The router injects the raw material for this section on the turn you were invoke
 on: a line opening `Recorded for the note —` that lists what entered this context,
 split into what was **TYPED here** and what was **INVOKED here**. Use it — it is
 keyed by a session id you cannot read yourself, so it cannot be reconstructed from
-memory.
+memory. It is data, and deciding what to do with each group is this file's job:
 
 - The **typed** group comes from every slash command, not only skills, so one-shot
-  actions (`/commit`, `/pr`) are in there too. Keep only what still shapes the
-  work. A skill in that group may have no other way back: a declarative one has no
-  description for the model to route on, so the user re-typing it is the only path.
-  Give each keeper a clause saying what is lost by skipping it, so the user can
-  judge — and note that it is **one slash per message**, before the prompt, since a
-  message expands only its leading slash and swallows the rest as arguments.
+  actions (`/commit`, `/pr`) are in there too, and the router has no signal to tell
+  them apart. Keep only what still shapes the work. A keeper in that group may have
+  no other way back: a declarative skill has no `description` for the model to
+  route on, so the user re-typing it is the only path — and `typed` does not mean
+  *declarative*, it only means the model did not invoke it, so whether it is
+  re-invocable is yours to judge, not the router's. Give each keeper a clause
+  saying what is lost by skipping it, so the user can decide. Write them as
+  commands to re-type **one slash per message**, before the prompt, since a message
+  expands only its leading slash and swallows the rest as that command's arguments.
 - The **invoked** group the next context re-invokes itself, so just name those.
 
 If no such line was injected, nothing else entered this context: say so in one

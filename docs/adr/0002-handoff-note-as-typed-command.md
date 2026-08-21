@@ -52,3 +52,34 @@ most recent by mtime breaks with two sessions open. The hook does know the id. S
   as permanent — it is the same one already accepted for re-typing skills into the
   fresh context — and it is what makes the `/clear` a deliberate act rather than a
   toll the router collects.
+
+## Settled during implementation
+
+Four things this split forced, none of them visible until the code was written.
+
+- **The resolved path stays with the hook.** The third consequence above claims
+  everything about the note is untouched, and one thing is not: `0.7.0` injected
+  `handoffFile(cwd)` into the writing turn, so writer and reader could not disagree.
+  A static file can carry only a *relative* path, while the read side resolves it
+  against `cwd` — a session started outside the project root would write one place
+  and be read another, losing the note in silence. So the hook names the absolute
+  path on the `/handoff` turn, and does so even when no skill was recorded: the list
+  is optional, the path is not.
+- **The command is `disable-model-invocation: true`.** Not asked for, and required
+  by the mechanism: reached through the `Skill` tool there is no `UserPromptSubmit`,
+  so neither the path nor the list is emitted and the note is written blind. The
+  last consequence above already accepts that a note exists because the user asked
+  for one; this is that sentence enforced rather than hoped for.
+- **`/handoff` means *this* plugin's.** `handoff` is a common name — this
+  marketplace already carries an unrelated skill by it — so the last-segment rule
+  the modes use is wrong here: it would capture `X:handoff` for any `X`, suppress
+  routing on a turn this plugin has no part in, and inject a list aimed at a note
+  the other skill does not write. Bare stays ours, a namespace has to be
+  `mode-router:`.
+- **A forced mode gives way on the `/handoff` turn.** The spec said both things:
+  `ROUTING.md`'s event table made the exception unconditional, its *Slash commands*
+  section said a forced mode "applies on every prompt regardless". The table's side
+  wins, on this ADR's own reasoning — the note has an imposed shape and no prose to
+  style, so a mode there could only argue with the schema — and the other line was
+  amended to name the exception. A forced mode already loaded still applies; it is
+  simply not *requested* on that turn. `off` continues to outrank everything.

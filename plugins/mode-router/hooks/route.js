@@ -56,8 +56,14 @@
 // written on demand by the /handoff command (commands/handoff.md). The split is
 // forced by one fact: the model does not know its own session id, so it cannot
 // find the skills file by name — the command carries the static schema, the hook
-// contributes the list and stays silent about routing that turn. See
-// docs/adr/0002-handoff-note-as-typed-command.md.
+// contributes the list and stays silent about routing that turn. The note's
+// RESOLVED path travels the same way and for the same reason: a file can only
+// carry a relative one, and a session that did not start at the project root would
+// then write where nothing reads. See docs/adr/0002-handoff-note-as-typed-command.md.
+//
+// `/handoff` means THIS plugin's command. The marketplace ships an unrelated
+// `handoff` skill, so matching on the last segment alone would hand its turn to
+// this hook: routing suppressed, and a list aimed at a note it does not write.
 //
 // This hook keeps only the READ side of the note: it lives in the project
 // (.mode-router/handoff.md) rather than in the state directory below — a reset
@@ -90,10 +96,10 @@ const os = require('os');
 
 const MODES = ['caveman', 'ponytail'];
 const VALID = ['auto', 'caveman', 'ponytail', 'off'];
-// The command that writes the handoff note (commands/handoff.md). Named here
-// because two places need it: the turn it is typed on, and the skill list it must
-// stay out of.
+// The command that writes the handoff note (commands/handoff.md). Two places need
+// it: the turn it is typed on, and the skill list it must stay out of.
 const HANDOFF_COMMAND = 'handoff';
+const PLUGIN = 'mode-router';
 
 // Session state files older than this are garbage from sessions that will never
 // resume. SessionStart already runs once per session, so it is the natural (and
@@ -254,9 +260,10 @@ function addMode(sessionId, mode) {
 function addSkill(sessionId, skill, source) {
   if (typeof skill !== 'string') return;
   const name = skill.trim();
-  // `/handoff` is excluded for the same reason the modes are: it is the command
-  // that WRITES the note, so filing it would make the note cite itself.
-  if (!name || skillToMode(name) || leaf(name) === HANDOFF_COMMAND) return;
+  // Our own `/handoff` is excluded for the same reason the modes are: it is the
+  // command that WRITES the note, so filing it would make the note cite itself.
+  // Somebody else's `handoff` is an ordinary skill and gets recorded.
+  if (!name || skillToMode(name) || isOurHandoff(name)) return;
   const skills = readSkills(sessionId);
   if (skills.some((e) => leaf(e.name) === leaf(name))) return;
   // Capped for the note's line budget, not for a per-turn cost. Oldest out first,
@@ -270,6 +277,17 @@ function addSkill(sessionId, skill, source) {
 // `caveman:caveman`), so compare the LAST segment. Plain endsWith would also
 // match a hypothetical `anti-caveman`.
 const leaf = (s) => String(s).trim().toLowerCase().split(/[:/]/).pop();
+
+// Deliberately NOT the leaf() rule the modes use. `handoff` is a common enough
+// name that the marketplace already carries another one, and capturing `X:handoff`
+// for any X would suppress routing on a turn this plugin has no part in. Bare
+// stays ours — the ambiguity there is irreducible, and the router is the half that
+// needs the turn — but a namespace has to be this plugin's.
+function isOurHandoff(name) {
+  if (typeof name !== 'string') return false;
+  const t = name.trim().toLowerCase();
+  return t === HANDOFF_COMMAND || t === PLUGIN + ':' + HANDOFF_COMMAND;
+}
 
 function skillToMode(skill) {
   if (typeof skill !== 'string') return null;
@@ -406,7 +424,7 @@ const slashIsMode = skillToMode(slash) !== null;
 // style: a mode there could only argue with the schema. So the turn gets the one
 // half commands/handoff.md cannot carry — the skill list, keyed by a session id
 // the model does not know — and nothing about routing.
-const handoffTurn = slash !== null && leaf(slash) === HANDOFF_COMMAND;
+const handoffTurn = isOurHandoff(slash);
 
 // A skill cannot be unloaded, and nothing stops the second mode from entering any
 // more, so a context holding both is the normal steady state of a long session and
@@ -425,38 +443,29 @@ const CODING_IS_PURE =
   ' So a coding turn is pure `ponytail`: the explanations and notes around the ' +
   'code read as normal writing, not as `caveman`.';
 
-// What entered this context, emitted on the /handoff turn as a ready-made list so
-// the note copies it instead of the model reconstructing it from memory. It is the
-// whole output of that turn, so it opens the text rather than continuing a
-// sentence. The two sources differ in how the next context gets them back, and
-// neither is filtered here:
-//   - `UserPromptExpansion` fires for EVERY slash command, not only skills, so
-//     the typed list also holds one-shot actions (/commit, /pr). The hook cannot
-//     tell them apart; the model can, and it is the one writing the note.
-//   - `typed` does not mean "declarative". It means the model did not invoke it,
-//     so it may or may not be re-invocable — only the model knows. What is
-//     certain is that a DECLARATIVE skill can arrive no other way, which is why
-//     the user is the fallback for this group.
-// The re-type line is one slash PER MESSAGE: a message expands only its leading
-// slash and swallows the rest as that command's arguments.
+// What entered this context, emitted on the /handoff turn so the note copies it
+// instead of the model reconstructing it from memory. DATA only, split by how it
+// arrived: what to do with each group is static text and lives in
+// commands/handoff.md, per ADR-0002 — restating it here would be the same
+// instruction maintained in two places, drifting apart on the first edit.
 function skillsClause(skills) {
   if (!skills.length) return '';
   const named = (s) => skills.filter((e) => e.source === s).map((e) => e.name);
   const typed = named('typed');
   const model = named('model');
   let c = 'Recorded for the note —';
-  if (typed.length) {
-    c += ' TYPED here: ' + typed.map((n) => '/' + n).join(' ') + ' (slash commands, ' +
-      'so one-shot actions are in there too: keep only what still shapes the work, ' +
-      'and put the keepers in `## Skills` as commands the user re-types, one per ' +
-      'message, before the prompt — a declarative skill has no other way back).';
-  }
-  if (model.length) {
-    c += ' INVOKED here: ' + model.map((n) => '`' + n + '`').join(', ') +
-      ' (the next context re-invokes these itself, so just name them).';
-  }
+  if (typed.length) c += ' TYPED here: ' + typed.map((n) => '/' + n).join(' ') + '.';
+  if (model.length) c += ' INVOKED here: ' + model.map((n) => '`' + n + '`').join(', ') + '.';
   return c;
 }
+
+// Where the note goes, resolved. The command file can only carry a relative path,
+// and the read side below resolves it against `cwd`: a session that did not start
+// at the project root would write one place and be read another, losing the note
+// silently. 0.7.0 injected the resolved path on the writing turn and could not
+// drift; so does this.
+const handoffTarget = (cwd) => 'Write the note to `' + handoffFile(cwd) +
+  '` — that exact path, which is where this hook reads it back from.';
 
 // The mode not classified to is inert for the turn, whichever way the
 // classification went, so both shapes of the non-empty branch end the same way:
@@ -504,7 +513,9 @@ const out =
   // Ahead of the mode cases, forced ones included: what this turn needs is the
   // note's missing half, not a style for prose the note does not contain. Only
   // `off` outranks it, that being a standing instruction to inject nothing.
-  handoffTurn ? skillsClause(readSkills(input.session_id)) :
+  handoffTurn
+    ? [handoffTarget(input.cwd), skillsClause(readSkills(input.session_id))]
+        .filter(Boolean).join(' ') :
   // Forced modes: invoke when missing from the set, stay silent once it is in.
   mode === 'caveman' || mode === 'ponytail'
     ? (loaded.includes(mode) ? '' : forced(mode)) :

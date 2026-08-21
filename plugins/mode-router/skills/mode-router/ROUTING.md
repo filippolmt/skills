@@ -20,7 +20,7 @@ events:
 | `SessionStart` (`resume`) | **keeps** the set: resume rebuilds the context from the transcript, so the modes invoked earlier are back in it |
 | `UserPromptExpansion` (slash command) | adds a **user-typed** mode to the set — a typed `/caveman` is expanded inline by the harness and never passes through the `Skill` tool — and records any **other** typed skill as `typed` |
 | `PostToolUse` (matcher `Skill`) | adds the model-invoked mode to the set, and records any **other** invoked skill as `model` |
-| `UserPromptSubmit` | reads the set and emits the routing text — except on a `/handoff` prompt, where it emits only the skill list and says nothing about routing |
+| `UserPromptSubmit` | reads the set and emits the routing text — except on a `/handoff` prompt, where it emits the note's resolved path plus the skill list, and says nothing about routing |
 
 Tool events that carry `agent_id` come from a **subagent** — a different context
 that shares the session id — and are ignored: a subagent's skill loads never
@@ -53,8 +53,10 @@ per-session file, `session-<id>.skills.json`:
 the form to re-type or re-invoke — but deduplicated on the **last segment**, so a
 typed `/grilling` and an invoked `grilling:grilling` are one entry rather than the
 same skill filed under two contradictory sources. First arrival keeps the tag.
-`/handoff` itself is excluded, exactly as the modes are: it is the command that
-*writes* the note, and recording it would make the note cite itself.
+This plugin's `/handoff` is excluded, exactly as the modes are: it is the command
+that *writes* the note, and recording it would make the note cite itself. Only this
+plugin's — see **Whose `/handoff`** below; somebody else's `handoff` is an ordinary
+skill and is recorded like any other.
 
 The list is emitted **once**, on the turn the user types `/handoff` — not on every
 prompt. Two deliberate limits survive that:
@@ -76,8 +78,11 @@ prompt. Two deliberate limits survive that:
 
 `UserPromptExpansion` fires for **every** slash command, not only skills, so the
 typed group also holds one-shot actions (`/commit`, `/pr`). The hook has no
-signal to tell them apart — but the model writing the note does, so the injected
-text asks it to keep only what is still shaping the work.
+signal to tell them apart — but the model writing the note does, so the **command**
+asks it to keep only what is still shaping the work. What the hook emits is data:
+the names and how each arrived. What to do with them is static text, and lives in
+`commands/handoff.md` rather than in a string inside the hook, so that one
+instruction is maintained in one place.
 
 Likewise, `typed` is **not** a synonym for *declarative*. It records how the name
 arrived, not whether the model could reach it: a user is free to type an
@@ -87,7 +92,8 @@ arrive *no other way*, which is why the user is the fallback for that group.
 
 The re-typing is **one slash per message**: a message expands only its leading
 slash and swallows the rest as that command's arguments, so the commands cannot
-be packed onto one line, nor prepended to the prompt itself.
+be packed onto one line, nor prepended to the prompt itself. That rule is stated
+where it is acted on, in the command file.
 
 The state files do not survive the reset (and the session id may change), so the
 list travels the only channel that does: `/handoff` injects it into the note the
@@ -186,7 +192,26 @@ its own session id, so it cannot find `session-<id>.skills.json` by name. So the
 command body carries the static half — the schema below — and the hook, which does
 know the session id, emits the skill list on that turn and stays silent about
 routing. The note has an imposed shape and no prose to style; a mode there could
-only argue with the schema.
+only argue with the schema. That silence covers a **forced** mode too: the hook
+asks for no invocation on this turn. A forced mode already in the context still
+applies — a loaded skill cannot be told to stop — it simply is not requested here.
+
+The **resolved path** travels the same channel, for the same kind of reason. A file
+can only carry a relative path, and the read side resolves `.mode-router/handoff.md`
+against `cwd`; a session started outside the project root would then write one
+place and be read another, losing the note in silence. So the hook names the
+absolute path on the `/handoff` turn — and it is emitted even when nothing was
+recorded, since it is the half that cannot be allowed to drift.
+
+### Whose `/handoff`
+
+`handoff` is a common name, and this marketplace already carries an unrelated
+skill by it. So the match is **not** the last-segment rule the modes use: a bare
+`/handoff` counts as this plugin's (the ambiguity is irreducible there, and the
+router is the half that needs the turn), and a namespaced one only as
+`/mode-router:handoff`. Matching `X:handoff` for any `X` would suppress routing on
+a turn this plugin has no part in, and inject a list aimed at a note the other
+skill does not write.
 
 The note goes to `.mode-router/handoff.md` inside the project (gitignore it). The
 router keeps only the **read** side: on the first prompt of a fresh context, the
@@ -246,9 +271,13 @@ the same four sections.
 In `auto`, the hook classifies **slash-command prompts** too, so the mode fires
 alongside the dispatched skill (e.g. `/improve-codebase-architecture` → also
 `ponytail`). It stays silent only when the slash command **is** a mode skill
-(`/caveman`, `/ponytail`) — the user already picked one — or `/handoff`, which
-gets the skill list instead. A **forced** mode is a standing choice and applies on
-every prompt regardless.
+(`/caveman`, `/ponytail`) — the user already picked one — or this plugin's
+`/handoff`, which gets the note's path and the skill list instead. A **forced**
+mode is a standing choice and applies on every prompt regardless — with the same
+one exception: on a `/handoff` turn the hook asks for no invocation, because that
+turn produces a file of imposed shape and no prose to style. A forced mode already
+loaded still applies to it; it is just not requested there. `off` outranks
+everything, `/handoff` included: it means inject nothing.
 
 ## Precedence over hard constraints
 
