@@ -33,6 +33,16 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   configured in catalog-meta: derived from the local `mode-router` plugin's
   `dependencies`.
 
+## Guards
+
+- **Guard** — a local plugin whose whole content is a `PreToolUse` hook standing
+  between a tool call and a known-wrong form of it: `agent-report-guard` on
+  `Agent`, `zsh-wordsplit-guard` on `Bash`. Rewrites the call or denies it, and
+  says which.
+- **Opt-out** — how a deliberate use survives a guard: a marker in the call's
+  `description` for one call (`[mailbox]`, `[nosplit]`), or an environment
+  variable for the session (`ALLOW_NAMED_AGENTS=1`, `ALLOW_ZSH_NOSPLIT=1`).
+
 ## Agent spawns
 
 - **Named spawn** — an `Agent` tool call that passes `name`. The harness
@@ -47,9 +57,6 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   reports (`code-review`'s two axes, `research`, `printing-press`). It assumes an
   unnamed spawn; a named one leaves it waiting. The local `agent-report-guard`
   plugin is what enforces that assumption.
-- **Mailbox opt-out** — how a deliberate teammate survives the guard:
-  `[mailbox]` in the call's `description` (per call), or
-  `ALLOW_NAMED_AGENTS=1` (session-wide).
 
 ## Mode router
 
@@ -76,3 +83,13 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   survives the reset. The artifact, not the act of producing it.
 - **Carryover** — the act of having the pending handoff note written. Named apart
   from the note so that one word does not stand for both.
+
+## Word splitting
+
+- **Silent non-split** — what zsh does to a parameter expansion that is not an
+  explicit split: `for x in $var` iterates once over the whole string. Named for
+  its failure mode, not its mechanism — it does not error, and a one-element
+  sample hides it.
+- **Splitting expansion** — a form that does yield several words in zsh:
+  `${=var}` (on IFS), `${(f)var}` (per line), an array expansion, or a command
+  substitution. What a silent non-split is rewritten into.
