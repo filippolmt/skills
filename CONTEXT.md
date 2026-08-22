@@ -76,3 +76,18 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   survives the reset. The artifact, not the act of producing it.
 - **Carryover** — the act of having the pending handoff note written. Named apart
   from the note so that one word does not stand for both.
+
+## Word splitting
+
+- **Silent non-split** — what zsh does to an unquoted parameter expansion:
+  `for x in $var` iterates once over the whole string. Named for its failure
+  mode, not its mechanism — it does not error, and a one-element sample hides it.
+- **Splitting expansion** — a form that does yield several words in zsh:
+  `${=var}` (on IFS), `${(f)var}` (per line), an array expansion, or a command
+  substitution. What a silent non-split is rewritten into.
+- **Guard** — a local plugin whose whole content is a `PreToolUse` hook standing
+  between a tool call and a known-wrong form of it (`agent-report-guard`,
+  `zsh-wordsplit-guard`). Denies or rewrites the call and says which.
+- **Opt-out** — how a deliberate use survives a guard: a marker in the call's
+  `description` (per call) or an environment variable (session-wide). Every guard
+  carries both, since a guard with no exit is a guard that gets uninstalled.
