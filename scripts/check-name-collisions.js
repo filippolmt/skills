@@ -20,8 +20,7 @@
 
 const fs = require('fs');
 const path = require('path');
-
-const root = path.join(__dirname, '..');
+const { readCatalog, isLocal, root } = require('./catalog.js');
 
 // A skill's own `name` frontmatter wins over its directory, matching the harness.
 // A command file has no `name` field at all: its name IS the filename.
@@ -38,10 +37,9 @@ const ls = (dir) => {
 // what ties an entry to the plugin directory whose artifacts it ships, and so what
 // lets a plugin's own name be exempt from its own entry.
 function collect() {
-  const mk = JSON.parse(fs.readFileSync(path.join(root, '.claude-plugin', 'marketplace.json'), 'utf8'));
-  const entries = (mk.plugins || []).map((p) => ({
+  const entries = readCatalog().plugins.map((p) => ({
     name: p.name,
-    dir: typeof p.source === 'string' ? path.basename(p.source) : null,
+    dir: isLocal(p) ? path.basename(p.source) : null,
   }));
 
   const artifacts = [];
