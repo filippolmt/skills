@@ -59,7 +59,24 @@ wrongly.
   shape from both lists above.
 - The exemption is syntactic, so `for f in $D/*` is allowed even when `D` holds a
   path with spaces. That is correct for the wrong reason — globbing splits the
-  result anyway — and it means the guard says nothing about quoting.
+  result anyway — and it means the guard says nothing about quoting. The same
+  syntax-only reading allows `for d in $dirs/bin`, which does run once: the path
+  separator says "one word by intent" whether or not that intent was there.
+- A `PreToolUse` hook sees one command, so an array assigned in an EARLIER call
+  (`arr=(x y)` in one, `for x in $arr` in the next) is denied wrongly. Within a
+  single command the assignment is honoured. The deny is noise, but it carries
+  the right answer anyway: `"${arr[@]}"` is the form to use in both cases.
+- `for x in $EMPTY` (unset) is denied although zsh runs zero iterations. A static
+  guard cannot know the value, and a loop over an unset variable is worth a
+  second look regardless.
+
+These three came out of a differential test — 39 `for`-list shapes, each executed
+in zsh 5.9 to count real iterations, compared against the guard's verdict. The
+other six mismatches it surfaced were the metric's fault, not the guard's:
+`"$v"`, `${(f)v}`, `${(s.,.)v}` and `$arr[1]` iterate once because that is what
+they ask for, and `for x in "$v" $w` or `$v $v` iterate more than once while
+still hiding an unsplit expansion. Iteration count alone does not decide a hit;
+intent does.
 - Widening the exemption again needs the same evidence: a replay showing the
   denials it removes were wrong. Narrowing it back is cheap, so a false negative
   found in use is a one-line change plus a test.
