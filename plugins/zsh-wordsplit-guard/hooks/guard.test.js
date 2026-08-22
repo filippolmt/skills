@@ -63,6 +63,17 @@ allowed('for f in *.js; do echo $f; done');            // glob
 allowed('for x in uno due tre; do echo $x; done');     // literal list
 allowed('for x in "$v"; do echo $x; done');            // deliberate single word
 allowed('for x in "$@"; do echo $x; done');            // positionals, idiomatic
+// An expansion carrying text is one word by intent, or a glob — and a glob
+// yields several words whatever the option is. Every shape here came from the
+// replay of 1588 real for-loops, where all five were denied wrongly.
+allowed('for f in $D/*; do echo $f; done');
+allowed('for f in $D/opt-cold-*.log; do echo $f; done');
+allowed('for f in $SRC/gateway/*.yaml; do echo $f; done');
+allowed('for f in internal/$pkg/*.go; do echo $f; done');
+allowed('for f in $D/a.log $D/b.log; do echo $f; done');
+// Still denied: a whole word that is one expansion, wherever it sits.
+denied('for f in $exported; do echo $f; done');
+denied('for f in a.log $files; do echo $f; done');
 allowed('for x in $@; do echo $x; done');
 allowed('for x in $1 $2; do echo $x; done');
 allowed('echo "for x in $v"');                         // a header only inside a string

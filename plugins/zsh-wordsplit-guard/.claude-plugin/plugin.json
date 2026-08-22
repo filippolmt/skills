@@ -1,7 +1,7 @@
 {
   "name": "zsh-wordsplit-guard",
   "description": "Denies a Bash command containing `for x in $var`: the Bash tool runs zsh, where parameter expansion is not word-split, so the loop silently runs once over the whole string instead of per element. The deny message names the splitting forms to use instead. Opt out per call with `[nosplit]` in the description, or session-wide with ALLOW_ZSH_NOSPLIT=1.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Filippo Merante Caparrotta"
   }

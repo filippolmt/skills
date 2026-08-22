@@ -28,12 +28,18 @@ const ON = new Set(['1', 'true', 'yes']);
 
 // A `for NAME in <list>`, list ending at `;` or newline (zsh needs one before `do`).
 const FOR_HEADER = /\bfor\s+[A-Za-z_]\w*\s+in\s+([^\n;]*)/g;
-// `$var`, `${var}`, and a braced form carrying a modifier (`${v:-a b c}`,
-// `${v#p}`, `${v%x}`, `${v/a/b}`) — none of which split. Excluded by
-// construction: `$1`, `$@`, `$*`, `$#` (positionals: correct, or split anyway),
-// `${=v}` and `${(f)v}` (explicit splits), `${v[@]}` (an array expansion yields
-// several words whatever the option is).
-const NONSPLIT_EXPANSION = /\$(?:\{([A-Za-z_]\w*)(?:[:#%/][^}]*)?\}|([A-Za-z_]\w*)(?![\w[]))/;
+// A WHOLE word that is one expansion: `$var`, `${var}`, or a braced form
+// carrying a modifier (`${v:-a b c}`, `${v#p}`, `${v%x}`, `${v/a/b}`) — none of
+// which split. Anchored at both ends, because an expansion carrying text
+// (`$D/*.log`, `internal/$pkg/*.go`, `$D/a.log $D/b.log`) is either one word by
+// intent or a glob, and globbing yields several words whatever the option is:
+// measured on 1588 real for-loops from past sessions, that shape was 5 of 12
+// denials, every one of them wrong.
+//
+// Excluded by construction: `$1`, `$@`, `$*`, `$#` (positionals: correct, or
+// split anyway), `${=v}` and `${(f)v}` (explicit splits), `${v[@]}` (an array
+// expansion yields several words too).
+const NONSPLIT_WORD = /(?:^|\s)\$(?:\{([A-Za-z_]\w*)(?:[:#%/][^}]*)?\}|([A-Za-z_]\w*))(?=\s|$)/;
 // `<<` heredoc, but not `<<<`, which is a zsh here-string.
 const HEREDOC = /(?<!<)<<(?!<)/;
 
@@ -73,13 +79,13 @@ const limit = heredocAt === -1 ? scannable.length : heredocAt;
 let hit = null;
 for (const header of scannable.matchAll(FOR_HEADER)) {
   if (header.index >= limit) break;
-  const found = NONSPLIT_EXPANSION.exec(header[1]);
+  const found = NONSPLIT_WORD.exec(header[1]);
   if (!found) continue;
   const name = found[1] || found[2];
   // `a=(x y); for i in $a` is fine: an array expands to several words even with
   // SH_WORD_SPLIT off. Only what was assigned BEFORE this loop can be one.
   if (new RegExp('(?:^|[;&|(\\s])' + name + '=\\(').test(scannable.slice(0, header.index))) continue;
-  hit = { expansion: found[0], name: name, header: header[0].trim() };
+  hit = { expansion: found[0].trim(), name: name, header: header[0].trim() };
   break;
 }
 
