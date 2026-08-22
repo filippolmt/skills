@@ -15,10 +15,15 @@ jobs:
           node-version: 20
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code
-      - name: Test README generator
-        run: node scripts/gen-readme.test.js
-      - name: Test name-collision checker
-        run: node scripts/check-name-collisions.test.js
+      - name: Test repo scripts
+        # Glob, for the same reason as the hook tests below: a new script test is
+        # picked up by adding the file, without a second edit in here.
+        run: |
+          shopt -s nullglob
+          tests=(scripts/*.test.js)
+          if [ ${#tests[@]} -eq 0 ]; then echo "no script tests found" >&2; exit 1; fi
+          for t in "${tests[@]}"; do echo "--- $t"; node "$t"; done
+        shell: bash
       - name: Test local plugin hooks
         # Glob, not one step per plugin: a new hook test is picked up by adding
         # the test file, without a second edit in this file.

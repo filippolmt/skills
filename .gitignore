@@ -6,3 +6,6 @@ graphify-out/
 
 # wayfinder: mappa e ticket locali (non versionati)
 .wayfinder/
+
+# Per-machine Claude Code settings: never tracked
+.claude/settings.local.json

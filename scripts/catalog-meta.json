@@ -1,5 +1,5 @@
 {
-  "_comment": "Editorial metadata for the README 'Available skills' catalog, consumed by gen-readme.js. Ordered list of source repos with a display tagline and column kind. Everything else (skill names, descriptions, URLs) is derived from marketplace.json; the Modes table is derived from the local mode-router plugin's dependencies. Add a group entry here when you reference a skill from a new repo.",
+  "_comment": "Editorial metadata for the README 'Available skills' catalog, consumed by gen-readme.js. Ordered list of source repos with a display tagline and column kind. Everything else (skill names, descriptions, URLs) is derived from marketplace.json; the Modes table is derived from the local mode-router plugin's dependencies; bundles omit themselves, since a local plugin shipping no artifacts of its own is what a bundle IS. Add a group entry here when you reference a skill from a new repo. 'omit' is for an entry a human decides to hide for a reason no rule can derive — it is empty on purpose.",
   "groups": [
     { "repo": "mattpocock/skills", "tagline": "engineering & productivity", "kind": "skill" },
     { "repo": "Leonxlnx/taste-skill", "tagline": "frontend design & image-gen", "kind": "skill" },
@@ -14,5 +14,5 @@
     { "repo": "pbakaus/impeccable", "tagline": "frontend design fluency", "kind": "plugin" },
     { "repo": "mvanhorn/last30days-skill", "tagline": "multi-source trend research", "kind": "skill" }
   ],
-  "omit": ["code-review-bundle", "improve-codebase-architecture-bundle", "printing-press-bundle", "implement-bundle", "triage-bundle", "wayfinder-bundle", "grill-with-docs-bundle"]
+  "omit": []
 }

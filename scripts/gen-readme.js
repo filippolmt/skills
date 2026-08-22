@@ -19,19 +19,10 @@
 
 const fs = require('fs');
 const path = require('path');
+const { readCatalog, isLocal, isBundle, repoOf, root } = require('./catalog.js');
 
 const START = '<!-- catalog:start -->';
 const END = '<!-- catalog:end -->';
-
-function repoOf(entry) {
-  const s = entry && entry.source;
-  if (!s || s.source !== 'git-subdir' || typeof s.url !== 'string') return null;
-  return s.url.replace(/^https:\/\/github\.com\//, '');
-}
-
-function isLocal(entry) {
-  return entry && typeof entry.source === 'string';
-}
 
 // A markdown table: header cells + already-formatted `| … |` body rows.
 function table(cols, rows) {
@@ -112,20 +103,19 @@ function replaceBetweenMarkers(readme, catalog) {
   return readme.slice(0, i + START.length) + '\n' + catalog + '\n' + readme.slice(j);
 }
 
-module.exports = { renderCatalog, table, repoOf, replaceBetweenMarkers, START, END };
+module.exports = { renderCatalog, table, replaceBetweenMarkers, START, END };
 
 if (require.main === module) {
-  const root = path.join(__dirname, '..');
   const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
-  const marketplace = JSON.parse(read('.claude-plugin/marketplace.json'));
+  const catalog = readCatalog();
   const meta = JSON.parse(read('scripts/catalog-meta.json'));
   const routerManifest = JSON.parse(read('plugins/mode-router/.claude-plugin/plugin.json'));
   const modes = routerManifest.dependencies || [];
 
   // Each local plugin's description is copied verbatim into the catalog, so it can
   // drift from the manifest it was copied from. Catch that here, not in review.
-  const drifted = (marketplace.plugins || [])
-    .filter((e) => typeof e.source === 'string')
+  const drifted = catalog.plugins
+    .filter(isLocal)
     .filter((e) => JSON.parse(read(path.join(e.source, '.claude-plugin/plugin.json'))).description !== e.description);
   if (drifted.length) {
     for (const e of drifted) {
@@ -137,10 +127,14 @@ if (require.main === module) {
     process.exit(1);
   }
 
-  const catalog = renderCatalog(marketplace, meta, modes);
+  // The omit list is what somebody DECIDED to hide; bundles hide themselves,
+  // because shipping no artifacts is what makes an entry one. Merged here rather
+  // than inside renderCatalog, which stays a pure function of its three inputs.
+  const omit = (meta.omit || []).concat(catalog.plugins.filter(isBundle).map((p) => p.name));
+  const markdown = renderCatalog(catalog, { ...meta, omit }, modes);
   const readmePath = path.join(root, 'README.md');
   const current = fs.readFileSync(readmePath, 'utf8');
-  const next = replaceBetweenMarkers(current, catalog);
+  const next = replaceBetweenMarkers(current, markdown);
 
   if (process.argv.includes('--check')) {
     if (current !== next) {

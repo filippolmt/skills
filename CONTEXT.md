@@ -15,14 +15,20 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Whole-plugin entry** — a git-subdir entry whose `path` points at an upstream
   plugin root (its own `.claude-plugin/plugin.json`); installing it brings every
   bundled skill and subagent at once.
+- **Bundle** — a local plugin that ships no artifacts of its own: its entry
+  exists to pull dependencies in. Not listed anywhere — a local plugin with no
+  `skills/`, `commands/`, `hooks/` or `agents/` directory IS one, which is what
+  keeps it out of the projection.
 - **Catalog projection** — the README "Available skills" section. NOT a source
   of truth: it is generated from the catalog by `scripts/gen-readme.js` and
   spliced between the `<!-- catalog:start -->` / `<!-- catalog:end -->` markers.
   Never hand-edited.
-- **Catalog-meta** — `scripts/catalog-meta.json`. The only irreducible editorial
-  data behind the projection: ordered source repos with a display **tagline** and
-  a column **kind** (`skill` → "What it does", `plugin` → "What it bundles"), plus
-  an **omit** list. Everything else in the projection is derived from the catalog.
+- **Catalog-meta** — `scripts/catalog-meta.json`. The irreducible editorial data
+  behind the projection: ordered source repos with a display **tagline** and a
+  column **kind** (`skill` → "What it does", `plugin` → "What it bundles").
+  Everything else in the projection is derived from the catalog. Its **omit** list
+  is not editorial in that sense and is empty: it once named the seven bundles,
+  which now omit themselves.
 - **Modes table** — the projection's final table (`caveman`, `ponytail`). Not
   configured in catalog-meta: derived from the local `mode-router` plugin's
   `dependencies`.

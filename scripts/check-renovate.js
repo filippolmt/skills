@@ -11,57 +11,72 @@
 
 const fs = require('fs');
 const path = require('path');
+const { readCatalog, isGitSubdir, root } = require('./catalog.js');
 
-const root = path.join(__dirname, '..');
-const renovate = JSON.parse(fs.readFileSync(path.join(root, 'renovate.json'), 'utf8'));
-const mkPath = path.join(root, '.claude-plugin', 'marketplace.json');
-const mkText = fs.readFileSync(mkPath, 'utf8');
-const mk = JSON.parse(mkText);
+// Pure: the message this guard exists to print, or null when the regexes cover the
+// catalog exactly. Split from the file reading because the guard's own failure mode
+// is SILENCE — a broken regex matches nothing, and a guard broken the same way
+// reports nothing — so running it only against a tree that happens to pass is not a
+// check. Taking the catalog and the parsed renovate.json as arguments is what lets
+// check-renovate.test.js hand it a tree that FAILS.
+//
+// `catalog` is `{ text, plugins }` from readCatalog(): the regexes are matched
+// against the file as written, because that is what Renovate itself matches.
+const gitSubdirCount = (catalog) => catalog.plugins.filter(isGitSubdir).length;
 
-const expected = (mk.plugins || []).filter(
-  (p) => p.source && p.source.source === 'git-subdir'
-).length;
+function coverageError(catalog, renovate) {
+  const expected = gitSubdirCount(catalog);
 
-// EVERY customManager counts, not just the first: the entry shape is split
-// across two of them by `ref` (a branch -> git-refs, a tag -> github-tags), and
-// they are only a guard TOGETHER. Reading one alone reports the other's entries
-// as uncovered — which is exactly what this check is supposed to detect, so the
-// false alarm is indistinguishable from the real fault.
-const managers = (renovate.customManagers || []).filter((m) => Array.isArray(m.matchStrings));
-if (!managers.length) {
-  console.error('renovate.json: no customManager with matchStrings found');
-  process.exit(1);
-}
+  // EVERY customManager counts, not just the first: the entry shape is split
+  // across two of them by `ref` (a branch -> git-refs, a tag -> github-tags), and
+  // they are only a guard TOGETHER. Reading one alone reports the other's entries
+  // as uncovered — which is exactly what this check is supposed to detect, so the
+  // false alarm is indistinguishable from the real fault.
+  const managers = (renovate.customManagers || []).filter((m) => Array.isArray(m.matchStrings));
+  if (!managers.length) return 'renovate.json: no customManager with matchStrings found';
 
-// Track WHERE each match starts, not just how many there are: an entry claimed by
-// two managers and an entry claimed by none cancel out in a plain count, and the
-// uncovered entry is the failure mode this guard exists for.
-const offsets = [];
-for (const manager of managers) {
-  for (const pattern of manager.matchStrings) {
-    const re = new RegExp(pattern, 'g');
-    for (const m of mkText.matchAll(re)) offsets.push(m.index);
+  // Track WHERE each match starts, not just how many there are: an entry claimed by
+  // two managers and an entry claimed by none cancel out in a plain count, and the
+  // uncovered entry is the failure mode this guard exists for.
+  const offsets = [];
+  for (const manager of managers) {
+    for (const pattern of manager.matchStrings) {
+      const re = new RegExp(pattern, 'g');
+      for (const m of catalog.text.matchAll(re)) offsets.push(m.index);
+    }
   }
-}
 
-const matched = new Set(offsets).size;
-if (matched !== offsets.length) {
-  console.error(
-    `${offsets.length - matched} marketplace entr${offsets.length - matched === 1 ? 'y is' : 'ies are'} ` +
+  const matched = new Set(offsets).size;
+  if (matched !== offsets.length) {
+    const over = offsets.length - matched;
+    return `${over} marketplace entr${over === 1 ? 'y is' : 'ies are'} ` +
       'matched by more than one customManager in renovate.json — two managers would ' +
-      'fight over the same sha. Narrow the regexes so each entry has exactly one.'
-  );
-  process.exit(1);
-}
+      'fight over the same sha. Narrow the regexes so each entry has exactly one.';
+  }
 
-if (matched !== expected) {
-  console.error(
-    `Renovate regex matches ${matched} entr${matched === 1 ? 'y' : 'ies'} but ` +
+  if (matched !== expected) {
+    return `Renovate regex matches ${matched} entr${matched === 1 ? 'y' : 'ies'} but ` +
       `marketplace.json has ${expected} git-subdir entr${expected === 1 ? 'y' : 'ies'}.\n` +
       'The customManager matchStrings in renovate.json is out of sync with the ' +
-      'entry shape — sha auto-bumps will silently stop. Fix the regex.'
-  );
-  process.exit(1);
+      'entry shape — sha auto-bumps will silently stop. Fix the regex.';
+  }
+
+  return null;
 }
 
-console.log(`Renovate regex matches all ${expected} git-subdir entries.`);
+module.exports = { coverageError };
+
+if (require.main === module) {
+  const catalog = readCatalog();
+  const renovate = JSON.parse(fs.readFileSync(path.join(root, 'renovate.json'), 'utf8'));
+
+  const error = coverageError(catalog, renovate);
+  if (error) {
+    console.error(error);
+    process.exit(1);
+  }
+
+  // The count, not just "ok": zero entries and zero matches also passes, and that
+  // is the one green worth being able to spot.
+  console.log(`Renovate regex matches all ${gitSubdirCount(catalog)} git-subdir entries.`);
+}
