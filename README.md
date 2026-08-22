@@ -66,8 +66,9 @@ The Bash tool runs zsh, where parameter expansion is not word-split. So
 `for x in $var` runs the body **once** over the whole string — no error, just a
 wrong result from the second element on, which any check with a one-element
 sample still passes. Command substitution does split, so `for f in $(cmd)` is
-fine. The local `zsh-wordsplit-guard` plugin denies the first form and names the
-fixes (`${=var}`, `${(f)var}`, an array plus `"${a[@]}"`, a literal list):
+fine, and so is a glob or a path around the expansion (`for f in $D/*.log`). The
+local `zsh-wordsplit-guard` plugin denies the bare expansion and names the fixes
+(`${=var}`, `${(f)var}`, an array plus `"${a[@]}"`, a literal list):
 
 ```
 /plugin install zsh-wordsplit-guard
@@ -83,7 +84,7 @@ Snapshot of the catalog — the source of truth is
 <!-- catalog:start -->
 **Local:**
 - `agent-report-guard` — Drops `name` from Agent tool calls so the subagent reports back on its own: a named agent becomes a mailbox teammate that notifies idle without a report body, leaving fan-out skills (code-review, research, printing-press) chasing the report with SendMessage. Opt out per call with `[mailbox]` in the description, or session-wide with ALLOW_NAMED_AGENTS=1.
-- `zsh-wordsplit-guard` — Denies a Bash command containing `for x in $var`: the Bash tool runs zsh, where parameter expansion is not word-split, so the loop silently runs once over the whole string instead of per element. The deny message names the splitting forms to use instead. Opt out per call with `[nosplit]` in the description, or session-wide with ALLOW_ZSH_NOSPLIT=1.
+- `zsh-wordsplit-guard` — Denies a Bash command looping over a bare expansion (`for x in $var`): the Bash tool runs zsh, where parameter expansion is not word-split, so the loop silently runs once over the whole string instead of per element. A glob or a path around the expansion (`for f in $D/*.log`) is left alone. The deny message names the splitting forms to use instead. Opt out per call with `[nosplit]` in the description, or session-wide with ALLOW_ZSH_NOSPLIT=1.
 - `mode-router` — Per-prompt router: classifies each request and invokes the caveman (terse output) or ponytail (minimal code) skill, exclusively. Force a mode or turn it off via control file. Bundles both as dependencies.
 
 ### [mattpocock/skills](https://github.com/mattpocock/skills) — engineering & productivity

@@ -93,3 +93,8 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Splitting expansion** — a form that does yield several words in zsh:
   `${=var}` (on IFS), `${(f)var}` (per line), an array expansion, or a command
   substitution. What a silent non-split is rewritten into.
+- **Bare expansion** — a word of a `for` list that is one non-splitting
+  expansion, with nothing glued on that changes the outcome: `$var`, `${var}`,
+  `$var,`, `${var}x`. The only shape a guard can call a silent non-split, since
+  a glob or a path separator around the expansion decides the word count
+  instead — see `docs/adr/0005-what-the-wordsplit-guard-flags.md`.

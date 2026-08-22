@@ -63,9 +63,31 @@ allowed('for f in *.js; do echo $f; done');            // glob
 allowed('for x in uno due tre; do echo $x; done');     // literal list
 allowed('for x in "$v"; do echo $x; done');            // deliberate single word
 allowed('for x in "$@"; do echo $x; done');            // positionals, idiomatic
+// A glob yields several words whatever the option says, and a path separator
+// marks a word built to BE one word — see
+// docs/adr/0005-what-the-wordsplit-guard-flags.md for the measurement behind
+// this exemption.
+allowed('for f in $D/*; do echo $f; done');
+allowed('for f in $D/opt-cold-*.log; do echo $f; done');
+allowed('for f in $SRC/gateway/*.yaml; do echo $f; done');
+allowed('for f in internal/$pkg/*.go; do echo $f; done');
+allowed('for f in $D/a.log $D/b.log; do echo $f; done');
 allowed('for x in $@; do echo $x; done');
 allowed('for x in $1 $2; do echo $x; done');
 allowed('echo "for x in $v"');                         // a header only inside a string
+
+// Text glued on that is neither glob nor path leaves the word one word, so the
+// body still runs once (each of these iterates once in zsh 5.9).
+denied('for x in $v,; do echo $x; done');
+denied('for x in $v.log; do echo $x; done');
+denied('for x in $v$w; do echo $x; done');
+denied('for x in ${v}x; do echo $x; done');
+denied('for x in $v:$w; do echo $x; done');
+denied('for f in a.log $files; do echo $f; done');
+denied('for f in $exported; do echo $f; done');
+// A backslash-continued header puts the list on the next line, where the scan
+// has to follow it.
+denied('for x in \\\n$v; do echo $x; done');
 
 // A braced expansion carrying a modifier does not split either (checked in zsh
 // 5.9: `${v:-a b c}` and `${w#x}` both give one iteration).

@@ -28,12 +28,22 @@ const ON = new Set(['1', 'true', 'yes']);
 
 // A `for NAME in <list>`, list ending at `;` or newline (zsh needs one before `do`).
 const FOR_HEADER = /\bfor\s+[A-Za-z_]\w*\s+in\s+([^\n;]*)/g;
-// `$var`, `${var}`, and a braced form carrying a modifier (`${v:-a b c}`,
-// `${v#p}`, `${v%x}`, `${v/a/b}`) — none of which split. Excluded by
+// One word of a `for` list. `${...}` is atomic, so a modifier holding spaces
+// (`${v:-a b c}`) stays one word.
+const WORD = /(?:\$\{[^}]*\}|[^\s])+/g;
+// A non-splitting expansion: `$var`, `${var}`, or a braced form carrying a
+// modifier (`${v:-a b c}`, `${v#p}`, `${v%x}`, `${v/a/b}`). Excluded by
 // construction: `$1`, `$@`, `$*`, `$#` (positionals: correct, or split anyway),
 // `${=v}` and `${(f)v}` (explicit splits), `${v[@]}` (an array expansion yields
-// several words whatever the option is).
+// several words too).
 const NONSPLIT_EXPANSION = /\$(?:\{([A-Za-z_]\w*)(?:[:#%/][^}]*)?\}|([A-Za-z_]\w*)(?![\w[]))/;
+// Text around the expansion that makes the word harmless — see
+// docs/adr/0005-what-the-wordsplit-guard-flags.md. A glob metacharacter yields
+// several words whatever `SH_WORD_SPLIT` says (`$D/*.log`), and a path
+// separator marks a word built to BE one word (`$D/a.log`). Anything else glued
+// on — `$v,`, `$v.log`, `${v}x`, `$v$w` — still runs the body once, so it is
+// still a hit.
+const HARMLESS_AROUND = /[*?[/]/;
 // `<<` heredoc, but not `<<<`, which is a zsh here-string.
 const HEREDOC = /(?<!<)<<(?!<)/;
 
@@ -57,6 +67,7 @@ if (input.tool_name !== 'Bash' || !command || optedOut) process.exit(0);
 // under a shell that splits — needs no special case, and `zsh -c '…'` slips
 // through with it. False negative over a wrong deny on the critical path.
 const scannable = command
+  .replace(/\\\n/g, ' ')
   .replace(/\$\((?:[^()]|\([^()]*\))*\)/g, ' ')
   .replace(/`[^`]*`/g, ' ')
   .replace(/"(?:\\.|[^"\\])*"/g, ' ')
@@ -73,7 +84,10 @@ const limit = heredocAt === -1 ? scannable.length : heredocAt;
 let hit = null;
 for (const header of scannable.matchAll(FOR_HEADER)) {
   if (header.index >= limit) break;
-  const found = NONSPLIT_EXPANSION.exec(header[1]);
+  const found = (header[1].match(WORD) || [])
+    .filter((word) => !HARMLESS_AROUND.test(word.replace(/\$\{[^}]*\}/g, '')))
+    .map((word) => NONSPLIT_EXPANSION.exec(word))
+    .find(Boolean);
   if (!found) continue;
   const name = found[1] || found[2];
   // `a=(x y); for i in $a` is fine: an array expands to several words even with
