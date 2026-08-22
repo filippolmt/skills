@@ -19,13 +19,6 @@
 // Deny rather than warn: an advisory arrives after the wrong output is already
 // in context, and the construct is narrow enough that a hit is almost always a
 // real bug. Flipping to `"ask"` is a one-line change if false positives show up.
-//
-// Not suggested anywhere: `setopt shwordsplit`. It changes the semantics of
-// every later expansion in that shell, trading one silent bug for a broader one.
-//
-// Opt-outs, mirroring agent-report-guard:
-//   - per call    — put `[nosplit]` in the Bash call's `description`
-//   - session     — ALLOW_ZSH_NOSPLIT=1
 const fs = require('fs');
 
 const NOSPLIT_OPT_OUT = /\[nosplit\]/i;
@@ -97,17 +90,16 @@ process.stdout.write(JSON.stringify({
     hookEventName: 'PreToolUse',
     permissionDecision: 'deny',
     permissionDecisionReason:
-      'zsh-wordsplit-guard: `' + hit.header + '` iterates ONCE over the whole ' +
-      'string. The Bash tool runs zsh, where parameter expansion is not ' +
-      'word-split, so ' + hit.expansion + ' stays one word instead of several — ' +
-      'no error, just a silent wrong result from the second element on. Rewrite ' +
-      'as one of:\n' +
+      'zsh-wordsplit-guard: silent non-split. `' + hit.header + '` iterates ONCE ' +
+      'over the whole string: the Bash tool runs zsh, where parameter expansion ' +
+      'is not word-split, so ' + hit.expansion + ' stays one word. No error — a ' +
+      'wrong result from the second element on. Rewrite as one of:\n' +
       '  - `${=' + hit.name + '}` — split on IFS\n' +
       '  - `${(f)' + hit.name + '}` — split per line (safe with paths containing spaces)\n' +
       '  - `arr=(...)` then `for x in "${arr[@]}"` — for values you build yourself\n' +
       '  - a literal list, or `$(cmd)` directly, which does split in zsh\n' +
-      'Do not use `setopt shwordsplit`: it changes every later expansion in that ' +
-      'shell. If the non-split is deliberate, put [nosplit] in the description ' +
-      '(or set ALLOW_ZSH_NOSPLIT=1 for the session).',
+      'Keep the split at the call site: `setopt shwordsplit` would change every ' +
+      'later expansion in that shell. Deliberate non-split: [nosplit] in the ' +
+      'description, or ALLOW_ZSH_NOSPLIT=1 for the session.',
   },
 }));

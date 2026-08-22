@@ -44,7 +44,8 @@ assert.ok(/\$\{\(f\)v\}/.test(reason), 'names the per-line fix');
 assert.ok(/"\$\{arr\[@\]\}"/.test(reason), 'names the array fix');
 assert.ok(/\[nosplit\]/.test(reason), 'points at the per-call opt-out');
 assert.ok(/ALLOW_ZSH_NOSPLIT=1/.test(reason), 'points at the session opt-out');
-assert.ok(/Do not use `setopt shwordsplit`/.test(reason), 'rules shwordsplit out rather than offering it');
+assert.ok(/Keep the split at the call site/.test(reason), 'names the target behaviour');
+assert.ok(/`setopt shwordsplit` would change/.test(reason), 'rules the shell option out as a consequence, not an order');
 
 denied('for x in ${v}; do echo $x; done');            // braced form
 denied('for f in $files\ndo\n  rm "$f"\ndone');       // newline before do
