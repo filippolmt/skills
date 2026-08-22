@@ -66,15 +66,41 @@ allowed('for x in $@; do echo $x; done');
 allowed('for x in $1 $2; do echo $x; done');
 allowed('echo "for x in $v"');                         // a header only inside a string
 
-// A body that does not run under zsh: skipped whole, false negative on purpose.
-allowed('cat <<EOF\nfor x in $v; do echo $x; done\nEOF');
+// A braced expansion carrying a modifier does not split either (checked in zsh
+// 5.9: `${v:-a b c}` and `${w#x}` both give one iteration).
+denied('for x in ${v:-a b c}; do echo $x; done');
+denied('for x in ${v#prefix}; do echo $x; done');
+denied('for x in ${v/a/b}; do echo $x; done');
+
+// --- what is NOT scanned, and only what is ------------------------------------
+// A quoted payload is blanked, so a loop inside one is invisible. That covers
+// `bash -c` for free — its body runs under a shell that does split — and takes
+// `zsh -c` with it, which is the acknowledged cost.
 allowed("bash -c 'for x in $v; do echo $x; done'");
 allowed('bash -lc "for x in \\$v; do echo x; done"');
-// A here-string is zsh, not another shell: it must not buy the heredoc skip.
+allowed("zsh -c 'for x in $v; do echo $x; done'");
+// But a `-c` anywhere on the line must NOT excuse a loop that IS zsh's.
+denied('for f in $files; do bash -c "echo hi"; done');
+denied('for f in $files; do ./deploy.sh -c prod; done');
+denied('for f in $files; do echo $f; done # deploy.sh -c runs elsewhere');
+
+// A `#` comment is not code: neither denied, nor able to hide a real loop.
+allowed('echo hi # for x in $v; do :; done');
+denied('for x in $v; do echo $x; done # iterate the changed files');
+allowed('echo "no # comment here"');
+
+// Everything from the first `<<` on is treated as heredoc body; before it is
+// still zsh, and a here-string (`<<<`) is zsh throughout.
+allowed('cat <<EOF\nfor x in $v; do echo $x; done\nEOF');
+denied('for f in $v; do echo $f; done\ncat <<EOF\nplain text\nEOF');
 denied('for x in $v; do echo $x; done <<<"seed"');
+
+// The array escape hatch is ordered: only an assignment BEFORE the loop counts.
+denied('for i in $a; do echo $i; done; a=(uno due)');
 
 // --- opt-outs and unrelated calls --------------------------------------------
 allowed('for x in $v; do echo $x; done', { description: 'deliberate [nosplit]' });
+allowed('for x in $v; do echo $x; done', { description: 'deliberate [NOSPLIT]' });
 assert.strictEqual(
   run(bash('for x in $v; do echo $x; done'), { ALLOW_ZSH_NOSPLIT: '1' }), null,
   'session opt-out honoured');
