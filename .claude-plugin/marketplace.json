@@ -588,7 +588,7 @@
         "url": "https://github.com/wshobson/agents",
         "path": "plugins/api-scaffolding",
         "ref": "main",
-        "sha": "2b49247f1347d9cbd90edf869e5412563c3945cf"
+        "sha": "d82998e7df393c671ede2387a8435075f0b633f5"
       },
       "description": "REST and GraphQL API scaffolding: backend-architect, fastapi-pro, django-pro, and graphql-architect agents plus the fastapi-templates skill."
     },
@@ -599,7 +599,7 @@
         "url": "https://github.com/wshobson/agents",
         "path": "plugins/shell-scripting",
         "ref": "main",
-        "sha": "2b49247f1347d9cbd90edf869e5412563c3945cf"
+        "sha": "d82998e7df393c671ede2387a8435075f0b633f5"
       },
       "description": "Production-grade Bash scripting: bash-pro and posix-shell-pro agents plus the bash-defensive-patterns, bats-testing-patterns, and shellcheck-configuration skills."
     },
