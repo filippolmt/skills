@@ -10,11 +10,15 @@ A hook (`hooks/route.js`) fires on every prompt. In `auto`
 mode it makes the model classify the request and invoke exactly one mode skill:
 coding task → **`ponytail`** (minimal code), everything else → **`caveman`**
 (terse output). The mode applies **on top of** any other skill the turn
-dispatches — never instead of it. Exactly one mode applies **per turn**: a second
-one entering the context is not refused, it is **suspended** on every turn it is
-not the one classified to. Switching mode therefore needs no context reset. The
-hook only routes; the two skills own their behavior. This skill reads and flips
-the control file that picks the mode.
+dispatches — never instead of it. A context holds **one mode**: the first one in.
+A request that classifies the other way is a **mode switch** — the router does
+not load the other mode; it answers with a one-line notice recommending
+`/mode-router:carryover` then `/clear`, and the user either does that or replies
+"proceed" to get the request answered with no mode at all. A `PreToolUse` veto
+backs the notice up. Only a user-typed `/caveman` or `/ponytail` can put both
+modes in one context; from then on the one not classified to is **suspended**
+per turn. The hook only routes; the two skills own their behavior. This skill
+reads and flips the control file that picks the mode.
 
 ## Control file
 
@@ -87,8 +91,9 @@ rules, and injects them into every turn.
 
 Two files explain that behavior for whoever administers it:
 
-- [`ROUTING.md`](ROUTING.md) — the loaded-mode set and the four events that
-  maintain it, per-turn suspension, the harness contracts the whole design rests on
+- [`ROUTING.md`](ROUTING.md) — the loaded-mode set and the five events that
+  maintain it, the switch notice and the veto, per-turn suspension in a mixed
+  context, the harness contracts the whole design rests on
   and how to check them when routing goes quiet, slash commands, precedence over
   hard constraints, and multi-turn spec-driven workflows.
 - [`HANDOFF-NOTE.md`](HANDOFF-NOTE.md) — the note: whose turn writes it, what it

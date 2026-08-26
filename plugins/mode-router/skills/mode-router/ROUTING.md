@@ -3,8 +3,10 @@
 How the `route.js` hook decides what to inject. `route.js` is the authoritative
 source; this file explains the behavior for anyone administering the router.
 
-One line holds the whole design: **the set decides what to invoke, the suspension
-decides who speaks.**
+One line holds the whole design: **a context holds one mode — the first one in —
+and the router never brings in the second.** A request that classifies the other
+way is a **mode switch**: the turn is spent telling the user so, and recommending
+a reset.
 
 The handoff note is the router's other half and has its own file,
 [`HANDOFF-NOTE.md`](HANDOFF-NOTE.md): whose turn writes it, what it holds, what
@@ -16,7 +18,7 @@ what appears below is only where a routing event touches it.
 Mode skills declare themselves "active every response", so once invoked they stay
 in context. What the hook needs is therefore not only *which mode fits this
 request* but *which mode skills are already loaded* — the **loaded-mode set**,
-kept per session under `$XDG_STATE_HOME/mode-router/` and maintained by four
+kept per session under `$XDG_STATE_HOME/mode-router/` and maintained by five
 events:
 
 | Event | Role |
@@ -24,6 +26,7 @@ events:
 | `SessionStart` (`startup`/`clear`/`compact`/`fork`) | empties the set — this is a **context reset** — and archives a handoff note older than 24h |
 | `SessionStart` (`resume`) | **keeps** the set: resume rebuilds the context from the transcript, so the modes invoked earlier are back in it |
 | `UserPromptExpansion` (slash command) | adds a **user-typed** mode to the set — a typed `/caveman` is expanded inline by the harness and never passes through the `Skill` tool — and records any **other** typed skill as `typed`; on `/carryover`, marks this session as the note's author instead |
+| `PreToolUse` (matcher `Skill`) | the **mode veto**: denies a mode skill entering a context that already holds the other one (in `auto` only — a forced mode and `off` pass) |
 | `PostToolUse` (matcher `Skill`) | adds the model-invoked mode to the set, and records any **other** invoked skill as `model` |
 | `UserPromptSubmit` | reads the set and emits the routing text — except on a `/carryover` prompt, where it emits the note's resolved path plus the skill list, and says nothing about routing |
 
@@ -31,47 +34,49 @@ Tool events that carry `agent_id` come from a **subagent** — a different conte
 that shares the session id — and are ignored: a subagent's skill loads never
 pollute this set.
 
-What the hook injects follows from the set, in two branches:
+What the hook injects follows from the set, in three branches:
 
 - **Empty set** — the full rules plus "invoke now", and the announcement of a
   pending handoff note if one is waiting — unless this session is the one that
   wrote it ([`HANDOFF-NOTE.md`](HANDOFF-NOTE.md)).
-- **Non-empty set** — the short classification line, a *conditional* invocation
-  ("invoke the one that is missing if you classify to it; do not re-invoke the one
-  already here"), and the suspension clause aimed at the other mode.
+- **One mode loaded** — the short classification line, then: if the request
+  classifies to the loaded mode, apply it (no re-invoke); if it classifies to the
+  other one, this is a **mode switch** — do *not* invoke it, and answer with the
+  **switch notice** instead (below).
+- **Both loaded** (a **mixed context**) — invoke neither; apply the mode the
+  request classifies to and suspend the other one for the turn.
 
-There is no third branch. Whether one mode is loaded or both, the state the model
-answers in is the same — every body in the context is in it — so the same text
-governs both, and the only thing that varies is whether an invocation is still
-being asked for.
+## One mode per context
 
-## One mode per turn
+A skill cannot be unloaded, so the only way to keep a context in one mode is to
+never let the second one in. The router does that in two layers:
 
-A skill cannot be unloaded. Exclusivity therefore cannot mean *one mode per
-context* — nothing can take the second body back out once it is in — so it means
-**one mode per turn**: the turn's text applies the mode the request classifies to
-and declares the other one suspended, contributing nothing, not even to the prose.
+1. **The switch notice.** On a switch, the routing text tells the model not to
+   invoke the other mode and to answer with one line only, in the user's language:
+   *this is a `ponytail` request in a `caveman` context; recommended
+   `/mode-router:carryover`, then `/clear`, then re-send; to answer here with no
+   mode, reply "proceed".* The turn ends there. The notice repeats on **every**
+   switch turn — it costs one line, and a forgotten reset costs more.
+2. **The mode veto.** `PreToolUse` on `Skill` denies the call if the model makes
+   it anyway. The deny reason is descriptive; the procedure is in the notice.
 
-Until `0.8.0` the router tried the stronger reading and stopped the second mode
-from entering at all: `PreToolUse` denied the invocation, and switching modes
-meant switching contexts. The leak that veto existed to prevent — `caveman`'s
-compression bleeding into the prose *around* the code on a `ponytail` turn — was
-then measured, and does not happen; neither does the opposite one. The veto was
-paying for a leak that is not there, so it was removed. The measurements and the
-reasoning are in `docs/adr/0001-drop-the-skill-veto.md`, at the root of the
-marketplace repo.
+The user decides. **Accepting** the recommendation is the carryover-and-clear the
+note is built for ([`HANDOFF-NOTE.md`](HANDOFF-NOTE.md)); the fresh context then
+classifies the re-sent request from an empty set and loads the right mode.
+**Declining** — "proceed", in any language — makes the model answer that request
+with **no mode at all**: plain writing, neither the loaded mode's rules nor the
+missing one's. The router recommends and never demands. The refusal is remembered
+by the model from the previous message, not by the hook: `UserPromptSubmit` is
+stateless, and the word is not one the hook can match across languages. After a
+compaction the model may have lost it, and the notice returns — the acceptable
+cost of keeping the hook stateless. The next switch turn gets the notice again.
 
-A context holding both mode skills is therefore a **mixed context**, and it is the
-normal steady state of any long session rather than a fallback: the second mode
-enters the first time a turn classifies the other way, and stays. Two ordinary
-paths reach it besides — typing the other mode (`/ponytail` while `caveman` is
-loaded), and typing a mode while the control file forces the other.
+The veto stops a `Skill` **call**. A user-typed `/ponytail` never makes one — the
+harness expands the body inline — so it walks in past both layers. That is the one
+path to a **mixed context**, and it is the user's choice: from then on the turn
+applies the mode it classifies to and suspends the other one, in words. Two things
+hold there:
 
-Three things follow, and they are the whole of the rule:
-
-- **The set never blocks anything.** It decides only between *invoke* and *do not
-  re-invoke*. A mode already loaded is never invoked again; the missing one is
-  invoked the turn it is classified to.
 - **The suspension is per turn, and only words.** The suspended mode is still
   loaded, just inert for that turn, and the clause denies it *any* influence
   rather than merely asking for one mode: the leak it guards is subtle enough that
@@ -79,10 +84,24 @@ Three things follow, and they are the whole of the rule:
   measurable and counter-intuitive effects, so it is not rephrased casually.
 - **A coding turn is pure `ponytail`.** The one directional clause the router
   carries (`CODING_IS_PURE`) says the explanations and notes around the code read
-  as normal writing, not as `caveman`. It exists because that leak was reported in
-  use. There is deliberately **no** mirror clause for the other direction: the
-  stub it would prevent was measured and does not occur, and the obvious wording
-  for it diluted `caveman` instead of defending it (again, ADR-0001).
+  as normal writing, not as `caveman`. There is deliberately **no** mirror clause
+  for the other direction: the stub it would prevent was measured and does not
+  occur, and the obvious wording for it diluted `caveman` instead of defending it
+  (ADR-0001).
+
+### History
+
+`0.5.0`–`0.7.0` vetoed the second mode to prevent a style leak between the two
+modes. `0.8.0` measured the leak, found none, and dropped the veto: contexts
+mixed freely and exclusivity was per turn only
+(`docs/adr/0001-drop-the-skill-veto.md`, at the root of the marketplace repo).
+`0.10.0` brings the veto back as a **product choice**, not a leak fix: one
+context, one mode, and the switch made visible to the user rather than silent
+(`docs/adr/0006-one-mode-per-context-by-choice.md`). The measurements of ADR-0001
+stand — they are why a mixed context, once the user creates one, is still handled
+in words and works. What `0.7.0` got wrong and `0.10.0` keeps in check is the
+cost: its veto text was ~62% of every steady-state injection; the notice is a few
+lines.
 
 ### Contract this rests on
 
@@ -114,6 +133,9 @@ first run consumed the flag and injected "no mode skill is active, invoke now"
 while the second found nothing and injected "do NOT re-invoke" — two contradictory
 instructions in one turn. Making `UserPromptSubmit` read-only removes the failure
 mode by construction rather than by convention: run it twice, get identical text.
+
+It is also why the "proceed" of a declined reset is the model's memory and not a
+flag: a flag written here would have to be consumed here.
 
 It is also why the note's 24h expiry is split in two. This branch only *stops
 serving* a stale note; moving it aside is `SessionStart`'s job, that being the
@@ -157,4 +179,5 @@ Auto classifies the **launching** prompt of a multi-turn spec-driven workflow
 `UserPromptSubmit` to re-route — so the phase can't switch mid-workflow. For
 per-phase control, force the mode first — `ponytail` for the coding phase,
 `caveman` for analysis — then reset to `auto`. For direct prompts, the natural
-`/clear` between analysis and coding already re-classifies each phase.
+`/clear` between analysis and coding is what the switch notice recommends, and
+it re-classifies each phase from an empty set.

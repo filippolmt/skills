@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0006 (the measurements stand; the decision they supported does not)
 ---
 
 # Drop the skill veto; keep exclusivity per turn

@@ -8,11 +8,11 @@ The routing half — the loaded-mode set, per-turn suspension, the harness contr
 the design rests on — is in [`ROUTING.md`](ROUTING.md). `route.js` is the
 authoritative source for both.
 
-Switching mode no longer requires a context reset, so the router no longer asks
-for one. The `/clear` between planning and implementation survives as something
-the **user** wants — the point of it is a fresh context, not a mode change — and
-the note that carries work across it is written on demand by the **`/carryover`
-command** (`commands/carryover.md`), never by injected text.
+On a mode switch the router **recommends** a context reset and never demands one
+(ROUTING.md, "One mode per context"). The `/clear` is the **user's** — they can
+decline it and go on with no mode — and the note that carries work across it is
+written on demand by the **`/carryover` command** (`commands/carryover.md`), never
+by injected text.
 
 The split between command and hook follows from one fact: the model does not know
 its own session id, so it cannot find `session-<id>.skills.json` by name. So the
