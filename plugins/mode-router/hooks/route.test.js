@@ -80,31 +80,74 @@ assert.strictEqual(prompt('explain this'), out, 'double execution => identical s
 // Every other branch exits on its own, so the tail used to be guarded by nothing
 // but the order of the branches above it: an event registered in hooks.json and
 // not handled here fell straight through and printed routing text on, say, every
-// Skill call. Dropping the veto's branch is exactly what made that reachable, so
-// the guard is tested rather than assumed.
-for (const ev of ['PreToolUse', 'PreCompact', 'Stop']) {
+// Skill call. The guard is tested rather than assumed.
+for (const ev of ['PreCompact', 'Stop']) {
   assert.strictEqual(run(ev, { tool_name: 'Skill', tool_input: { skill: 'ponytail' } }), '',
     ev + ' is not handled here, so it emits nothing at all');
 }
 
-// --- PostToolUse on Skill populates the set => the non-empty branch, one mode in ---
+// --- the veto lets the FIRST mode in ---
+// PreToolUse fires before the Skill call lands; with an empty set nothing is
+// denied, and it says nothing at all rather than an explicit allow.
+assert.strictEqual(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'caveman' } }), '',
+  'first mode => veto silent');
+
+// --- PostToolUse on Skill populates the set => one mode in: apply it, or a MODE SWITCH ---
 loadSkill('caveman');
 out = prompt('explain more');
 assert.match(out, /MODE ROUTER/, 'classifier still fires every turn');
-assert.match(out, /`caveman` is already in this context/, 'loaded mode => no re-invocation');
+assert.match(out, /`caveman` is already in this context and a context holds ONE\s+mode/,
+  'one mode loaded => it owns the context');
+assert.match(out, /If you classify to `caveman`: apply it, do NOT re-invoke, answer\s+normally/,
+  'loaded mode => no re-invocation, no notice');
 assert.doesNotMatch(out, /Precedence:/, 'steady state => precedence not repeated');
-// The set decides invoke from do-not-re-invoke and nothing else. The mode that is
-// missing is asked for the turn it is classified to — it is no longer refused, and
-// no switch ceremony is imposed to reach it.
-assert.match(out, /if you classify to `ponytail`, invoke it now/, 'the missing mode is invoked on demand');
-assert.doesNotMatch(out, /do NOT invoke it/, 'nothing is refused any more');
-assert.doesNotMatch(out, /run \/clear/, 'the steady state asks for no context switch');
-assert.doesNotMatch(out, /OVERWRITE that file/, "the note's schema left the injected text");
+// The other mode is never brought in by the router (ADR-0006). The turn that
+// classifies to it is a switch: a one-line notice, or — once the user has declined
+// the reset — an answer with no mode at all. The router recommends, never demands.
+assert.match(out, /classify to `ponytail`: do NOT invoke it; instead/, 'the missing mode is refused, and the notice hangs off that branch');
+assert.doesNotMatch(out, /invoke it now/, 'no invocation is asked for');
+assert.match(out, /Recommended:\s+`\/mode-router:carryover`, then `\/clear`/, 'the reset is recommended, in that order');
+assert.match(out, /reply: proceed/, 'the user can decline the reset');
+assert.match(out, /answer with NO mode\s+at all/, 'a declined reset => no mode, not the loaded one');
+assert.match(out, /in the user's language/, 'the notice speaks the user\'s language');
+assert.doesNotMatch(out, /SUSPENDED/, 'one mode loaded => nothing to suspend');
 assert.ok(!out.includes(HANDOFF), 'a steady-state turn does not name the note at all');
-// One branch, so the suspension reads the same with one mode loaded as with two.
-assert.match(out, /the other one is SUSPENDED for this turn/, 'the suspension covers this shape too');
-assert.match(out, /not\s+even to prose/, 'suspension denies prose influence too');
-assert.match(out, /a coding turn is pure `ponytail`/, 'the concrete leak is named');
+assert.ok(out.length < 1200, 'the notice stays short: ' + out.length + ' chars');
+
+// --- the veto: the model tries to invoke the other mode anyway ---
+let pre = run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'ponytail:ponytail' } });
+let decision = JSON.parse(pre).hookSpecificOutput;
+assert.strictEqual(decision.permissionDecision, 'deny', 'second mode in auto => denied');
+assert.match(decision.permissionDecisionReason, /`caveman` is already loaded/, 'the reason names the loaded mode');
+assert.strictEqual(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'caveman' } }), '',
+  're-invoking the loaded mode => not denied');
+assert.strictEqual(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'grilling' } }), '',
+  'a non-mode skill => not denied');
+assert.strictEqual(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'ponytail' }, agent_id: 'sub-1' }), '',
+  'a subagent is another context => not denied');
+assert.strictEqual(run('PreToolUse', { tool_name: 'SkillLike', tool_input: { skill: 'ponytail' } }), '',
+  'only the built-in Skill tool is vetoed');
+// The control file does not open the door either: one context, one mode, whoever
+// asks. A forced `ponytail` against a `caveman` context is denied like any other,
+// and the prompt side asks for the reset instead of the invocation. `off` vetoes
+// nothing.
+setMode('ponytail');
+assert.strictEqual(JSON.parse(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'ponytail' } }))
+  .hookSpecificOutput.permissionDecision, 'deny', 'forced mode => still one mode per context');
+out = prompt('write code');
+assert.match(out, /^Forced ponytail mode, but `caveman` is already in this context/, 'forced + other loaded => switch notice');
+assert.match(out, /do NOT invoke `ponytail`/, 'and no invocation');
+assert.match(out, /The control file forces `ponytail` but this context holds `caveman`/, 'control-file wording');
+assert.match(out, /Recommended:\s+`\/mode-router:carryover`, then `\/clear`/, 'same reset recommendation');
+assert.match(out, /answer with\s+NO mode at all/, 'a declined reset => no mode');
+assert.doesNotMatch(out, /MODE ROUTER/, 'forced => no classifier');
+setMode('caveman');
+assert.strictEqual(prompt('write code'), '', 'forced mode already loaded => silent, as before');
+setMode('off');
+assert.strictEqual(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'ponytail' } }), '',
+  'off => nothing is vetoed');
+setMode('auto');
+assert.match(prompt('explain more'), /do NOT invoke it/, 'still one mode loaded: a denied call adds nothing to the set');
 
 // An explicit /ponytail is the user overruling the router. It never reaches the
 // tool layer — the harness expands the skill inline and no Skill call fires — so
@@ -113,10 +156,10 @@ assert.strictEqual(prompt('/ponytail go'), '', '/ponytail => no classifier');
 assert.strictEqual(prompt('/caveman:caveman go'), '', 'namespaced mode slash => silent too');
 assert.match(prompt('/anti-caveman go'), /MODE ROUTER/, 'lookalike slash => still classified');
 
-// --- both loaded: a mixed context is the normal steady state, not a fallback ---
-// The second mode enters by an ordinary path — here a typed slash — and nothing
-// intercepts it. Exclusivity is then asserted in words, and these are the words
-// that were measured (ADR-0001): they are not rephrased casually.
+// --- both loaded: a mixed context, reached only by a typed slash ---
+// A typed /ponytail is expanded inline by the harness, so neither the notice nor
+// the veto can stop it: the user chose it. Exclusivity is then asserted in words,
+// and these are the words that were measured (ADR-0001): not rephrased casually.
 expand('ponytail');
 out = prompt('write code');
 assert.match(out, /Both `caveman` and `ponytail` are already in this context/, 'suffix match');
@@ -232,12 +275,16 @@ run('SessionStart');
 loadSkill('ponytail');
 out = prompt('explain this');
 assert.match(out, /`ponytail` is already in this context/, 'ponytail-only => named as loaded');
-assert.match(out, /if you classify to `caveman`, invoke it now/, 'ponytail-only => caveman is the missing one');
-// The other ordinary path into a mixed context: a Skill call for the second mode,
-// which the router records instead of intercepting.
+assert.match(out, /If you classify to `caveman`: do NOT invoke it/, 'ponytail-only => caveman is the refused one');
+assert.match(out, /a `caveman` request in a `ponytail` context/, 'the notice reads the right way round');
+assert.match(JSON.parse(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'caveman' } }))
+  .hookSpecificOutput.permissionDecisionReason, /`ponytail` is already loaded/, 'veto reads the right way round');
+// PostToolUse only fires for a call that went through. If a Skill call for the
+// second mode did land (a veto not registered, an older CLI), the set records it
+// and the turn falls into the mixed-context branch rather than lying about it.
 loadSkill('caveman');
 assert.match(prompt('explain this'), /Both `caveman` and `ponytail` are already/,
-  'a Skill call for the second mode is recorded, not refused');
+  'a second mode that did land is recorded, not hidden');
 
 // --- expansion details: namespaced names register ---
 run('SessionStart');

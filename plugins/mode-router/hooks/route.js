@@ -1,34 +1,36 @@
 #!/usr/bin/env node
-// mode-router — one script, four hook events.
+// mode-router — one script, five hook events.
 //
 // The mode skills (caveman/ponytail) declare themselves "active every response",
-// and a skill cannot be unloaded. So exclusivity cannot be one mode per CONTEXT;
-// it is one mode per TURN: the injected text applies the mode this request
-// classifies to and SUSPENDS the other one for the turn. The LOADED-MODE SET is
-// what makes the rest decidable — it says what is already here, and therefore
-// what still has to be invoked:
+// and a skill cannot be unloaded. So a context holds ONE mode: the first one that
+// enters it. The router never brings the second one in — a request that
+// classifies the other way is a MODE SWITCH, and the turn answers with a one-line
+// notice recommending /carryover + /clear instead of loading the other mode. The
+// LOADED-MODE SET is what makes that decidable — it says what is already here:
 //
 //   SessionStart        (startup|clear|compact|fork)  clears the set — a context reset
 //   SessionStart        (resume)                      keeps it: the context comes back
 //   UserPromptExpansion (slash command)               adds a user-TYPED mode to the set,
 //                                                     or marks a note as this session's
+//   PreToolUse          (matcher: Skill)              the VETO: denies a mode entering a
+//                                                     context that holds the other one
 //   PostToolUse         (matcher: Skill)              adds the invoked mode to the set
 //   UserPromptSubmit                                  reads the set, emits the routing text
 //
-// One rule holds the design: the SET decides what to INVOKE, the SUSPENSION
-// decides who SPEAKS. Hence two branches in invocationTail() and not three —
-// with one mode loaded or with both, the model answers with every body that is
-// in the context, so the only difference is whether an invocation is still being
-// asked for.
+// The veto is the net, not the mechanism: the routing text tells the model not to
+// invoke, and PreToolUse catches the call it makes anyway. A typed /caveman never
+// reaches the tool layer (see UserPromptExpansion below), so the one way a MIXED
+// context — both modes loaded — still arises is the user typing the second mode.
+// That is a choice of theirs, recorded and not fought: from then on the turn
+// applies the mode it classifies to and SUSPENDS the other one, in words.
 //
-// A PreToolUse branch used to DENY a second mode entering the context (0.5.0 to
-// 0.7.0), which made switching mode mean switching contexts. Removed in 0.8.0:
-// the leak it guarded was measured and does not happen, and it cost ~62% of the
-// text injected on every steady-state turn — docs/adr/0001-drop-the-skill-veto.md
-// carries the numbers. Two things to know before adding any event back here: the
-// registration in hooks.json is half the change (an event registered but not
-// handled falls through to the UserPromptSubmit tail), and the guard below the
-// PostToolUse branch is what stops that fall-through.
+// Why the veto left in 0.8.0 and came back in 0.10.0 is ADR-0001 and ADR-0006
+// (docs/adr/, marketplace root); ROUTING.md "History" has the short form.
+//
+// Two things to know about the events: the registration in hooks.json is half the
+// change (an event registered but not handled falls through to the
+// UserPromptSubmit tail), and the guard below the PostToolUse branch is what stops
+// that fall-through.
 //
 // The two set-feeding events also record everything ELSE that entered the
 // context, in a second per-session file, tagged by how it got there: `typed` for
@@ -51,10 +53,10 @@
 // happens to share the session id, so its skill loads must not pollute this set:
 // subagent tool events are ignored wholesale.
 //
-// Switching mode no longer requires switching contexts, so this hook no longer
-// asks for a handoff note. The /clear between planning and implementation stays
-// as something the USER wants, and the note that carries work across it is
-// written on demand by the /carryover command (commands/carryover.md). The split is
+// The hook RECOMMENDS the /carryover + /clear on a mode switch and never demands
+// it: the user may answer "proceed" and get the turn answered with no mode at
+// all. The note that carries work across the clear is written on demand by the
+// /carryover command (commands/carryover.md). The split is
 // forced by one fact: the model does not know its own session id, so it cannot
 // find the skills file by name — the command carries the static schema, the hook
 // contributes the list and stays silent about routing that turn. The note's
@@ -144,6 +146,20 @@ function forced(mode) {
   return 'Forced ' + mode + ' mode: invoke the `' + mode + '` skill (Skill tool) ' +
     'now, before responding, and apply it to this turn — regardless of request ' +
     'type.' + PRECEDENCE;
+}
+
+// Forced mode, context holding the OTHER one. A context holds one mode whatever
+// put it there, so the file does not bring the second in either: the turn gets
+// the switch notice (control-file wording) until the user resets or declines.
+function forcedSwitch(mode, loaded) {
+  return 'Forced ' + mode + ' mode, but `' + loaded + '` is already in this context ' +
+    'and a context holds ONE mode: do NOT invoke `' + mode + '`. Unless the user\'s ' +
+    'previous message declined the reset for this same request ("proceed" or ' +
+    'equivalent), answer with ONLY this notice, in the user\'s language, and stop: ' +
+    '"The control file forces `' + mode + '` but this context holds `' + loaded + '`. ' +
+    'Recommended: `/mode-router:carryover`, then `/clear`, then re-send the request. ' +
+    'To answer here with no mode, reply: proceed." If they did decline: answer with ' +
+    'NO mode at all — plain writing, no `' + loaded + '` rules, no `' + mode + '` rules.';
 }
 
 // The classification rule itself. Needed EVERY turn: in `auto` the right mode
@@ -383,12 +399,14 @@ function archiveStaleHandoff(cwd) {
 let input = {};
 try { input = JSON.parse(fs.readFileSync(0, 'utf8')) || {}; } catch (e) { /* no stdin */ }
 
-// Two filters on the one tool branch left. Only the built-in Skill tool carries a
+// Two filters on the tool branches. Only the built-in Skill tool carries a
 // skill — the matcher narrows this already, but a regex matcher also matches tool
 // names merely CONTAINING "Skill". And a tool event from a subagent (`agent_id`
 // set) describes a DIFFERENT context that happens to share the session id, so its
 // skill loads must not enter this set.
 const skillEventHere = input.tool_name === 'Skill' && !input.agent_id;
+// The skill this tool event names, or null when the event is not one of ours.
+const skillOfEvent = () => (skillEventHere && input.tool_input) ? input.tool_input.skill : null;
 
 // SessionStart: a context reset, EXCEPT on resume. Resume rebuilds the context
 // from the transcript, so any mode skill invoked before is back in it and the set
@@ -443,11 +461,39 @@ if (input.hook_event_name === 'UserPromptExpansion') {
   process.exit(0);
 }
 
+// PreToolUse on Skill: the veto. Denies exactly one thing — a mode skill entering
+// a context that already holds the OTHER mode. A non-mode skill, a re-invoke of
+// what is loaded and the first mode all pass. A FORCED mode does not: the file
+// picks the mode of a fresh context, it does not add a second one to a running
+// context (forcedSwitch() below asks for the reset instead). `off` vetoes nothing —
+// it is a standing order to stay out of the way.
+// The reason is descriptive only: the model acts on the UserPromptSubmit text,
+// which told it not to make this call in the first place.
+if (input.hook_event_name === 'PreToolUse') {
+  const mode = skillToMode(skillOfEvent());
+  if (mode) {
+    const loaded = readLoadedModes(input.session_id);
+    const other = MODES.find((m) => m !== mode);
+    if (!loaded.includes(mode) && loaded.includes(other) && readMode() !== 'off') {
+      process.stdout.write(JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: 'PreToolUse',
+          permissionDecision: 'deny',
+          permissionDecisionReason: 'mode-router: `' + other + '` is already loaded ' +
+            'in this context and a context holds one mode, so `' + mode + '` was ' +
+            'not loaded. Answer this turn as the routing text says.',
+        },
+      }));
+    }
+  }
+  process.exit(0);
+}
+
 // PostToolUse on Skill: a skill the MODEL invoked just entered the context — a
 // mode goes in the set, anything else in the skill list.
 if (input.hook_event_name === 'PostToolUse') {
-  if (skillEventHere) {
-    const skill = input.tool_input && input.tool_input.skill;
+  const skill = skillOfEvent();
+  if (skill) {
     const mode = skillToMode(skill);
     if (mode) addMode(input.session_id, mode);
     else addSkill(input.session_id, skill, 'model');
@@ -457,11 +503,10 @@ if (input.hook_event_name === 'PostToolUse') {
 
 // --- UserPromptSubmit ---
 
-// Everything below belongs to this one event, and now says so. Each branch above
-// exits, so before 0.8.0 the tail was reachable only by convention — an event
+// Everything below belongs to this one event, and says so. Each branch above
+// exits, so the tail used to be reachable by convention alone — an event
 // registered in hooks.json but not handled here fell straight through and printed
-// routing text on, say, every `Skill` call. Removing the veto's branch made that
-// one line of distance between working and broken; the guard closes it for good.
+// routing text on, say, every `Skill` call. The guard closes that for good.
 if (input.hook_event_name !== 'UserPromptSubmit') process.exit(0);
 
 // The leading slash command of this prompt, or null when there is none. Only the
@@ -487,9 +532,9 @@ const slashIsMode = skillToMode(slash) !== null;
 // the model does not know — and nothing about routing.
 const carryoverTurn = isCarryoverCommand(slash);
 
-// A skill cannot be unloaded, and nothing stops the second mode from entering any
-// more, so a context holding both is the normal steady state of a long session and
-// exclusivity can only be asserted in words. These are the words that were
+// A skill cannot be unloaded. The router keeps the second mode out (the switch
+// notice, then the veto), but a user-typed slash brings it in past both, and from
+// then on exclusivity can only be asserted in words. These are the words that were
 // measured (ADR-0001): "apply one, not the other" leaves room for the leak the
 // clause exists for — caveman's compression bleeding into the prose *around* code
 // — so it denies the suspended mode any influence at all. Wording in here has
@@ -528,12 +573,31 @@ function skillsClause(skills) {
 const handoffTarget = (cwd) => 'Write the note to `' + handoffFile(cwd) +
   '` — that exact path, which is where this hook reads it back from.';
 
-// The mode not classified to is inert for the turn, whichever way the
-// classification went, so both shapes of the non-empty branch end the same way:
-// with one mode loaded "the other one" is whichever of the two the turn did not
-// pick, with both loaded it is the one left sitting in the context unused.
+// Mixed context only: the mode not classified to is the one left sitting in the
+// context unused, and it is inert for the turn.
 const SUSPEND_TAIL = ' Apply ONLY the mode you classify to; ' +
   suspendClause('the other one') + CODING_IS_PURE;
+
+// One mode loaded. The SWITCH CLAUSE is what the model receives; the SWITCH
+// NOTICE is the one line the user sees when the request classifies to the missing
+// mode. That mode is not invoked. The user decides between the reset the router
+// recommends and going on without a mode. "Proceed" is remembered by the model,
+// not the hook: UserPromptSubmit is stateless and the word comes in any language,
+// so the clause points at the previous message instead of matching keywords.
+// Everything after "do NOT invoke it" belongs to that branch alone — a turn
+// classified to the loaded mode never sees a notice.
+function switchClause(loaded, missing) {
+  return '\n`' + loaded + '` is already in this context and a context holds ONE ' +
+    'mode. If you classify to `' + loaded + '`: apply it, do NOT re-invoke, answer ' +
+    'normally. If you classify to `' + missing + '`: do NOT invoke it; instead — ' +
+    'unless the user\'s previous message declined the reset for this same request ' +
+    '("proceed" or equivalent) — answer with ONLY this notice, in the user\'s ' +
+    'language, and stop: "This is a `' + missing + '` request in a `' + loaded + '` ' +
+    'context. Recommended: `/mode-router:carryover`, then `/clear`, then re-send the ' +
+    'request. To answer here with no mode, reply: proceed." If they did decline: ' +
+    'answer with NO mode at all — plain writing, no `' + loaded + '` rules, no `' +
+    missing + '` rules.';
+}
 
 function invocationTail(loaded, cwd, sessionId) {
   if (loaded.length === 0) {
@@ -554,17 +618,15 @@ function invocationTail(loaded, cwd, sessionId) {
     }
     return tail;
   }
-  // Non-empty. The set decides invoke from do-not-re-invoke and nothing else, so
-  // one loaded mode and two are the same state to answer in — the only difference
-  // is whether an invocation is still being asked for.
+  // Both loaded: a mixed context, reached only by a typed slash. Neither is
+  // invoked, and the one not classified to is suspended for the turn.
   const missing = MODES.find((m) => !loaded.includes(m));
   if (!missing) {
     return '\nBoth `caveman` and `ponytail` are already in this context — invoke ' +
       'neither.' + SUSPEND_TAIL;
   }
-  return '\n`' + loaded[0] + '` is already in this context: if you classify to it, ' +
-    'do NOT re-invoke — just apply it; if you classify to `' + missing + '`, ' +
-    'invoke it now (Skill tool, before responding).' + SUSPEND_TAIL;
+  // One loaded: apply it or, on a switch, notify instead of invoking the other.
+  return switchClause(loaded[0], missing);
 }
 
 const mode = readMode();
@@ -578,9 +640,10 @@ const out =
   carryoverTurn
     ? [handoffTarget(input.cwd), skillsClause(readSkills(input.session_id))]
         .filter(Boolean).join(' ') :
-  // Forced modes: invoke when missing from the set, stay silent once it is in.
+  // Forced modes: silent once in the set; invoke when the set is empty; on a set
+  // holding the other mode, the switch notice — never a second mode.
   mode === 'caveman' || mode === 'ponytail'
-    ? (loaded.includes(mode) ? '' : forced(mode)) :
+    ? (loaded.includes(mode) ? '' : loaded.length ? forcedSwitch(mode, loaded[0]) : forced(mode)) :
   // auto: always classify; the set decides what to say about invoking.
   slashIsMode ? '' :
   CLASSIFY + invocationTail(loaded, input.cwd, input.session_id);
