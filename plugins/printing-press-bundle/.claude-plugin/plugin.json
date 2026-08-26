@@ -1,7 +1,7 @@
 {
   "name": "printing-press-bundle",
-  "description": "Install printing-press with the sibling skills it invokes at runtime (printing-press-polish, printing-press-score, and the internal printing-press-output-review) and agent-report-guard, the hook that keeps its subagents reporting back. Bundles them as dependencies.",
-  "version": "0.2.0",
+  "description": "Install printing-press with the sibling skills it invokes at runtime (printing-press-polish, printing-press-score, printing-press-retro, printing-press-publish, and the internal printing-press-output-review) and agent-report-guard, the hook that keeps its subagents reporting back. Bundles them as dependencies.",
+  "version": "0.3.0",
   "author": {
     "name": "Filippo Merante Caparrotta"
   },
@@ -9,6 +9,8 @@
     "printing-press",
     "printing-press-polish",
     "printing-press-score",
+    "printing-press-retro",
+    "printing-press-publish",
     "printing-press-output-review",
     "agent-report-guard"
   ]
