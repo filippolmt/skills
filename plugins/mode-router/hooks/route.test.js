@@ -98,12 +98,13 @@ out = prompt('explain more');
 assert.match(out, /MODE ROUTER/, 'classifier still fires every turn');
 assert.match(out, /`caveman` is already in this context and a context holds ONE\s+mode/,
   'one mode loaded => it owns the context');
-assert.match(out, /If you classify to `caveman`: apply it, do NOT re-invoke/, 'loaded mode => no re-invocation');
+assert.match(out, /If you classify to `caveman`: apply it, do NOT re-invoke, answer\s+normally/,
+  'loaded mode => no re-invocation, no notice');
 assert.doesNotMatch(out, /Precedence:/, 'steady state => precedence not repeated');
 // The other mode is never brought in by the router (ADR-0006). The turn that
 // classifies to it is a switch: a one-line notice, or — once the user has declined
 // the reset — an answer with no mode at all. The router recommends, never demands.
-assert.match(out, /If you\s+classify to `ponytail`: do NOT invoke it/, 'the missing mode is refused');
+assert.match(out, /classify to `ponytail`: do NOT invoke it; instead/, 'the missing mode is refused, and the notice hangs off that branch');
 assert.doesNotMatch(out, /invoke it now/, 'no invocation is asked for');
 assert.match(out, /Recommended:\s+`\/mode-router:carryover`, then `\/clear`/, 'the reset is recommended, in that order');
 assert.match(out, /reply: proceed/, 'the user can decline the reset');
@@ -126,10 +127,15 @@ assert.strictEqual(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 
   'a subagent is another context => not denied');
 assert.strictEqual(run('PreToolUse', { tool_name: 'SkillLike', tool_input: { skill: 'ponytail' } }), '',
   'only the built-in Skill tool is vetoed');
-// The control file outranks the set: a forced mode gets in, `off` vetoes nothing.
+// The control file outranks the set — for its OWN mode only. A forced `ponytail`
+// gets in; a forced `caveman` does not wave a stray `ponytail` call through, or the
+// force would open a second path to a mixed context. `off` vetoes nothing.
 setMode('ponytail');
 assert.strictEqual(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'ponytail' } }), '',
   'forced mode => enters a context holding the other');
+setMode('caveman');
+assert.strictEqual(JSON.parse(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'ponytail' } }))
+  .hookSpecificOutput.permissionDecision, 'deny', 'a forced mode waves in only itself');
 setMode('off');
 assert.strictEqual(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'ponytail' } }), '',
   'off => nothing is vetoed');

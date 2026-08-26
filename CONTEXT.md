@@ -68,13 +68,18 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Mode switch** — a request that classifies to the mode a context does not
   hold, while it holds the other one. The router does not load the missing mode:
   the turn is spent on the **switch notice**, and the user chooses.
-- **Switch notice** — the one-line answer to a mode switch: which mode the request
-  wanted, which one the context holds, the recommended carryover and reset, and
-  the word that declines it. A recommendation — the router never demands the
-  reset. Declining it gets the request answered in no mode at all.
+- **Switch clause** — what the router tells the model on a turn with one mode
+  loaded: apply that mode, or — on a mode switch — do not load the other and
+  answer with the switch notice instead.
+- **Switch notice** — the one-line answer the user sees on a mode switch: which
+  mode the request wanted, which one the context holds, the recommended
+  carryover and reset, and the word that declines it. A recommendation — the
+  router never demands the reset. Declining it gets the request answered in no
+  mode at all.
 - **Mode veto** — the router refusing a mode skill's invocation because the
-  context already holds the other mode. Backs up the switch notice; it stops the
-  model's call, never the user's typed slash.
+  context already holds the other mode. Backs up the switch clause; it stops the
+  model's call, never the user's typed slash. A forced mode is waved in — only
+  that one.
 - **Mixed context** — a context holding both mode skills. Reached only by the
   user typing the second mode; the router never produces one. Tolerated, not a
   failure: per-turn suspension is how it still answers in exactly one mode.
@@ -89,8 +94,9 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Handoff note** — what a context leaves behind for the one that replaces it:
   what has been established, what remains, and the prompt to re-send afterwards.
   The user asks for it explicitly before a deliberate `/clear` — the router
-  recommends one on a mode switch and never demands it. Belongs to the project, not to the session it was written in, so it
-  survives the reset. The artifact, not the act of producing it.
+  recommends one on a mode switch and never demands it. Belongs to the project,
+  not to the session it was written in, so it survives the reset. The artifact,
+  not the act of producing it.
 - **Carryover** — the act of having the pending handoff note written. Named apart
   from the note so that one word does not stand for both.
 

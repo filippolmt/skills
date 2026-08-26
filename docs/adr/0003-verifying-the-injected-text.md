@@ -21,7 +21,7 @@ with the `0.8.0` code change.
 
 **If an assertion can be written against the emitted string, it is a test, not an
 eval.** Tests cost nothing and never flake, so every deterministic property stays
-in `route.test.js`: which of the two branches of `invocationTail()` fires for a
+in `route.test.js`: which branch of `invocationTail()` fires for a
 given set, the silence on a `/handoff` turn and the skill list it emits instead,
 the `off`/forced config paths, the archival backstop, the sweep.
 

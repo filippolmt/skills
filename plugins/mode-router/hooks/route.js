@@ -24,14 +24,8 @@
 // That is a choice of theirs, recorded and not fought: from then on the turn
 // applies the mode it classifies to and SUSPENDS the other one, in words.
 //
-// History. 0.5.0 to 0.7.0 vetoed for a reason that turned out false — a style
-// leak between the two modes, measured in 0.8.0 and absent — so 0.8.0 removed the
-// veto and let contexts mix (docs/adr/0001-drop-the-skill-veto.md). 0.10.0 brings
-// it back as a PRODUCT choice, not a leak fix: one context, one mode, and the
-// switch made visible to the user instead of silent. The measurements of 0001
-// stand; what changed is what the router is for
-// (docs/adr/0006-one-mode-per-context-by-choice.md). The 0.7.0 veto cost ~62% of
-// the steady-state injected text; this one keeps the notice to a few lines.
+// Why the veto left in 0.8.0 and came back in 0.10.0 is ADR-0001 and ADR-0006
+// (docs/adr/, marketplace root); ROUTING.md "History" has the short form.
 //
 // Two things to know about the events: the registration in hooks.json is half the
 // change (an event registered but not handled falls through to the
@@ -391,12 +385,14 @@ function archiveStaleHandoff(cwd) {
 let input = {};
 try { input = JSON.parse(fs.readFileSync(0, 'utf8')) || {}; } catch (e) { /* no stdin */ }
 
-// Two filters on the one tool branch left. Only the built-in Skill tool carries a
+// Two filters on the tool branches. Only the built-in Skill tool carries a
 // skill — the matcher narrows this already, but a regex matcher also matches tool
 // names merely CONTAINING "Skill". And a tool event from a subagent (`agent_id`
 // set) describes a DIFFERENT context that happens to share the session id, so its
 // skill loads must not enter this set.
 const skillEventHere = input.tool_name === 'Skill' && !input.agent_id;
+// The skill this tool event names, or null when the event is not one of ours.
+const skillOfEvent = () => (skillEventHere && input.tool_input) ? input.tool_input.skill : null;
 
 // SessionStart: a context reset, EXCEPT on resume. Resume rebuilds the context
 // from the transcript, so any mode skill invoked before is back in it and the set
@@ -452,18 +448,20 @@ if (input.hook_event_name === 'UserPromptExpansion') {
 }
 
 // PreToolUse on Skill: the veto. Denies exactly one thing — a mode skill entering
-// a context that already holds the OTHER mode, in `auto`. A non-mode skill, a
-// re-invoke of what is loaded, the first mode, `off`, and a forced mode entering a
-// context that holds the other (the control file outranks the set) all pass.
+// a context that already holds the OTHER mode. A non-mode skill, a re-invoke of
+// what is loaded and the first mode all pass. So does the control file, in two
+// shapes: `off` vetoes nothing, and a FORCED mode may enter a context holding the
+// other — the file outranks the set. A forced `caveman` does not let a stray
+// `ponytail` call through, though: the only mode the file waves in is its own.
 // The reason is descriptive only: the model acts on the UserPromptSubmit text,
 // which told it not to make this call in the first place.
 if (input.hook_event_name === 'PreToolUse') {
-  const mode = skillEventHere ? skillToMode(input.tool_input && input.tool_input.skill) : null;
+  const mode = skillToMode(skillOfEvent());
   if (mode) {
     const loaded = readLoadedModes(input.session_id);
     const other = MODES.find((m) => m !== mode);
     const cfg = readMode();
-    if (!loaded.includes(mode) && loaded.includes(other) && cfg === 'auto') {
+    if (!loaded.includes(mode) && loaded.includes(other) && cfg !== 'off' && cfg !== mode) {
       process.stdout.write(JSON.stringify({
         hookSpecificOutput: {
           hookEventName: 'PreToolUse',
@@ -481,8 +479,8 @@ if (input.hook_event_name === 'PreToolUse') {
 // PostToolUse on Skill: a skill the MODEL invoked just entered the context — a
 // mode goes in the set, anything else in the skill list.
 if (input.hook_event_name === 'PostToolUse') {
-  if (skillEventHere) {
-    const skill = input.tool_input && input.tool_input.skill;
+  const skill = skillOfEvent();
+  if (skill) {
     const mode = skillToMode(skill);
     if (mode) addMode(input.session_id, mode);
     else addSkill(input.session_id, skill, 'model');
@@ -567,22 +565,25 @@ const handoffTarget = (cwd) => 'Write the note to `' + handoffFile(cwd) +
 const SUSPEND_TAIL = ' Apply ONLY the mode you classify to; ' +
   suspendClause('the other one') + CODING_IS_PURE;
 
-// One mode loaded, request classifies to the other: a MODE SWITCH. The other mode
-// is not invoked. The turn is spent on a notice — the user decides between the
-// reset the router recommends and going on without a mode. "Proceed" is
-// remembered by the model, not the hook: UserPromptSubmit is stateless and the
-// word comes in any language, so the text points at the previous message instead
-// of the hook matching keywords.
+// One mode loaded. The SWITCH CLAUSE is what the model receives; the SWITCH
+// NOTICE is the one line the user sees when the request classifies to the missing
+// mode. That mode is not invoked. The user decides between the reset the router
+// recommends and going on without a mode. "Proceed" is remembered by the model,
+// not the hook: UserPromptSubmit is stateless and the word comes in any language,
+// so the clause points at the previous message instead of matching keywords.
+// Everything after "do NOT invoke it" belongs to that branch alone — a turn
+// classified to the loaded mode never sees a notice.
 function switchClause(loaded, missing) {
   return '\n`' + loaded + '` is already in this context and a context holds ONE ' +
-    'mode. If you classify to `' + loaded + '`: apply it, do NOT re-invoke. If you ' +
-    'classify to `' + missing + '`: do NOT invoke it. Then, unless the user\'s ' +
-    'previous message declined the reset for this same request ("proceed" or ' +
-    'equivalent): answer with ONLY this notice, in the user\'s language, and stop — ' +
-    '"This is a `' + missing + '` request in a `' + loaded + '` context. Recommended: ' +
-    '`/mode-router:carryover`, then `/clear`, then re-send the request. To answer ' +
-    'here with no mode, reply: proceed." If they did decline: answer with NO mode ' +
-    'at all — plain writing, no `' + loaded + '` rules, no `' + missing + '` rules.';
+    'mode. If you classify to `' + loaded + '`: apply it, do NOT re-invoke, answer ' +
+    'normally. If you classify to `' + missing + '`: do NOT invoke it; instead — ' +
+    'unless the user\'s previous message declined the reset for this same request ' +
+    '("proceed" or equivalent) — answer with ONLY this notice, in the user\'s ' +
+    'language, and stop: "This is a `' + missing + '` request in a `' + loaded + '` ' +
+    'context. Recommended: `/mode-router:carryover`, then `/clear`, then re-send the ' +
+    'request. To answer here with no mode, reply: proceed." If they did decline: ' +
+    'answer with NO mode at all — plain writing, no `' + loaded + '` rules, no `' +
+    missing + '` rules.';
 }
 
 function invocationTail(loaded, cwd, sessionId) {

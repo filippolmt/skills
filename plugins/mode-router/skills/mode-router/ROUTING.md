@@ -18,7 +18,7 @@ what appears below is only where a routing event touches it.
 Mode skills declare themselves "active every response", so once invoked they stay
 in context. What the hook needs is therefore not only *which mode fits this
 request* but *which mode skills are already loaded* — the **loaded-mode set**,
-kept per session under `$XDG_STATE_HOME/mode-router/` and maintained by five
+kept per session under `$XDG_STATE_HOME/mode-router/` and maintained by these
 events:
 
 | Event | Role |
@@ -26,7 +26,7 @@ events:
 | `SessionStart` (`startup`/`clear`/`compact`/`fork`) | empties the set — this is a **context reset** — and archives a handoff note older than 24h |
 | `SessionStart` (`resume`) | **keeps** the set: resume rebuilds the context from the transcript, so the modes invoked earlier are back in it |
 | `UserPromptExpansion` (slash command) | adds a **user-typed** mode to the set — a typed `/caveman` is expanded inline by the harness and never passes through the `Skill` tool — and records any **other** typed skill as `typed`; on `/carryover`, marks this session as the note's author instead |
-| `PreToolUse` (matcher `Skill`) | the **mode veto**: denies a mode skill entering a context that already holds the other one (in `auto` only — a forced mode and `off` pass) |
+| `PreToolUse` (matcher `Skill`) | the **mode veto**: denies a mode skill entering a context that already holds the other one — unless the control file is `off`, or forces the very mode that is entering |
 | `PostToolUse` (matcher `Skill`) | adds the model-invoked mode to the set, and records any **other** invoked skill as `model` |
 | `UserPromptSubmit` | reads the set and emits the routing text — except on a `/carryover` prompt, where it emits the note's resolved path plus the skill list, and says nothing about routing |
 
@@ -51,8 +51,10 @@ What the hook injects follows from the set, in three branches:
 A skill cannot be unloaded, so the only way to keep a context in one mode is to
 never let the second one in. The router does that in two layers:
 
-1. **The switch notice.** On a switch, the routing text tells the model not to
-   invoke the other mode and to answer with one line only, in the user's language:
+1. **The switch clause and the switch notice.** On a switch, the routing text
+   (the *clause*, what the model receives) tells it not to invoke the other mode
+   and to answer with one line only (the *notice*, what the user sees), in the
+   user's language:
    *this is a `ponytail` request in a `caveman` context; recommended
    `/mode-router:carryover`, then `/clear`, then re-send; to answer here with no
    mode, reply "proceed".* The turn ends there. The notice repeats on **every**
@@ -100,8 +102,8 @@ context, one mode, and the switch made visible to the user rather than silent
 (`docs/adr/0006-one-mode-per-context-by-choice.md`). The measurements of ADR-0001
 stand — they are why a mixed context, once the user creates one, is still handled
 in words and works. What `0.7.0` got wrong and `0.10.0` keeps in check is the
-cost: its veto text was ~62% of every steady-state injection; the notice is a few
-lines.
+cost: its veto text was ~62% of every steady-state injection; the switch clause
+is a few lines, and the notice the user sees is one.
 
 ### Contract this rests on
 

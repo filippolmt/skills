@@ -1,6 +1,10 @@
 ---
-status: superseded by ADR-0006 (the measurements stand; the decision they supported does not)
+status: superseded by ADR-0006
 ---
+
+> Superseded in the decision only: the measurements below stand, and ADR-0006
+> relies on them for the mixed context it still tolerates.
+
 
 # Drop the skill veto; keep exclusivity per turn
 

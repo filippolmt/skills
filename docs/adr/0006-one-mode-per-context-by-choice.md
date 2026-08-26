@@ -23,8 +23,9 @@ rather than a second skill body silently entering the context.
   ("proceed"). Every switch turn, not once per session.
 - Declining gets the request answered with **no mode at all** — not the loaded
   one. The refusal is the model's memory of the previous message, not hook state.
-- `PreToolUse` on `Skill` denies the call if the model makes it anyway, in `auto`
-  only; a forced mode and `off` pass, as in 0.7.0.
+- `PreToolUse` on `Skill` denies the call if the model makes it anyway. `off`
+  vetoes nothing, and a forced mode is waved in — but only that mode: a forced
+  `caveman` does not let a stray `ponytail` call open a mixed context. As in 0.7.0.
 - A user-typed `/caveman` or `/ponytail` is not intercepted — it cannot be, the
   harness expands it inline — and is the one path to a mixed context. There the
   per-turn suspension of 0.8.0 applies unchanged, because 0001 showed it works.
@@ -51,4 +52,5 @@ rather than a second skill body silently entering the context.
 - After a compaction the model may forget a "proceed" and the notice returns on
   the next switch turn. Accepted: the alternative is hook state.
 - 0.7.0's veto text was ~62% of every steady-state injection (ADR-0001). The
-  0.10.0 notice is a few lines and is asserted short in `route.test.js`.
+  0.10.0 switch clause is a few lines, asserted short in `route.test.js`; the
+  notice the user sees is one.

@@ -91,7 +91,7 @@ rules, and injects them into every turn.
 
 Two files explain that behavior for whoever administers it:
 
-- [`ROUTING.md`](ROUTING.md) — the loaded-mode set and the five events that
+- [`ROUTING.md`](ROUTING.md) — the loaded-mode set and the events that
   maintain it, the switch notice and the veto, per-turn suspension in a mixed
   context, the harness contracts the whole design rests on
   and how to check them when routing goes quiet, slash commands, precedence over
