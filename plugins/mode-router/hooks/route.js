@@ -148,6 +148,20 @@ function forced(mode) {
     'type.' + PRECEDENCE;
 }
 
+// Forced mode, context holding the OTHER one. A context holds one mode whatever
+// put it there, so the file does not bring the second in either: the turn gets
+// the switch notice (control-file wording) until the user resets or declines.
+function forcedSwitch(mode, loaded) {
+  return 'Forced ' + mode + ' mode, but `' + loaded + '` is already in this context ' +
+    'and a context holds ONE mode: do NOT invoke `' + mode + '`. Unless the user\'s ' +
+    'previous message declined the reset for this same request ("proceed" or ' +
+    'equivalent), answer with ONLY this notice, in the user\'s language, and stop: ' +
+    '"The control file forces `' + mode + '` but this context holds `' + loaded + '`. ' +
+    'Recommended: `/mode-router:carryover`, then `/clear`, then re-send the request. ' +
+    'To answer here with no mode, reply: proceed." If they did decline: answer with ' +
+    'NO mode at all — plain writing, no `' + loaded + '` rules, no `' + mode + '` rules.';
+}
+
 // The classification rule itself. Needed EVERY turn: in `auto` the right mode
 // varies per request, so the choice is re-made even when nothing is reloaded.
 const CLASSIFY =
@@ -449,10 +463,10 @@ if (input.hook_event_name === 'UserPromptExpansion') {
 
 // PreToolUse on Skill: the veto. Denies exactly one thing — a mode skill entering
 // a context that already holds the OTHER mode. A non-mode skill, a re-invoke of
-// what is loaded and the first mode all pass. So does the control file, in two
-// shapes: `off` vetoes nothing, and a FORCED mode may enter a context holding the
-// other — the file outranks the set. A forced `caveman` does not let a stray
-// `ponytail` call through, though: the only mode the file waves in is its own.
+// what is loaded and the first mode all pass. A FORCED mode does not: the file
+// picks the mode of a fresh context, it does not add a second one to a running
+// context (forcedSwitch() below asks for the reset instead). `off` vetoes nothing —
+// it is a standing order to stay out of the way.
 // The reason is descriptive only: the model acts on the UserPromptSubmit text,
 // which told it not to make this call in the first place.
 if (input.hook_event_name === 'PreToolUse') {
@@ -460,8 +474,7 @@ if (input.hook_event_name === 'PreToolUse') {
   if (mode) {
     const loaded = readLoadedModes(input.session_id);
     const other = MODES.find((m) => m !== mode);
-    const cfg = readMode();
-    if (!loaded.includes(mode) && loaded.includes(other) && cfg !== 'off' && cfg !== mode) {
+    if (!loaded.includes(mode) && loaded.includes(other) && readMode() !== 'off') {
       process.stdout.write(JSON.stringify({
         hookSpecificOutput: {
           hookEventName: 'PreToolUse',
@@ -627,9 +640,10 @@ const out =
   carryoverTurn
     ? [handoffTarget(input.cwd), skillsClause(readSkills(input.session_id))]
         .filter(Boolean).join(' ') :
-  // Forced modes: invoke when missing from the set, stay silent once it is in.
+  // Forced modes: silent once in the set; invoke when the set is empty; on a set
+  // holding the other mode, the switch notice — never a second mode.
   mode === 'caveman' || mode === 'ponytail'
-    ? (loaded.includes(mode) ? '' : forced(mode)) :
+    ? (loaded.includes(mode) ? '' : loaded.length ? forcedSwitch(mode, loaded[0]) : forced(mode)) :
   // auto: always classify; the set decides what to say about invoking.
   slashIsMode ? '' :
   CLASSIFY + invocationTail(loaded, input.cwd, input.session_id);

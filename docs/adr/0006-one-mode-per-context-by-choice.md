@@ -24,8 +24,10 @@ rather than a second skill body silently entering the context.
 - Declining gets the request answered with **no mode at all** — not the loaded
   one. The refusal is the model's memory of the previous message, not hook state.
 - `PreToolUse` on `Skill` denies the call if the model makes it anyway. `off`
-  vetoes nothing, and a forced mode is waved in — but only that mode: a forced
-  `caveman` does not let a stray `ponytail` call open a mixed context. As in 0.7.0.
+  vetoes nothing. A **forced** mode is not waved in either — unlike 0.7.0, where
+  the control file outranked the set: against a context holding the other mode
+  it gets the switch notice in control-file wording, and takes effect after the
+  reset. One or the other, whoever asks.
 - A user-typed `/caveman` or `/ponytail` is not intercepted — it cannot be, the
   harness expands it inline — and is the one path to a mixed context. There the
   per-turn suspension of 0.8.0 applies unchanged, because 0001 showed it works.

@@ -66,7 +66,7 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   context. A mode is (re)invoked only when it is missing from the set. See
   `plugins/mode-router/skills/mode-router/ROUTING.md`.
 - **Mode switch** — a request that classifies to the mode a context does not
-  hold, while it holds the other one. The router does not load the missing mode:
+  hold, while it holds the other one; or the control file forcing that mode. The router does not load the missing mode:
   the turn is spent on the **switch notice**, and the user chooses.
 - **Switch clause** — what the router tells the model on a turn with one mode
   loaded: apply that mode, or — on a mode switch — do not load the other and
@@ -78,8 +78,7 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   mode at all.
 - **Mode veto** — the router refusing a mode skill's invocation because the
   context already holds the other mode. Backs up the switch clause; it stops the
-  model's call, never the user's typed slash. A forced mode is waved in — only
-  that one.
+  model's call, never the user's typed slash — a forced mode included.
 - **Mixed context** — a context holding both mode skills. Reached only by the
   user typing the second mode; the router never produces one. Tolerated, not a
   failure: per-turn suspension is how it still answers in exactly one mode.

@@ -30,7 +30,9 @@ reads and flips the control file that picks the mode.
 
 `mode` is one of: `auto` (default — model routes per request), `caveman` (force
 terse everywhere, regardless of request type), `ponytail` (force minimal-code
-everywhere), `off` (inject nothing). Missing or invalid → `auto`.
+everywhere), `off` (inject nothing). Missing or invalid → `auto`. A forced mode
+does not override a context that already holds the other one: it gets the same
+switch notice, and takes effect after the `/clear`.
 
 This file is **user configuration** and nothing else writes to it. Runtime state
 is kept apart under `$XDG_STATE_HOME/mode-router/` (or

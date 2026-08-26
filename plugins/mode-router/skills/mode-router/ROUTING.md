@@ -26,7 +26,7 @@ events:
 | `SessionStart` (`startup`/`clear`/`compact`/`fork`) | empties the set — this is a **context reset** — and archives a handoff note older than 24h |
 | `SessionStart` (`resume`) | **keeps** the set: resume rebuilds the context from the transcript, so the modes invoked earlier are back in it |
 | `UserPromptExpansion` (slash command) | adds a **user-typed** mode to the set — a typed `/caveman` is expanded inline by the harness and never passes through the `Skill` tool — and records any **other** typed skill as `typed`; on `/carryover`, marks this session as the note's author instead |
-| `PreToolUse` (matcher `Skill`) | the **mode veto**: denies a mode skill entering a context that already holds the other one — unless the control file is `off`, or forces the very mode that is entering |
+| `PreToolUse` (matcher `Skill`) | the **mode veto**: denies a mode skill entering a context that already holds the other one, a forced mode included — only `off` switches it off |
 | `PostToolUse` (matcher `Skill`) | adds the model-invoked mode to the set, and records any **other** invoked skill as `model` |
 | `UserPromptSubmit` | reads the set and emits the routing text — except on a `/carryover` prompt, where it emits the note's resolved path plus the skill list, and says nothing about routing |
 
@@ -72,6 +72,13 @@ by the model from the previous message, not by the hook: `UserPromptSubmit` is
 stateless, and the word is not one the hook can match across languages. After a
 compaction the model may have lost it, and the notice returns — the acceptable
 cost of keeping the hook stateless. The next switch turn gets the notice again.
+
+The rule is *one or the other*, whoever asks. A **forced** mode against a
+context holding the other one gets the same treatment: the prompt side emits the
+switch notice in control-file wording ("the control file forces `ponytail` but
+this context holds `caveman`") instead of the invocation, and the veto denies the
+call. The file picks the mode of a fresh context; it does not add a second one to
+a running context.
 
 The veto stops a `Skill` **call**. A user-typed `/ponytail` never makes one — the
 harness expands the body inline — so it walks in past both layers. That is the one
@@ -154,8 +161,9 @@ alongside the dispatched skill (e.g. `/improve-codebase-architecture` → also
 `ponytail`). It stays silent only when the slash command **is** a mode skill
 (`/caveman`, `/ponytail`) — the user already picked one — or this plugin's
 `/carryover`, which gets the note's path and the skill list instead. A **forced**
-mode is a standing choice and applies on every prompt regardless — with the same
-one exception: on a `/carryover` turn the hook asks for no invocation, because that
+mode is a standing choice and applies on every prompt regardless — except against
+a context that already holds the other mode, where it asks for the reset (above),
+and with the same one exception: on a `/carryover` turn the hook asks for no invocation, because that
 turn produces a file of imposed shape and no prose to style. A forced mode already
 loaded still applies to it; it is just not requested there. `off` outranks
 everything, `/carryover` included: it means inject nothing.
