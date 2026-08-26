@@ -41,7 +41,7 @@
     {
       "name": "printing-press-bundle",
       "source": "./plugins/printing-press-bundle",
-      "description": "Install printing-press with the sibling skills it invokes at runtime (printing-press-polish, printing-press-score, and the internal printing-press-output-review) and agent-report-guard, the hook that keeps its subagents reporting back. Bundles them as dependencies.",
+      "description": "Install printing-press with the sibling skills it invokes at runtime (printing-press-polish, printing-press-score, printing-press-retro, printing-press-publish, and the internal printing-press-output-review) and agent-report-guard, the hook that keeps its subagents reporting back. Bundles them as dependencies.",
       "author": {
         "name": "Filippo Merante Caparrotta"
       }
@@ -580,6 +580,28 @@
         "sha": "a6d572b02ed02175df95a8df7a278f970107513d"
       },
       "description": "Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use."
+    },
+    {
+      "name": "printing-press-retro",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mvanhorn/cli-printing-press",
+        "path": "skills/printing-press-retro",
+        "ref": "v4.31.1",
+        "sha": "a6d572b02ed02175df95a8df7a278f970107513d"
+      },
+      "description": "Run a retrospective after a printed-CLI run: surface systemic gaps (generator misses, scorer bugs, skill-doc drift) and file them upstream for the Printing Press maintainers."
+    },
+    {
+      "name": "printing-press-publish",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mvanhorn/cli-printing-press",
+        "path": "skills/printing-press-publish",
+        "ref": "v4.31.1",
+        "sha": "a6d572b02ed02175df95a8df7a278f970107513d"
+      },
+      "description": "Publish a generated CLI to the public printing-press-library repo by opening a pull request."
     },
     {
       "name": "api-scaffolding",

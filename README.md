@@ -144,6 +144,8 @@ Snapshot of the catalog — the source of truth is
 | `printing-press-polish` | Polish a generated CLI to pass verification and become publish-ready: runs diagnostics (dogfood, verify, scorecard, go vet, gosec), auto-fixes issues, and reports the before/after delta. |
 | `printing-press-score` | Score a generated CLI against the Steinberger bar, or compare two CLIs side-by-side. |
 | `printing-press-output-review` | Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use. |
+| `printing-press-retro` | Run a retrospective after a printed-CLI run: surface systemic gaps (generator misses, scorer bugs, skill-doc drift) and file them upstream for the Printing Press maintainers. |
+| `printing-press-publish` | Publish a generated CLI to the public printing-press-library repo by opening a pull request. |
 
 ### [wshobson/agents](https://github.com/wshobson/agents) — backend scaffolding
 
