@@ -543,8 +543,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press",
-        "ref": "v4.31.1",
-        "sha": "a6d572b02ed02175df95a8df7a278f970107513d"
+        "ref": "v4.31.2",
+        "sha": "7656fe7ca01ea2a83bd309411abee8bf404d6b66"
       },
       "description": "Generate a ship-ready CLI for an API via a lean research → generate → build → shipcheck loop."
     },
@@ -554,8 +554,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-polish",
-        "ref": "v4.31.1",
-        "sha": "a6d572b02ed02175df95a8df7a278f970107513d"
+        "ref": "v4.31.2",
+        "sha": "7656fe7ca01ea2a83bd309411abee8bf404d6b66"
       },
       "description": "Polish a generated CLI to pass verification and become publish-ready: runs diagnostics (dogfood, verify, scorecard, go vet, gosec), auto-fixes issues, and reports the before/after delta."
     },
@@ -565,8 +565,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-score",
-        "ref": "v4.31.1",
-        "sha": "a6d572b02ed02175df95a8df7a278f970107513d"
+        "ref": "v4.31.2",
+        "sha": "7656fe7ca01ea2a83bd309411abee8bf404d6b66"
       },
       "description": "Score a generated CLI against the Steinberger bar, or compare two CLIs side-by-side."
     },
@@ -576,8 +576,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-output-review",
-        "ref": "v4.31.1",
-        "sha": "a6d572b02ed02175df95a8df7a278f970107513d"
+        "ref": "v4.31.2",
+        "sha": "7656fe7ca01ea2a83bd309411abee8bf404d6b66"
       },
       "description": "Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use."
     },
@@ -587,8 +587,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-retro",
-        "ref": "v4.31.1",
-        "sha": "a6d572b02ed02175df95a8df7a278f970107513d"
+        "ref": "v4.31.2",
+        "sha": "7656fe7ca01ea2a83bd309411abee8bf404d6b66"
       },
       "description": "Run a retrospective after a printed-CLI run: surface systemic gaps (generator misses, scorer bugs, skill-doc drift) and file them upstream for the Printing Press maintainers."
     },
@@ -598,8 +598,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-publish",
-        "ref": "v4.31.1",
-        "sha": "a6d572b02ed02175df95a8df7a278f970107513d"
+        "ref": "v4.31.2",
+        "sha": "7656fe7ca01ea2a83bd309411abee8bf404d6b66"
       },
       "description": "Publish a generated CLI to the public printing-press-library repo by opening a pull request."
     },
