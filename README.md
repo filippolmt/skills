@@ -221,6 +221,12 @@ Snapshot of the catalog — the source of truth is
 |---|---|
 | `last30days` | Research what people actually say about any topic in the last 30 days. Pulls posts and engagement from Reddit, X, YouTube, TikTok, Hacker News, Polymarket, GitHub, and the web. Includes a doctor health check to diagnose broken or missing sources. |
 
+### [filippolmt/proximo](https://github.com/filippolmt/proximo) — local HTTPS for Docker containers
+
+| Skill | What it does |
+|---|---|
+| `proximo` | Makes local Docker containers reachable at https://<name>.test with trusted HTTPS and local DNS. Use when exposing a container through proximo.* labels, or when diagnosing a broken one: a .test host that does not answer, a 502/503, an untrusted local certificate, or a page that loads and then breaks. |
+
 ### Modes (bundled by the local `mode-router` plugin)
 
 | Skill | Source | What it does |

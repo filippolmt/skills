@@ -921,6 +921,17 @@
         "sha": "9243a32d823c7c8659e44b92f2dedcf1b7397137"
       },
       "description": "Research what people actually say about any topic in the last 30 days. Pulls posts and engagement from Reddit, X, YouTube, TikTok, Hacker News, Polymarket, GitHub, and the web. Includes a doctor health check to diagnose broken or missing sources."
+    },
+    {
+      "name": "proximo",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/filippolmt/proximo",
+        "path": "skills/proximo",
+        "ref": "v0.14.0",
+        "sha": "26efff7774948784aafa836af42a5640c720988a"
+      },
+      "description": "Makes local Docker containers reachable at https://<name>.test with trusted HTTPS and local DNS. Use when exposing a container through proximo.* labels, or when diagnosing a broken one: a .test host that does not answer, a 502/503, an untrusted local certificate, or a page that loads and then breaks."
     }
   ]
 }
