@@ -48,9 +48,11 @@ endpoints are identical.
 Renovate updates an entry only when its `ref` has one of two shapes — one
 `customManager` in `renovate.json` per shape:
 
-- **Tag** — `vX.Y.Z`, optionally prefixed (`skill-v4.1.2`, prefix = the tag
-  series). Tag and `sha` bump together. **The default when the repo publishes
-  semver tags**, and what most entries here use.
+- **Tag** — `vX.Y.Z`, optionally prefixed (`skill-v4.1.2`). Tag and `sha` bump
+  together. **The default when the repo publishes semver tags**, and what most
+  entries here use. The prefix names the tag series, so a repo publishing
+  several (`cli-v*`, `ext-v*`, `skill-v*`) only ever bumps within the one you
+  pinned.
 - **Branch** — literally `main` or `master`; the `sha` bumps to that branch's
   HEAD. For a repo publishing no usable tags.
 
