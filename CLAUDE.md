@@ -1,83 +1,72 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## What this repo is
 
 A Claude Code **plugin marketplace**. `.claude-plugin/marketplace.json` is the
-catalog; each entry is a plugin. **Default granularity is one skill per plugin
-entry** — skills are installed individually (`/plugin install <name>`), not in
-bulk.
+catalog; each entry is a plugin, installed on its own (`/plugin install <name>`),
+not in bulk. **Default granularity is one skill per entry.**
 
-**Exception — whole-plugin entries.** When an upstream repo ships a cohesive
-plugin that bundles multiple skills and/or subagents (a folder with its own
-`.claude-plugin/plugin.json`), reference it as a **single `git-subdir` entry
-whose `path` points at the plugin root**. Installing it brings all its
-artifacts (skills + subagents) at once. See the `api-scaffolding` and
-`shell-scripting` entries from `wshobson/agents`. Use this only for genuinely
-cohesive upstream plugins; isolated skills stay one-per-entry.
+**Exception — whole-plugin entries.** An upstream repo shipping a cohesive plugin
+that bundles several skills and/or subagents (a folder with its own
+`.claude-plugin/plugin.json`) gets a **single `git-subdir` entry whose `path` is
+the plugin root**: installing it brings every artifact at once. See
+`api-scaffolding` and `shell-scripting` from `wshobson/agents`.
 
-## Adding an external skill (the main workflow)
+## Adding or updating an external skill
 
 External skills are **referenced upstream** via `git-subdir` — never copied into
-this repo. Each entry is one skill, pins a commit `sha` that Renovate bumps
-automatically, and points at a folder containing a `SKILL.md` at its root. Run
-the `/add-external-skill` skill: it fetches the SHA and appends a
-correctly-shaped entry. For the exact entry shape, see that skill or any existing
-`git-subdir` entry in `marketplace.json`.
+this repo. Both branches run through the user-invoked **`/add-external-skill`**
+skill: `<owner/repo> [path] [name]` appends entries, `update` reconciles existing
+ones against upstream (skills added and removed, tag/`sha` bumps, refreshed
+descriptions). It also picks the `ref`, regenerates the README and validates.
+Copy the entry shape from any existing `git-subdir` entry.
 
-## Renovate sync gotcha
+## Gotchas
 
-`renovate.json` has two mutually exclusive `customManager`s over the `git-subdir`
-entry shape (`url` github + `path` + `ref` + `sha`), told apart by `ref`:
+**The Renovate seam.** `renovate.json` matches the `git-subdir` entry shape with
+two `customManager` regexes, told apart by `ref` (`main`/`master` vs
+`[prefix-]vX.Y.Z`). A regex that stops matching fails **silently** — zero
+matches, no error, auto-updates simply stop. So the entry shape and both regexes
+move together, and `scripts/check-renovate.js` asserts they cover the catalog
+exactly.
 
-- `ref: "main"`/`"master"` → `git-refs` datasource, bumps the `sha` (automerge on).
-- `ref: "vX.Y.Z"` (optionally prefixed, e.g. `skill-v4.1.1`) → `github-tags`
-  datasource, bumps tag + `sha` together (automerge on minor/patch only;
-  majors wait for review). The prefix is captured as the regex-versioning
-  `compatibility` group, so a repo publishing several tag series
-  (`cli-v*`, `ext-v*`, `skill-v*`) only ever bumps within its own series.
-
-Together they must cover **every** `git-subdir` entry — an entry matched by
-neither is silently never updated. **If you change the source shape in
-`marketplace.json`, update both regexes in `renovate.json` to match** —
-otherwise auto-updates silently stop.
-
-## Local plugin hooks gotcha
-
-A local plugin's `hooks/hooks.json` is loaded **automatically**. Do NOT also
-point `manifest.hooks` (in `.claude-plugin/plugin.json`) at it — that loads the
-file twice: `Duplicate hooks file detected`. The `hooks` manifest field is only
-for *additional* hook files beyond the standard path. The same double
-registration happens through a stale entry in `.claude/settings.local.json`
-pointing at a plugin's hook script — and this variant is **silent** (no
-duplicate-file warning, the hook just runs twice per event). If a hook seems to
-fire twice, check there first.
+**Double-registered hooks.** A local plugin's `hooks/hooks.json` loads
+automatically; `manifest.hooks` (in `.claude-plugin/plugin.json`) is for
+*additional* hook files beyond that path, so pointing it at the standard one
+loads the file twice (`Duplicate hooks file detected`). A stale entry in
+`.claude/settings.local.json` pointing at a plugin's hook script does the same
+**silently**: no warning, the hook just runs twice per event. A hook firing twice
+→ check those two places first.
 
 ## Validate before committing
 
 ```
-claude plugin validate .              # marketplace + all local plugins
+for t in scripts/*.test.js plugins/*/hooks/*.test.js; do node "$t"; done
+node scripts/gen-readme.js --check    # README catalog matches marketplace.json
+node scripts/check-renovate.js        # Renovate regexes cover every git-subdir entry
 node scripts/check-name-collisions.js # what validate does NOT cover
+claude plugin validate .              # marketplace + all local plugins
 ```
 
+This is what CI runs (`.github/workflows/validate.yml`). A `PostToolUse` hook
+(`.claude/settings.json`) runs the last two on every edit to `marketplace.json`,
+`plugin.json`, a `SKILL.md` or a `commands/*.md`, and blocks the edit (exit 2) if
+either fails — the rest are yours to run.
+
 Output must be **clean** — no errors *and* no warnings. A warning (e.g. a
-`version` that diverges between `plugin.json` and a marketplace entry) is a
-fail here: fix it before committing.
+`version` that diverges between `plugin.json` and a marketplace entry) is a fail
+here: fix it before committing.
 
-`validate` checks that catalog `name` values are unique. It says nothing about a
-**command** in one plugin against a **skill** in another, which is a real collision
-the harness resolves to one of them while a hook reading the raw prompt text can
-act as if it were the other — that gap shipped a defect
-(`docs/adr/0004-rename-the-handoff-command.md`), so the second command closes it.
-
-A `PostToolUse` hook (`.claude/settings.json`) runs **both** on every edit to
-`marketplace.json`, `plugin.json`, a `SKILL.md`, or a `commands/*.md`, and blocks
-the edit (exit 2) if either fails.
+`claude plugin validate` compares catalog `name` values against each other and
+nothing more. A local plugin's **command** colliding with another plugin's
+**skill** is a real collision it misses — the harness resolves it to one of them
+while a hook reading the raw prompt text can act as if it were the other, which
+shipped a defect (`docs/adr/0004-rename-the-handoff-command.md`).
+`check-name-collisions.js` is what closes that gap.
 
 ## Conventions
 
 - Conventional Commits (`feat:`, `fix:`, `chore:`, …).
 - Work on a feature branch (`feat/...`), open a PR to `main` — no direct pushes to `main`.
-- Plugin/skill `name` values must be unique across the whole marketplace — and so must a local plugin's command and skill names, against each other and against every catalog entry. `scripts/check-name-collisions.js` is what enforces the second half.
+- `name` values are unique across the whole marketplace, and a local plugin's command and skill names are unique against each other and against every catalog entry.
 - **Bump the `version` (SemVer) only of the plugin you changed** — never touch the others. Edit it in the plugin's own `plugin.json` (the single source of truth; local-plugin `marketplace.json` entries carry no `version`). `fix:` → patch, `feat:` → minor, breaking → major. **Below `1.0.0` a breaking change is a minor**, not a major — every local plugin is still pre-1.0. The bumped version is the release: merging the PR to `main` ships it. Skip only for changes that don't touch a plugin's behaviour (e.g. repo docs, `renovate.json`).
