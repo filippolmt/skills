@@ -8,7 +8,8 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 
 - **Marketplace catalog** — the `plugins` array in
   `.claude-plugin/marketplace.json`. The single source of truth for what this
-  marketplace offers.
+  marketplace offers. Say **Claude catalog** where it has to be told apart from
+  the Codex one, which is derived from it.
 - **Plugin entry** — one object in the catalog. Either a **local plugin** (its
   `source` is a repo-relative path, e.g. `./plugins/mode-router`) or a
   **git-subdir entry** (references an upstream folder, pins a `sha`).
@@ -32,6 +33,32 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Modes table** — the projection's final table (`caveman`, `ponytail`). Not
   configured in catalog-meta: derived from the local `mode-router` plugin's
   `dependencies`.
+
+## Codex catalog
+
+- **Codex catalog** — `.agents/plugins/marketplace.json`, the catalog Codex
+  reads. A second **catalog projection**: derived from the marketplace catalog,
+  checked in CI, never hand-edited.
+- **Codex-plugin** — an installable unit on the Codex side. Distinguished from a
+  plugin entry because it is a different artifact with a different manifest
+  (`.codex-plugin/plugin.json`) and no notion of dependencies, so a bundle has no
+  Codex-plugin.
+- **Vendored copy** — an upstream skill's files reproduced inside a Codex-plugin
+  at the `sha` its entry pins. What the Codex side has instead of a reference.
+- **Overlay** — a Codex-specific edit to a vendored copy, held apart from it as a
+  patch so the copy stays identical to upstream. Named for the separation: an
+  edit made *in* the copy is a fork, not an overlay.
+- **Overlay drift** — an overlay whose upstream has moved under it. Surfaces as
+  the patch failing to apply, which is the property the form is chosen for.
+- **Portable entry** — a catalog entry that has a Codex-plugin. Excluded are the
+  bundles, and any entry whose value is a parallel fan-out of subagents — Codex
+  spawns subagents only when asked, and a plugin cannot ship them.
+- **Ported skill** — a subagent turned into a skill of its own inside the
+  Codex-plugin that used to spawn it. Prefixed with that plugin's name, because
+  its bare name is in the same namespace as every catalog entry.
+- **Release branch** — `codex`, the branch CI regenerates on merge to `main` and
+  the one a Codex marketplace is registered against. Behind `main` by the
+  lifetime of any open pull request, by design.
 
 ## Guards
 
