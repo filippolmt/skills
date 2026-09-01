@@ -543,8 +543,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press",
-        "ref": "v4.31.3",
-        "sha": "64e5fd62ed37ec095c0d5428b2f4f47abd967c25"
+        "ref": "v4.31.4",
+        "sha": "ba4e6914c3de726ff3be284c4ceb40761c95c265"
       },
       "description": "Generate a ship-ready CLI for an API via a lean research → generate → build → shipcheck loop."
     },
@@ -554,8 +554,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-polish",
-        "ref": "v4.31.3",
-        "sha": "64e5fd62ed37ec095c0d5428b2f4f47abd967c25"
+        "ref": "v4.31.4",
+        "sha": "ba4e6914c3de726ff3be284c4ceb40761c95c265"
       },
       "description": "Polish a generated CLI to pass verification and become publish-ready: runs diagnostics (dogfood, verify, scorecard, go vet, gosec), auto-fixes issues, and reports the before/after delta."
     },
@@ -565,8 +565,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-score",
-        "ref": "v4.31.3",
-        "sha": "64e5fd62ed37ec095c0d5428b2f4f47abd967c25"
+        "ref": "v4.31.4",
+        "sha": "ba4e6914c3de726ff3be284c4ceb40761c95c265"
       },
       "description": "Score a generated CLI against the Steinberger bar, or compare two CLIs side-by-side."
     },
@@ -576,8 +576,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-output-review",
-        "ref": "v4.31.3",
-        "sha": "64e5fd62ed37ec095c0d5428b2f4f47abd967c25"
+        "ref": "v4.31.4",
+        "sha": "ba4e6914c3de726ff3be284c4ceb40761c95c265"
       },
       "description": "Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use."
     },
@@ -587,8 +587,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-retro",
-        "ref": "v4.31.3",
-        "sha": "64e5fd62ed37ec095c0d5428b2f4f47abd967c25"
+        "ref": "v4.31.4",
+        "sha": "ba4e6914c3de726ff3be284c4ceb40761c95c265"
       },
       "description": "Run a retrospective after a printed-CLI run: surface systemic gaps (generator misses, scorer bugs, skill-doc drift) and file them upstream for the Printing Press maintainers."
     },
@@ -598,8 +598,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-publish",
-        "ref": "v4.31.3",
-        "sha": "64e5fd62ed37ec095c0d5428b2f4f47abd967c25"
+        "ref": "v4.31.4",
+        "sha": "ba4e6914c3de726ff3be284c4ceb40761c95c265"
       },
       "description": "Publish a generated CLI to the public printing-press-library repo by opening a pull request."
     },
@@ -917,8 +917,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/last30days-skill",
         "path": "skills/last30days",
-        "ref": "v3.21.1",
-        "sha": "9243a32d823c7c8659e44b92f2dedcf1b7397137"
+        "ref": "v3.22.0",
+        "sha": "fcebe321c22e5e97e3ef5712e4bc00f2b33bba37"
       },
       "description": "Research what people actually say about any topic in the last 30 days. Pulls posts and engagement from Reddit, X, YouTube, TikTok, Hacker News, Polymarket, GitHub, and the web. Includes a doctor health check to diagnose broken or missing sources."
     },
@@ -928,8 +928,8 @@
         "source": "git-subdir",
         "url": "https://github.com/filippolmt/proximo",
         "path": "skills/proximo",
-        "ref": "v0.14.0",
-        "sha": "26efff7774948784aafa836af42a5640c720988a"
+        "ref": "v0.15.0",
+        "sha": "8a5e234e5340c71690ff0adecf60b3ecb4547618"
       },
       "description": "Makes local Docker containers reachable at https://<name>.test with trusted HTTPS and local DNS. Use when exposing a container through proximo.* labels, or when diagnosing a broken one: a .test host that does not answer, a 502/503, an untrusted local certificate, or a page that loads and then breaks."
     }
