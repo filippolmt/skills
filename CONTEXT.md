@@ -36,6 +36,11 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 
 ## Codex catalog
 
+> **Design, not current state.** [ADR-0007](docs/adr/0007-vendor-a-generated-codex-catalog.md)
+> is still `status: proposed`: on `main` there is no `.agents/`, no
+> `.codex-plugin/`, no `codex` branch. The names below are settled so the work
+> can use them — drop this note when the ADR is accepted.
+
 - **Codex catalog** — `.agents/plugins/marketplace.json`, the catalog Codex
   reads. A second **catalog projection**: derived from the marketplace catalog,
   checked in CI, never hand-edited.
