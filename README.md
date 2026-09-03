@@ -258,10 +258,11 @@ parent folder to batch-add every `SKILL.md` under it:
 
 To do it by hand instead:
 
-1. Get the current branch SHA:
+1. Get the SHA to pin. `HEAD` resolves the repo's default branch, so `main` vs
+   `master` is never a guess; for a tag pin, put the tag name in the URL instead:
 
    ```bash
-   curl -fsSL https://api.github.com/repos/<owner>/<repo>/commits/main \
+   curl -fsSL https://api.github.com/repos/<owner>/<repo>/commits/HEAD \
      -H "Accept: application/vnd.github.sha"
    ```
 2. Add an entry to `.claude-plugin/marketplace.json` (one per skill):
@@ -279,15 +280,29 @@ To do it by hand instead:
      "description": "..."
    }
    ```
-3. Done. The branch `customManager` in `renovate.json` matches every entry of this
+3. Regenerate the README catalog — it is a projection of `marketplace.json`,
+   never hand-edited:
+
+   ```bash
+   node scripts/gen-readme.js
+   ```
+
+   For a source repo not already listed, add its group to
+   `scripts/catalog-meta.json` first (`{ "repo": "<owner>/<repo>", "tagline":
+   "<short label>", "kind": "skill" }`) — the generator throws without one.
+4. Done. The branch `customManager` in `renovate.json` matches every entry of this
    shape (github `url` + `path` + `ref: "main"`/`"master"` + `sha`), tracks the
    branch via the `git-refs` datasource, and opens SHA-bump PRs that merge
    themselves (automerge). Entries from the same repo are grouped into a single PR.
 
-   If the upstream repo publishes semver tags, use the tag instead of the branch
-   (`"ref": "v1.2.3"`, with `sha` set to the commit that tag points at). A second
-   `customManager` picks those up via the `github-tags` datasource: minor/patch
-   bumps automerge, majors wait for review.
+   Prefer a tag when the upstream repo publishes semver ones (`"ref": "v1.2.3"`,
+   with `sha` set to the commit that tag points at). A second `customManager`
+   picks those up via the `github-tags` datasource: minor/patch bumps automerge,
+   majors wait for review.
+
+   Those two shapes — `main`/`master`, or `[prefix-]vX.Y.Z` — are the only ones
+   Renovate matches. Any other `ref` fails silently: no error, the entry is just
+   never updated again.
 
 The folder pointed to by `path` must be a valid skill (contain `SKILL.md`).
 
@@ -326,7 +341,16 @@ Fastest path: copy `plugins/mode-router/skills/mode-router/` as a starting point
 
 ## Validating
 
+What CI runs, so run it before opening a PR — `claude plugin validate` alone
+covers neither the README catalog nor command/skill name collisions:
+
 ```
-claude plugin validate .                     # marketplace + all local plugins
-claude plugin validate ./plugins/mode-router # single plugin + skill
+for t in scripts/*.test.js plugins/*/hooks/*.test.js; do node "$t"; done
+node scripts/gen-readme.js --check    # README catalog matches marketplace.json
+node scripts/check-renovate.js        # Renovate regexes cover every git-subdir entry
+node scripts/check-name-collisions.js # what validate does NOT cover
+claude plugin validate .              # marketplace + all local plugins
 ```
+
+Output must be clean — warnings count as failures. To check one plugin on its
+own: `claude plugin validate ./plugins/mode-router`.
