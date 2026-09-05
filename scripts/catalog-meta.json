@@ -14,7 +14,8 @@
     { "repo": "pbakaus/impeccable", "tagline": "frontend design fluency", "kind": "plugin" },
     { "repo": "mvanhorn/last30days-skill", "tagline": "multi-source trend research", "kind": "skill" },
     { "repo": "filippolmt/proximo", "tagline": "local HTTPS for Docker containers", "kind": "skill" },
-    { "repo": "tt-a1i/archify", "tagline": "architecture & workflow diagrams", "kind": "skill" }
+    { "repo": "tt-a1i/archify", "tagline": "architecture & workflow diagrams", "kind": "skill" },
+    { "repo": "cathrynlavery/diagram-design", "tagline": "editorial diagram system", "kind": "plugin" }
   ],
   "omit": []
 }

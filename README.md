@@ -233,6 +233,12 @@ Snapshot of the catalog — the source of truth is
 |---|---|
 | `archify` | Create polished, validated architecture, workflow, sequence, data-flow, and lifecycle/state diagrams as explorable standalone HTML with inline SVG, dark/light themes, optional trace motion, and PNG/JPEG/WebP/SVG/WebM export. Accept plain-language requirements or pasted Mermaid flowchart, sequenceDiagram, and stateDiagram input; inspect repository evidence when the diagram must reflect real code. |
 
+### [cathrynlavery/diagram-design](https://github.com/cathrynlavery/diagram-design) — editorial diagram system
+
+| Plugin | What it bundles |
+|---|---|
+| `diagram-design` | Branded editorial diagrams as self-contained HTML/SVG/PNG — 39 types covering architecture, flowchart, sequence, state, ER, timeline, swimlane, quadrant, radar, Gantt, Sankey, fishbone, Wardley map, kanban, journey and more: the diagram-design skill plus the doctor, export-diagram, import-drawio, import-mermaid and profile commands. Redraws .drawio or Mermaid sources, onboards brand tokens from a website, and adds semantic patterns, callouts, accessible motion or sketchy styling. |
+
 ### Modes (bundled by the local `mode-router` plugin)
 
 | Skill | Source | What it does |
