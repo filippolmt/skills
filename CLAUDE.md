@@ -7,10 +7,13 @@ catalog; each entry is a plugin, installed on its own (`/plugin install <name>`)
 not in bulk. **Default granularity is one skill per entry.**
 
 **Exception — whole-plugin entries.** An upstream repo shipping a cohesive plugin
-that bundles several skills and/or subagents (a folder with its own
-`.claude-plugin/plugin.json`) gets a **single `git-subdir` entry whose `path` is
-the plugin root**: installing it brings every artifact at once. See
-`api-scaffolding` and `shell-scripting` from `wshobson/agents`.
+(a folder with its own `.claude-plugin/plugin.json`) whose artifacts a per-skill
+entry would **drop** — further skills, subagents, or commands — gets a **single
+`git-subdir` entry whose `path` is the plugin root**: installing it brings every
+artifact at once. See `api-scaffolding` and `shell-scripting` from
+`wshobson/agents`. When the plugin root *is* the repo root, the `path` is `"."`,
+never `""` — an empty path matches neither Renovate manager
+(`docs/adr/0008-whole-plugin-entries-cover-commands.md`); see `diagram-design`.
 
 `CONTEXT.md` is the domain glossary — the naming authority. Read it before you
 coin a name, and whenever a task says *bundle*, *projection*, *overlay*, *guard*,

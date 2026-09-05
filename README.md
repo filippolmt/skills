@@ -237,7 +237,7 @@ Snapshot of the catalog — the source of truth is
 
 | Plugin | What it bundles |
 |---|---|
-| `diagram-design` | Branded editorial diagrams as self-contained HTML/SVG/PNG — 39 types covering architecture, flowchart, sequence, state, ER, timeline, swimlane, quadrant, radar, Gantt, Sankey, fishbone, Wardley map, kanban, journey and more: the diagram-design skill plus the doctor, export-diagram, import-drawio, import-mermaid and profile commands. Redraws .drawio or Mermaid sources, onboards brand tokens from a website, and adds semantic patterns, callouts, accessible motion or sketchy styling. |
+| `diagram-design` | An opinionated editorial diagram system, drawn to one house style and branded from your own tokens: architecture, flowchart, sequence, state, ER, timeline, swimlane, quadrant, radar, Gantt, Sankey, fishbone, Wardley map, kanban and journey diagrams as self-contained HTML/SVG/PNG. Bundles the diagram-design skill plus the doctor, export-diagram, import-drawio, import-mermaid and profile commands — redraw .drawio or Mermaid sources at a chosen size and detail, onboard brand tokens from a website, add semantic patterns, callouts, accessible motion or sketchy styling. |
 
 ### Modes (bundled by the local `mode-router` plugin)
 

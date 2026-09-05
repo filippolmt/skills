@@ -13,7 +13,8 @@ Arguments: `$ARGUMENTS`
 
 Granularity is the CLAUDE.md rule: one entry per `SKILL.md`, `name` = skill
 folder basename; a cohesive upstream plugin becomes one whole-plugin entry whose
-`path` is the plugin root, `name` = the `name` in its `plugin.json`.
+`path` is the plugin root (`"."` when that root is the repo root), `name` = the
+`name` in its `plugin.json`.
 
 ## Fetches
 
@@ -63,9 +64,10 @@ manager, and that entry is then silently never updated again.
 
 1. Parse args. If `owner/repo` missing, ask for it.
 2. Decide granularity. `path` points at a plugin root (has
-   `.claude-plugin/plugin.json`) and you want its subagents too → one
-   **whole-plugin** entry at that root; skip per-skill discovery, take `name`
-   from the `plugin.json`. Otherwise discover skills: `path` = a skill folder →
+   `.claude-plugin/plugin.json`) holding artifacts a per-skill entry would drop
+   — further skills, subagents, or commands → one **whole-plugin** entry at that
+   root (`"."` when the plugin root is the repo root); skip per-skill discovery,
+   take `name` from the `plugin.json`. Otherwise discover skills: `path` = a skill folder →
    single entry; a parent folder → only folders under it (empty → stop,
    report); omitted → all (batch).
 3. Pick the `ref` (see above), then fetch the SHA it resolves to — one SHA
