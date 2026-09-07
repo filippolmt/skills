@@ -467,8 +467,12 @@ if (input.hook_event_name === 'UserPromptExpansion') {
 // picks the mode of a fresh context, it does not add a second one to a running
 // context (forcedSwitch() below asks for the reset instead). `off` vetoes nothing —
 // it is a standing order to stay out of the way.
-// The reason is descriptive only: the model acts on the UserPromptSubmit text,
-// which told it not to make this call in the first place.
+// The reason carries the whole procedure, because the UserPromptSubmit text may
+// not: a mode can enter the set MID-TURN (the model invokes the classified one,
+// then the work shifts and it reaches for the other), and that turn was routed
+// from an EMPTY set — its routing text asked for an invocation and says nothing
+// about a switch. Deferring to it there left the turn with a denial and no
+// instruction, so this text stands on its own instead.
 if (input.hook_event_name === 'PreToolUse') {
   const mode = skillToMode(skillOfEvent());
   if (mode) {
@@ -481,7 +485,12 @@ if (input.hook_event_name === 'PreToolUse') {
           permissionDecision: 'deny',
           permissionDecisionReason: 'mode-router: `' + other + '` is already loaded ' +
             'in this context and a context holds one mode, so `' + mode + '` was ' +
-            'not loaded. Answer this turn as the routing text says.',
+            'not loaded. Do not retry: finish this turn with `' + other + '`. If the ' +
+            'request really needs `' + mode + '`, answer with ONLY this notice, in the ' +
+            'user\'s language, and stop: "This is a `' + mode + '` request in a ' +
+            '`' + other + '` context. Recommended: `/mode-router:carryover`, then ' +
+            '`/clear`, then re-send the request. To answer here with no mode, reply: ' +
+            'proceed."',
         },
       }));
     }

@@ -60,7 +60,10 @@ never let the second one in. The router does that in two layers:
    mode, reply "proceed".* The turn ends there. The notice repeats on **every**
    switch turn — it costs one line, and a forgotten reset costs more.
 2. **The mode veto.** `PreToolUse` on `Skill` denies the call if the model makes
-   it anyway. The deny reason is descriptive; the procedure is in the notice.
+   it anyway. The deny reason carries the procedure itself — the notice and the
+   reset recommendation — because the turn it fires on may never have seen a
+   switch clause: a mode can enter the set **mid-turn**, and that turn was routed
+   from an empty set, where the routing text asks for an invocation instead.
 
 The user decides. **Accepting** the recommendation is the carryover-and-clear the
 note is built for ([`HANDOFF-NOTE.md`](HANDOFF-NOTE.md)); the fresh context then

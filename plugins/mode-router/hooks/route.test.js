@@ -286,6 +286,24 @@ loadSkill('caveman');
 assert.match(prompt('explain this'), /Both `caveman` and `ponytail` are already/,
   'a second mode that did land is recorded, not hidden');
 
+// --- the veto reason stands alone: the MID-TURN arrival ---
+// The real shape of the denial in use (two transcripts): a turn routed from an
+// EMPTY set is told to invoke, the model loads the mode it classified to, then the
+// work shifts and it reaches for the other one in the SAME turn. That turn never
+// saw a switch clause, so a reason deferring to "the routing text" pointed at text
+// asking for an invocation and left the turn with no instruction at all.
+run('SessionStart');
+out = prompt('/wayfinder:wayfinder 11');
+assert.match(out, /Invoke the chosen skill now/, 'setup: an empty set asks for the invocation');
+loadSkill('caveman:caveman');
+const midTurn = JSON.parse(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'ponytail:ponytail' } }))
+  .hookSpecificOutput.permissionDecisionReason;
+assert.doesNotMatch(midTurn, /routing text/, 'the reason never defers to text that may not carry the switch');
+assert.match(midTurn, /Do not retry: finish this turn with `caveman`/, 'it names what the turn does instead');
+assert.match(midTurn, /Recommended:\s+`\/mode-router:carryover`, then `\/clear`/, 'and the same reset recommendation as the notice');
+assert.match(midTurn, /reply: proceed/, 'including the way to decline it');
+assert.match(midTurn, /in the user's language/, 'the notice speaks the user\'s language here too');
+
 // --- expansion details: namespaced names register ---
 run('SessionStart');
 expand('caveman:caveman');
