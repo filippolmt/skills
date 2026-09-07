@@ -846,15 +846,37 @@
       "description": "Create and review Cloudflare Durable Objects — stateful coordination, RPC methods, SQLite storage, alarms, and WebSockets."
     },
     {
-      "name": "sandbox-sdk",
+      "name": "sandbox-migrate-to-next",
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/cloudflare/skills",
-        "path": "skills/sandbox-sdk",
+        "path": "skills/sandbox-migrate-to-next",
         "ref": "main",
         "sha": "d924cd8f59e75e08fd3dd52843bb2776de35c77e"
       },
-      "description": "Build sandboxed applications for secure code execution with the Sandbox SDK — code interpreters, CI/CD, and untrusted code."
+      "description": "Migrate Cloudflare Sandbox apps from stable @cloudflare/sandbox to @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-next for apps already on the preview."
+    },
+    {
+      "name": "sandbox-next",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/sandbox-next",
+        "ref": "main",
+        "sha": "d924cd8f59e75e08fd3dd52843bb2776de35c77e"
+      },
+      "description": "Build or maintain Cloudflare Sandbox apps on @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-migrate-to-next when porting a stable app."
+    },
+    {
+      "name": "sandbox-stable",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/sandbox-stable",
+        "ref": "main",
+        "sha": "d924cd8f59e75e08fd3dd52843bb2776de35c77e"
+      },
+      "description": "Build or maintain Cloudflare Sandbox apps on the stable @cloudflare/sandbox package. Use sandbox-next for preview apps and sandbox-migrate-to-next for stable-to-preview migrations."
     },
     {
       "name": "turnstile-spin",
