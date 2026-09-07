@@ -80,6 +80,13 @@ auto-update. The noise is isolated by *when* generation runs instead: Renovate's
 stays the one-line `sha` change it is today, and regeneration lands afterwards in its
 own `chore: regenerate skills tree` PR.
 
+That promise decides what CI may check on a pull request. A bumped `sha` leaves the
+committed tree stale until regeneration follows, so comparing the tree on a PR would
+redden every Renovate PR and force regeneration back into it. The generator therefore
+has two modes: `--verify-paths` resolves every entry at its `sha` and runs on every
+PR — it is the `sandbox-sdk` guard — while `--check` compares the tree and runs only
+in the regeneration job, where a stale tree is the signal to act on.
+
 **How it is consumed.**
 
 - **pi, globally**: `pi install git:github.com/filippolmt/skills` — deliberately with
@@ -95,8 +102,10 @@ own `chore: regenerate skills tree` PR.
 active is a package filter (`{"source": "…", "skills": ["skills/*", "!skills/…"]}`
 with globs and `+`/`-` overrides) in a settings file this repository does not own. For
 Codex it is `[[skills.config]] path = "…" enabled = false` in `~/.codex/config.toml`.
-The generator emits the snippets; `pi config` toggles at runtime. We recommend, we do
-not install.
+The README carries both as worked examples and `pi config` toggles at runtime. They
+are hand-written prose, not generated: nothing in them varies with the catalog, and a
+generator for two static blocks would be machinery pretending to be a projection. We
+recommend, we do not install.
 
 **Skills only, and all of them.** Every git-subdir entry is vendored, with no
 allow-list: a new entry is in the tree on the next regeneration. Measured against

@@ -36,10 +36,6 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 
 ## Agent distribution
 
-> **Design, not current state.** [ADR-0010](docs/adr/0010-vendor-a-shared-skills-tree-on-main.md)
-> is `accepted`, but on `main` there is no `skills/` tree yet. The names below are
-> settled so the work can use them — drop this note when the tree lands.
-
 - **Skills tree** — `skills/`, one directory per portable skill. A second **catalog
   projection**: derived from the marketplace catalog, checked in CI, never
   hand-edited. What pi and Codex read; Claude reads the catalog instead.
