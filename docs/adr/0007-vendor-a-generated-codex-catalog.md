@@ -1,8 +1,17 @@
 ---
-status: proposed
+status: superseded by ADR-0010
 ---
 
 # Serve Codex from a generated, vendored catalog on a release branch
+
+> **Superseded by [ADR-0010](0010-vendor-a-shared-skills-tree-on-main.md).**
+> One vendored tree at `.agents/skills/` serves Codex and pi both, because both
+> scan that path on their own — which is what this ADR missed, having framed Codex
+> as needing a plugin per entry. What survived is named there: vendored copies,
+> overlays as patches, loud failures, the licence rule. What did not: the release
+> branch (a branch is a pinned ref for pi, so it never auto-updates) and every
+> factual claim about pi below, which is wrong — pi has git package sources and
+> package filters.
 
 This marketplace is built on one principle: external skills are **referenced**
 upstream via `git-subdir`, never copied here. Serving Codex breaks it. Codex has a

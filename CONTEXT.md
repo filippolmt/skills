@@ -8,8 +8,8 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 
 - **Marketplace catalog** — the `plugins` array in
   `.claude-plugin/marketplace.json`. The single source of truth for what this
-  marketplace offers. Say **Claude catalog** where it has to be told apart from
-  the Codex one, which is derived from it.
+  marketplace offers. Every other tree in this repo is derived from it — the
+  README's catalog projection and the skills tree pi reads.
 - **Plugin entry** — one object in the catalog. Either a **local plugin** (its
   `source` is a repo-relative path, e.g. `./plugins/mode-router`) or a
   **git-subdir entry** (references an upstream folder, pins a `sha`).
@@ -34,36 +34,46 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   configured in catalog-meta: derived from the local `mode-router` plugin's
   `dependencies`.
 
-## Codex catalog
+## Agent distribution
 
-> **Design, not current state.** [ADR-0007](docs/adr/0007-vendor-a-generated-codex-catalog.md)
-> is still `status: proposed`: on `main` there is no `.agents/`, no
-> `.codex-plugin/`, no `codex` branch. The names below are settled so the work
-> can use them — drop this note when the ADR is accepted.
+> **Design, not current state.** [ADR-0010](docs/adr/0010-vendor-a-shared-skills-tree-on-main.md)
+> is `accepted`, but on `main` there is no `.agents/` yet. The names below are
+> settled so the work can use them — drop this note when the tree lands.
 
-- **Codex catalog** — `.agents/plugins/marketplace.json`, the catalog Codex
-  reads. A second **catalog projection**: derived from the marketplace catalog,
-  checked in CI, never hand-edited.
-- **Codex-plugin** — an installable unit on the Codex side. Distinguished from a
-  plugin entry because it is a different artifact with a different manifest
-  (`.codex-plugin/plugin.json`) and no notion of dependencies, so a bundle has no
-  Codex-plugin.
-- **Vendored copy** — an upstream skill's files reproduced inside a Codex-plugin
-  at the `sha` its entry pins. What the Codex side has instead of a reference.
-- **Overlay** — a Codex-specific edit to a vendored copy, held apart from it as a
-  patch so the copy stays identical to upstream. Named for the separation: an
-  edit made *in* the copy is a fork, not an overlay.
-- **Overlay drift** — an overlay whose upstream has moved under it. Surfaces as
-  the patch failing to apply, which is the property the form is chosen for.
-- **Portable entry** — a catalog entry that has a Codex-plugin. Excluded are the
-  bundles, and any entry whose value is a parallel fan-out of subagents — Codex
-  spawns subagents only when asked, and a plugin cannot ship them.
-- **Ported skill** — a subagent turned into a skill of its own inside the
-  Codex-plugin that used to spawn it. Prefixed with that plugin's name, because
-  its bare name is in the same namespace as every catalog entry.
-- **Release branch** — `codex`, the branch CI regenerates on merge to `main` and
-  the one a Codex marketplace is registered against. Behind `main` by the
-  lifetime of any open pull request, by design.
+- **Skills tree** — `.agents/skills/`, one directory per portable skill. A second
+  **catalog projection**: derived from the marketplace catalog, checked in CI, never
+  hand-edited. The shared location both pi and Codex scan on their own.
+- **Vendored copy** — an upstream skill's files reproduced in the skills tree at the
+  `sha` its entry pins, beside that upstream's licence and a `SOURCE.md`. What the
+  pi side has instead of a reference.
+- **Overlay** — a harness-specific edit to a vendored copy, held apart from it as a patch
+  so the copy stays identical to upstream. Named for the separation: an edit made
+  *in* the copy is a fork, not an overlay.
+- **Overlay drift** — an overlay whose upstream has moved under it. Surfaces as the
+  patch failing to apply, which is the property the form is chosen for.
+- **Portable entry** — a catalog entry that has a vendored copy. Excluded are the
+  bundles, the guards and `mode-router`: neither agent has `dependencies` or a
+  subagent a plugin can ship, and pi has no declarative hooks at all.
+- **pi package** — the installable unit on the pi side: this repository, installed
+  whole. There is exactly one, never one per entry, because pi has no
+  per-subdirectory source.
+- **Ref-less source** — a pi package source carrying no `ref`. The only shape that
+  auto-updates, and the reason the skills tree lives on `main`.
+- **Convention directory** — `skills/` at the root of a pi package or a Codex
+  plugin, served with no manifest field. Not where the skills tree lives: neither
+  agent scans it without being installed first.
+- **Pinned source** — a pi package source carrying any `ref` — branch, tag or
+  commit. Beware the inversion: in pi's vocabulary *pinned* means **never
+  advanced**, where a pinned `sha` in this catalog is what Renovate advances.
+- **Version gate** — the rule by which Codex refreshes an installed plugin: only
+  when the manifest's `version` differs from the installed one. Not the ref, and not
+  the commit — which is why a generated Codex plugin has to bump it.
+- **Package filter** — the `skills` array of a settings entry, selecting which
+  resources of an installed package are active. Where "install one skill" lives on
+  the pi side, installation itself being all-or-nothing.
+- **Settings snippet** — a generated block the user pastes into
+  `~/.pi/agent/settings.json` (global) or a consuming project's `.pi/settings.json`.
+  The repo recommends; it cannot write into either file.
 
 ## Guards
 
