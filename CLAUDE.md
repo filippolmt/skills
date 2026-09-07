@@ -2,9 +2,15 @@
 
 ## What this repo is
 
-A Claude Code **plugin marketplace**. `.claude-plugin/marketplace.json` is the
-catalog; each entry is a plugin, installed on its own (`/plugin install <name>`),
+A skill marketplace for **three harnesses**. `.claude-plugin/marketplace.json` is
+the catalog; each entry is a plugin, installed on its own (`/plugin install <name>`),
 not in bulk. **Default granularity is one skill per entry.**
+
+Claude installs from that catalog, **referencing** upstream. pi and Codex cannot
+address a subdirectory of somebody else's repo, so they read `.agents/skills/` —
+a generated tree of **vendored copies**, the one path both of them scan on their
+own (`docs/adr/0010-vendor-a-shared-skills-tree-on-main.md`). It ships a
+five-skill pilot; the `PILOT` list in `scripts/gen-skills-tree.js` opens it up.
 
 **Exception — whole-plugin entries.** An upstream repo shipping a cohesive plugin
 (a folder with its own `.claude-plugin/plugin.json`) whose artifacts a per-skill
@@ -62,6 +68,7 @@ loads the file twice (`Duplicate hooks file detected`). A stale entry in
 ```
 for t in scripts/*.test.js plugins/*/hooks/*.test.js; do node "$t"; done
 node scripts/gen-readme.js --check    # README catalog matches marketplace.json
+node scripts/gen-skills-tree.js --check  # .agents/skills/ matches the catalog (clones upstream)
 node scripts/check-renovate.js        # Renovate regexes cover every git-subdir entry
 node scripts/check-name-collisions.js # what validate does NOT cover
 claude plugin validate .              # marketplace + all local plugins

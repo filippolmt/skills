@@ -1,0 +1,11 @@
+{
+  "name": "@filippolmt/skills",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Skills for Claude Code, pi and Codex. The pi/Codex side is the generated tree at .agents/skills/.",
+  "license": "MIT",
+  "repository": "github:filippolmt/skills",
+  "pi": {
+    "skills": [".agents/skills"]
+  }
+}

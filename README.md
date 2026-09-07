@@ -1,18 +1,26 @@
 # filippo-skills
 
-A Claude Code plugin marketplace — a collection of reusable skills installable
-via git.
+A skill marketplace for Claude Code, pi and Codex — a collection of reusable
+skills installable via git. Claude installs them as plugins, referenced upstream;
+pi and Codex read them from a generated tree of vendored copies at
+`.agents/skills/` (see [ADR-0010](docs/adr/0010-vendor-a-shared-skills-tree-on-main.md)).
 
 ## Structure
 
 ```
-.claude-plugin/marketplace.json   # marketplace catalog
+.claude-plugin/marketplace.json   # marketplace catalog — the source of truth
 plugins/
   mode-router/
     .claude-plugin/plugin.json     # plugin manifest
     hooks/hooks.json               # UserPromptSubmit hook (auto-loaded)
     skills/
       mode-router/SKILL.md         # skill
+.agents/skills/                    # generated: vendored copies, read by pi and Codex
+  tdd/
+    SKILL.md                       # byte-identical to upstream at the pinned sha
+    LICENSE                        # the upstream's own
+    SOURCE.md                      # repo, sha and licence it came from
+overlays/                          # <skill>.patch, applied after the copy
 ```
 
 ## Adding this marketplace
@@ -42,6 +50,58 @@ To refresh after upstream updates:
 ```
 /plugin marketplace update filippo-skills
 ```
+
+## Using these skills from pi or Codex
+
+Both agents scan `.agents/skills` on their own, at two scopes, and neither needs
+this marketplace registered. The tree is generated — see
+[ADR-0010](docs/adr/0010-vendor-a-shared-skills-tree-on-main.md).
+
+**Everywhere, no install** — one symlink, both agents, `git pull` to update:
+
+```
+git clone https://github.com/filippolmt/skills.git
+ln -s "$PWD/skills/.agents/skills" ~/.agents/skills
+```
+
+**As a pi package**, which is what `pi update` can refresh:
+
+```
+pi install git:github.com/filippolmt/skills
+pi update
+```
+
+Deliberately with **no** `@ref`: any ref makes a pi source *pinned*, and a pinned
+source is never advanced. Per project instead of globally, add it to that repo's
+`.pi/settings.json` — pi installs a project's packages on startup once the project
+is trusted:
+
+```json
+{ "packages": [{ "source": "git:github.com/filippolmt/skills" }] }
+```
+
+**Turning individual skills off.** Everything is enabled by default. In pi, filter
+the package in `~/.pi/agent/settings.json` (globs, `!` to exclude, `+`/`-` to
+override):
+
+```json
+{ "packages": [{ "source": "git:github.com/filippolmt/skills",
+                 "skills": [".agents/skills/*", "!.agents/skills/caveman"] }] }
+```
+
+or run `pi config`. In Codex, name the skill in `~/.codex/config.toml`:
+
+```toml
+[[skills.config]]
+path = "~/.agents/skills/caveman/SKILL.md"
+enabled = false
+```
+
+**Scope of the tree today.** It ships a five-skill pilot (`tdd`, `grilling`,
+`domain-modeling`, `caveman`, `proximo`), because vendoring redistributes other
+people's code and that is the least reversible thing in this repo. The `PILOT`
+list in `scripts/gen-skills-tree.js` is what opens it up. Claude's side is
+unaffected: it installs from the catalog, referenced upstream, as it always has.
 
 ### Fan-out skills need `agent-report-guard`
 
