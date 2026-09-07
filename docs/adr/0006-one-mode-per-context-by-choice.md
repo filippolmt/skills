@@ -5,6 +5,11 @@ supersedes: ADR-0001
 
 # One mode per context, by choice — the veto returns as a product decision
 
+> **Refined by [ADR-0009](0009-the-deny-reason-carries-the-procedure.md).** The
+> veto's deny reason, described here as backing the notice up, carries the notice
+> itself from `0.10.1`: the turn it fires on may never have seen the switch
+> clause. Every decision below stands as written.
+
 ADR-0001 dropped the `PreToolUse` veto in `mode-router` `0.8.0` because the
 leak it existed to prevent — one mode's style bleeding into the other's turn in
 a context holding both — was measured and does not happen. That measurement

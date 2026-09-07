@@ -467,12 +467,9 @@ if (input.hook_event_name === 'UserPromptExpansion') {
 // picks the mode of a fresh context, it does not add a second one to a running
 // context (forcedSwitch() below asks for the reset instead). `off` vetoes nothing —
 // it is a standing order to stay out of the way.
-// The reason carries the whole procedure, because the UserPromptSubmit text may
-// not: a mode can enter the set MID-TURN (the model invokes the classified one,
-// then the work shifts and it reaches for the other), and that turn was routed
-// from an EMPTY set — its routing text asked for an invocation and says nothing
-// about a switch. Deferring to it there left the turn with a denial and no
-// instruction, so this text stands on its own instead.
+// The reason carries the whole procedure rather than deferring to the routing
+// text, because a MID-TURN ARRIVAL never saw a switch clause: that turn was
+// routed from an EMPTY set and told to invoke (ADR-0009).
 if (input.hook_event_name === 'PreToolUse') {
   const mode = skillToMode(skillOfEvent());
   if (mode) {
