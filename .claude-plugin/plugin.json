@@ -1,0 +1,8 @@
+{
+  "name": "skills-tree",
+  "description": "Every vendored skill in one plugin — the same tree at `skills/` that pi and Codex read directly. Install this OR the individual entries, not both.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Filippo Merante Caparrotta"
+  }
+}

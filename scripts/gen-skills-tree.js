@@ -1,12 +1,18 @@
 #!/usr/bin/env node
-// gen-skills-tree — vendor the catalog's skills into `.agents/skills/`.
+// gen-skills-tree — vendor the catalog's skills into `skills/`.
 //
 // The tree is a PROJECTION of .claude-plugin/marketplace.json, in the same sense
 // the README's catalog table is: derived, checked in CI, never hand-edited. It
 // exists because neither pi nor Codex can address a subdirectory of somebody
 // else's repository, which is what all our git-subdir entries are — see
-// docs/adr/0010-vendor-a-shared-skills-tree-on-main.md. `.agents/skills/` is the
-// one path both of them scan on their own, at user and repo scope.
+// docs/adr/0010-vendor-a-shared-skills-tree-on-main.md.
+//
+// The tree lives at `skills/` because that one position serves all three harnesses:
+// it is a Claude plugin's mandatory `<plugin-root>/skills/` (this repo is itself a
+// plugin), pi's package convention directory, and a Codex plugin's default skill
+// root. `.agents/skills` — the Agent Skills standard's shared path, which pi and
+// Codex scan with nothing installed — is a committed SYMLINK to it, so there is
+// still exactly one copy.
 //
 // Two properties are deliberate:
 //
@@ -19,7 +25,7 @@
 //     that moves under a patch FAILS instead of silently freezing the skill.
 //
 // Usage:
-//   node scripts/gen-skills-tree.js          # rewrite .agents/skills/ in place
+//   node scripts/gen-skills-tree.js          # rewrite skills/ in place
 //   node scripts/gen-skills-tree.js --check  # exit 1 if the tree is out of date
 //
 // The pure functions (parseFrontmatter, renderSource, vendorList, treeFingerprint)
@@ -32,7 +38,7 @@ const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 const { readCatalog, isGitSubdir, repoOf, root } = require('./catalog.js');
 
-const TREE = path.join(root, '.agents', 'skills');
+const TREE = path.join(root, 'skills');
 const OVERLAYS = path.join(root, 'overlays');
 
 // THE PILOT. ADR-0010 makes redistribution the least reversible part of this
@@ -244,16 +250,18 @@ if (require.main === module) {
 
     if (check) {
       if (treeFingerprint(staging) === treeFingerprint(TREE)) {
-        console.log(`.agents/skills/ is in sync (${names.length} skills).`);
+        console.log(`skills/ is in sync (${names.length} skills).`);
         process.exit(0);
       }
-      console.error('.agents/skills/ is out of date. Run: node scripts/gen-skills-tree.js');
+      console.error('skills/ is out of date. Run: node scripts/gen-skills-tree.js');
       process.exit(1);
     }
 
+    // Only the real directory is rebuilt. `.agents/skills` is a symlink to it and
+    // survives untouched — it points at the path, not at the inode.
     fs.rmSync(TREE, { recursive: true, force: true });
     copyDir(staging, TREE);
-    console.log(`.agents/skills/ regenerated (${names.length} skills): ${names.join(', ')}`);
+    console.log(`skills/ regenerated (${names.length} skills): ${names.join(', ')}`);
   } finally {
     fs.rmSync(staging, { recursive: true, force: true });
   }

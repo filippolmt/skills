@@ -79,6 +79,11 @@
       }
     },
     {
+      "name": "skills-tree",
+      "source": "./",
+      "description": "Every vendored skill in one plugin — the same tree at `skills/` that pi and Codex read directly. Install this OR the individual entries, not both."
+    },
+    {
       "name": "grill-with-docs-bundle",
       "source": "./plugins/grill-with-docs-bundle",
       "description": "Install grill-with-docs together with the skills it calls at runtime (grilling, domain-modeling). Bundles them as dependencies.",

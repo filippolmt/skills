@@ -7,10 +7,17 @@ the catalog; each entry is a plugin, installed on its own (`/plugin install <nam
 not in bulk. **Default granularity is one skill per entry.**
 
 Claude installs from that catalog, **referencing** upstream. pi and Codex cannot
-address a subdirectory of somebody else's repo, so they read `.agents/skills/` —
-a generated tree of **vendored copies**, the one path both of them scan on their
-own (`docs/adr/0010-vendor-a-shared-skills-tree-on-main.md`). It ships a
-five-skill pilot; the `PILOT` list in `scripts/gen-skills-tree.js` opens it up.
+address a subdirectory of somebody else's repo, so a generated tree of **vendored
+copies** lives at `skills/` — the one position all three reach: a Claude plugin's
+mandatory `<plugin-root>/skills/` (this repo is itself the `skills-tree` plugin,
+manifest at `.claude-plugin/plugin.json`), pi's package convention directory, and
+— via the committed `.agents/skills` **symlink** — the standard path pi and Codex
+scan with nothing installed (`docs/adr/0010-vendor-a-shared-skills-tree-on-main.md`).
+One copy, never two: the symlink is what keeps it that way.
+
+The tree ships a five-skill pilot; the `PILOT` list in `scripts/gen-skills-tree.js`
+opens it up. On Claude the two routes are exclusive — `skills-tree` ships what the
+catalog also offers entry by entry, so installing both gives two of each.
 
 **Exception — whole-plugin entries.** An upstream repo shipping a cohesive plugin
 (a folder with its own `.claude-plugin/plugin.json`) whose artifacts a per-skill
