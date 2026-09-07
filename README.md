@@ -108,10 +108,12 @@ path = "~/.agents/skills/caveman/SKILL.md"
 enabled = false
 ```
 
-**Scope of the tree today.** It ships a five-skill pilot (`tdd`, `grilling`,
-`domain-modeling`, `caveman`, `proximo`), because vendoring redistributes other
-people's code and that is the least reversible thing in this repo. The `PILOT`
-list in `scripts/gen-skills-tree.js` is what opens it up.
+**Scope.** Every catalog entry is vendored — 83 skills, since a few entries ship
+more than one. There is no allow-list to maintain: adding an entry to the catalog
+is what puts its skill in the tree, on the next regeneration. Note what that means
+in practice: this repo **redistributes other people's code**, each copy carrying
+that upstream's own licence and a `SOURCE.md`, and a repository with no licence is
+refused outright.
 
 ### Fan-out skills need `agent-report-guard`
 

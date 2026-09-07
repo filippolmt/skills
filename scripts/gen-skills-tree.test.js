@@ -39,12 +39,8 @@ test('parseFrontmatter returns nothing when there is no frontmatter', () => {
   assert.deepEqual(parseFrontmatter('# Just a heading\n'), {});
 });
 
-test('vendorList takes only git-subdir entries, never a local plugin', () => {
-  assert.deepEqual(vendorList(PLUGINS, []).map((e) => e.name), ['tdd', 'grilling', 'other']);
-});
-
-test('vendorList narrows to the pilot, ignoring a name that is not in the catalog', () => {
-  assert.deepEqual(vendorList(PLUGINS, ['grilling', 'nope']).map((e) => e.name), ['grilling']);
+test('vendorList takes every git-subdir entry, never a local plugin', () => {
+  assert.deepEqual(vendorList(PLUGINS).map((e) => e.name), ['tdd', 'grilling', 'other']);
 });
 
 test('renderSource records the commit, the licence and the entry it came from', () => {

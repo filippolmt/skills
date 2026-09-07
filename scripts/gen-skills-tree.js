@@ -41,13 +41,6 @@ const { readCatalog, isGitSubdir, repoOf, root } = require('./catalog.js');
 const TREE = path.join(root, 'skills');
 const OVERLAYS = path.join(root, 'overlays');
 
-// THE PILOT. ADR-0010 makes redistribution the least reversible part of this
-// design, so the first release vendors five skills over three upstreams — two
-// tag-pinned, one of them ours — and not all eighty-odd. Emptying this list is
-// what opens the floodgates, and it is a one-line change on purpose. Every
-// entry's path is validated either way; the list only decides what gets copied.
-const PILOT = ['tdd', 'grilling', 'domain-modeling', 'caveman', 'proximo'];
-
 // A licence is the right to redistribute. No licence, no copy — so the name is
 // looked up rather than assumed, and its absence is fatal.
 const LICENCE_RE = /^(LICEN[SC]E|COPYING)(\..*)?$/i;
@@ -69,14 +62,12 @@ function parseFrontmatter(text) {
   return { name: field('name'), description: field('description') };
 }
 
-// Which entries get copied. Every git-subdir entry is a candidate; the pilot
-// narrows it. Bundles and local plugins never appear — they have no upstream to
-// vendor, and neither agent has a `dependencies` field for a bundle to be.
-function vendorList(plugins, pilot) {
-  const candidates = plugins.filter(isGitSubdir);
-  if (!pilot || !pilot.length) return candidates;
-  const wanted = new Set(pilot);
-  return candidates.filter((e) => wanted.has(e.name));
+// Which entries get copied: every git-subdir entry, always. Adding one to the
+// catalog is what puts its skill in the tree — there is no second list to keep in
+// step. Bundles and local plugins never appear: they have no upstream to vendor,
+// and neither agent has a `dependencies` field for a bundle to be.
+function vendorList(plugins) {
+  return plugins.filter(isGitSubdir);
 }
 
 // What lands beside every vendored copy: where it came from and under what
@@ -178,7 +169,7 @@ function skillDirs(start) {
 // Resolve every entry, copy the ones on the list. Returns the vendored skill
 // names; throws on the first thing that would silently lose a skill.
 function build(dest, plugins) {
-  const wanted = new Set(vendorList(plugins, PILOT).map((e) => e.name));
+  const wanted = new Set(vendorList(plugins).map((e) => e.name));
   const unresolved = [];
   const written = new Map();
 
@@ -267,4 +258,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { parseFrontmatter, renderSource, vendorList, treeFingerprint, PILOT };
+module.exports = { parseFrontmatter, renderSource, vendorList, treeFingerprint };

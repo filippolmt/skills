@@ -14,8 +14,8 @@ committed **symlink**, the standard path both scan with nothing installed
 (`docs/adr/0010-vendor-a-shared-skills-tree-on-main.md`). One copy, never two: the
 symlink is what keeps it that way.
 
-The tree ships a five-skill pilot; the `PILOT` list in `scripts/gen-skills-tree.js`
-opens it up.
+The tree covers **every** git-subdir entry — no allow-list: a new catalog entry is
+in the tree on the next regeneration.
 
 **Exception — whole-plugin entries.** An upstream repo shipping a cohesive plugin
 (a folder with its own `.claude-plugin/plugin.json`) whose artifacts a per-skill
