@@ -164,12 +164,12 @@ In `auto`, the hook classifies **slash-command prompts** too, so the mode fires
 alongside the dispatched skill (e.g. `/improve-codebase-architecture` → also
 `ponytail`). It stays silent only when the slash command **is** a mode skill
 (`/caveman`, `/ponytail`) — the user already picked one — or this plugin's
-`/carryover`, which gets the note's path and the skill list instead. A **forced**
-mode is a standing choice and applies on every prompt regardless — except against
-a context that already holds the other mode, where it asks for the reset (above),
-and with the same one exception: on a `/carryover` turn the hook asks for no invocation, because that
-turn produces a file of imposed shape and no prose to style. A forced mode already
-loaded still applies to it; it is just not requested there. `off` outranks
+`/carryover`, which gets the note's path and the skill list instead: that turn
+produces a file of imposed shape and no prose to style, so no mode is asked for.
+A **forced** mode is a standing choice and applies on every prompt regardless,
+with those same two exceptions — a context already holding the other mode, where
+it asks for the reset (above), and the `/carryover` turn, where a forced mode
+already loaded still applies but none is requested. `off` outranks
 everything, `/carryover` included: it means inject nothing.
 
 ## Precedence over hard constraints

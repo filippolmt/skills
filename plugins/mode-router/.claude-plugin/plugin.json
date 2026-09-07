@@ -1,6 +1,6 @@
 {
   "name": "mode-router",
-  "description": "Per-prompt router: classifies each request and invokes the caveman (terse output) or ponytail (minimal code) skill, exclusively. Force a mode or turn it off via control file. Bundles both as dependencies.",
+  "description": "Per-prompt router: classifies each request and invokes the caveman (terse output) or ponytail (minimal code) skill. One mode per context — a request that classifies the other way gets a switch notice recommending a carryover and a clear, never a second mode. Force a mode or turn it off via control file. Bundles both as dependencies.",
   "version": "0.10.1",
   "author": {
     "name": "Filippo Merante Caparrotta"
