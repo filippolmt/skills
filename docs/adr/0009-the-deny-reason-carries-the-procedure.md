@@ -57,6 +57,11 @@ are untouched, so the ADR-0003 eval trigger does not fire.
   paid only on the turn that fires it, which is the turn that needs it.
 - `route.test.js` carries the mid-turn arrival as its own case: a turn routed from
   an empty set, a mode loaded, then the other one denied.
+- The deny reason joins ADR-0003's eval trigger. A descriptive string needed no
+  behavioural check; one carrying a procedure does, because "the model emits the
+  notice and stops" is not something `route.test.js` can assert. The suite is
+  still not exercisable here (`claude plugin eval`, early access), so the trigger
+  is recorded rather than run — which is the state ADR-0003 already describes.
 - The switch notice now has two emitters, `switchClause()` and the veto. They are
   held together by that test, not by a shared string: the veto's copy has to stand
   alone, so factoring it out would put a sentence fragment in two callers.

@@ -18,7 +18,9 @@
 //   UserPromptSubmit                                  reads the set, emits the routing text
 //
 // The veto is the net, not the mechanism: the routing text tells the model not to
-// invoke, and PreToolUse catches the call it makes anyway. A typed /caveman never
+// invoke, and PreToolUse catches the call it makes anyway — except on a MID-TURN
+// ARRIVAL, where the routing text told it the opposite and the deny reason is the
+// only thing carrying the switch notice (ADR-0009). A typed /caveman never
 // reaches the tool layer (see UserPromptExpansion below), so the one way a MIXED
 // context — both modes loaded — still arises is the user typing the second mode.
 // That is a choice of theirs, recorded and not fought: from then on the turn

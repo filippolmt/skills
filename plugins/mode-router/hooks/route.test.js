@@ -277,8 +277,13 @@ out = prompt('explain this');
 assert.match(out, /`ponytail` is already in this context/, 'ponytail-only => named as loaded');
 assert.match(out, /If you classify to `caveman`: do NOT invoke it/, 'ponytail-only => caveman is the refused one');
 assert.match(out, /a `caveman` request in a `ponytail` context/, 'the notice reads the right way round');
-assert.match(JSON.parse(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'caveman' } }))
-  .hookSpecificOutput.permissionDecisionReason, /`ponytail` is already loaded/, 'veto reads the right way round');
+const mirrorVeto = JSON.parse(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'caveman' } }))
+  .hookSpecificOutput.permissionDecisionReason;
+assert.match(mirrorVeto, /`ponytail` is already loaded/, 'veto reads the right way round');
+// `mode` and `other` are interchangeable in that template, so the notice it carries
+// is asserted in both directions rather than only the one the modes happen to be in.
+assert.match(mirrorVeto, /This is a `caveman` request in a `ponytail` context/,
+  'and so does the notice it carries');
 // PostToolUse only fires for a call that went through. If a Skill call for the
 // second mode did land (a veto not registered, an older CLI), the set records it
 // and the turn falls into the mixed-context branch rather than lying about it.

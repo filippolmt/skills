@@ -101,8 +101,12 @@ that goes red because today's model is wordier is a build people learn to ignore
 `plugins/*/hooks/*.test.js` stays the CI contract.
 
 The trigger is a release that changes the **injected text** — `CLASSIFY`,
-`PRECEDENCE`, `RESET_TAIL`, `suspendClause()`, `CODING_IS_PURE`, or either branch
-of `invocationTail()`. The suite lives in `plugins/mode-router/evals/` with a
+`PRECEDENCE`, `RESET_TAIL`, `suspendClause()`, `CODING_IS_PURE`, either branch
+of `invocationTail()`, or the veto's **deny reason**. That last one joined the
+list in `0.10.1`: it stopped being descriptive and started carrying the switch
+notice itself ([ADR-0009](0009-the-deny-reason-carries-the-procedure.md)), so
+whether the model actually emits that notice and stops is now a stochastic
+question about a string, which is exactly what this suite is for. The suite lives in `plugins/mode-router/evals/` with a
 `README.md` naming that trigger, the command, and these thresholds. That directory
 ships to everyone who installs the plugin, which is a second reason to keep it
 small. Runs are bounded with `--max-cost-usd`: five cases × 5 runs × two arms is
