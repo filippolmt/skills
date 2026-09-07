@@ -6,18 +6,16 @@ A skill marketplace for **three harnesses**. `.claude-plugin/marketplace.json` i
 the catalog; each entry is a plugin, installed on its own (`/plugin install <name>`),
 not in bulk. **Default granularity is one skill per entry.**
 
-Claude installs from that catalog, **referencing** upstream. pi and Codex cannot
-address a subdirectory of somebody else's repo, so a generated tree of **vendored
-copies** lives at `skills/` — the one position all three reach: a Claude plugin's
-mandatory `<plugin-root>/skills/` (this repo is itself the `skills-tree` plugin,
-manifest at `.claude-plugin/plugin.json`), pi's package convention directory, and
-— via the committed `.agents/skills` **symlink** — the standard path pi and Codex
-scan with nothing installed (`docs/adr/0010-vendor-a-shared-skills-tree-on-main.md`).
-One copy, never two: the symlink is what keeps it that way.
+Claude installs from that catalog, **referencing** upstream, and that is the whole
+story for Claude. pi and Codex cannot address a subdirectory of somebody else's
+repo, so they read a generated tree of **vendored copies** at `skills/` — pi's
+package convention directory, which is also reachable as `.agents/skills` through a
+committed **symlink**, the standard path both scan with nothing installed
+(`docs/adr/0010-vendor-a-shared-skills-tree-on-main.md`). One copy, never two: the
+symlink is what keeps it that way.
 
 The tree ships a five-skill pilot; the `PILOT` list in `scripts/gen-skills-tree.js`
-opens it up. On Claude the two routes are exclusive — `skills-tree` ships what the
-catalog also offers entry by entry, so installing both gives two of each.
+opens it up.
 
 **Exception — whole-plugin entries.** An upstream repo shipping a cohesive plugin
 (a folder with its own `.claude-plugin/plugin.json`) whose artifacts a per-skill
@@ -75,7 +73,7 @@ loads the file twice (`Duplicate hooks file detected`). A stale entry in
 ```
 for t in scripts/*.test.js plugins/*/hooks/*.test.js; do node "$t"; done
 node scripts/gen-readme.js --check    # README catalog matches marketplace.json
-node scripts/gen-skills-tree.js --check  # .agents/skills/ matches the catalog (clones upstream)
+node scripts/gen-skills-tree.js --check  # skills/ matches the catalog (clones upstream)
 node scripts/check-renovate.js        # Renovate regexes cover every git-subdir entry
 node scripts/check-name-collisions.js # what validate does NOT cover
 claude plugin validate .              # marketplace + all local plugins
