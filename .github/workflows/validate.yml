@@ -35,10 +35,12 @@ jobs:
         shell: bash
       - name: Check README catalog is in sync
         run: node scripts/gen-readme.js --check
-      - name: Check the skills tree matches the catalog
-        # Resolves every entry's path at its sha, so this is also the guard that
-        # catches an upstream folder renamed under a pinned entry.
-        run: node scripts/gen-skills-tree.js --check
+      - name: Check every catalog path resolves at its pinned sha
+        # NOT `--check`: a Renovate PR moves a sha, so the committed tree is out of
+        # date by design until regeneration follows, and comparing it here would turn
+        # every Renovate PR red — the coupling ADR-0010 rejects. This half is the
+        # guard an upstream folder renamed under a pinned entry walks into.
+        run: node scripts/gen-skills-tree.js --verify-paths
       - name: Check Renovate regex covers every git-subdir entry
         run: node scripts/check-renovate.js
       - name: Check no local command or skill name is already taken

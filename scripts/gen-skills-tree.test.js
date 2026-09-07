@@ -1,13 +1,14 @@
 // Self-check for gen-skills-tree.js. Run: node scripts/gen-skills-tree.test.js
-// Exercises the pure surface only — parseFrontmatter, vendorList, renderSource,
-// treeFingerprint. build() clones 17 repositories, so it belongs to CI's
-// `--check` run, not to a test that has to pass offline.
+// Exercises the pure surface — parseFrontmatter, vendorList, renderSource,
+// treeFingerprint — plus build()'s three loud failures, which are the whole point of
+// the generator and so must not be left to CI. build() takes its checkout as a
+// dependency, so those run against fake repositories on disk, with no network.
 const { test } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { parseFrontmatter, renderSource, vendorList, treeFingerprint } = require('./gen-skills-tree.js');
+const { parseFrontmatter, renderSource, vendorList, treeFingerprint, build } = require('./gen-skills-tree.js');
 
 const gitsub = (name, p) => ({
   name,
@@ -91,4 +92,106 @@ test('treeFingerprint sees a file added, not only a file changed', () => {
   } finally {
     fs.rmSync(d, { recursive: true, force: true });
   }
+});
+
+// --- build(), against fake repositories -------------------------------------
+//
+// The three throws below are the generator's reason to exist: each one is a way a
+// skill could go missing in silence. A fake checkout is enough to exercise them.
+
+function fakeRepo(files) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fake-repo-'));
+  for (const [rel, body] of Object.entries(files)) {
+    const abs = path.join(dir, rel);
+    fs.mkdirSync(path.dirname(abs), { recursive: true });
+    fs.writeFileSync(abs, body);
+  }
+  return dir;
+}
+
+const skill = (name) => `---\nname: ${name}\ndescription: Does ${name}.\n---\n# ${name}\n`;
+const entry = (name, p) => ({
+  name,
+  source: { source: 'git-subdir', url: 'https://github.com/acme/skills', path: p, sha: 'abc123def456' },
+});
+
+function withBuild(files, plugins, fn) {
+  const repo = fakeRepo(files);
+  const dest = fs.mkdtempSync(path.join(os.tmpdir(), 'fake-tree-'));
+  try {
+    return fn({ dest, plugins, deps: { checkout: () => repo } });
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+    fs.rmSync(dest, { recursive: true, force: true });
+  }
+}
+
+test('build throws, naming the entry, when a path does not resolve at its sha', () => {
+  withBuild(
+    { LICENSE: 'MIT', 'skills/tdd/SKILL.md': skill('tdd') },
+    [entry('tdd', 'skills/tdd'), entry('gone', 'skills/renamed-away')],
+    ({ dest, plugins, deps }) => {
+      assert.throws(() => build(dest, plugins, deps), /will not resolve[\s\S]*gone/);
+    }
+  );
+});
+
+test('build throws when the upstream ships no licence', () => {
+  withBuild({ 'skills/tdd/SKILL.md': skill('tdd') }, [entry('tdd', 'skills/tdd')], ({ dest, plugins, deps }) => {
+    assert.throws(() => build(dest, plugins, deps), /no licence, no right to redistribute/);
+  });
+});
+
+test('build throws when two entries resolve to one skill name', () => {
+  withBuild(
+    { LICENSE: 'MIT', 'a/SKILL.md': skill('tdd'), 'b/SKILL.md': skill('tdd') },
+    [entry('one', 'a'), entry('two', 'b')],
+    ({ dest, plugins, deps }) => {
+      assert.throws(() => build(dest, plugins, deps), /skill name 'tdd' comes from both/);
+    }
+  );
+});
+
+test('build throws when a SKILL.md has no frontmatter name', () => {
+  withBuild({ LICENSE: 'MIT', 'skills/x/SKILL.md': '# No frontmatter\n' }, [entry('x', 'skills/x')], ({ dest, plugins, deps }) => {
+    assert.throws(() => build(dest, plugins, deps), /has no frontmatter name/);
+  });
+});
+
+test('build writes the copy, the licence and SOURCE.md, and skips local plugins', () => {
+  withBuild(
+    { LICENSE: 'MIT text', 'skills/tdd/SKILL.md': skill('tdd'), 'skills/tdd/tests.md': 'more' },
+    [{ name: 'mode-router', source: './plugins/mode-router' }, entry('tdd', 'skills/tdd')],
+    ({ dest, plugins, deps }) => {
+      assert.deepEqual(build(dest, plugins, deps), ['tdd']);
+      assert.deepEqual(fs.readdirSync(dest), ['tdd']);
+      assert.equal(fs.readFileSync(path.join(dest, 'tdd', 'LICENSE'), 'utf8'), 'MIT text');
+      assert.ok(fs.existsSync(path.join(dest, 'tdd', 'tests.md')));
+      const source = fs.readFileSync(path.join(dest, 'tdd', 'SOURCE.md'), 'utf8');
+      assert.match(source, /\*\*Commit\*\*: `abc123def456`/);
+      assert.match(source, /skills\/tdd/);
+    }
+  );
+});
+
+test("build keeps a skill's own licence rather than overwriting it", () => {
+  withBuild(
+    { LICENSE: 'repo-root licence', 'skills/tdd/SKILL.md': skill('tdd'), 'skills/tdd/LICENSE': 'the skill/s own licence' },
+    [entry('tdd', 'skills/tdd')],
+    ({ dest, plugins, deps }) => {
+      build(dest, plugins, deps);
+      assert.equal(fs.readFileSync(path.join(dest, 'tdd', 'LICENSE'), 'utf8'), 'the skill/s own licence');
+    }
+  );
+});
+
+test('build with a null dest resolves every path and copies nothing', () => {
+  withBuild(
+    { LICENSE: 'MIT', 'skills/tdd/SKILL.md': skill('tdd') },
+    [entry('tdd', 'skills/tdd')],
+    ({ dest, plugins, deps }) => {
+      assert.deepEqual(build(null, plugins, deps), []);
+      assert.deepEqual(fs.readdirSync(dest), []);
+    }
+  );
 });

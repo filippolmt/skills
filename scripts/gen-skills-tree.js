@@ -7,12 +7,12 @@
 // else's repository, which is what all our git-subdir entries are — see
 // docs/adr/0010-vendor-a-shared-skills-tree-on-main.md.
 //
-// The tree lives at `skills/` because that one position serves all three harnesses:
-// it is a Claude plugin's mandatory `<plugin-root>/skills/` (this repo is itself a
-// plugin), pi's package convention directory, and a Codex plugin's default skill
-// root. `.agents/skills` — the Agent Skills standard's shared path, which pi and
-// Codex scan with nothing installed — is a committed SYMLINK to it, so there is
-// still exactly one copy.
+// The tree lives at `skills/` because that is pi's package convention directory: a
+// package is served from it with no manifest field naming it, which is why this repo
+// needs no package.json. `.agents/skills` — the Agent Skills standard's shared path,
+// which pi and Codex scan with nothing installed — is a committed SYMLINK to it, so
+// there is still exactly one copy. Claude does not read the tree at all; it installs
+// from the catalog, referencing upstream.
 //
 // Two properties are deliberate:
 //
@@ -25,8 +25,17 @@
 //     that moves under a patch FAILS instead of silently freezing the skill.
 //
 // Usage:
-//   node scripts/gen-skills-tree.js          # rewrite skills/ in place
-//   node scripts/gen-skills-tree.js --check  # exit 1 if the tree is out of date
+//   node scripts/gen-skills-tree.js                 # rewrite skills/ in place
+//   node scripts/gen-skills-tree.js --verify-paths  # resolve every path, copy nothing
+//   node scripts/gen-skills-tree.js --check         # exit 1 if the tree is out of date
+//
+// The two checks are for different places, and the split is load-bearing. A Renovate
+// PR moves a `sha`, so the tree it finds committed is out of date BY DESIGN until
+// regeneration follows — running `--check` on pull requests would turn every one of
+// those PRs red and force regeneration back into them, which is the coupling the ADR
+// rejects. So CI runs `--verify-paths` on PRs (the guard a renamed upstream folder
+// walks into) and `--check` only where a stale tree is actionable: inside the
+// regeneration job, as the signal that there is something to regenerate.
 //
 // The pure functions (parseFrontmatter, renderSource, vendorList, treeFingerprint)
 // are exported for the test; the network and the file IO live in the CLI wrapper.
@@ -89,8 +98,10 @@ function renderSource({ entry, repo, sha, dir, licence, overlay }) {
   return lines.join('\n');
 }
 
-// A comparable digest of a directory: every file's repo-relative path and hash,
-// sorted. What makes `--check` a comparison rather than a re-run.
+// A comparable digest of a directory: every file's repo-relative path, mode and
+// hash, sorted. What makes `--check` a comparison rather than a re-run. The mode is
+// in there because `copyDir` deliberately preserves the execute bit — a skill
+// shipping a script needs it — so a bit that drifts has to fail the comparison.
 function treeFingerprint(dir) {
   if (!fs.existsSync(dir)) return '';
   const out = [];
@@ -99,7 +110,10 @@ function treeFingerprint(dir) {
       const abs = path.join(d, e.name);
       const r = rel ? `${rel}/${e.name}` : e.name;
       if (e.isDirectory()) walk(abs, r);
-      else out.push(`${r}\t${crypto.createHash('sha1').update(fs.readFileSync(abs)).digest('hex')}`);
+      else {
+        const mode = (fs.statSync(abs).mode & 0o777).toString(8);
+        out.push(`${r}\t${mode}\t${crypto.createHash('sha1').update(fs.readFileSync(abs)).digest('hex')}`);
+      }
     }
   };
   walk(dir, '');
@@ -166,18 +180,20 @@ function skillDirs(start) {
   return found.sort();
 }
 
-// Resolve every entry, copy the ones on the list. Returns the vendored skill
-// names; throws on the first thing that would silently lose a skill.
-function build(dest, plugins) {
-  const wanted = new Set(vendorList(plugins).map((e) => e.name));
+// Resolve every entry and copy each one's skills into `dest`. A null `dest` resolves
+// and copies nothing, which is what `--verify-paths` runs. Returns the vendored skill
+// names; throws on the first thing that would silently lose a skill. `deps` exists so
+// the test can hand over a fake checkout and exercise those throws without a network.
+function build(dest, plugins, deps = {}) {
+  const fetch = deps.checkout || checkout;
   const unresolved = [];
   const written = new Map();
 
-  for (const entry of plugins.filter(isGitSubdir)) {
+  for (const entry of vendorList(plugins)) {
     const repo = repoOf(entry);
     const { url, sha, path: sub } = entry.source;
     if (!sha) throw new Error(`entry ${entry.name}: no sha to resolve — every git-subdir entry must pin one`);
-    const repoDir = checkout(repo, url, sha);
+    const repoDir = fetch(repo, url, sha);
     // `.` is a whole-plugin entry's path (ADR-0008), `./x` and `x` are the same
     // subdirectory — but a leading dot is not a prefix to strip: the real paths
     // include `.claude/skills/…`, which loses its meaning the moment it becomes
@@ -191,7 +207,7 @@ function build(dest, plugins) {
       unresolved.push(`  ${entry.name}: ${repo}@${sha.slice(0, 7)}:${rel || '.'} does not exist`);
       continue;
     }
-    if (!wanted.has(entry.name)) continue;
+    if (!dest) continue;
 
     const licence = licenceIn(repoDir);
     if (!licence) throw new Error(`entry ${entry.name}: ${repo} ships no licence — no licence, no right to redistribute`);
@@ -207,7 +223,10 @@ function build(dest, plugins) {
 
       const out = path.join(dest, name);
       copyDir(skillDir, out);
-      fs.copyFileSync(path.join(repoDir, licence), path.join(out, licence));
+      // A skill that ships its own licence keeps it: overwriting with the repo-root
+      // one would break the byte-identity the whole design rests on.
+      const own = licenceIn(out);
+      if (!own) fs.copyFileSync(path.join(repoDir, licence), path.join(out, licence));
 
       // An overlay is a diff against the skill's own files, so it applies from
       // inside the vendored copy — `git apply` needs no repository for that.
@@ -218,7 +237,7 @@ function build(dest, plugins) {
       const dirRel = path.relative(repoDir, skillDir) || '.';
       fs.writeFileSync(
         path.join(out, 'SOURCE.md'),
-        renderSource({ entry: entry.name, repo, sha, dir: dirRel, licence, overlay: overlay ? `${name}.patch` : null })
+        renderSource({ entry: entry.name, repo, sha, dir: dirRel, licence: own || licence, overlay: overlay ? `${name}.patch` : null })
       );
     }
   }
@@ -229,11 +248,20 @@ function build(dest, plugins) {
   return [...written.keys()].sort();
 }
 
+module.exports = { parseFrontmatter, renderSource, vendorList, treeFingerprint, build };
+
 // --- cli -------------------------------------------------------------------
 
 if (require.main === module) {
   const check = process.argv.includes('--check');
   const { plugins } = readCatalog();
+
+  if (process.argv.includes('--verify-paths')) {
+    build(null, plugins);
+    console.log(`every catalog path resolves at its pinned sha (${plugins.filter(isGitSubdir).length} entries).`);
+    process.exit(0);
+  }
+
   const staging = fs.mkdtempSync(path.join(os.tmpdir(), 'skills-tree-out-'));
 
   try {
@@ -258,4 +286,3 @@ if (require.main === module) {
   }
 }
 
-module.exports = { parseFrontmatter, renderSource, vendorList, treeFingerprint };

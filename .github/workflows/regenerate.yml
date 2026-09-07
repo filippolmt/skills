@@ -17,6 +17,8 @@ on:
       - .claude-plugin/marketplace.json
       - scripts/gen-skills-tree.js
       - overlays/**
+      # A hand-edit of the tree belongs here too: regeneration is what undoes it.
+      - skills/**
   workflow_dispatch:
 
 permissions:
@@ -35,17 +37,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Regenerate .agents/skills/
+      - name: Regenerate skills/
         run: node scripts/gen-skills-tree.js
       - name: Stop here when the tree is already current
         id: diff
         run: |
-          if [ -z "$(git status --porcelain .agents)" ]; then
+          if [ -z "$(git status --porcelain skills)" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "tree already current"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            git status --short .agents
+            git status --short skills
           fi
         shell: bash
       - name: Validate before proposing
@@ -68,7 +70,7 @@ jobs:
           git config user.name  'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git checkout -b "$branch"
-          git add .agents
+          git add skills
           git commit -m 'chore: regenerate skills tree'
           git push --force origin "$branch"
           # A single long-lived branch: a second regeneration force-pushes onto the
