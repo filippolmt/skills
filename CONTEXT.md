@@ -42,7 +42,7 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 
 - **Skills tree** — `skills/`, one directory per portable skill. A second **catalog
   projection**: derived from the marketplace catalog, checked in CI, never
-  hand-edited. The one position all three harnesses reach.
+  hand-edited. What pi and Codex read; Claude reads the catalog instead.
 - **Vendored copy** — an upstream skill's files reproduced in the skills tree at the
   `sha` its entry pins, beside that upstream's licence and a `SOURCE.md`. What the
   tree holds instead of a reference.
@@ -54,21 +54,16 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Portable entry** — a catalog entry that has a vendored copy. Excluded are the
   bundles, the guards and `mode-router`: neither agent has `dependencies` or a
   subagent a plugin can ship, and pi has no declarative hooks at all.
-- **Repo-as-plugin** — this repository installed whole, as one unit: the
-  `skills-tree` plugin for Claude, a package for pi. There is exactly one, never one
-  per entry, because neither has a per-subdirectory source.
+- **pi package** — this repository installed whole, as one unit. There is exactly
+  one, never one per entry, because pi has no per-subdirectory source.
 - **Ref-less source** — a pi package source carrying no `ref`. The only shape that
   auto-updates, and the reason the skills tree lives on `main`.
-- **Convention directory** — `skills/` at the root of a package or plugin, served
-  with no manifest field naming it. Where the skills tree lives, because Claude's
-  version of it is not a convention but a requirement: a plugin's skills MUST sit
-  there.
+- **Convention directory** — `skills/` at the root of a pi package, served with no
+  manifest field naming it. Where the skills tree lives, and the reason this repo
+  needs no `package.json`.
 - **Shared location** — `.agents/skills`, the Agent Skills standard's path, scanned
   by pi and Codex with nothing installed. Here it is a **symlink** to the skills
   tree, never a second copy — which is the distinction the term exists to keep.
-- **Exclusive route** — the rule that a skill reaches Claude either through its own
-  catalog entry or through the `skills-tree` plugin, never both. Not enforceable by
-  a check: the two names are meant to be identical.
 - **Pinned source** — a pi package source carrying any `ref` — branch, tag or
   commit. Beware the inversion: in pi's vocabulary *pinned* means **never
   advanced**, where a pinned `sha` in this catalog is what Renovate advances.
