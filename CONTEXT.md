@@ -98,8 +98,9 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   context. A mode is (re)invoked only when it is missing from the set. See
   `plugins/mode-router/skills/mode-router/ROUTING.md`.
 - **Mode switch** — a request that classifies to the mode a context does not
-  hold, while it holds the other one; or the control file forcing that mode. The router does not load the missing mode:
-  the turn is spent on the **switch notice**, and the user chooses.
+  hold, while it holds the other one; or the control file forcing that mode. The
+  router does not load the missing mode: the turn is spent on the **switch
+  notice**, and the user chooses.
 - **Switch clause** — what the router tells the model on a turn with one mode
   loaded: apply that mode, or — on a mode switch — do not load the other and
   answer with the switch notice instead.
@@ -111,6 +112,12 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Mode veto** — the router refusing a mode skill's invocation because the
   context already holds the other mode. Backs up the switch clause; it stops the
   model's call, never the user's typed slash — a forced mode included.
+- **Mid-turn arrival** — a mode reaching for a context that already holds the
+  other one *inside a turn routed from an empty set*: the model invokes the mode
+  it classified to, the work then shifts, and it reaches for the other. Named
+  because that turn was told to invoke and never saw a switch clause, which is
+  why the veto's deny reason carries the switch notice itself
+  (`docs/adr/0009-the-deny-reason-carries-the-procedure.md`).
 - **Mixed context** — a context holding both mode skills. Reached only by the
   user typing the second mode; the router never produces one. Tolerated, not a
   failure: per-turn suspension is how it still answers in exactly one mode.

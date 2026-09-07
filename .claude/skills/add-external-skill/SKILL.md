@@ -11,10 +11,9 @@ Arguments: `$ARGUMENTS`
 - `<owner/repo> [path] [name]` → **add mode** (default).
 - `update` (optionally `update <owner/repo>` to scope to one repo) → **update mode**.
 
-Granularity is the CLAUDE.md rule: one entry per `SKILL.md`, `name` = skill
-folder basename; a cohesive upstream plugin becomes one whole-plugin entry whose
-`path` is the plugin root (`"."` when that root is the repo root), `name` = the
-`name` in its `plugin.json`.
+Granularity is the CLAUDE.md rule; what it does not say is where `name` comes
+from — the skill folder's basename for a per-skill entry, the `name` in
+`plugin.json` for a whole-plugin one.
 
 ## Fetches
 
@@ -36,8 +35,7 @@ curl -fsSL "https://api.github.com/repos/<owner>/<repo>/commits/<ref>" \
   -H "Accept: application/vnd.github.sha"
 ```
 A skill's upstream frontmatter `description` — the **one-liner**, usually its
-first sentence, stored verbatim in `marketplace.json` and rendered as-is into the
-README row:
+first sentence:
 ```bash
 curl -fsSL "https://raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>/SKILL.md"
 ```
@@ -98,6 +96,9 @@ manager, and that entry is then silently never updated again.
    skills."`.
 6. **Regenerate the README** (see below), then validate.
 
+Done when every skill the discovery in step 2 turned up is either an entry in
+`marketplace.json` or named as deliberately left out.
+
 ## Update mode
 
 For each `git-subdir` source repo in `marketplace.json` (or the one named):
@@ -115,6 +116,10 @@ For each `git-subdir` source repo in `marketplace.json` (or the one named):
    - Refresh each entry's `description` from upstream. `marketplace.json` is the
      source of truth, so this is what the README shows.
 3. **Regenerate the README**, then validate.
+
+Done when every `git-subdir` repo in scope is accounted for — reconciled, or
+reported as already current. A repo silently skipped is one Renovate keeps
+bumping while its entry list drifts.
 
 ## Regenerate the README
 

@@ -277,14 +277,37 @@ out = prompt('explain this');
 assert.match(out, /`ponytail` is already in this context/, 'ponytail-only => named as loaded');
 assert.match(out, /If you classify to `caveman`: do NOT invoke it/, 'ponytail-only => caveman is the refused one');
 assert.match(out, /a `caveman` request in a `ponytail` context/, 'the notice reads the right way round');
-assert.match(JSON.parse(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'caveman' } }))
-  .hookSpecificOutput.permissionDecisionReason, /`ponytail` is already loaded/, 'veto reads the right way round');
+const mirrorVeto = JSON.parse(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'caveman' } }))
+  .hookSpecificOutput.permissionDecisionReason;
+assert.match(mirrorVeto, /`ponytail` is already loaded/, 'veto reads the right way round');
+// `mode` and `other` are interchangeable in that template, so the notice it carries
+// is asserted in both directions rather than only the one the modes happen to be in.
+assert.match(mirrorVeto, /This is a `caveman` request in a `ponytail` context/,
+  'and so does the notice it carries');
 // PostToolUse only fires for a call that went through. If a Skill call for the
 // second mode did land (a veto not registered, an older CLI), the set records it
 // and the turn falls into the mixed-context branch rather than lying about it.
 loadSkill('caveman');
 assert.match(prompt('explain this'), /Both `caveman` and `ponytail` are already/,
   'a second mode that did land is recorded, not hidden');
+
+// --- the veto reason stands alone: the MID-TURN ARRIVAL (ADR-0009) ---
+// The shape the denial actually takes in use, from two transcripts: a turn routed
+// from an EMPTY set is told to invoke, the model loads the mode it classified to,
+// then the work shifts and it reaches for the other one in the SAME turn. That
+// turn never saw a switch clause, so a reason deferring to "the routing text"
+// pointed at text asking for an invocation and left the turn with nothing.
+run('SessionStart');
+out = prompt('/wayfinder:wayfinder 11');
+assert.match(out, /Invoke the chosen skill now/, 'setup: an empty set asks for the invocation');
+loadSkill('caveman:caveman');
+const midTurn = JSON.parse(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'ponytail:ponytail' } }))
+  .hookSpecificOutput.permissionDecisionReason;
+assert.doesNotMatch(midTurn, /routing text/, 'the reason never defers to text that may not carry the switch');
+assert.match(midTurn, /Do not retry: finish this turn with `caveman`/, 'it names what the turn does instead');
+assert.match(midTurn, /Recommended:\s+`\/mode-router:carryover`, then `\/clear`/, 'and the same reset recommendation as the notice');
+assert.match(midTurn, /reply: proceed/, 'including the way to decline it');
+assert.match(midTurn, /in the user's language/, 'the notice speaks the user\'s language here too');
 
 // --- expansion details: namespaced names register ---
 run('SessionStart');

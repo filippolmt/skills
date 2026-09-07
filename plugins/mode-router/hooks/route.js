@@ -18,7 +18,9 @@
 //   UserPromptSubmit                                  reads the set, emits the routing text
 //
 // The veto is the net, not the mechanism: the routing text tells the model not to
-// invoke, and PreToolUse catches the call it makes anyway. A typed /caveman never
+// invoke, and PreToolUse catches the call it makes anyway — except on a MID-TURN
+// ARRIVAL, where the routing text told it the opposite and the deny reason is the
+// only thing carrying the switch notice (ADR-0009). A typed /caveman never
 // reaches the tool layer (see UserPromptExpansion below), so the one way a MIXED
 // context — both modes loaded — still arises is the user typing the second mode.
 // That is a choice of theirs, recorded and not fought: from then on the turn
@@ -467,8 +469,9 @@ if (input.hook_event_name === 'UserPromptExpansion') {
 // picks the mode of a fresh context, it does not add a second one to a running
 // context (forcedSwitch() below asks for the reset instead). `off` vetoes nothing —
 // it is a standing order to stay out of the way.
-// The reason is descriptive only: the model acts on the UserPromptSubmit text,
-// which told it not to make this call in the first place.
+// The reason carries the whole procedure rather than deferring to the routing
+// text, because a MID-TURN ARRIVAL never saw a switch clause: that turn was
+// routed from an EMPTY set and told to invoke (ADR-0009).
 if (input.hook_event_name === 'PreToolUse') {
   const mode = skillToMode(skillOfEvent());
   if (mode) {
@@ -481,7 +484,12 @@ if (input.hook_event_name === 'PreToolUse') {
           permissionDecision: 'deny',
           permissionDecisionReason: 'mode-router: `' + other + '` is already loaded ' +
             'in this context and a context holds one mode, so `' + mode + '` was ' +
-            'not loaded. Answer this turn as the routing text says.',
+            'not loaded. Do not retry: finish this turn with `' + other + '`. If the ' +
+            'request really needs `' + mode + '`, answer with ONLY this notice, in the ' +
+            'user\'s language, and stop: "This is a `' + mode + '` request in a ' +
+            '`' + other + '` context. Recommended: `/mode-router:carryover`, then ' +
+            '`/clear`, then re-send the request. To answer here with no mode, reply: ' +
+            'proceed."',
         },
       }));
     }

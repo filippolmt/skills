@@ -60,7 +60,11 @@ never let the second one in. The router does that in two layers:
    mode, reply "proceed".* The turn ends there. The notice repeats on **every**
    switch turn — it costs one line, and a forgotten reset costs more.
 2. **The mode veto.** `PreToolUse` on `Skill` denies the call if the model makes
-   it anyway. The deny reason is descriptive; the procedure is in the notice.
+   it anyway. Its deny reason carries the same notice and reset recommendation,
+   because the turn it fires on may never have seen the switch clause: on a
+   **mid-turn arrival** — the model loads the mode it classified to, then the work
+   shifts and it reaches for the other one — the turn was routed from an empty set
+   and told to invoke (`docs/adr/0009-the-deny-reason-carries-the-procedure.md`).
 
 The user decides. **Accepting** the recommendation is the carryover-and-clear the
 note is built for ([`HANDOFF-NOTE.md`](HANDOFF-NOTE.md)); the fresh context then
@@ -160,12 +164,12 @@ In `auto`, the hook classifies **slash-command prompts** too, so the mode fires
 alongside the dispatched skill (e.g. `/improve-codebase-architecture` → also
 `ponytail`). It stays silent only when the slash command **is** a mode skill
 (`/caveman`, `/ponytail`) — the user already picked one — or this plugin's
-`/carryover`, which gets the note's path and the skill list instead. A **forced**
-mode is a standing choice and applies on every prompt regardless — except against
-a context that already holds the other mode, where it asks for the reset (above),
-and with the same one exception: on a `/carryover` turn the hook asks for no invocation, because that
-turn produces a file of imposed shape and no prose to style. A forced mode already
-loaded still applies to it; it is just not requested there. `off` outranks
+`/carryover`, which gets the note's path and the skill list instead: that turn
+produces a file of imposed shape and no prose to style, so no mode is asked for.
+A **forced** mode is a standing choice and applies on every prompt regardless,
+with those same two exceptions — a context already holding the other mode, where
+it asks for the reset (above), and the `/carryover` turn, where a forced mode
+already loaded still applies but none is requested. `off` outranks
 everything, `/carryover` included: it means inject nothing.
 
 ## Precedence over hard constraints
