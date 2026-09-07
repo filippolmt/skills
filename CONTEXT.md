@@ -37,15 +37,15 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 ## Agent distribution
 
 > **Design, not current state.** [ADR-0010](docs/adr/0010-vendor-a-shared-skills-tree-on-main.md)
-> is `accepted`, but on `main` there is no `.agents/` yet. The names below are
+> is `accepted`, but on `main` there is no `skills/` tree yet. The names below are
 > settled so the work can use them — drop this note when the tree lands.
 
-- **Skills tree** — `.agents/skills/`, one directory per portable skill. A second
-  **catalog projection**: derived from the marketplace catalog, checked in CI, never
-  hand-edited. The shared location both pi and Codex scan on their own.
+- **Skills tree** — `skills/`, one directory per portable skill. A second **catalog
+  projection**: derived from the marketplace catalog, checked in CI, never
+  hand-edited. The one position all three harnesses reach.
 - **Vendored copy** — an upstream skill's files reproduced in the skills tree at the
   `sha` its entry pins, beside that upstream's licence and a `SOURCE.md`. What the
-  pi side has instead of a reference.
+  tree holds instead of a reference.
 - **Overlay** — a harness-specific edit to a vendored copy, held apart from it as a patch
   so the copy stays identical to upstream. Named for the separation: an edit made
   *in* the copy is a fork, not an overlay.
@@ -54,14 +54,21 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Portable entry** — a catalog entry that has a vendored copy. Excluded are the
   bundles, the guards and `mode-router`: neither agent has `dependencies` or a
   subagent a plugin can ship, and pi has no declarative hooks at all.
-- **pi package** — the installable unit on the pi side: this repository, installed
-  whole. There is exactly one, never one per entry, because pi has no
-  per-subdirectory source.
+- **Repo-as-plugin** — this repository installed whole, as one unit: the
+  `skills-tree` plugin for Claude, a package for pi. There is exactly one, never one
+  per entry, because neither has a per-subdirectory source.
 - **Ref-less source** — a pi package source carrying no `ref`. The only shape that
   auto-updates, and the reason the skills tree lives on `main`.
-- **Convention directory** — `skills/` at the root of a pi package or a Codex
-  plugin, served with no manifest field. Not where the skills tree lives: neither
-  agent scans it without being installed first.
+- **Convention directory** — `skills/` at the root of a package or plugin, served
+  with no manifest field naming it. Where the skills tree lives, because Claude's
+  version of it is not a convention but a requirement: a plugin's skills MUST sit
+  there.
+- **Shared location** — `.agents/skills`, the Agent Skills standard's path, scanned
+  by pi and Codex with nothing installed. Here it is a **symlink** to the skills
+  tree, never a second copy — which is the distinction the term exists to keep.
+- **Exclusive route** — the rule that a skill reaches Claude either through its own
+  catalog entry or through the `skills-tree` plugin, never both. Not enforceable by
+  a check: the two names are meant to be identical.
 - **Pinned source** — a pi package source carrying any `ref` — branch, tag or
   commit. Beware the inversion: in pi's vocabulary *pinned* means **never
   advanced**, where a pinned `sha` in this catalog is what Renovate advances.
