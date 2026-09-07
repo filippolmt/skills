@@ -98,9 +98,10 @@ Codex it is `[[skills.config]] path = "…" enabled = false` in `~/.codex/config
 The generator emits the snippets; `pi config` toggles at runtime. We recommend, we do
 not install.
 
-**Skills only.** Measured against the 17 upstream repositories at their pinned
-`sha`s, install-independently: the entries hold one `SKILL.md` each, **zero
-commands**, 10 subagent files across 3 entries (`api-scaffolding`, `impeccable`,
+**Skills only, and all of them.** Every git-subdir entry is vendored, with no
+allow-list: a new entry is in the tree on the next regeneration. Measured against
+the 17 upstream repositories at their pinned `sha`s, install-independently: 81
+entries yield **83 skills** — a few ship more than one — **zero commands**, 10 subagent files across 3 entries (`api-scaffolding`, `impeccable`,
 `shell-scripting`) and **one** `hooks.json`. Neither pi nor Codex has subagents a
 plugin can ship, neither has `dependencies`, and pi has no declarative hooks at all
 (TypeScript extensions only). So the guards, `mode-router` and every bundle have no
@@ -143,8 +144,12 @@ the whole generation.
   their source is in our history, permanently. All 17 upstream repositories carry a
   licence, so nothing is excluded on that ground today — the generator still reads
   each licence, copies it next to the skill, and refuses a repository that has none.
-  This is the least reversible part of the decision, which is why the first release
-  is a five-skill pilot with no overlays.
+  This is the least reversible part of the decision. A five-skill pilot was built
+  as a release gate and then dropped: the tree holds **every** entry, 83 skills over
+  1464 files and 39 MB, because an allow-list that must always contain everything is
+  one that will eventually fall behind the catalog. Adding a catalog entry is
+  therefore the act that redistributes an upstream, and the regeneration PR is where
+  that shows.
 - **Claude's route is untouched.** Nothing about the catalog changes for it: 81
   git-subdir entries, referenced upstream, installed one at a time. The tree is
   additive, and a Claude user who ignores it loses nothing.
