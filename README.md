@@ -16,6 +16,7 @@ plugins/
     hooks/hooks.json               # UserPromptSubmit hook (auto-loaded)
     skills/
       mode-router/SKILL.md         # skill
+  code-review-bundle/              # a bundle: dependencies only, no artifacts
 skills/                            # generated: vendored copies, read by pi and Codex
   tdd/
     SKILL.md                       # byte-identical to upstream at the pinned sha
@@ -35,7 +36,7 @@ Register it once, then it shows up in `/plugin`:
 
 (Any git remote works too, e.g. `/plugin marketplace add https://github.com/filippolmt/skills`.)
 
-## Installing skills (individually)
+## Installing skills
 
 Each skill is its own plugin, so you only install the ones you want:
 
@@ -52,6 +53,73 @@ To refresh after upstream updates:
 ```
 /plugin marketplace update filippo-skills
 ```
+
+### Bundles: a skill plus what it calls
+
+Some skills do not work alone. Two things break them, and a **bundle** — a local
+plugin carrying only `dependencies`, with no artifacts of its own — installs the
+cure along with the skill.
+
+**A fan-out skill loses its sub-agents' reports.** Skills that spawn sibling
+sub-agents and then read what they report — `code-review`, `research`,
+`codebase-design`, `improve-codebase-architecture`, `printing-press`,
+`wayfinder`, `impeccable` — stall when those sub-agents are spawned with a
+`name`: a named agent becomes a mailbox teammate that notifies idle without a
+report body, so the parent waits, and then has to chase the report with
+`SendMessage`. The local `agent-report-guard` plugin drops the name, so they
+report back on their own.
+
+**A skill invokes sibling skills at runtime.** `grill-with-docs` calls `grilling`
+and `domain-modeling`, `implement` calls `tdd` and `code-review`,
+`printing-press` calls five siblings. Install the skill by itself and those calls
+find nothing — no error, just a skill quietly doing less than it says.
+
+Where a bundle exists, reach for it rather than the bare skill:
+
+```
+/plugin install code-review-bundle     # not: /plugin install code-review
+```
+
+<!-- bundles:start -->
+| Bundle | What it installs with it |
+|---|---|
+| `improve-codebase-architecture-bundle` | `improve-codebase-architecture`, `grilling`, `codebase-design`, `domain-modeling`, `agent-report-guard` |
+| `printing-press-bundle` | `printing-press`, `printing-press-polish`, `printing-press-score`, `printing-press-retro`, `printing-press-publish`, `printing-press-output-review`, `agent-report-guard` |
+| `code-review-bundle` | `code-review`, `agent-report-guard` |
+| `implement-bundle` | `implement`, `tdd`, `code-review`, `agent-report-guard` |
+| `triage-bundle` | `triage`, `grilling`, `domain-modeling` |
+| `wayfinder-bundle` | `wayfinder`, `grilling`, `domain-modeling`, `prototype`, `research`, `setup-matt-pocock-skills`, `agent-report-guard` |
+| `grill-with-docs-bundle` | `grill-with-docs`, `grilling`, `domain-modeling` |
+<!-- bundles:end -->
+
+That table is generated from each bundle's own `dependencies`
+([ADR-0012](docs/adr/0012-the-bundle-table-lives-next-to-the-install.md)). A
+bundle never appears under **Available skills** below, and a skill listed there
+never says which bundle wraps it — so look here first.
+
+Not every fan-out skill has one: `research`, `codebase-design` and `impeccable`
+have no bundle, so install the guard alongside them yourself. It is also what you
+want if you already have the skills and only need the fix:
+
+```
+/plugin install agent-report-guard
+```
+
+### Loops over a variable need `zsh-wordsplit-guard`
+
+The Bash tool runs zsh, where parameter expansion is not word-split. So
+`for x in $var` runs the body **once** over the whole string — no error, just a
+wrong result from the second element on, which any check with a one-element
+sample still passes. Command substitution does split, so `for f in $(cmd)` is
+fine, and so is a glob or a path around the expansion (`for f in $D/*.log`). The
+local `zsh-wordsplit-guard` plugin denies the bare expansion and names the fixes
+(`${=var}`, `${(f)var}`, an array plus `"${a[@]}"`, a literal list):
+
+```
+/plugin install zsh-wordsplit-guard
+```
+
+Nothing depends on it — install it if your Bash commands run under zsh.
 
 ## The tree: how pi and Codex get these skills
 
@@ -115,38 +183,27 @@ in practice: this repo **redistributes other people's code**, each copy carrying
 that upstream's own licence and a `SOURCE.md`, and a repository with no licence is
 refused outright.
 
-### Fan-out skills need `agent-report-guard`
+### Overlays
 
-Skills that spawn sibling sub-agents and then read their reports — `code-review`,
-`research`, `codebase-design`, `improve-codebase-architecture`, `printing-press`,
-`wayfinder`, `impeccable` — stall when those sub-agents are spawned with a
-`name`: a named agent becomes a mailbox teammate that notifies idle without a
-report body, so the parent waits, then has to chase the report with
-`SendMessage`. The local `agent-report-guard` plugin drops the name, so they
-report back on their own:
+A vendored copy is byte-identical to its upstream at the pinned `sha`. When a
+skill needs a change to work under pi or Codex, that change lives in
+`overlays/<skill>.patch` and is applied after the copy — editing the copy itself
+is a fork, not an overlay. The conventions (patch naming, what the diff is
+relative to) are in [`overlays/README.md`](overlays/README.md).
 
-```
-/plugin install agent-report-guard
-```
+### How the tree stays current
 
-Every bundle that ships a fan-out skill already depends on it — install it
-yourself if you install one of those skills individually.
+Nobody regenerates the tree by hand. Once a catalog change lands on `main`, CI's
+`regenerate` workflow opens a `chore: regenerate skills tree` PR, and that PR
+**merges itself** when `validate` passes
+([ADR-0011](docs/adr/0011-the-regeneration-pr-merges-itself.md)) — which is what
+keeps a Renovate `sha` bump a one-line diff. So a tree that lags on a pull
+request is normal, not a failure; a **red** `regenerate` run with its PR left
+open is the signal that something needs a human, and the catalog stops advancing
+until it gets one.
 
-### Loops over a variable need `zsh-wordsplit-guard`
-
-The Bash tool runs zsh, where parameter expansion is not word-split. So
-`for x in $var` runs the body **once** over the whole string — no error, just a
-wrong result from the second element on, which any check with a one-element
-sample still passes. Command substitution does split, so `for f in $(cmd)` is
-fine, and so is a glob or a path around the expansion (`for f in $D/*.log`). The
-local `zsh-wordsplit-guard` plugin denies the bare expansion and names the fixes
-(`${=var}`, `${(f)var}`, an array plus `"${a[@]}"`, a literal list):
-
-```
-/plugin install zsh-wordsplit-guard
-```
-
-Nothing depends on it — install it if your Bash commands run under zsh.
+Editing `skills/` by hand is pointless — the next regeneration overwrites it.
+Change the catalog entry, or add an overlay.
 
 ## Available skills
 
@@ -419,18 +476,56 @@ Fastest path: copy `plugins/mode-router/skills/mode-router/` as a starting point
    the `plugins` array (the `source` is relative to the repo root, e.g.
    `"./plugins/<plugin-name>"`).
 
+To ship a **bundle** instead, give its `plugin.json` a `dependencies` array and
+**no** artifact directories: shipping no `skills/`, `commands/`, `hooks/` or
+`agents/` directory is precisely what `scripts/catalog.js` derives to spot one,
+which is what routes it to the bundle table instead of **Available skills**.
+
 ## Validating
 
-What CI runs, so run it before opening a PR — `claude plugin validate` alone
-covers neither the README catalog nor command/skill name collisions:
+What CI runs (`.github/workflows/validate.yml`), so run it before opening a PR —
+`claude plugin validate` alone covers neither the README's generated regions nor
+command/skill name collisions:
 
 ```
-for t in scripts/*.test.js plugins/*/hooks/*.test.js; do node "$t"; done
-node scripts/gen-readme.js --check    # README catalog matches marketplace.json
-node scripts/check-renovate.js        # Renovate regexes cover every git-subdir entry
-node scripts/check-name-collisions.js # what validate does NOT cover
-claude plugin validate .              # marketplace + all local plugins
+bash scripts/run-tests.sh                       # every node test; CI runs this same script
+node scripts/gen-readme.js --check              # README's generated regions match the catalog
+node scripts/gen-skills-tree.js --verify-paths  # every entry's path resolves at its sha
+node scripts/check-renovate.js                  # Renovate regexes cover every git-subdir entry
+node scripts/check-name-collisions.js           # what validate does NOT cover
+claude plugin validate .                        # marketplace + all local plugins
 ```
 
 Output must be clean — warnings count as failures. To check one plugin on its
 own: `claude plugin validate ./plugins/mode-router`.
+
+## Versioning
+
+Bump the `version` (SemVer) of the **one** plugin you changed, and leave the
+others alone. It lives in that plugin's own `.claude-plugin/plugin.json` — the
+single source of truth; local entries in `marketplace.json` carry no `version`.
+
+`fix:` → patch, `feat:` → minor, breaking → major — except that below `1.0.0` a
+breaking change is a **minor**, and every local plugin here is still pre-1.0.
+
+The bumped version *is* the release: merging the PR to `main` ships it. Skip the
+bump only for changes that leave every plugin's behaviour alone — repo docs,
+`renovate.json`, this README.
+
+## Decisions and vocabulary
+
+- [`docs/adr/`](docs/adr/) — one file per decision, carrying the reasoning and
+  the options that lost. Read the ADR a rule cites before you change that rule,
+  and write a new one when you settle a question the next reader would otherwise
+  reopen. Three worth starting with:
+  [ADR-0010](docs/adr/0010-vendor-a-shared-skills-tree-on-main.md), why the
+  vendored tree exists at all;
+  [ADR-0011](docs/adr/0011-the-regeneration-pr-merges-itself.md), why its
+  regeneration PR merges itself; and
+  [ADR-0008](docs/adr/0008-whole-plugin-entries-cover-commands.md), why a few
+  entries point at a whole plugin instead of a single skill.
+- [`CONTEXT.md`](CONTEXT.md) — the domain glossary, and the naming authority.
+  *Bundle*, *projection*, *overlay*, *guard*, *spawn*, *mode* and *carryover* are
+  defined terms there, each narrower than its everyday sense.
+- [`CLAUDE.md`](CLAUDE.md) — the operating instructions for agents working in
+  this repo.

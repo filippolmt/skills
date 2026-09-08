@@ -33,9 +33,14 @@ function repoOf(entry) {
 }
 
 // A bundle ships nothing of its own: its plugin entry exists to pull dependencies
-// in, and the README has no row to give it. Derived, not listed — shipping no
-// artifacts is what MAKES an entry a bundle, so a hand-kept list of names is the
-// same fact maintained twice, drifting the first time a bundle is added.
+// in. Derived, not listed — shipping no artifacts is what MAKES an entry a
+// bundle, so a hand-kept list of names is the same fact maintained twice,
+// drifting the first time a bundle is added.
+//
+// gen-readme consults this set twice, in opposite directions: subtracted from
+// the catalog projection, selected for the bundle projection. Removing either
+// use puts the bundles back out of sight — see
+// docs/adr/0012-the-bundle-table-lives-next-to-the-install.md.
 const ARTIFACT_DIRS = ['skills', 'commands', 'hooks', 'agents'];
 function isBundle(entry) {
   return isLocal(entry) &&

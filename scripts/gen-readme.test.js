@@ -2,7 +2,14 @@
 // Exercises renderCatalog() + replaceBetweenMarkers() against fixtures — the pure render surface.
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { renderCatalog, table, replaceBetweenMarkers, START, END } = require('./gen-readme.js');
+const {
+  renderCatalog,
+  renderBundles,
+  table,
+  replaceBetweenMarkers,
+  START,
+  END,
+} = require('./gen-readme.js');
 
 // Minimal fixture covering every branch: a skill group, a plugin group, an
 // omitted local plugin, a shown local plugin, and two modes pulled out of their
@@ -79,4 +86,20 @@ test('replaceBetweenMarkers replaces only the region between markers', () => {
 
 test('replaceBetweenMarkers throws when markers are missing', () => {
   assert.throws(() => replaceBetweenMarkers('no markers here', 'x'), /missing the .* markers/);
+});
+
+// --- bundle projection ---
+
+test('a bundle row lists its dependencies as code, in order', () => {
+  const md = renderBundles([
+    { name: 'code-review-bundle', dependencies: ['code-review', 'agent-report-guard'] },
+  ]);
+  assert.match(md, /\| Bundle \| What it installs with it \|/);
+  assert.match(md, /\| `code-review-bundle` \| `code-review`, `agent-report-guard` \|/);
+});
+
+test('a bundle with no dependencies renders an empty cell, it does not throw', () => {
+  const md = renderBundles([{ name: 'hollow-bundle' }, { name: 'empty-bundle', dependencies: [] }]);
+  assert.match(md, /\| `hollow-bundle` \|  \|/);
+  assert.match(md, /\| `empty-bundle` \|  \|/);
 });
