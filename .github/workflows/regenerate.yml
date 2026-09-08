@@ -61,7 +61,7 @@ jobs:
           # branch pushed with `GITHUB_TOKEN` gets its `validate` run parked
           # awaiting approval, which no token available here can give.
           token: ${{ secrets.REGEN_TOKEN }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
       - name: Regenerate skills/
