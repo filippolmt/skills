@@ -49,9 +49,23 @@ jobs:
       - name: Require the regeneration token
         env:
           REGEN_TOKEN: ${{ secrets.REGEN_TOKEN }}
+          GH_TOKEN: ${{ secrets.REGEN_TOKEN }}
         run: |
           if [ -z "$REGEN_TOKEN" ]; then
             echo "::error::secret REGEN_TOKEN is missing or expired — see docs/adr/0011-the-regeneration-pr-merges-itself.md for what it is and how to mint it" >&2
+            exit 1
+          fi
+          # Present is not the same as usable, and the difference is expensive: a
+          # token that authenticates and cannot write fails four steps later as a
+          # bare `Permission to <repo> denied to <user>`, which names neither the
+          # secret nor what it is missing. Ask the API the same question the push
+          # asks. `x-oauth-scopes` comes back only for a classic PAT — absent means
+          # fine-grained — so the line also says WHICH page to go fix.
+          kind="$(gh api -i /user 2>/dev/null | grep -i '^x-oauth-scopes:' || echo 'x-oauth-scopes: absent (fine-grained token)')"
+          push="$(gh api "repos/$GITHUB_REPOSITORY" --jq .permissions.push 2>/dev/null || echo 'no-access')"
+          echo "REGEN_TOKEN: $kind | permissions.push=$push"
+          if [ "$push" != true ]; then
+            echo "::error::REGEN_TOKEN cannot write to $GITHUB_REPOSITORY (permissions.push=$push). A fine-grained PAT needs this repository under 'Only select repositories' with contents: write and pull-requests: write; a classic PAT needs the 'repo' scope. See docs/adr/0011-the-regeneration-pr-merges-itself.md" >&2
             exit 1
           fi
         shell: bash
