@@ -39,6 +39,14 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Skills tree** — `skills/`, one directory per portable skill. A second **catalog
   projection**: derived from the marketplace catalog, checked in CI, never
   hand-edited. What pi and Codex read; Claude reads the catalog instead.
+- **Regeneration PR** — the single long-lived `chore/regenerate-skills-tree` PR the
+  `regenerate` workflow opens, force-pushes onto and merges on green. Not a review
+  request: the catalog entry it materialises is where the decision was reviewed, and
+  this is the audit record (ADR-0011).
+- **Dispatched check** — the `validate` run the regeneration job starts by hand
+  against its own branch, matched back by head `sha`. It exists because a branch
+  pushed with `GITHUB_TOKEN` triggers no workflow, so the required check has to be
+  asked for.
 - **Vendored copy** — an upstream skill's files reproduced in the skills tree at the
   `sha` its entry pins, beside that upstream's licence and a `SOURCE.md`. What the
   tree holds instead of a reference.
