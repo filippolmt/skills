@@ -45,8 +45,12 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   this is the audit record (ADR-0011).
 - **Parked run** — the `pull_request` run of `validate` that a `GITHUB_TOKEN` push
   leaves `completed` with `conclusion: action_required` and no check runs: created,
-  awaiting approval. Not a missing check — a waiting one, which is why the
-  regeneration job approves it rather than raising a check of its own (ADR-0011).
+  awaiting an approval no token inside a workflow can give. Not a missing check — a
+  waiting one, and the reason the push needs an identity of its own.
+- **Regeneration token** — `REGEN_TOKEN`, the secret the regeneration job pushes
+  with so its `validate` run is not parked. Scoped to this repository,
+  `contents: write` + `pull-requests: write`, and it expires: the job's first step
+  fails by name when it is empty (ADR-0011).
 - **Vendored copy** — an upstream skill's files reproduced in the skills tree at the
   `sha` its entry pins, beside that upstream's licence and a `SOURCE.md`. What the
   tree holds instead of a reference.
