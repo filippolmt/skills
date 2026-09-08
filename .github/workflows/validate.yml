@@ -4,13 +4,6 @@ on:
   pull_request:
   push:
     branches: [main]
-  # Dispatchable so the regeneration job can raise this check on its own PR. That
-  # PR is pushed with GITHUB_TOKEN, which triggers no workflow, so the one required
-  # check would otherwise never arrive and the PR could never merge (ADR-0011).
-  # Note what a dispatched run checks out: the branch head, not the
-  # `refs/pull/N/merge` a `pull_request` run gets. Same tree as the commit, one
-  # merge short of the base — see ADR-0011 for why that is the acceptable half.
-  workflow_dispatch:
 
 jobs:
   validate:

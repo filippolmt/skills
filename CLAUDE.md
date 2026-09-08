@@ -62,7 +62,9 @@ stays a one-line diff — and that PR **merges itself** once `validate` passes
 chore. Hand-editing `skills/` is pointless: regeneration overwrites it. A tree
 that cannot pass `validate` turns the `regenerate` run red and leaves the PR
 open — that red run is the signal, and the catalog stops advancing until it is
-dealt with.
+dealt with. That workflow needs the **`REGEN_TOKEN`** secret: pushed with the
+default token instead, its `validate` run is parked awaiting an approval no
+workflow can give. An expired token fails the job's first step by name.
 
 ## Gotchas
 
