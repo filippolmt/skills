@@ -786,7 +786,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/agents-sdk",
         "ref": "main",
-        "sha": "d924cd8f59e75e08fd3dd52843bb2776de35c77e"
+        "sha": "b052c32bab7dd493513260228a36c88294f343f1"
       },
       "description": "Build AI agents on Cloudflare Workers using the Agents SDK — stateful agents, durable workflows, WebSocket apps, scheduled tasks, MCP servers."
     },
@@ -797,7 +797,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/cloudflare-email-service",
         "ref": "main",
-        "sha": "d924cd8f59e75e08fd3dd52843bb2776de35c77e"
+        "sha": "b052c32bab7dd493513260228a36c88294f343f1"
       },
       "description": "Send and receive transactional emails with Cloudflare Email Service (Email Sending + Email Routing)."
     },
@@ -808,7 +808,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/cloudflare-one-migrations",
         "ref": "main",
-        "sha": "d924cd8f59e75e08fd3dd52843bb2776de35c77e"
+        "sha": "b052c32bab7dd493513260228a36c88294f343f1"
       },
       "description": "Plan migrations from Zscaler ZIA/ZPA, Palo Alto, legacy VPN, SWG, or SASE stacks to Cloudflare One."
     },
@@ -819,7 +819,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/cloudflare-one",
         "ref": "main",
-        "sha": "d924cd8f59e75e08fd3dd52843bb2776de35c77e"
+        "sha": "b052c32bab7dd493513260228a36c88294f343f1"
       },
       "description": "Guides Cloudflare One Zero Trust and SASE work across Access, Gateway, WARP, Tunnel, WAN, DLP, CASB, device posture, and identity."
     },
@@ -830,7 +830,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/cloudflare",
         "ref": "main",
-        "sha": "d924cd8f59e75e08fd3dd52843bb2776de35c77e"
+        "sha": "b052c32bab7dd493513260228a36c88294f343f1"
       },
       "description": "Comprehensive Cloudflare platform skill: Workers, Pages, storage (KV, D1, R2), AI, networking, security, and infrastructure-as-code."
     },
@@ -841,7 +841,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/durable-objects",
         "ref": "main",
-        "sha": "d924cd8f59e75e08fd3dd52843bb2776de35c77e"
+        "sha": "b052c32bab7dd493513260228a36c88294f343f1"
       },
       "description": "Create and review Cloudflare Durable Objects — stateful coordination, RPC methods, SQLite storage, alarms, and WebSockets."
     },
@@ -852,7 +852,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/sandbox-migrate-to-next",
         "ref": "main",
-        "sha": "d924cd8f59e75e08fd3dd52843bb2776de35c77e"
+        "sha": "b052c32bab7dd493513260228a36c88294f343f1"
       },
       "description": "Migrate Cloudflare Sandbox apps from stable @cloudflare/sandbox to @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-next for apps already on the preview."
     },
@@ -863,7 +863,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/sandbox-next",
         "ref": "main",
-        "sha": "d924cd8f59e75e08fd3dd52843bb2776de35c77e"
+        "sha": "b052c32bab7dd493513260228a36c88294f343f1"
       },
       "description": "Build or maintain Cloudflare Sandbox apps on @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-migrate-to-next when porting a stable app."
     },
@@ -874,7 +874,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/sandbox-stable",
         "ref": "main",
-        "sha": "d924cd8f59e75e08fd3dd52843bb2776de35c77e"
+        "sha": "b052c32bab7dd493513260228a36c88294f343f1"
       },
       "description": "Build or maintain Cloudflare Sandbox apps on the stable @cloudflare/sandbox package. Use sandbox-next for preview apps and sandbox-migrate-to-next for stable-to-preview migrations."
     },
@@ -885,7 +885,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/turnstile-spin",
         "ref": "main",
-        "sha": "d924cd8f59e75e08fd3dd52843bb2776de35c77e"
+        "sha": "b052c32bab7dd493513260228a36c88294f343f1"
       },
       "description": "Set up Cloudflare Turnstile end-to-end — scan the codebase, create the widget, deploy the siteverify Worker, and write frontend snippets."
     },
@@ -896,7 +896,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/web-perf",
         "ref": "main",
-        "sha": "d924cd8f59e75e08fd3dd52843bb2776de35c77e"
+        "sha": "b052c32bab7dd493513260228a36c88294f343f1"
       },
       "description": "Analyze web performance via Chrome DevTools MCP — Core Web Vitals, render-blocking resources, layout shifts, and caching."
     },
@@ -907,7 +907,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/workers-best-practices",
         "ref": "main",
-        "sha": "d924cd8f59e75e08fd3dd52843bb2776de35c77e"
+        "sha": "b052c32bab7dd493513260228a36c88294f343f1"
       },
       "description": "Review and author Cloudflare Workers code against production best practices and common anti-patterns."
     },
@@ -918,7 +918,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/wrangler",
         "ref": "main",
-        "sha": "d924cd8f59e75e08fd3dd52843bb2776de35c77e"
+        "sha": "b052c32bab7dd493513260228a36c88294f343f1"
       },
       "description": "Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets."
     },
