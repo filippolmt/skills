@@ -17,26 +17,38 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   plugin root (its own `.claude-plugin/plugin.json`); installing it brings every
   bundled skill and subagent at once.
 - **Bundle** — a local plugin that ships no artifacts of its own: its entry
-  exists to pull dependencies in. Not listed anywhere — a local plugin with no
-  `skills/`, `commands/`, `hooks/` or `agents/` directory IS one, which is what
-  keeps it out of the projection.
+  exists to pull dependencies in, so installing it brings a skill plus everything
+  that skill calls at runtime. A local plugin with no `skills/`, `commands/`,
+  `hooks/` or `agents/` directory IS one — derived, never listed. It appears in
+  the **bundle projection** and nowhere else in the README.
 - **Catalog projection** — the README "Available skills" section. NOT a source
   of truth: it is generated from the catalog by `scripts/gen-readme.js` and
   spliced between the `<!-- catalog:start -->` / `<!-- catalog:end -->` markers.
   Never hand-edited.
+- **Bundle projection** — the README's table of bundles, the other region
+  `scripts/gen-readme.js` generates, spliced between the
+  `<!-- bundles:start -->` / `<!-- bundles:end -->` markers. It lives under the
+  README's "Installing skills" heading, beside the install instructions rather
+  than in the catalog projection, because a reader choosing between `code-review`
+  and `code-review-bundle` needs it at that moment. Its cells name each bundle's
+  `dependencies`, not its description. Never hand-edited. Its content is
+  **disjoint** from the catalog projection's: the one derived set of bundles is
+  subtracted from that one and selected for this one
+  (`docs/adr/0012-the-bundle-table-lives-next-to-the-install.md`).
 - **Catalog-meta** — `scripts/catalog-meta.json`. The irreducible editorial data
-  behind the projection: ordered source repos with a display **tagline** and a
-  column **kind** (`skill` → "What it does", `plugin` → "What it bundles").
-  Everything else in the projection is derived from the catalog. Its **omit** list
-  is not editorial in that sense and is empty: it once named the seven bundles,
-  which now omit themselves.
-- **Modes table** — the projection's final table (`caveman`, `ponytail`). Not
-  configured in catalog-meta: derived from the local `mode-router` plugin's
-  `dependencies`.
+  behind the **catalog projection**: ordered source repos with a display
+  **tagline** and a column **kind** (`skill` → "What it does", `plugin` → "What
+  it bundles"). Everything else in that projection is derived from the catalog.
+  Its **omit** list is not editorial in that sense and is empty: it once named
+  the seven bundles, which the derived set has handled since — first by
+  subtracting them, now by routing them to the bundle projection instead.
+- **Modes table** — the catalog projection's final table (`caveman`,
+  `ponytail`). Not configured in catalog-meta: derived from the local
+  `mode-router` plugin's `dependencies`.
 
 ## Agent distribution
 
-- **Skills tree** — `skills/`, one directory per portable skill. A second **catalog
+- **Skills tree** — `skills/`, one directory per portable skill. A further **catalog
   projection**: derived from the marketplace catalog, checked in CI, never
   hand-edited. What pi and Codex read; Claude reads the catalog instead.
 - **Regeneration PR** — the single long-lived `chore/regenerate-skills-tree` PR the
