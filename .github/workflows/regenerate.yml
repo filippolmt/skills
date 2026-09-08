@@ -55,7 +55,7 @@ jobs:
             exit 1
           fi
         shell: bash
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # The push inherits these credentials, and that is the whole point: a
           # branch pushed with `GITHUB_TOKEN` gets its `validate` run parked
