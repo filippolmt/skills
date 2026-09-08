@@ -4,6 +4,11 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Dispatchable so the regeneration job can raise this check on its own PR. That
+  # PR is pushed with GITHUB_TOKEN, which triggers no workflow, so the one required
+  # check would never arrive and auto-merge would wait forever (ADR-0011). A
+  # dispatched run attaches to the branch head — the sha branch protection reads.
+  workflow_dispatch:
 
 jobs:
   validate:
