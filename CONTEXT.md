@@ -43,10 +43,10 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   `regenerate` workflow opens, force-pushes onto and merges on green. Not a review
   request: the catalog entry it materialises is where the decision was reviewed, and
   this is the audit record (ADR-0011).
-- **Dispatched check** — the `validate` run the regeneration job starts by hand
-  against its own branch, matched back by head `sha`. It exists because a branch
-  pushed with `GITHUB_TOKEN` triggers no workflow, so the required check has to be
-  asked for.
+- **Parked run** — the `pull_request` run of `validate` that a `GITHUB_TOKEN` push
+  leaves `completed` with `conclusion: action_required` and no check runs: created,
+  awaiting approval. Not a missing check — a waiting one, which is why the
+  regeneration job approves it rather than raising a check of its own (ADR-0011).
 - **Vendored copy** — an upstream skill's files reproduced in the skills tree at the
   `sha` its entry pins, beside that upstream's licence and a `SOURCE.md`. What the
   tree holds instead of a reference.
