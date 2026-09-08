@@ -31,6 +31,23 @@ write, so the job's explicit `permissions:` block has to name `actions: write` �
 an explicit block sets every scope it omits to `none`, which is a 403 at the
 dispatch and a flow that stops after pushing the branch.
 
+**The dispatched check is not counted on the pull request, so the run mirrors its
+own verdict as a commit status.** This was measured, not assumed — the first
+attempt merged nothing and said why: *"not mergeable: the base branch policy
+prohibits the merge"*. On PR #206's head commit the check run was there and
+correct (`validate`, app id 15368, `success`), while the PR's own
+`statusCheckRollup` was **empty**, and no ruleset or review requirement was in
+play. A dispatched run's check suite is simply not associated with the pull
+request, so protection does not count it. A **commit status** it does count, so
+`validate.yml`'s last step posts one — `context: validate`, the run's own verdict,
+on the sha it ran against, and only on a dispatched run.
+
+Note what this is not: a status the merging job posts about itself, which is
+rejected below. It is the validating run reporting the suite it just finished, and
+it carries the run's URL. And because protection re-evaluates asynchronously, the
+merge retries for a minute before giving up loudly rather than reading the first
+rejection as final.
+
 **Waiting for the verdict, not arming auto-merge.** `gh pr merge --auto` was the
 first shape, and it hides the failure: a red `validate` leaves an armed PR parked
 with nobody told, and a stalled catalog is exactly the quiet failure this repo's
@@ -89,10 +106,19 @@ diff is visible in history, whether or not anyone looked.
   by weakening the guard for every other PR.
 - **Pushing the tree straight to `main`**, no PR. Branch protection blocks it, and
   it would erase the audit record the PR is kept for.
-- **A self-reported `validate` commit status** from the regeneration job, whose
+- **A self-reported `validate` commit status** from the **regeneration** job, whose
   pre-push suite is close to the real one. Close, not equal: it adds
   `gen-skills-tree.js --check` and omits `claude plugin validate .`. A required
-  check a job raises on itself is a check in name only.
+  check a job raises on itself is a check in name only. Note the difference from
+  what was chosen: the status is posted by the dispatched `validate` run about its
+  own suite, not by the job that wants the merge.
+- **A PAT or GitHub App token, revisited.** It remains the shape GitHub actually
+  designs for: push as a real identity, `validate` triggers as a `pull_request`
+  run, the PR's rollup is populated, and neither the dispatch nor the status
+  mirror is needed. It stays rejected only for the secret — one credential to
+  store, scope and rotate, whose silent expiry would stop the flow. If the status
+  route ever breaks, this is the fallback, and it is a smaller change than it
+  looks.
 
 ## Consequences
 
@@ -111,6 +137,16 @@ diff is visible in history, whether or not anyone looked.
 - **`workflow_dispatch` must be on the default branch to be dispatchable.** It is
   from the moment this decision merges; a `regenerate` run before that fails at the
   dispatch line, with the branch already pushed.
+- **`validate` now has an explicit `permissions:` block**, so every scope it needs
+  is spelled out — `statuses: write` for the mirror, and `contents: read` for the
+  checkout that used to come free. Adding a step that needs another scope means
+  adding it here; that is the trade for not running the whole suite with write
+  access to everything.
+- **The `validate` context can now arrive two ways** — a check run on a pull
+  request, a commit status on a dispatched run — and branch protection is
+  satisfied by either. Worth knowing before pinning that context harder: the
+  status is created by `GITHUB_TOKEN`, so tightening the required check to
+  check-runs-only would silently strand the regeneration PR again.
 - **The test suite moved into `scripts/run-tests.sh`**, because `validate` and
   `regenerate` both run it and the two copies had already diverged — one carried the
   empty-glob guard, the other passed silently on nothing. One copy, one guard, and

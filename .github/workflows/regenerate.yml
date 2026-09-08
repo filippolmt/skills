@@ -119,5 +119,15 @@ jobs:
           # Adopt its verdict: green merges, red fails this run. Merging here rather
           # than arming auto-merge is the whole reason a failure is visible.
           gh run watch "$run" --exit-status
-          gh pr merge --squash "$pr"
+          # That run's last step mirrors its verdict onto the commit as a status,
+          # because the check it raises is not counted on the PR (see validate.yml).
+          # Protection re-evaluates asynchronously, so give it a few seconds rather
+          # than read one rejection as final — and if it never clears, say so.
+          for attempt in 1 2 3 4 5 6; do
+            if gh pr merge --squash "$pr"; then exit 0; fi
+            echo "merge rejected on attempt $attempt, mergeStateStatus=$(gh pr view "$pr" --json mergeStateStatus --jq .mergeStateStatus)"
+            sleep 10
+          done
+          echo "::error::validate passed on $sha but #$pr would not merge" >&2
+          exit 1
         shell: bash

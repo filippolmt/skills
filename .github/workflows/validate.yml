@@ -12,6 +12,12 @@ on:
   # merge short of the base — see ADR-0011 for why that is the acceptable half.
   workflow_dispatch:
 
+permissions:
+  contents: read
+  # For the last step only. An explicit block sets every omitted scope to `none`,
+  # so `contents: read` has to be spelled out for the checkout.
+  statuses: write
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -40,3 +46,23 @@ jobs:
         run: node scripts/check-name-collisions.js
       - name: Validate marketplace and plugins
         run: claude plugin validate .
+      # Measured on #206: a dispatched run's check suite is NOT associated with the
+      # pull request. The check lands on the commit — `validate`, the right app id,
+      # green — while the PR's rollup stays empty, so branch protection never counts
+      # it and the merge is refused with "the base branch policy prohibits the
+      # merge". A commit status it does count. This is not a status the merging job
+      # posts about itself: it is this run reporting the suite it just ran, on the
+      # sha it ran against (ADR-0011).
+      - name: Report the verdict as a commit status
+        if: always() && github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STATE: ${{ job.status == 'success' && 'success' || 'failure' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh api "repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -f state="$STATE" \
+            -f context=validate \
+            -f target_url="$RUN_URL" \
+            -f description='dispatched run of the suite every pull request passes' >/dev/null
+        shell: bash
