@@ -4,6 +4,13 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Dispatchable so the regeneration job can raise this check on its own PR. That
+  # PR is pushed with GITHUB_TOKEN, which triggers no workflow, so the one required
+  # check would otherwise never arrive and the PR could never merge (ADR-0011).
+  # Note what a dispatched run checks out: the branch head, not the
+  # `refs/pull/N/merge` a `pull_request` run gets. Same tree as the commit, one
+  # merge short of the base — see ADR-0011 for why that is the acceptable half.
+  workflow_dispatch:
 
 jobs:
   validate:
@@ -15,24 +22,10 @@ jobs:
           node-version: 20
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code
-      - name: Test repo scripts
-        # Glob, for the same reason as the hook tests below: a new script test is
-        # picked up by adding the file, without a second edit in here.
-        run: |
-          shopt -s nullglob
-          tests=(scripts/*.test.js)
-          if [ ${#tests[@]} -eq 0 ]; then echo "no script tests found" >&2; exit 1; fi
-          for t in "${tests[@]}"; do echo "--- $t"; node "$t"; done
-        shell: bash
-      - name: Test local plugin hooks
-        # Glob, not one step per plugin: a new hook test is picked up by adding
-        # the test file, without a second edit in this file.
-        run: |
-          shopt -s nullglob
-          tests=(plugins/*/hooks/*.test.js)
-          if [ ${#tests[@]} -eq 0 ]; then echo "no hook tests found" >&2; exit 1; fi
-          for t in "${tests[@]}"; do echo "--- $t"; node "$t"; done
-        shell: bash
+      - name: Test repo scripts and local plugin hooks
+        # The globs, their empty guard and their reasoning live in the script, so
+        # `regenerate` runs the same suite instead of a copy that drifts from it.
+        run: bash scripts/run-tests.sh
       - name: Check README catalog is in sync
         run: node scripts/gen-readme.js --check
       - name: Check every catalog path resolves at its pinned sha
