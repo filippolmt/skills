@@ -132,11 +132,20 @@ Hence a real identity on the push, which is where this started.
 
 ## Consequences
 
-- **`REGEN_TOKEN` has to exist, and has to be renewed.** Scope it to this
-  repository with `contents: write` and `pull-requests: write` — enough to push the
-  branch, open the PR and merge it, and nothing more. A fine-grained PAT expires;
-  when it does, `regenerate` fails on its first step with the secret's name. A
-  GitHub App installation token avoids the expiry at the cost of an app to own.
+- **`REGEN_TOKEN` has to exist.** A fine-grained PAT scoped to this repository with
+  `contents: write` and `pull-requests: write` — enough to push the branch, open
+  the PR and merge it, and nothing more. Minted with **no expiration**, by choice:
+  the alternative is a flow that stops dead on a date nobody remembers. The cost is
+  a standing credential, so what ends it is revocation rather than expiry, and the
+  job's first step fails by name either way. A GitHub App installation token is the
+  same trade with an app to own instead of a token to guard.
+- **It cannot be created from the CLI, and neither can the alternatives.** There is
+  no API that mints a PAT, and creating a GitHub App needs a browser too. The one
+  API-settable knob nearby does not apply:
+  `actions/permissions/fork-pr-contributor-approval` offers only
+  `first_time_contributors_new_to_github`, `first_time_contributors` and
+  `all_external_contributors` — no "never" — and it governs **fork** PRs, not a PR
+  from a branch in this repository. Measured, not assumed.
 - **`GITHUB_TOKEN` is down to `contents: read`.** It does none of the work, so it
   holds none of the permissions it used to: no `contents: write`, no
   `pull-requests: write`, no `actions: write`, no `statuses: write`.
