@@ -928,8 +928,8 @@
         "source": "git-subdir",
         "url": "https://github.com/pbakaus/impeccable",
         "path": "plugin",
-        "ref": "skill-v4.2.2",
-        "sha": "f64da20b07271b760e4e3133eef3b87942860f11"
+        "ref": "skill-v4.3.1",
+        "sha": "cd12f8660e2dde57b9615c8a6b8ea674101f9cfc"
       },
       "description": "Design fluency for frontend development. 1 skill with 23 commands (/impeccable polish, /impeccable audit, /impeccable critique, etc.) and curated anti-pattern detection."
     },
