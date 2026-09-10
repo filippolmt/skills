@@ -26,6 +26,13 @@
 // That is a choice of theirs, recorded and not fought: from then on the turn
 // applies the mode it classifies to and SUSPENDS the other one, in words.
 //
+// A DISPATCH TURN — a prompt whose leading token is a slash command other than a
+// mode or /carryover — carries a skill body, not a request. It routes on the WORK
+// the dispatched skill leads to and defers the invocation to the moment that work
+// starts. Classifying the dispatch itself read `/wayfinder:wayfinder 1 82` as
+// "anything else" and locked `caveman` into a context whose work was code
+// (ADR-0013).
+//
 // Why the veto left in 0.8.0 and came back in 0.10.0 is ADR-0001 and ADR-0006
 // (docs/adr/, marketplace root); ROUTING.md "History" has the short form.
 //
@@ -164,15 +171,30 @@ function forcedSwitch(mode, loaded) {
     'NO mode at all — plain writing, no `' + loaded + '` rules, no `' + mode + '` rules.';
 }
 
-// The classification rule itself. Needed EVERY turn: in `auto` the right mode
-// varies per request, so the choice is re-made even when nothing is reloaded.
-const CLASSIFY =
-  'MODE ROUTER — classify THIS request and keep EXACTLY ONE mode skill active ' +
-  '(never both), IN ADDITION to any other skill this turn dispatches:\n' +
+// The two rules both heads share. One place, because a wording drift between the
+// prose turn and the dispatch turn would route the same work two ways.
+const RULES =
   '- Coding task (writing/editing/refactoring/debugging code, writing tests, ' +
   'choosing a library or dependency, implementing) -> `ponytail`, not caveman.\n' +
   '- Anything else (explaining, answering, planning, discussing, docs) -> ' +
   '`caveman`, not ponytail.';
+
+// The classification rule itself. Needed EVERY turn: in `auto` the right mode
+// varies per request, so the choice is re-made even when nothing is reloaded.
+const CLASSIFY =
+  'MODE ROUTER — classify THIS request and keep EXACTLY ONE mode skill active ' +
+  '(never both), IN ADDITION to any other skill this turn dispatches:\n' + RULES;
+
+// A DISPATCH TURN: the prompt is a slash command, so what it carries is a skill
+// body, not a request. Classifying it routes on the wrong text — `/wayfinder 1
+// 82` reads as "anything else" and locks `caveman` into a context whose work
+// turns out to be code, which the veto then refuses (ADR-0013). So this head
+// points the classification at the WORK the dispatched skill leads to.
+const LAUNCH_CLASSIFY =
+  'MODE ROUTER — this prompt DISPATCHES a skill: classify the WORK that skill ' +
+  'leads to, never the dispatch. Loading it, its setup and its own questions are ' +
+  'not the work. Keep EXACTLY ONE mode skill active (never both), IN ADDITION to ' +
+  'the dispatched skill:\n' + RULES;
 
 // Emitted once per context, when the set is empty: nothing is loaded, so the
 // full rules go in. Later turns get the short form — PRECEDENCE is still in the
@@ -181,6 +203,15 @@ const RESET_TAIL =
   '\n' + PRECEDENCE + '\n' +
   'Invoke the chosen skill now (Skill tool, before responding): no mode skill is ' +
   'in this context.';
+
+// The empty-set tail of a dispatch turn. It defers the invocation instead of
+// dropping it: a slash command that does its work in the same turn still gets a
+// mode, one classified on the work rather than on the dispatch.
+const LAUNCH_TAIL =
+  '\n' + PRECEDENCE + '\n' +
+  'No mode skill is in this context. Do NOT invoke one for the dispatch: invoke ' +
+  'the mode (Skill tool) the moment the work starts — later in this turn if the ' +
+  'work runs here, otherwise on the turn that brings it.';
 
 function stateDir() {
   return process.env.XDG_STATE_HOME
@@ -539,6 +570,11 @@ const slashIsMode = skillToMode(slash) !== null;
 // half commands/carryover.md cannot carry — the skill list, keyed by a session id
 // the model does not know — and nothing about routing.
 const carryoverTurn = isCarryoverCommand(slash);
+// Any other slash command is a DISPATCH TURN: the prompt hands the model a skill
+// body, and the work it leads to is what the mode has to fit. The two exceptions
+// above never reach this flag — a mode slash silences the router, `/carryover`
+// owns its own branch — so every slash left is one that dispatches something.
+const launchTurn = slash !== null && !slashIsMode && !carryoverTurn;
 
 // A skill cannot be unloaded. The router keeps the second mode out (the switch
 // notice, then the veto), but a user-typed slash brings it in past both, and from
@@ -607,9 +643,9 @@ function switchClause(loaded, missing) {
     missing + '` rules.';
 }
 
-function invocationTail(loaded, cwd, sessionId) {
+function invocationTail(loaded, cwd, sessionId, launch) {
   if (loaded.length === 0) {
-    let tail = RESET_TAIL;
+    let tail = launch ? LAUNCH_TAIL : RESET_TAIL;
     // A note outlives the clear that consumed the context which wrote it —
     // but only for a day. Past the TTL it is likelier a note the model forgot to
     // delete than work still waiting, so it is not offered as current: the read
@@ -654,7 +690,8 @@ const out =
     ? (loaded.includes(mode) ? '' : loaded.length ? forcedSwitch(mode, loaded[0]) : forced(mode)) :
   // auto: always classify; the set decides what to say about invoking.
   slashIsMode ? '' :
-  CLASSIFY + invocationTail(loaded, input.cwd, input.session_id);
+  (launchTurn ? LAUNCH_CLASSIFY : CLASSIFY) +
+    invocationTail(loaded, input.cwd, input.session_id, launchTurn);
 
 if (out) process.stdout.write(out);
 process.exit(0);
