@@ -36,7 +36,8 @@ pollute this set.
 
 What the hook injects follows from the set, in three branches:
 
-- **Empty set** — the full rules plus "invoke now", and the announcement of a
+- **Empty set** — the full rules plus "invoke now" (on a **dispatch turn**,
+  "invoke when the work starts" — see *Slash commands*), and the announcement of a
   pending handoff note if one is waiting — unless this session is the one that
   wrote it ([`HANDOFF-NOTE.md`](HANDOFF-NOTE.md)).
 - **One mode loaded** — the short classification line, then: if the request
@@ -116,6 +117,10 @@ in words and works. What `0.7.0` got wrong and `0.10.0` keeps in check is the
 cost: its veto text was ~62% of every steady-state injection; the switch clause
 is a few lines, and the notice the user sees is one.
 
+`0.11.0` takes the **dispatch turn** out of the classification: a slash-command
+prompt carries a skill body and no request, so routing it picked the mode before
+the work was known (`docs/adr/0013-a-dispatch-turn-routes-the-work.md`).
+
 ### Contract this rests on
 
 `PostToolUse` firing for the built-in `Skill` tool, with `tool_input.skill`
@@ -160,16 +165,28 @@ depends on.
 
 ## Slash commands
 
-In `auto`, the hook classifies **slash-command prompts** too, so the mode fires
-alongside the dispatched skill (e.g. `/improve-codebase-architecture` → also
-`ponytail`). It stays silent only when the slash command **is** a mode skill
-(`/caveman`, `/ponytail`) — the user already picked one — or this plugin's
-`/carryover`, which gets the note's path and the skill list instead: that turn
-produces a file of imposed shape and no prose to style, so no mode is asked for.
-A **forced** mode is a standing choice and applies on every prompt regardless,
-with those same two exceptions — a context already holding the other mode, where
-it asks for the reset (above), and the `/carryover` turn, where a forced mode
-already loaded still applies but none is requested. `off` outranks
+A slash-command prompt is a **dispatch turn**: what it carries is a skill body,
+not a request. In `auto` the hook still routes it, but it points the
+classification at the **work the dispatched skill leads to** — loading the skill,
+its setup and its own questions are not the work — and **defers the invocation**:
+the mode is invoked the moment the work starts, later in the same turn when the
+skill does its work there, on a later turn when the work arrives then.
+
+Classifying the dispatch itself is what
+`docs/adr/0013-a-dispatch-turn-routes-the-work.md` retired:
+`/wayfinder:wayfinder 1 82` has no request in it, read as "anything else", and
+locked `caveman` into a context whose work was code — which the veto then refused,
+one turn after the router itself had asked for the wrong mode.
+
+The two exceptions are unchanged. The hook stays silent when the slash command
+**is** a mode skill (`/caveman`, `/ponytail`) — the user already picked one — and
+this plugin's `/carryover` gets the note's path and the skill list instead: that
+turn produces a file of imposed shape and no prose to style, so no mode is asked
+for. A **forced** mode is a standing choice and applies on every prompt
+regardless, the dispatch turn included — it classifies nothing, so it has nothing
+to get wrong — with those same two exceptions: a context already holding the
+other mode, where it asks for the reset (above), and the `/carryover` turn, where
+a forced mode already loaded still applies but none is requested. `off` outranks
 everything, `/carryover` included: it means inject nothing.
 
 ## Precedence over hard constraints
@@ -188,10 +205,13 @@ line — for **forced** modes too, since the hook can't detect the constraint.
 
 ## Spec-driven workflows
 
-Auto classifies the **launching** prompt of a multi-turn spec-driven workflow
-(openspec, bmad, …), but a single slash command spans later turns with no
-`UserPromptSubmit` to re-route — so the phase can't switch mid-workflow. For
-per-phase control, force the mode first — `ponytail` for the coding phase,
+The **launching** prompt of a multi-turn spec-driven workflow (openspec, bmad, …)
+is a dispatch turn, so auto routes it on the work rather than on the launch and
+the mode lands on the first phase that does any. What it cannot do is follow the
+phases: a single slash command spans later turns with no `UserPromptSubmit` to
+re-route, so the mode chosen for the analysis phase is still the one in the
+context when the coding phase starts, and there the veto is what the turn meets.
+For per-phase control, force the mode first — `ponytail` for the coding phase,
 `caveman` for analysis — then reset to `auto`. For direct prompts, the natural
 `/clear` between analysis and coding is what the switch notice recommends, and
 it re-classifies each phase from an empty set.

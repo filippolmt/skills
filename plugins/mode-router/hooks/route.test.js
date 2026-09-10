@@ -291,14 +291,46 @@ loadSkill('caveman');
 assert.match(prompt('explain this'), /Both `caveman` and `ponytail` are already/,
   'a second mode that did land is recorded, not hidden');
 
+// --- a DISPATCH turn routes the WORK, not the dispatch (ADR-0013) ---
+// `/wayfinder:wayfinder 1 82` carries a skill body and two numbers: nothing to
+// classify. Routed as a request it read "anything else", loaded `caveman`, and
+// the coding work that followed hit the veto. The turn is still routed — the head
+// points the classification at the work — and the invocation is deferred.
+run('SessionStart');
+out = prompt('/wayfinder:wayfinder 1 82');
+assert.match(out, /MODE ROUTER/, 'a dispatch turn is still routed');
+assert.match(out, /classify the WORK that skill\s+leads to, never the dispatch/,
+  'the classification is pointed at the work');
+assert.match(out, /Loading it, its setup and its own questions are\s+not the work/,
+  'the skill getting under way is not the work either');
+assert.doesNotMatch(out, /Invoke the chosen skill now/, 'no invocation is asked for on the dispatch');
+assert.match(out, /Do NOT invoke one for the dispatch/, 'and it says so');
+assert.match(out, /the moment the work starts/,
+  'deferred, not dropped: a slash command that works in this turn still gets a mode');
+assert.match(out, /Precedence:/, 'empty set => full precedence clause, dispatch turn included');
+assert.ok(out.includes('-> `ponytail`, not caveman.') && out.includes('`caveman`, not ponytail.'),
+  'both heads carry the same two rules');
+assert.match(prompt('/tdd'), /never the dispatch/, 'a bare slash dispatches too');
+assert.match(prompt('fix the parser'), /classify THIS request/, 'a prose prompt routes as before');
+// One mode loaded: the switch clause is unchanged, and the head keyed to the work
+// is what decides which side of it the turn falls on.
+loadSkill('caveman');
+out = prompt('/wayfinder:wayfinder 1 82');
+assert.match(out, /never the dispatch/, 'the head still points at the work');
+assert.match(out, /`caveman` is already in this context/, 'the loaded mode still owns the context');
+assert.doesNotMatch(out, /Precedence:/, 'steady state => precedence not repeated');
+
 // --- the veto reason stands alone: the MID-TURN ARRIVAL (ADR-0009) ---
 // The shape the denial actually takes in use, from two transcripts: a turn routed
 // from an EMPTY set is told to invoke, the model loads the mode it classified to,
 // then the work shifts and it reaches for the other one in the SAME turn. That
 // turn never saw a switch clause, so a reason deferring to "the routing text"
 // pointed at text asking for an invocation and left the turn with nothing.
+// The prompt here is prose, not the `/wayfinder:wayfinder 11` this test used to
+// drive: a dispatch turn no longer asks for the invocation (ADR-0013), and the
+// arrival this test is about needs a turn that does.
 run('SessionStart');
-out = prompt('/wayfinder:wayfinder 11');
+out = prompt('explain the parser, then fix it');
 assert.match(out, /Invoke the chosen skill now/, 'setup: an empty set asks for the invocation');
 loadSkill('caveman:caveman');
 const midTurn = JSON.parse(run('PreToolUse', { tool_name: 'Skill', tool_input: { skill: 'ponytail:ponytail' } }))
