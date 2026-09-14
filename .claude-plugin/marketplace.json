@@ -532,8 +532,8 @@
         "source": "git-subdir",
         "url": "https://github.com/dietrichgebert/ponytail",
         "path": "skills/ponytail",
-        "ref": "v4.9.0",
-        "sha": "0a4dd63ad4541f4f655c4108a295916f3c1d8fda"
+        "ref": "v4.10.0",
+        "sha": "1d95ff7d39de12d87014ea40d4e22201bddc501b"
       },
       "description": "Forces the laziest solution that actually works, simplest, shortest, most minimal."
     },
