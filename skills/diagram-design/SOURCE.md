@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/cathrynlavery/diagram-design/tree/ce9344c52cb9be811de187bf2a6d58c712c9c9fe/skills/diagram-design
-- **Commit**: `ce9344c52cb9be811de187bf2a6d58c712c9c9fe`
+- **Upstream**: https://github.com/cathrynlavery/diagram-design/tree/9874ad73813715fc36875e45afd9cd94c68f3c3f/skills/diagram-design
+- **Commit**: `9874ad73813715fc36875e45afd9cd94c68f3c3f`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `diagram-design` in `.claude-plugin/marketplace.json`
