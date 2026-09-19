@@ -83,6 +83,23 @@ def _cleanup_children() -> None:
 atexit.register(_cleanup_children)
 
 
+def parse_meta_ads_page(raw: str) -> str:
+    """Extract an Ad Library page id from a flag value, or "" if there is none.
+
+    Accepts a bare numeric id or any Ad Library URL carrying
+    ``view_all_page_id``. A ``facebook.com/<vanity>`` URL is deliberately
+    rejected rather than guessed at: a vanity handle is not a page id, and one
+    live check resolved a brand-looking handle to a private person's profile.
+    """
+    value = str(raw or "").strip()
+    if not value:
+        return ""
+    if re.fullmatch(r"\d{5,20}", value):
+        return value
+    match = re.search(r"view_all_page_id=(\d{5,20})", value)
+    return match.group(1) if match else ""
+
+
 def parse_search_flag(raw: str, flag_name: str = "--search") -> list[str]:
     sources = []
     for source in raw.split(","):
@@ -539,6 +556,17 @@ def comparison_topic(entity_reports: list[tuple[str, schema.Report]]) -> str:
     return " vs ".join(label for label, _ in entity_reports)
 
 
+def comparison_label_key(label: str) -> str:
+    """Normalize an entity label for duplicate detection.
+
+    Comparison labels double as keys in the fan-out's results dict, so two
+    entities differing only in case, surrounding space, or a repeated space
+    collide there while still looking distinct on the command line. Spaces
+    are collapsed, never stripped: "Open AI" stays distinct from "OpenAI".
+    """
+    return " ".join(label.split()).casefold()
+
+
 def compute_save_path_display(save_dir: str, topic: str, suffix: str, emit: str) -> str:
     """Compute the user-friendly save path string that will be shown in the footer.
 
@@ -832,6 +860,17 @@ def build_parser() -> argparse.ArgumentParser:
             "(--amazon-query='Weber grill', not 'Weber' -- a bare brand keyword lands "
             "on an ad-heavy page that can miss the brand's own bestsellers). "
             "Requires the brightdata CLI on PATH and logged in."
+        ),
+    )
+    parser.add_argument(
+        "--meta-ads-page",
+        help=(
+            "Meta Ad Library page id for the topic's advertiser, when the meta_ads "
+            "source is active. Skips name-based page resolution and its discovery "
+            "credit. Accepts a bare numeric page id (e.g. 123456789012345) or an Ad "
+            "Library URL carrying view_all_page_id. A facebook.com vanity URL is not "
+            "a page id and is rejected. Use it when a brand advertises under product "
+            "names, or when resolution picked the wrong company."
         ),
     )
     parser.add_argument(
@@ -3825,6 +3864,31 @@ def _main(
                     "or set INCLUDE_SOURCES=amazon. Ignoring the keyword.\n"
                 )
 
+        # Advertiser page override for the meta_ads source. Same shape as
+        # --amazon-query (config-carried, warn-not-activate) and for the same
+        # reason: the lane spends metered credits per call.
+        if getattr(args, "meta_ads_page", None):
+            page_id = parse_meta_ads_page(args.meta_ads_page)
+            if not page_id:
+                sys.stderr.write(
+                    "[Meta Ads] --meta-ads-page must be a numeric Ad Library page id "
+                    "or an Ad Library URL containing view_all_page_id; a facebook.com "
+                    "vanity URL is not a page id. Ignoring the override.\n"
+                )
+            else:
+                config["_meta_ads_page"] = page_id
+                _meta_ads_requested = (
+                    (requested_sources and "meta_ads" in requested_sources)
+                    or "meta_ads" in str(config.get("INCLUDE_SOURCES") or "").lower()
+                )
+                if not _meta_ads_requested:
+                    sys.stderr.write(
+                        "[Meta Ads] --meta-ads-page was set but the meta_ads source "
+                        "was not requested; add it to --search (e.g. --search "
+                        "reddit,x,meta_ads) or set INCLUDE_SOURCES=meta_ads. "
+                        "Ignoring the page.\n"
+                    )
+
         # vs-mode / plan routing: split a vs-topic into main + peers unless
         # discover-N or an explicit --competitors-list already decided who runs.
         topic, comp_enabled, comp_count, comp_explicit = apply_vs_competitor_routing(
@@ -3944,6 +4008,33 @@ def _main(
                     )
                     return 2
 
+            # run_competitor_fanout keys its results by label, so two
+            # submissions sharing one collapse to a single report while the
+            # returned list still carries two entries. That yields a
+            # comparison of an entity against itself, and it hides a failed
+            # main topic from the survivor check below: the duplicate peer's
+            # report answers for the label the main run was supposed to fill.
+            distinct_peers: list[str] = []
+            claimed_labels = {comparison_label_key(topic)}
+            for peer in discovered:
+                key = comparison_label_key(peer)
+                if key in claimed_labels:
+                    sys.stderr.write(
+                        f"[Competitors] Dropping {peer!r}: duplicates the main "
+                        "topic or an earlier peer.\n"
+                    )
+                    continue
+                claimed_labels.add(key)
+                distinct_peers.append(peer)
+            if not distinct_peers:
+                sys.stderr.write(
+                    f"[Competitors] No peer distinct from {topic!r} remains; "
+                    "there is nothing to compare against. Pass "
+                    "--competitors-list with distinct entities.\n"
+                )
+                return 2
+            discovered = distinct_peers
+
             sys.stderr.write(
                 f"[Competitors] Comparing: {topic} vs " + " vs ".join(discovered) + "\n"
             )
@@ -3961,6 +4052,9 @@ def _main(
                 # so each peer derives its own keyword from its own topic; a
                 # per-entity keyword can ride in the --competitors-plan entry.
                 entity_config.pop("_amazon_query", None)
+                # An advertiser page is per-entity state by definition: left in
+                # place it would render one brand's ads as every peer's.
+                entity_config.pop("_meta_ads_page", None)
                 plan_entry = comp_plan.get(entity.strip().lower(), {})
                 resolved = {
                     "entity": entity,
@@ -4049,6 +4143,25 @@ def _main(
                 competitors=discovered,
                 competitor_runner=_competitor_runner,
             )
+            # run_competitor_fanout drops a failed sub-run from the list, and
+            # the render takes entity_reports[0] as the comparison's subject.
+            # Without this check, a main topic that raised while >=2 peers
+            # succeeded silently promoted a competitor to be the subject: the
+            # report was headed by that peer, saved under its slug, and the
+            # topic the user actually asked about went unmentioned.
+            survived = {label for label, _ in entity_reports}
+            dropped = [
+                label for label in (topic, *discovered) if label not in survived
+            ]
+            if topic not in survived:
+                progress.end_processing()
+                sys.stderr.write(
+                    f"[Competitors] The main topic {topic!r} failed; "
+                    f"{len(entity_reports)} competitor sub-run(s) survived. "
+                    "Refusing to render a comparison headed by a competitor. "
+                    "Check the warnings above.\n"
+                )
+                return 1
             if len(entity_reports) < 2:
                 progress.end_processing()
                 sys.stderr.write(
@@ -4058,6 +4171,14 @@ def _main(
                 )
                 return 1
             report = entity_reports[0][1]
+            if dropped:
+                # A narrower comparison than the user asked for is a result
+                # they need to see, not a silent substitution.
+                report.warnings.append(
+                    "Comparison is incomplete: "
+                    f"{len(dropped)} of {len(discovered) + 1} entities failed and "
+                    f"were dropped ({', '.join(dropped)})."
+                )
         else:
             entity_reports = None
             report = _main_runner()
