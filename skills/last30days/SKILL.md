@@ -1,6 +1,6 @@
 ---
 name: last30days
-version: "3.24.0"
+version: "3.25.0"
 description: "Research what people actually say about any topic in the last 30 days. Pulls posts and engagement from Reddit, X, YouTube, TikTok, Hacker News, Polymarket, GitHub, and the web. Includes a doctor health check to diagnose broken or missing sources."
 argument-hint: 'last30days nvidia earnings reaction | last30days AI video tools | last30days what users want in react'
 allowed-tools: Bash, Read, Write, AskUserQuestion, WebSearch
@@ -303,10 +303,10 @@ After resolving host web search, run the first-run gate below before anything el
 grep -q "SETUP_COMPLETE=true" ~/.config/last30days/.env 2>/dev/null && echo "1" || echo "FIRST_RUN_DETECTED"
 ```
 
-This emits exactly one token: `1` or `FIRST_RUN_DETECTED`, never both.
+This emits exactly one token: `1` or `FIRST_RUN_DETECTED`, never both. The grep only sees `SETUP_COMPLETE` in the global `.env`; it does not see process env, project config, Keychain, pass, or host-provided auth.
 
 - Output is `1` → setup is complete. Continue to the branching rule below.
-- Output is `FIRST_RUN_DETECTED` → this is a first run. Jump immediately to `## Step 0: First-Run Setup Wizard` and complete it **before doing any topic research**. Do NOT proceed to Step 0.5, do NOT load WebSearch supplements, do NOT synthesize anything. The wizard installs yt-dlp (YouTube), the Digg CLI (via `npx`), and extracts browser cookies for X/Twitter and other sources. Skipping it produces a degraded WebSearch-only result that misrepresents the skill's capability to the user.
+- Output is `FIRST_RUN_DETECTED` → global `SETUP_COMPLETE` is unset. Jump immediately to `## Step 0: First-Run Setup Wizard`. That section decides first-run from every credential source without dumping files. A missing `.env` alone is not a first run. If Step 0 skips, continue to the branching rule. If Step 0 runs, complete it **before doing any topic research**. Do NOT proceed to Step 0.5, do NOT load WebSearch supplements, do NOT synthesize anything. The wizard installs yt-dlp (YouTube), the Digg CLI (via `npx`), and extracts browser cookies for X/Twitter and other sources. Skipping a true first run produces a degraded WebSearch-only result that misrepresents the skill's capability to the user.
 
 **Named failure mode (2026-06-22, first-run setup skip - Fredy Montero run):** Model read "proceed to Step 0.5" in the branching rule and jumped there directly, bypassing `## Step 0: First-Run Setup Wizard` at line ~339. Result: no browser cookie extraction, no yt-dlp, no Digg CLI install, WebSearch-only synthesis with no X/YouTube/TikTok data. Root cause: the branching rule named Step 0.5 as the next step without mentioning the wizard. Fix: this gate and the updated branching rule below.
 
@@ -415,7 +415,7 @@ If your Bash call to `last30days.py` does NOT include the FULL pre-flight checkl
 
 ---
 
-# last30days v3.24.0: Research Any Topic from the Last 30 Days
+# last30days v3.25.0: Research Any Topic from the Last 30 Days
 
 > **Permissions overview:** Reads public web/platform data and optionally saves research briefings to `LAST30DAYS_MEMORY_DIR` (defaults to `~/Documents/Last30Days`). X/Twitter search uses optional user-provided tokens (AUTH_TOKEN/CT0 env vars), an X API v2 app-only bearer (X_BEARER_TOKEN, sent only to api.x.com), or a host-provided `--x-posts` envelope the hosting model fetched through its own X connector. Bluesky search uses optional app password (BSKY_HANDLE/BSKY_APP_PASSWORD env vars - create at bsky.app/settings/app-passwords). On hosts with `uv` and no Python 3.12+, the preflight may install a uv-managed CPython 3.12 (one-time ~28MB download, announced on stderr). All credential usage and data writes are documented in the [Security & Permissions](#security--permissions) section.
 
@@ -527,7 +527,7 @@ Your host search is better than the engine's keyless web fallback, so this tells
 
 ## Configuration
 
-Set `LAST30DAYS_MEMORY_DIR` before invoking the skill to choose where raw research files are saved. If it is not set, the skill defaults to `~/Documents/Last30Days`. The SessionStart hook (`hooks/scripts/check-config.sh`) creates this directory automatically on every session start if it doesn't already exist - but the hook ships only with the Claude Code plugin install; on `npx skills` and other hookless installs there is no hook, and the engine creates the directory itself on first save.
+Set `LAST30DAYS_MEMORY_DIR` before invoking the skill to choose where raw research files are saved. If it is not set, the skill defaults to `~/Documents/Last30Days`. The engine creates this directory on first save.
 
 The engine reads `LAST30DAYS_MEMORY_DIR` from either the process env or `~/.config/last30days/.env`, so direct CLI invocations (`python3 scripts/last30days.py ...`) without `--save-dir` will still save when the env var is set. Mirrors the `LAST30DAYS_STORE` env-or-flag convention. Explicit `--save-dir` always wins.
 
@@ -546,6 +546,8 @@ When both `LAST30DAYS_API_KEY` and `LAST30DAYS_API_BASE` are set, the engine run
 **First-run detection (silent, no commands, no output to user):**
 - If `SETUP_COMPLETE=true` is available from process env, project config (`.claude/last30days.env`), global config (`~/.config/last30days/.env`), or the setup check reports configured credentials, skip Step 0 entirely and go to Step 1 (CRITICAL: Parse User Intent below). Do NOT announce that setup is complete. The user does not need a status message on every run.
 - Do NOT treat the absence of `~/.config/last30days/.env` alone as a first run. Credentials may live in process env, project config, macOS Keychain (`last30days-<KEY>`), pass(1), or host-provided auth.
+- Detect first-run from key presence and setup status, not by dumping files. Do not print `.env` contents or credential values.
+- `--preflight` is an opt-in inspector (what this run would read or write, ignored project config). Do not run it as a required first-run step.
 - If no setup marker or credential source is present, this is a first run.
 
 **Named onboarding contracts:**
@@ -615,7 +617,8 @@ Options:
    3. **Run `--github-poll`** (background with a 5-minute timeout, or foreground): `"${LAST30DAYS_PYTHON:-python3}" skills/last30days/scripts/last30days.py setup --github-poll`. Parse the **LAST** JSON line of its stdout for the final status:
       - `status == "success"`: the engine persisted the key (`"persisted": true`, MASKED `api_key` - never ask for or echo the raw key); confirm "You're in! 10,000 free calls. TikTok, Instagram, empty-path Reddit search backup, and YouTube transcript fallback are now active."
       - `status == "success"` but `"persisted": false` (key write failed): do NOT claim sources are active - tell the user signup worked but saving the key failed, and have them add `SCRAPECREATORS_API_KEY=<key>` to `~/.config/last30days/.env` manually.
-      - `status == "error"` **with `message == "Authorized but failed to fetch API key"`**: GitHub authorized fine - do NOT say auth failed. This usually means your GitHub is **already linked** to a ScrapeCreators account. Tell the user: "GitHub authorized, but I couldn't auto-grab your ScrapeCreators key - your GitHub is probably already linked to an account. Get your key at scrapecreators.com and paste it here, or Skip." Then accept a pasted key (write `SCRAPECREATORS_API_KEY` to `.env`) or offer the web/skip options.
+      - `status == "error"` **with `message == "Authorized but failed to fetch API key"`** (exact match; often also `"reason": "no_api_key"`): GitHub authorized fine - do NOT say auth failed. This usually means your GitHub is **already linked** to a ScrapeCreators account. Tell the user: "GitHub authorized, but I couldn't auto-grab your ScrapeCreators key - your GitHub is probably already linked to an account. Get your key at scrapecreators.com and paste it here, or Skip." Then accept a pasted key (write `SCRAPECREATORS_API_KEY` to `.env`) or offer the web/skip options.
+      - `status == "error"` **with `message` containing `ScrapeCreators profile failed`** (or `"reason": "upstream_error"`): GitHub authorized fine - do NOT say auth failed, and do **NOT** say the GitHub is already linked. ScrapeCreators returned a server error after auth. Tell the user: "GitHub authorized, but ScrapeCreators had a server error minting your key - this is on their side, not yours. Sign up or log in at scrapecreators.com, grab a key there, and paste it, or Skip / retry later." Accept a pasted key or offer web/skip. Do not imply they already have a working linked account.
       - `status == "timeout"`, or any other `status == "error"` message: show "GitHub auth didn't complete - no worries, sign up at scrapecreators.com or try again later," then offer the web option below.
    - **One-shot fallback:** hosts that prefer a single call can still run `setup --github` (foreground), which chains start+poll; tell the user first that a code will appear on their clipboard to paste.
 - "Open scrapecreators.com (Google sign-in)" - run `open https://scrapecreators.com` via Bash, then ask them to paste the API key. Write `SCRAPECREATORS_API_KEY={key}` to `~/.config/last30days/.env`.
@@ -655,27 +658,26 @@ For hosts without interactive modal prompts (OpenClaw, Codex, Cursor, Gemini CLI
 
 **1. Welcome.** Run `"${LAST30DAYS_PYTHON:-python3}" skills/last30days/scripts/last30days.py --welcome` and show its stdout to the user VERBATIM (do not summarize or reformat). The welcome is engine-owned so it renders the same everywhere.
 
-**2. Permission preflight.** Run `"${LAST30DAYS_PYTHON:-python3}" "${SKILL_DIR}/scripts/last30days.py" --preflight` using the directory of the `SKILL.md` you loaded, then summarize the human-readable result before setup: config source, project config trust/ignore state, planned browser-cookie mode, planned writes, optional commands, and active/ignored endpoint overrides. This is safe: it does not read browser-cookie values, does not write setup/config/report files, and does not run research. For Codex desktop and other folder-mode hosts, if hidden `.claude/last30days.env` project config is shown as ignored, tell the user it remains ignored unless `LAST30DAYS_TRUST_PROJECT_CONFIG=1` is set from the process environment or global config. Do not block normal research on missing optional commands; describe them as optional coverage.
-
-**3. Cookie consent (ask BEFORE reading anything).** First check if `BROWSER_CONSENT=true` already exists in `~/.config/last30days/.env` (e.g. granted in a prior Claude Code session); if so, skip this prompt and run `setup --allow-browser-cookies` directly. Otherwise ask. Example: `I can read your browser cookies to unlock X/Twitter and other logged-in sources - I check Chrome first (a one-time macOS Keychain prompt may appear; click Always Allow), then Firefox and Safari. Want me to? (yes / no)` **Wait for the answer.**
+**2. Cookie consent (ask BEFORE reading anything).** First check if `BROWSER_CONSENT=true` already exists in `~/.config/last30days/.env` (e.g. granted in a prior Claude Code session); if so, skip this prompt and run `setup --allow-browser-cookies` directly. Otherwise ask. Example: `I can read your browser cookies to unlock X/Twitter and other logged-in sources - I check Chrome first (a one-time macOS Keychain prompt may appear; click Always Allow), then Firefox and Safari. Want me to? (yes / no)` **Wait for the answer.**
    - On **yes** → run `"${LAST30DAYS_PYTHON:-python3}" skills/last30days/scripts/last30days.py setup --allow-browser-cookies` (and append `BROWSER_CONSENT=true` to `.env` after it completes). Extracts cookies (Chrome/Chromium family first via the Keychain with no Full Disk Access, then Firefox and Safari; only a Firefox/Safari winner is pinned for later runs, so Chrome never re-prompts) and best-effort installs yt-dlp (YouTube), the free keyless Digg CLI (`digg-pp-cli` via `@mvanhorn/printing-press-library install digg --cli-only`; activates only when on the agent subprocess PATH, typically `$HOME/.local/bin`; reports honestly if off-PATH; recommend-only if `npx` is unavailable), plus the free keyless arXiv and Techmeme CLIs.
      - **Extras hosts (Linux / Mac mini / Darwin agentcookie sink) — a MacBook SKIPS this, and so does a `LAST30DAYS_HOST=grok-bot` host.** On these hosts the Chrome cookie store can't be decrypted, so the extract above finds nothing and X stays empty unless you capture a LIVE login over CDP. Run `"${LAST30DAYS_PYTHON:-python3}" skills/last30days/scripts/box_chrome_login.py` (prints the host-correct command; `--exec` launches it; a MacBook prints "no launch needed" and spawns nothing). When `box-chrome` is on PATH it launches a throwaway profile on the last30days extras port **18800** (`SAND_CHROME_REMOTE_DEBUG_PORT=18800`, not box-chrome's default): `CHROME_USER_DATA_DIR=/tmp/last30days-x-chrome SAND_CHROME_REMOTE_DEBUG_PORT=18800 box-chrome --new-window https://x.com/login`. Wait for the x.com login page, then HAND THE DESKTOP to the human to type — do NOT drive the form. After they sign in, append `BROWSER_CDP_URL=http://127.0.0.1:18800` to `.env` (never `AUTH_TOKEN`/`CT0`; keep `AGENTCOOKIE=off` during the harvest) and re-run `setup --allow-browser-cookies`. Full steps and the block/rate-limit stop rule: **X on Linux / Mac mini** below. This extras-host login only runs on the consented **yes** path; a waiting topic never skips it when the user said yes to X.
-   - On **no** → run `FROM_BROWSER=off "${LAST30DAYS_PYTHON:-python3}" skills/last30days/scripts/last30days.py setup`. Skips all cookie reads; still installs yt-dlp (YouTube), Digg, arXiv, and Techmeme, still writes `SETUP_COMPLETE`. If the invocation already includes a topic, immediately research it with `--no-browser-cookies`, then resume the deferred onboarding in the same run after the findings: the ScrapeCreators offer (step 5) and source tier (step 5b) if a key is saved. Do not re-ask cookie consent as part of the resume.
+   - On **no** → run `FROM_BROWSER=off "${LAST30DAYS_PYTHON:-python3}" skills/last30days/scripts/last30days.py setup`. Skips all cookie reads; still installs yt-dlp (YouTube), Digg, arXiv, and Techmeme, still writes `SETUP_COMPLETE`. If the invocation already includes a topic, immediately research it with `--no-browser-cookies`, then resume the deferred onboarding in the same run after the findings: the ScrapeCreators offer (step 4) and source tier (step 4b) if a key is saved. Do not re-ask cookie consent as part of the resume.
 
-**4. Full Disk Access remediation (macOS only).** After `setup`, inspect stderr. If it contains `Permission denied reading Cookies.binarycookies` on macOS, surface: `macOS blocked the cookie read. To enable X/Twitter: System Settings > Privacy & Security > Full Disk Access > enable your terminal (or the Claude app), then I can retry.` Offer ONE retry only when no research topic is waiting. If a topic is already waiting or the user skips, continue immediately with available sources.
+**3. Full Disk Access remediation (macOS only).** After `setup`, inspect stderr. If it contains `Permission denied reading Cookies.binarycookies` on macOS, surface: `macOS blocked the cookie read. To enable X/Twitter: System Settings > Privacy & Security > Full Disk Access > enable your terminal (or the Claude app), then I can retry.` Offer ONE retry only when no research topic is waiting. If a topic is already waiting or the user skips, continue immediately with available sources.
 
-**5. ScrapeCreators signup offer (every first run, consent BEFORE launching the browser).** Explain it grants 10,000 free calls that add TikTok and Instagram, plus optional backups: Reddit search backfill when the free path returns no items (empty-only by default; thin-run / SC-primary are opt-in env knobs — see Reddit backend pin below), and a YouTube transcript fallback when yt-dlp is rate-limited or bot-gated. GitHub signup grants the full 10,000 free calls (more than the web form), and it opens a GitHub authorization page where you enter a short code. Ask, e.g.: `Want to unlock TikTok, Instagram, and more? I can sign you up for ScrapeCreators with GitHub (10,000 free calls, ~20-30s) - it opens a browser and you enter a short code. (yes / no)` **Wait for the answer.**
+**4. ScrapeCreators signup offer (every first run, consent BEFORE launching the browser).** Explain it grants 10,000 free calls that add TikTok and Instagram, plus optional backups: Reddit search backfill when the free path returns no items (empty-only by default; thin-run / SC-primary are opt-in env knobs — see Reddit backend pin below), and a YouTube transcript fallback when yt-dlp is rate-limited or bot-gated. GitHub signup grants the full 10,000 free calls (more than the web form), and it opens a GitHub authorization page where you enter a short code. Ask, e.g.: `Want to unlock TikTok, Instagram, and more? I can sign you up for ScrapeCreators with GitHub (10,000 free calls, ~20-30s) - it opens a browser and you enter a short code. (yes / no)` **Wait for the answer.**
    - On **yes** → two commands. FIRST run `"${LAST30DAYS_PYTHON:-python3}" skills/last30days/scripts/last30days.py setup --github-start` in the FOREGROUND - it returns in ~1-2s with a `Your GitHub code: XXXX-XXXX` line plus a JSON blob, copies the code to the clipboard, and opens the browser. Read the `user_code` from that output and immediately tell the user: the code, that it's on their clipboard so they can just paste it (Cmd+V) on the GitHub page - do not make them hunt for it. (If `status == "already_registered"`, stop here - their existing key is active. If the output said the clipboard copy failed, tell them to type the code.) THEN run `"${LAST30DAYS_PYTHON:-python3}" skills/last30days/scripts/last30days.py setup --github-poll` (background with a 5-min timeout, or foreground) and parse the **LAST** JSON line of its stdout for the final status. On success the engine persists the key automatically and returns `"persisted": true` with a MASKED `api_key` (never ask for or echo the raw key). Confirm the paid sources are active.
    - On **success but `"persisted": false`** (auth completed yet the key write failed) → do NOT claim sources are active. Tell the user signup worked but saving failed, and have them add `SCRAPECREATORS_API_KEY=<key>` to `~/.config/last30days/.env` manually (the raw key is masked in output, so re-run `setup --github` or retrieve it from scrapecreators.com to get the value).
-   - On **`status == "error"` with `message == "Authorized but failed to fetch API key"`** → GitHub authorized fine, so do NOT say auth failed. This usually means the GitHub account is already linked to a ScrapeCreators account. Tell the user: "GitHub authorized, but I couldn't auto-grab your ScrapeCreators key - your GitHub is probably already linked to an account. Get your key at scrapecreators.com and paste it, or Skip." Accept a pasted key or offer web/skip.
+   - On **`status == "error"` with `message == "Authorized but failed to fetch API key"`** (exact match; often `"reason": "no_api_key"`) → GitHub authorized fine, so do NOT say auth failed. This usually means the GitHub account is already linked to a ScrapeCreators account. Tell the user: "GitHub authorized, but I couldn't auto-grab your ScrapeCreators key - your GitHub is probably already linked to an account. Get your key at scrapecreators.com and paste it, or Skip." Accept a pasted key or offer web/skip.
+   - On **`status == "error"` with `message` containing `ScrapeCreators profile failed`** (or `"reason": "upstream_error"`) → GitHub authorized fine; do NOT say auth failed, and do **NOT** say the account is already linked. ScrapeCreators returned a server error after auth. Tell the user: "GitHub authorized, but ScrapeCreators had a server error minting your key - this is on their side, not yours. Sign up or log in at scrapecreators.com, grab a key there, and paste it, or Skip / retry later." Accept a pasted key or offer web/skip.
    - On **timeout, or any other error** → tell the user it didn't complete and offer to retry or the web signup at scrapecreators.com.
    - On **no** → note they can run it later by asking to set up ScrapeCreators, then continue.
 
-**5b. Source tier (only if a key was saved).** Comments are the default, never opt-in. Your key runs TikTok + Instagram posts AND top comments, plus YouTube comments. Reddit stays on the free keyless path (empty-only ScrapeCreators search backup; comments via shreddit). Ask whether they want the widest net, e.g.: `Recommended is TikTok + Instagram + all comments (posts and top comments for TikTok/Instagram plus YouTube comments). Or Everything - also Threads + Pinterest (more credits). (recommended / everything)` **Wait for the answer.**
+**4b. Source tier (only if a key was saved).** Comments are the default, never opt-in. Your key runs TikTok + Instagram posts AND top comments, plus YouTube comments. Reddit stays on the free keyless path (empty-only ScrapeCreators search backup; comments via shreddit). Ask whether they want the widest net, e.g.: `Recommended is TikTok + Instagram + all comments (posts and top comments for TikTok/Instagram plus YouTube comments). Or Everything - also Threads + Pinterest (more credits). (recommended / everything)` **Wait for the answer.**
    - On **recommended** → append `INCLUDE_SOURCES=tiktok,instagram,youtube_comments,tiktok_comments,instagram_comments` to `~/.config/last30days/.env` (include `tiktok,instagram` so they are not treated as excluded). Confirm posts + top comments for TikTok/Instagram/YouTube are on.
    - On **everything** → append `INCLUDE_SOURCES=tiktok,instagram,youtube_comments,tiktok_comments,instagram_comments,threads,pinterest`. Confirm Threads and Pinterest are on too.
 
-**6. Complete.** Once `SETUP_COMPLETE=true` is written, briefly confirm which sources are now active (read the `setup --github` JSON `persisted` field, re-run `--preflight` for a human permission summary, or re-run safe `--diagnose` for JSON) and proceed to research. For Codex desktop, Cursor, Gemini CLI, and raw folder-mode hosts, hidden `.claude/last30days.env` project config is ignored unless `LAST30DAYS_TRUST_PROJECT_CONFIG=1` is set from the process environment or global config; only report a project file as active when diagnose reports it as the config source.
+**5. Complete.** Once `SETUP_COMPLETE=true` is written, proceed to research. Setup stdout is what this run installed, not the runtime source list; the engine diagnostic at research confirmation is authoritative. For Codex desktop, Cursor, Gemini CLI, and raw folder-mode hosts, hidden `.claude/last30days.env` project config is ignored unless `LAST30DAYS_TRUST_PROJECT_CONFIG=1` is set from the process environment or global config; only report a project file as active when the engine reports it as the config source.
 
 ---
 
@@ -685,13 +687,11 @@ For a Grok Bot host. The Grok Bot host rule in HOW TO INVOKE applies throughout:
 
 **1. Host key + welcome.** Persist the host signal so later runs and `doctor` see it: if `~/.config/last30days/.env` is missing, `mkdir -p ~/.config/last30days && touch ~/.config/last30days/.env`; then append one line `LAST30DAYS_HOST=grok-bot` (append-only with `>>`; never `>`). Then run `"${LAST30DAYS_PYTHON:-python3}" "${SKILL_DIR}/scripts/last30days.py" --welcome` and show its stdout VERBATIM.
 
-**2. Permission preflight.** Run `"${LAST30DAYS_PYTHON:-python3}" "${SKILL_DIR}/scripts/last30days.py" --preflight` and summarize the human-readable result (config source, planned writes, optional commands). It reads nothing from a browser and runs no research.
+**2. X connector (primary - check this BEFORE offering any key).** Look for an X post-search tool from the X connector in this session: the "X for Grok Bot" plugin (search posts, read timelines, check mentions), for example `search_posts_all`. Any of its search tools counts; use the one that searches posts by query.
+   - **Present** → tell the user: `X search runs through your X connector on the credits included with Grok Bot, with full 30-day coverage - nothing to configure.` Export `LAST30DAYS_X_HOST_LANE=1` next to `LAST30DAYS_HOST=grok-bot` in every engine shell for this session, and on every research run follow the X connector recipe in Research Execution: one `topic` call sized 10 / 30 / 60 by depth (`--quick` / default / `--deep`) with `-is:retweet` and the window; per `--x-handle`, a `from` call of 8 and a `mention` call of 5; per `--x-related` handle, a `related` call of 3; written to a `last30days-x-posts/1` envelope (`generated_at`, `topic`, `window`, `status`, `calls` tagged `topic` / `from` / `mention` / `related`, each post exactly `id`, `author_handle`, `created_at`, `text`, `likes`, `reposts`, `replies`, `quotes` and nothing else); if the tool rejects the window or count parameters, omit them and write `status: partial` with `error: window-unsupported`; pass the file as `--x-posts <file>`. Skip step 3.
+   - **Absent** → continue to step 3.
 
-**3. X connector (primary - check this BEFORE offering any key).** Look for an X post-search tool from the X connector in this session: the "X for Grok Bot" plugin (search posts, read timelines, check mentions), for example `search_posts_all`. Any of its search tools counts; use the one that searches posts by query.
-   - **Present** → tell the user: `X search runs through your X connector on the credits included with Grok Bot, with full 30-day coverage - nothing to configure.` Export `LAST30DAYS_X_HOST_LANE=1` next to `LAST30DAYS_HOST=grok-bot` in every engine shell for this session, and on every research run follow the X connector recipe in Research Execution: one `topic` call sized 10 / 30 / 60 by depth (`--quick` / default / `--deep`) with `-is:retweet` and the window; per `--x-handle`, a `from` call of 8 and a `mention` call of 5; per `--x-related` handle, a `related` call of 3; written to a `last30days-x-posts/1` envelope (`generated_at`, `topic`, `window`, `status`, `calls` tagged `topic` / `from` / `mention` / `related`, each post exactly `id`, `author_handle`, `created_at`, `text`, `likes`, `reposts`, `replies`, `quotes` and nothing else); if the tool rejects the window or count parameters, omit them and write `status: partial` with `error: window-unsupported`; pass the file as `--x-posts <file>`. Skip step 4.
-   - **Absent** → continue to step 4.
-
-**4. Backup key (only when the connector is absent).** Say, then WAIT: `This session has no X connector, so X needs a key. Best fix: add the "X for Grok Bot" plugin and connect X inside Grok Bot (it provisions an X developer account for you, with credits included). Otherwise paste an X_BEARER_TOKEN from the X developer console - recent posts, about the last week, unless your X developer project has full-archive access - or an XAI_API_KEY from console.x.ai. Or skip X for now. (bearer / xai / skip)`
+**3. Backup key (only when the connector is absent).** Say, then WAIT: `This session has no X connector, so X needs a key. Best fix: add the "X for Grok Bot" plugin and connect X inside Grok Bot (it provisions an X developer account for you, with credits included). Otherwise paste an X_BEARER_TOKEN from the X developer console - recent posts, about the last week, unless your X developer project has full-archive access - or an XAI_API_KEY from console.x.ai. Or skip X for now. (bearer / xai / skip)`
    - On a pasted key → persist it ONLY through the engine's key-write path, feeding stdin from a single-quoted heredoc. Never an ad-hoc shell write of the value, never interpolate it into a command line:
 
      ```bash
@@ -701,13 +701,13 @@ For a Grok Bot host. The Grok Bot host rule in HOW TO INVOKE applies throughout:
      ```
 
      Use `setup --store-key XAI_API_KEY` for an xAI key. The engine prints `X_BEARER_TOKEN=****` (or `XAI_API_KEY=****`) plus a JSON `persisted` line; never echo the value back, and confirm only in the masked `NAME=****` form. Running it again with a new value replaces the stored one (that is how a rejected key is rotated). A `"persisted": false` means the write failed: say so and do not claim X is active.
-   - On **skip** → append `X_DECLINED=grok-bot` to `~/.config/last30days/.env` (append-only) so later runs stay quiet about X: no unlock pitch, no second key question. If the invocation already includes a topic, research it right after step 5 and resume steps 6-7 after the findings.
+   - On **skip** → append `X_DECLINED=grok-bot` to `~/.config/last30days/.env` (append-only) so later runs stay quiet about X: no unlock pitch, no second key question. If the invocation already includes a topic, research it right after step 4 and resume steps 5-6 after the findings.
 
-**5. Setup (free CLIs, no browser reads).** Run `"${LAST30DAYS_PYTHON:-python3}" "${SKILL_DIR}/scripts/last30days.py" setup` (the plain form; on this host it reads nothing from a browser). It best-effort installs yt-dlp (YouTube), the Digg CLI, arXiv, and Techmeme and writes `SETUP_COMPLETE=true`. Show what was installed, including whether Digg landed on PATH.
+**4. Setup (free CLIs, no browser reads).** Run `"${LAST30DAYS_PYTHON:-python3}" "${SKILL_DIR}/scripts/last30days.py" setup` (the plain form; on this host it reads nothing from a browser). It best-effort installs yt-dlp (YouTube), the Digg CLI, arXiv, and Techmeme and writes `SETUP_COMPLETE=true`. Show what was installed, including whether Digg landed on PATH.
 
-**6. ScrapeCreators offer and source tier.** Run steps 5 and 5b of the Non-Modal Prose Flow exactly as written there (GitHub device-code signup with `setup --github-start` then `setup --github-poll`; the engine persists the key and masks it).
+**5. ScrapeCreators offer and source tier.** Run steps 4 and 4b of the Non-Modal Prose Flow exactly as written there (GitHub device-code signup with `setup --github-start` then `setup --github-poll`; the engine persists the key and masks it).
 
-**7. Complete.** Confirm `SETUP_COMPLETE=true` is in `~/.config/last30days/.env` (append it if `setup` did not run), briefly confirm which sources are active (re-run `--preflight`, or safe `--diagnose`, with the host signal and, when the connector is present, `LAST30DAYS_X_HOST_LANE=1` exported; `--diagnose` then lists `x` as served by the connector), and proceed to research.
+**6. Complete.** Confirm `SETUP_COMPLETE=true` is in `~/.config/last30days/.env` (append it if `setup` did not run) and proceed to research (with the host signal and, when the connector is present, `LAST30DAYS_X_HOST_LANE=1` exported). Setup stdout is what this run installed, not the runtime source list; the engine diagnostic at research confirmation is authoritative.
 
 ---
 
@@ -759,7 +759,7 @@ The magic of /last30days is Reddit comments + X posts together - and both are fr
 
 **Bonus: TikTok, Instagram, YouTube comments (ScrapeCreators):**
 - `SCRAPECREATORS_API_KEY=xxx` - 10,000 free calls at scrapecreators.com.
-- After adding your key, set `INCLUDE_SOURCES=tiktok,instagram` to turn on the popular ones. (Threads, Pinterest, and LinkedIn are also available via `INCLUDE_SOURCES=threads,pinterest,linkedin` for power users.)
+- After adding your key, set `INCLUDE_SOURCES=tiktok,instagram` to turn on the popular ones. (Threads, Pinterest, LinkedIn, and Meta Ads are also available via `INCLUDE_SOURCES=threads,pinterest,linkedin,meta_ads` for power users.)
 
 **Other optional sources (add anytime):**
 - `PERPLEXITY_API_KEY=xxx` - preferred Agent/Search API path with citations; set `INCLUDE_SOURCES=perplexity`. Existing `OPENROUTER_API_KEY` installs keep the synchronous Sonar fallback.
@@ -822,7 +822,7 @@ SKILL_DIR="<absolute path of the directory containing the SKILL.md you just Read
 "${LAST30DAYS_PYTHON}" "${SKILL_DIR}/scripts/last30days.py" --diagnose
 ```
 
-`--diagnose` prints JSON. `ACTIVE_SOURCES_LIST` is its `available_sources` array — the engine's authoritative source set, computed after credential resolution. Map the tokens to display names: `reddit`→Reddit, `hackernews`→Hacker News, `polymarket`→Polymarket, `github`→GitHub, `digg`→Digg, `x`→X, `youtube`→YouTube, `tiktok`→TikTok, `instagram`→Instagram, `threads`→Threads, `pinterest`→Pinterest, `linkedin`→LinkedIn, `bluesky`→Bluesky, `perplexity`→Perplexity, `grounding`→Web, `jobs`→Jobs, `corpus`→Your files, `dripstack`→DripStack.
+`--diagnose` prints JSON. `ACTIVE_SOURCES_LIST` is its `available_sources` array — the engine's authoritative source set, computed after credential resolution. Map the tokens to display names: `reddit`→Reddit, `hackernews`→Hacker News, `polymarket`→Polymarket, `github`→GitHub, `digg`→Digg, `x`→X, `youtube`→YouTube, `tiktok`→TikTok, `instagram`→Instagram, `threads`→Threads, `pinterest`→Pinterest, `linkedin`→LinkedIn, `bluesky`→Bluesky, `perplexity`→Perplexity, `grounding`→Web, `jobs`→Jobs, `meta_ads`→Meta Ads, `corpus`→Your files, `dripstack`→DripStack.
 
 - If EXCLUDE_SOURCES is set (comma-separated, case-insensitive): drop any matching source from ACTIVE_SOURCES_LIST before displaying
 
@@ -925,6 +925,7 @@ Before running the engine, determine which flags apply to this topic and resolve
 | `--github-repo={owner/repo}` | Step 0.5c | Topic is a product / project / open-source tool |
 | `--trustpilot-domain={domain}` | Step 0.5d | Topic is a company / brand / service with a Trustpilot presence (passing the flag also auto-activates the opt-in Trustpilot source for this run) |
 | `--amazon-query={keyword}` | Step 0.5e | Recent buyer sentiment would materially inform the report AND `brightdata` is on PATH and logged in. Keyword is brand-plus-category (`Weber grill`), and for a person topic it is their company's product line (`June Oven`), not their name. Also add `amazon` to `--search` |
+| `--meta-ads-page={page_id}` | Step 0.5f | Name-based advertiser resolution picked the wrong company, or the brand advertises only under product-line page names. Accepts a numeric Ad Library page id or an Ad Library URL with `view_all_page_id`; a facebook.com vanity URL is not a page id. Also add `meta_ads` to `--search` |
 | `--subreddits={sub1,sub2,...}` | Step 0.55 | Always — almost every topic has active Reddit communities |
 | `--tiktok-hashtags={h1,h2,...}` | Step 0.55 | Always — inferred from topic |
 | `--tiktok-creators={c1,c2,...}` | Step 0.55 | Creator / influencer / brand topics |
@@ -1111,6 +1112,37 @@ Store: `RESOLVED_TRUSTPILOT_DOMAIN = {domain or empty}`
 Store: `AMAZON_QUERY = {product keyword or empty}` — pass as `--amazon-query="{AMAZON_QUERY}"` and add `amazon` to `--search`.
 
 **Skip this step if:** the CLI is unavailable, the topic has no consumer-product dimension, or the user set `EXCLUDE_SOURCES=amazon`.
+
+---
+
+### Step 0.5f: Decide the Meta Ads Lane (if a ScrapeCreators key is set)
+
+**Availability first.** This lane exists only when `SCRAPECREATORS_API_KEY` is configured (`--diagnose` reports `has_scrapecreators`). Without it the source does not exist, nothing changes, and you should skip this step entirely — do not mention it, do not suggest signing up mid-run.
+
+**The one question to ask:** *is there a brand here whose own paid message is evidence?* This lane answers "what is this company paying to say right now" — its live creatives, the products it is pushing, the promo codes it is running, and what its video ads say out loud. It is not a conversation source: nothing here is what people think about the brand, only what the brand is telling them.
+
+| Topic | Fires? | Why |
+|---|---|---|
+| A consumer-brand topic | Yes — the brand's own campaign is first-party evidence | Paid message next to customer reaction |
+| A retailer or membership warehouse | Yes — current promotions and seasonal push | Live offers are the story |
+| A direct-to-consumer startup | Yes — positioning shows up in ad copy first | Often the earliest signal of a repositioning |
+| A person, an executive, a creator | No — people do not run Ad Library campaigns | Their company might; use the company as the topic |
+| An AI tool, a framework, a developer product | No — resolution returns unrelated advertisers | A live check on one such topic returned 1,467 wrong-entity ads |
+| A news, politics, or culture topic | No — nothing to resolve | The lane ends unresolved and spends a credit finding that out |
+
+**Three mechanics that matter:**
+
+1. **Resolution can pick the wrong company, and the footer tells you when it did.** The lane resolves the advertiser page by name from an ad search. The 📣 footer line always names the page it resolved, and says `matched by partial name` when it fell back to the weakest match, so check it. If the advertiser is not the brand you meant, find the real page id and re-run with `--meta-ads-page`: `WebSearch("{TOPIC} facebook ad library")`, open the Ad Library result, and take the digits from its `view_all_page_id=` parameter. A `facebook.com/<name>` vanity URL is not a page id and the flag rejects it.
+2. **A brand that advertises under product-line names still resolves.** Matching works in both directions, so an umbrella topic finds a product-named page and vice versa. What does not resolve is a brand whose pages share no word with the topic; that is the override's main use.
+3. **The window means launched, not running.** Items are creatives that *started* inside the last 30 days. Long-running creatives from before are counted on the footer but never ranked, because "still advertising" is not news and "just launched this" is.
+
+**`--search` is replace-not-add.** Passing `--search` narrows the run to exactly the sources listed, so include the full intended set: `--search reddit,x,youtube,meta_ads` — never a bare `--search meta_ads`, which would silently drop every other source.
+
+**Cost and latency, so you can set expectations:** one or two credits to resolve the advertiser (a second only when the first search finds no name match), up to two more for its creatives, and up to three for video transcripts — at most seven per default-depth run against a 10,000-call free tier. Transcripts add roughly 15 to 45 seconds. Quick depth pulls no transcripts at all, though it still spends the resolve and one page.
+
+Store: `META_ADS_PAGE = {page id or empty}` — add `meta_ads` to `--search`, and pass `--meta-ads-page="{META_ADS_PAGE}"` only when you have a page id.
+
+**Skip this step if:** no ScrapeCreators key is set, the topic has no brand whose advertising is evidence, or the user set `EXCLUDE_SOURCES=meta_ads`.
 
 ---
 
@@ -1466,7 +1498,7 @@ Only show lines for platforms where something was resolved. Skip empty lines. On
 - For how_to: prioritize YouTube (tutorials) and Reddit (guides)
 - Primary subquery weight = 1.0, secondary = 0.6-0.8, peripheral = 0.3-0.5
 
-**Available sources (include every active one in the primary subquery):** use the engine's `ACTIVE_SOURCES_LIST`. The normal candidates are reddit, x, youtube, tiktok, instagram, hackernews, and polymarket; X remains part of the normal set when active and is simply omitted when unavailable. Optional: bluesky, truthsocial, threads, pinterest, grounding (web search - only if user has Brave/Exa/Serper key), digg (Digg clusters - only if `digg-pp-cli` is on PATH), amazon (buyer reviews - only if `brightdata` is on PATH and logged in; see Step 0.5e)
+**Available sources (include every active one in the primary subquery):** use the engine's `ACTIVE_SOURCES_LIST`. The normal candidates are reddit, x, youtube, tiktok, instagram, hackernews, and polymarket; X remains part of the normal set when active and is simply omitted when unavailable. Optional: bluesky, truthsocial, threads, pinterest, grounding (web search - only if user has Brave/Exa/Serper key), digg (Digg clusters - only if `digg-pp-cli` is on PATH), amazon (buyer reviews - only if `brightdata` is on PATH and logged in; see Step 0.5e), meta_ads (a brand's live Meta ad creatives - only if `SCRAPECREATORS_API_KEY` is set and the topic is a brand; see Step 0.5f)
 
 **Intent → freshness_mode mapping:**
 - breaking_news, prediction → `strict_recent`
@@ -2374,7 +2406,7 @@ Want another prompt? Just tell me what you're creating next.
 - Saves research briefings as .md files to `LAST30DAYS_MEMORY_DIR` (defaults to `~/Documents/Last30Days`)
 - Generates a local `index.html`, Atom `feed.xml`, and rendered brief pages from saved research when the user asks for the library feed
 - Publishes the library, feed, and referenced briefs to `ht-ml.app` only after explicit opt-in; hosted pages are public by default unless the user chooses password protection
-- Provides `--preflight` for a safe human-readable permission summary before research; it does not read browser-cookie values, write files, or run live research
+- Provides `--preflight` as an opt-in permission inspector (config source, planned writes, available sources); it does not read browser-cookie values, write files, or run live research. Do not run it as a required first-run step.
 
 **What this skill does NOT do:**
 - Does not post, like, or modify content on any platform
