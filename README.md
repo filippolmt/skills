@@ -143,25 +143,44 @@ git clone https://github.com/filippolmt/skills.git
 ln -s "$PWD/skills/skills" ~/.agents/skills
 ```
 
-**As a pi package**, which is what `pi update` refreshes:
+**As a pi package:**
 
 ```
 pi install git:github.com/filippolmt/skills
-pi update
+pi update --extensions
 ```
 
-Deliberately with **no** `@ref`: any ref makes a pi source *pinned*, and a pinned
-source is never advanced. Per project instead of globally, add it to that repo's
-`.pi/settings.json` — pi installs a project's packages on startup once the project
-is trusted:
+The second command updates all installed packages; pi does not update an existing
+package at startup. Deliberately install this one with **no** `@ref`: any ref makes
+a pi source *pinned*, so even an explicit update never advances it. Use `pi list`
+to inspect installed packages.
+
+Per project instead of globally, add it to that repo's `.pi/settings.json` — pi
+installs a missing project package on startup once the project is trusted, but
+still leaves later updates explicit:
 
 ```json
 { "packages": [{ "source": "git:github.com/filippolmt/skills" }] }
 ```
 
-**Turning individual skills off.** Everything is enabled by default. In pi, filter
-the package in `~/.pi/agent/settings.json` (globs, `!` to exclude, `+`/`-` to
-override), or run `pi config`:
+To schedule updates, have cron, launchd or your system scheduler run the same
+`pi update --extensions` command. Use the absolute path reported by
+`command -v pi`; the repository cannot safely opt a user's machine into
+background network access.
+
+**Selecting individual skills.** Everything is enabled by default. Run `pi config`
+for an interactive picker, or filter the package in
+`~/.pi/agent/settings.json`. An include-only profile names just the skills it
+needs:
+
+```json
+{ "packages": [{ "source": "git:github.com/filippolmt/skills",
+                 "skills": ["skills/code-review/SKILL.md",
+                            "skills/tdd/SKILL.md"] }] }
+```
+
+Globs, `!` exclusions and `+`/`-` exact-path overrides are also supported. For
+example, load everything except a mode you do not use:
 
 ```json
 { "packages": [{ "source": "git:github.com/filippolmt/skills",

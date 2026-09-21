@@ -73,10 +73,11 @@ pinned: Boolean(ref)
 // so include them to reconcile an existing clone when the configured ref changes.
 ```
 
-Any ref at all — branch, tag or commit — makes a pi source *pinned*, and `pi update`
-never moves a pinned source forward. Only a **ref-less source** tracks `origin/HEAD`,
-which is the **default branch**. A release branch as a ref would therefore never
-auto-update. The noise is isolated by *when* generation runs instead: Renovate's PR
+Any ref at all — branch, tag or commit — makes a pi source *pinned*.
+`pi update --extensions` never moves a pinned source forward. Only a
+**ref-less source** tracks `origin/HEAD`, which is the **default branch**. A release
+branch as a ref would therefore never advance during an explicit package update.
+The noise is isolated by *when* generation runs instead: Renovate's PR
 stays the one-line `sha` change it is today, and regeneration lands afterwards in its
 own `chore: regenerate skills tree` PR.
 
@@ -90,7 +91,8 @@ in the regeneration job, where a stale tree is the signal to act on.
 **How it is consumed.**
 
 - **pi, globally**: `pi install git:github.com/filippolmt/skills` — deliberately with
-  no ref, so `pi update` moves it.
+  no ref, so an explicit `pi update --extensions` moves it. Existing packages are
+  not updated automatically at startup.
 - **pi, per project**: a `.pi/settings.json` committed in the consuming repository.
   pi auto-installs a project's packages on startup once the project is trusted, which
   is the closest thing it has to Claude's `enabledPlugins`.
