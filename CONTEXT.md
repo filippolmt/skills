@@ -77,7 +77,8 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **pi package** — this repository installed whole, as one unit. There is exactly
   one, never one per entry, because pi has no per-subdirectory source.
 - **Ref-less source** — a pi package source carrying no `ref`. The only shape that
-  auto-updates, and the reason the skills tree lives on `main`.
+  an explicit `pi update --extensions` advances, and the reason the skills tree
+  lives on `main`; pi does not update existing packages at startup.
 - **Convention directory** — `skills/` at the root of a pi package, served with no
   manifest field naming it. Where the skills tree lives, and the reason this repo
   needs no `package.json`.
