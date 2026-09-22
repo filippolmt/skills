@@ -1,6 +1,6 @@
 ---
 name: add-external-skill
-description: Add or update external skills in this marketplace as git-subdir entries and keep the README catalog in sync. Usage: /add-external-skill <owner/repo> [path] [name] | /add-external-skill update
+description: "Add or update external skills in this marketplace as git-subdir entries and keep the README catalog in sync. Usage: /add-external-skill <owner/repo> [path] [name] | /add-external-skill update"
 disable-model-invocation: true
 ---
 
