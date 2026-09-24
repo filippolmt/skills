@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/Leonxlnx/taste-skill/tree/5217fb45be2c0b302f29c9cd31cbd3237501c684/skills/soft-skill
-- **Commit**: `5217fb45be2c0b302f29c9cd31cbd3237501c684`
+- **Upstream**: https://github.com/Leonxlnx/taste-skill/tree/c184364c58658b2f131b4ae8bd3d206cabb3deee/skills/soft-skill
+- **Commit**: `c184364c58658b2f131b4ae8bd3d206cabb3deee`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `soft-skill` in `.claude-plugin/marketplace.json`
