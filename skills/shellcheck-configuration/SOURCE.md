@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/wshobson/agents/tree/4236bb91f8395b0435f1d8b8baf9e8e4c69a8620/plugins/shell-scripting/skills/shellcheck-configuration
-- **Commit**: `4236bb91f8395b0435f1d8b8baf9e8e4c69a8620`
+- **Upstream**: https://github.com/wshobson/agents/tree/6161de4da8164795bc1128e8888c5054a5b67ddf/plugins/shell-scripting/skills/shellcheck-configuration
+- **Commit**: `6161de4da8164795bc1128e8888c5054a5b67ddf`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `shell-scripting` in `.claude-plugin/marketplace.json`
