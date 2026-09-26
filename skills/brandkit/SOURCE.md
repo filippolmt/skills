@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/Leonxlnx/taste-skill/tree/c184364c58658b2f131b4ae8bd3d206cabb3deee/skills/brandkit
-- **Commit**: `c184364c58658b2f131b4ae8bd3d206cabb3deee`
+- **Upstream**: https://github.com/Leonxlnx/taste-skill/tree/ce26fc25c0e5e8cab638f883de62d9a86ee5e45b/skills/brandkit
+- **Commit**: `ce26fc25c0e5e8cab638f883de62d9a86ee5e45b`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `brandkit` in `.claude-plugin/marketplace.json`
