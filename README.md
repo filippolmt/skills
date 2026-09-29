@@ -71,7 +71,7 @@ report back on their own.
 
 **A skill invokes sibling skills at runtime.** `grill-with-docs` calls `grilling`
 and `domain-modeling`, `implement` calls `tdd` and `code-review`,
-`printing-press` calls five siblings. Install the skill by itself and those calls
+`printing-press` calls three siblings. Install the skill by itself and those calls
 find nothing — no error, just a skill quietly doing less than it says.
 
 Where a bundle exists, reach for it rather than the bare skill:
@@ -84,7 +84,7 @@ Where a bundle exists, reach for it rather than the bare skill:
 | Bundle | What it installs with it |
 |---|---|
 | `improve-codebase-architecture-bundle` | `improve-codebase-architecture`, `grilling`, `codebase-design`, `domain-modeling`, `agent-report-guard` |
-| `printing-press-bundle` | `printing-press`, `printing-press-polish`, `printing-press-score`, `printing-press-retro`, `printing-press-publish`, `printing-press-output-review`, `agent-report-guard` |
+| `printing-press-bundle` | `printing-press`, `printing-press-polish`, `printing-press-score`, `printing-press-output-review`, `printing-press-reprint`, `agent-report-guard` |
 | `code-review-bundle` | `code-review`, `agent-report-guard` |
 | `implement-bundle` | `implement`, `tdd`, `code-review`, `agent-report-guard` |
 | `triage-bundle` | `triage`, `grilling`, `domain-modeling` |
@@ -263,6 +263,7 @@ Snapshot of the catalog — the source of truth is
 | `teach` | Teach the user a new skill or concept, within this workspace. |
 | `writing-for-agents` | Writing documents for agents. Use when creating or editing skills, or modifying AGENTS.md or CLAUDE.md. |
 | `to-questionnaire` | Turn a decision you can't fully answer into a questionnaire for someone else to fill in. |
+| `wait-what` | Stop. That last message did not land — re-pitch it. |
 | `setup-pre-commit` | Set up Husky pre-commit hooks with lint-staged (Prettier), type checking, and tests in the current repo. |
 | `git-guardrails-claude-code` | Set up Claude Code hooks to block dangerous git commands (push, reset --hard, clean, branch -D, etc.) before they execute. |
 
@@ -292,8 +293,7 @@ Snapshot of the catalog — the source of truth is
 | `printing-press-polish` | Polish a generated CLI to pass verification and become publish-ready: runs diagnostics (dogfood, verify, scorecard, go vet, gosec), auto-fixes issues, and reports the before/after delta. |
 | `printing-press-score` | Score a generated CLI against the Steinberger bar, or compare two CLIs side-by-side. |
 | `printing-press-output-review` | Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use. |
-| `printing-press-retro` | Run a retrospective after a printed-CLI run: surface systemic gaps (generator misses, scorer bugs, skill-doc drift) and file them upstream for the Printing Press maintainers. |
-| `printing-press-publish` | Publish a generated CLI to the public printing-press-library repo by opening a pull request. |
+| `printing-press-reprint` | Regenerate an existing printed CLI from scratch under the current Printing Press, carrying prior research, novel features, and patches into the new run. |
 
 ### [wshobson/agents](https://github.com/wshobson/agents) — backend scaffolding
 
@@ -358,6 +358,7 @@ Snapshot of the catalog — the source of truth is
 | `web-perf` | Analyze web performance via Chrome DevTools MCP — Core Web Vitals, render-blocking resources, layout shifts, and caching. |
 | `workers-best-practices` | Review and author Cloudflare Workers code against production best practices and common anti-patterns. |
 | `wrangler` | Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets. |
+| `nextjs-on-cloudflare` | Build, migrate, and deploy Next.js apps on Cloudflare Workers with vinext. |
 
 ### [pbakaus/impeccable](https://github.com/pbakaus/impeccable) — frontend design fluency
 

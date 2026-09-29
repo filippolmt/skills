@@ -16,6 +16,15 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Whole-plugin entry** — a git-subdir entry whose `path` points at an upstream
   plugin root (its own `.claude-plugin/plugin.json`); installing it brings every
   bundled skill and subagent at once.
+- **Whole source** — a git-subdir source repo whose every skill is catalogued: a
+  new upstream skill gets an entry unless it is a **catalog exclusion**
+  (`docs/adr/0014-each-source-repo-is-whole-or-curated.md`, which classifies
+  each repo).
+- **Curated source** — a git-subdir source repo whose skills are picked by hand: a
+  new upstream skill is reported, never added.
+- **Catalog exclusion** — an upstream skill deliberately left without an entry,
+  listed with its reason in ADR-0014. Neither added nor reported by
+  `/add-external-skill update`.
 - **Bundle** — a local plugin that ships no artifacts of its own: its entry
   exists to pull dependencies in, so installing it brings a skill plus everything
   that skill calls at runtime. A local plugin with no `skills/`, `commands/`,
