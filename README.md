@@ -534,7 +534,7 @@ command/skill name collisions:
 ```
 bash scripts/run-tests.sh                       # every node test; CI runs this same script
 node scripts/gen-readme.js --check              # README's generated regions match the catalog
-node scripts/gen-skills-tree.js --verify-paths  # every entry's path resolves at its sha
+node scripts/gen-skills-tree.js --verify-paths  # resolve every path; name what regeneration will prune
 node scripts/check-renovate.js                  # Renovate regexes cover every git-subdir entry
 node scripts/check-name-collisions.js           # what validate does NOT cover
 claude plugin validate .                        # marketplace + all local plugins

@@ -21,11 +21,12 @@ jobs:
         run: bash scripts/run-tests.sh
       - name: Check README catalog is in sync
         run: node scripts/gen-readme.js --check
-      - name: Check every catalog path resolves at its pinned sha
+      - name: Resolve every catalog path at its pinned sha
         # NOT `--check`: a Renovate PR moves a sha, so the committed tree is out of
         # date by design until regeneration follows, and comparing it here would turn
-        # every Renovate PR red — the coupling ADR-0010 rejects. This half is the
-        # guard an upstream folder renamed under a pinned entry walks into.
+        # every Renovate PR red — the coupling ADR-0010 rejects. A path gone upstream
+        # is named here, not failed: the PR has to merge for regeneration to prune it
+        # (ADR-0015). A missing sha or a failed clone still fails.
         run: node scripts/gen-skills-tree.js --verify-paths
       - name: Check Renovate regex covers every git-subdir entry
         run: node scripts/check-renovate.js
