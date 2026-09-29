@@ -9,6 +9,10 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { BRAND_MARKS } from '../renderers/shared/generated-brand-marks.mjs';
 import { isPrivateBrandAddress, prepareDiagramBrandMarks } from '../renderers/shared/brand-marks.mjs';
+import {
+  THIRD_PARTY_NOTICE_DISCLOSURE_COUNT,
+  validateThirdPartyNotices,
+} from '../../scripts/third-party-notices-contract.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(here, '..');
@@ -21,6 +25,25 @@ const cases = {
   dataflow: ['product-analytics.dataflow.json', 'nodes'],
   lifecycle: ['agent-run.lifecycle.json', 'states'],
 };
+
+test('third-party notices cover every recorded individual mark license', () => {
+  const notices = fs.readFileSync(path.join(skillRoot, 'THIRD_PARTY_NOTICES.md'), 'utf8');
+  const licensedMarks = BRAND_MARKS.filter((mark) => mark.provenance?.license);
+
+  assert.equal(THIRD_PARTY_NOTICE_DISCLOSURE_COUNT, 39, 'notice contract changed without review');
+  assert.deepEqual(validateThirdPartyNotices(notices), { ok: true, missing: [] });
+  assert.equal(licensedMarks.length, 8, 'pinned Simple Icons license inventory changed');
+  for (const mark of licensedMarks) {
+    assert.match(notices, new RegExp(`\\| ${mark.title.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')} \\|`));
+    assert.ok(notices.includes(mark.provenance.source), `${mark.id} source must be disclosed`);
+    assert.ok(notices.includes(mark.provenance.license.type), `${mark.id} license must be disclosed`);
+  }
+  assert.match(notices, /OpenAI brand guidelines/);
+  assert.match(notices, /does not state or imply endorsement by OpenAI/);
+  assert.match(notices, /does not imply sponsorship, endorsement, partnership/);
+  assert.match(notices, /commercial, promotional, or redistributive use/);
+  assert.match(notices, /does not grant rights\s+that Archify does not hold/);
+});
 
 function writeFixture(type, name, brand, customize) {
   const [example, collection] = cases[type];
@@ -182,11 +205,12 @@ test('a branded node fails before its semantic sigil, label, and brand badge can
 
 test('every renderer enforces the same collision-free brand top rail', () => {
   for (const type of ['architecture', 'sequence', 'dataflow', 'lifecycle']) {
-    const input = writeFixture(type, `narrow-brand-rail-${type}`, 'openai', (_diagram, node) => {
+    const input = writeFixture(type, `narrow-brand-rail-${type}`, 'openai', (diagram, node) => {
       node.label = type === 'sequence' ? 'ABCDEFGHI' : 'A';
       delete node.sublabel;
       delete node.tag;
       if (type === 'architecture') node.size = [32, 60];
+      if (type === 'sequence') diagram.meta.column_fit = 'fixed';
       if (type === 'dataflow' || type === 'lifecycle') node.width = 48;
     });
     const { result, html } = renderSync(type, input, `narrow-brand-rail-${type}`);
@@ -273,6 +297,127 @@ test('capture command returns a digest-pinned brand object that renders reproduc
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test('capture reads a small head even when the body is far larger than the byte cap', async () => {
+  const icon = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64');
+  const server = http.createServer((request, response) => {
+    if (request.url === '/mark.png') {
+      response.writeHead(200, { 'content-type': 'image/png' });
+      response.end(icon);
+      return;
+    }
+    response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    response.write('<!doctype html><head><title>Big Body</title><link rel="icon" type="image/png" href="/mark.png"></head><body>');
+    // Past the head close, so it must never be counted against the byte cap.
+    response.end('x'.repeat(300 * 1024));
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const address = server.address();
+    const url = `http://127.0.0.1:${address.port}/big`;
+    const capture = await runCliAsync(['brands', 'capture', url, '--json'], { ARCHIFY_BRAND_ALLOW_PRIVATE: '1' });
+    assert.equal(capture.status, 0, capture.stderr || capture.stdout);
+    const receipt = JSON.parse(capture.stdout);
+    assert.equal(receipt.ok, true);
+    assert.deepEqual(receipt.brand, {
+      url,
+      sha256: createHash('sha256').update(icon).digest('hex'),
+    });
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('capture finds a head close split across separate response chunks', async () => {
+  const icon = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64');
+  const server = http.createServer(async (request, response) => {
+    if (request.url === '/mark.png') {
+      response.writeHead(200, { 'content-type': 'image/png' });
+      response.end(icon);
+      return;
+    }
+    response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    response.write('<!doctype html><head><title>Split</title><link rel="icon" type="image/png" href="/mark.png"></he');
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    response.end('ad><body>hi</body>');
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const address = server.address();
+    const url = `http://127.0.0.1:${address.port}/split`;
+    const capture = await runCliAsync(['brands', 'capture', url, '--json'], { ARCHIFY_BRAND_ALLOW_PRIVATE: '1' });
+    assert.equal(capture.status, 0, capture.stderr || capture.stdout);
+    const receipt = JSON.parse(capture.stdout);
+    assert.equal(receipt.ok, true);
+    assert.deepEqual(receipt.brand, {
+      url,
+      sha256: createHash('sha256').update(icon).digest('hex'),
+    });
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('capture still fails closed when the head itself exceeds the byte cap', async () => {
+  const server = http.createServer(async (request, response) => {
+    response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    response.write('<!doctype html><head><title>Huge head</title>');
+    // Still inside <head>, and past the 256 KiB cap on its own. Flushed and
+    // awaited before </head> so the client reads it as a chunk that already
+    // exceeds the cap with no head close in sight yet, instead of Node
+    // coalescing every write into one chunk that contains </head> already.
+    response.write(`<!-- ${'x'.repeat(300 * 1024)} -->`);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    response.end('</head><body>never reached</body>');
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const address = server.address();
+    const url = `http://127.0.0.1:${address.port}/huge-head`;
+    const capture = await runCliAsync(['brands', 'capture', url, '--json'], { ARCHIFY_BRAND_ALLOW_PRIVATE: '1' });
+    assert.equal(capture.status, 2, capture.stdout);
+    assert.match(capture.stderr, /brand asset is too large/);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+for (const scenario of ['over-limit-close', 'exact-limit-close', 'body-only-icon']) {
+  test(`capture bounds the head bytes independently of response chunks: ${scenario}`, async () => {
+    const maximum = 256 * 1024;
+    const icon = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64');
+    const prefix = '<head><link rel="icon" type="image/png" href="/mark.png">';
+    const server = http.createServer(async (request, response) => {
+      if (request.url === '/mark.png') {
+        response.writeHead(200, { 'content-type': 'image/png' });
+        response.end(icon);
+        return;
+      }
+      if (request.url === '/favicon.ico') {
+        response.writeHead(404); response.end(); return;
+      }
+      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      if (scenario === 'over-limit-close') {
+        response.write(prefix + ' '.repeat(maximum - 1 - Buffer.byteLength(prefix)));
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        response.end('x</head><body>');
+      } else if (scenario === 'exact-limit-close') {
+        response.end(prefix + ' '.repeat(maximum - 7 - Buffer.byteLength(prefix)) + '</HEAD><body>' + 'x'.repeat(maximum));
+      } else {
+        response.end('<head><title>No icon</title></head><body><link rel="icon" href="/mark.png"></body>');
+      }
+    });
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+    try {
+      const capture = await runCliAsync(['brands', 'capture', `http://127.0.0.1:${server.address().port}/page`, '--json'], { ARCHIFY_BRAND_ALLOW_PRIVATE: '1' });
+      assert.equal(capture.status, scenario === 'exact-limit-close' ? 0 : 2, capture.stderr || capture.stdout);
+      if (scenario === 'over-limit-close') assert.match(capture.stderr, /brand asset is too large/);
+      if (scenario === 'exact-limit-close') assert.equal(JSON.parse(capture.stdout).brand.sha256, createHash('sha256').update(icon).digest('hex'));
+    } finally {
+      await new Promise((resolve) => server.close(resolve));
+    }
+  });
+}
 
 test('a pinned brand fails closed when the remote icon digest changes', async () => {
   const firstIcon = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64');
@@ -647,7 +792,7 @@ test('viewer exposes brand identity to Passport and Finder while keeping source 
   const template = fs.readFileSync(path.join(skillRoot, 'assets', 'template.html'), 'utf8');
   assert.match(template, /id="focus-brand" data-passport="brand" hidden/);
   assert.match(template, /node\.getAttribute\('data-node-brand'\)/);
-  assert.match(template, /brandOffset = node\.hasAttribute\('data-node-brand'\) \? 24 : 0/);
+  assert.match(template, /brandOffset = node\.hasAttribute\('data-node-brand'\) \? 22 : 0/);
   assert.match(template, /sourceSearch \+ ' ' \+ text\)\.toLowerCase\(\) \+ ' ' \+ brand\.toLowerCase\(\)/);
 });
 
