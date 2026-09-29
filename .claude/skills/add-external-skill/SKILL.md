@@ -115,7 +115,7 @@ For each `git-subdir` source repo in `marketplace.json` (or the one named):
      one declined goes in the exclusions table so it is not asked again. A repo
      with no row → ask which kind it is and add the row.
    - **Removed** upstream (entry whose `path` no longer has `SKILL.md`) → list
-     it, **ask to confirm**, then delete the entry.
+     it, **ask to confirm**, then delete the entry (see **Removing an entry**).
    - Bump each surviving entry to the SHA its `ref` now resolves to: a
      tag-pinned entry moves `ref` and `sha` together to the latest tag, keeping
      its tag series; a branch-pinned entry takes that branch's HEAD. (Renovate
@@ -127,6 +127,22 @@ For each `git-subdir` source repo in `marketplace.json` (or the one named):
 Done when every `git-subdir` repo in scope is accounted for — reconciled, or
 reported as already current. A repo silently skipped is one Renovate keeps
 bumping while its entry list drifts.
+
+## Removing an entry
+
+Whatever the reason — gone upstream, or dropped by decision — deleting an entry
+also means:
+
+- Drop its name from every bundle's `dependencies` that lists it, and bump that
+  bundle's `version`.
+- Tell the user that **installed copies break**: `claude plugin update` on a name
+  no longer in the catalog fails with `Plugin "<name>" not found`. List where it is
+  installed (`claude plugin list --json`, filter on `@filippo-skills`) and offer
+  `claude plugin uninstall <name>@filippo-skills -s <scope>` for each — a
+  `project` scope runs from that project's directory and edits its committed
+  `.claude/settings.json`, so ask before touching it. The README's *When a skill
+  leaves the catalog* gives other users the same steps; name the removed skills
+  in the PR body so they know what to uninstall.
 
 ## Regenerate the README
 
