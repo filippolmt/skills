@@ -8,7 +8,7 @@ An audit of the catalog against upstream turned up dozens of skills that exist
 upstream and have no entry here. Almost all of them were already present at the
 pinned `sha` when their siblings were added — `printing-press-amend`, `-import`
 and `-reprint` were there when the printing-press series landed (#16) — so their
-absence was a choice. Nothing recorded it. The next audit would have to rebuild the
+absence looked like a choice. Nothing recorded it. The next audit would have to rebuild the
 reasoning skill by skill, and `/add-external-skill update` would undo it: its
 update mode turns every new upstream folder into an entry, which on
 `Jeffallan/claude-skills` means proposing sixty skills against a catalog that took
@@ -17,14 +17,23 @@ ten.
 Some turned out to be oversights, and are added alongside this ADR:
 `nextjs-on-cloudflare`, the only `cloudflare/skills` skill without an entry;
 `wait-what`, the only `mattpocock/skills` productivity skill without one; and
-`printing-press-reprint`, `-import` and `-amend`. The first two are not optional
-for anyone who installs `printing-press-bundle`: `printing-press` (phase 3),
-`printing-press-polish` and `printing-press-publish` all hand off to
-`/printing-press-reprint`, which in turn calls `/printing-press-import`. The
-bundle now carries all nine skills, `-amend` included, so one install both creates
-a CLI and maintains it after publishing. A separate create/maintain split was
-considered and dropped: `-reprint` hands back to `/printing-press`, so a maintain
-bundle would contain the create one, differing only by `-amend`.
+`printing-press-reprint`, which `printing-press` (phase 3) and
+`printing-press-polish` hand off to when a CLI already exists — without it
+`printing-press-bundle` stopped at that hand-off.
+
+The printing-press series had the opposite problem too. `printing-press-publish`,
+`-amend` and `-import` are bound to `mvanhorn/printing-press-library`, a third
+party's public library: publish forks it and opens a PR, amend opens patch PRs
+against it (the repo is hardcoded), import pulls CLIs out of it.
+`printing-press-retro` files findings against the Press itself, for its
+maintainers. None of that serves CLIs built and kept locally, so `-publish` and
+`-retro` leave the catalog and all four are exclusions. The bundle keeps what
+creates and maintains a CLI locally: `printing-press`, `-polish`, `-score`,
+`-output-review`, `-reprint`. The handoffs to the excluded skills become dead
+suggestions — `printing-press` and `-polish` name them as optional next steps;
+`-reprint` calls `-import` only when the CLI is not on disk. A separate
+create/maintain bundle split was considered and dropped: `-reprint` hands back to
+`/printing-press`, so a maintain bundle would contain the create one.
 
 ## Decision
 
@@ -68,6 +77,8 @@ the exclusions.
 | `mcollina/skills` | curated | |
 | `wshobson/agents` | curated | whole-plugin entries, picked per plugin |
 | `nextlevelbuilder/ui-ux-pro-max-skill` | curated | |
+| `mvanhorn/cli-printing-press` | `printing-press-publish`, `printing-press-amend`, `printing-press-import` | Bound to the third-party public library `mvanhorn/printing-press-library` |
+| `mvanhorn/cli-printing-press` | `printing-press-retro` | Files findings for the Press's maintainers |
 | `juliusbrussee/caveman` | curated | `mode-router` depends on the core mode only |
 | `dietrichgebert/ponytail` | curated | `mode-router` depends on the core mode only |
 | `filippolmt/proximo` | curated | |
