@@ -14,10 +14,17 @@ update mode turns every new upstream folder into an entry, which on
 `Jeffallan/claude-skills` means proposing sixty skills against a catalog that took
 ten.
 
-Two skills did turn out to be oversights: `nextjs-on-cloudflare`, the only
-`cloudflare/skills` skill without an entry, and `wait-what`, the only
-`mattpocock/skills` productivity skill without one. Both are added alongside this
-ADR.
+Some turned out to be oversights, and are added alongside this ADR:
+`nextjs-on-cloudflare`, the only `cloudflare/skills` skill without an entry;
+`wait-what`, the only `mattpocock/skills` productivity skill without one; and
+`printing-press-reprint`, `-import` and `-amend`. The first two are not optional
+for anyone who installs `printing-press-bundle`: `printing-press` (phase 3),
+`printing-press-polish` and `printing-press-publish` all hand off to
+`/printing-press-reprint`, which in turn calls `/printing-press-import`. The
+bundle now carries all nine skills, `-amend` included, so one install both creates
+a CLI and maintains it after publishing. A separate create/maintain split was
+considered and dropped: `-reprint` hands back to `/printing-press`, so a maintain
+bundle would contain the create one, differing only by `-amend`.
 
 ## Decision
 
@@ -72,7 +79,6 @@ the exclusions.
 | --- | --- | --- |
 | `mattpocock/skills` | `migrate-to-shoehorn` | Tied to one TypeScript test library |
 | `mattpocock/skills` | `scaffold-exercises` | Tied to the author's course format |
-| `mvanhorn/cli-printing-press` | `printing-press-amend`, `printing-press-import`, `printing-press-reprint` | Left out of the series when it was added (#16); `printing-press-bundle` covers the six catalogued |
 | `juliusbrussee/caveman` | every skill but `caveman` | Companions trigger on their own; a context holds one mode (ADR-0006), and `caveman-review` overlaps `code-review` |
 | `dietrichgebert/ponytail` | every skill but `ponytail` | Same as `caveman`'s companions |
 | `filippolmt/proximo` | `.claude/skills/*` | Skills for developing proximo, not for using it |

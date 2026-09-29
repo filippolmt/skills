@@ -84,7 +84,7 @@ Where a bundle exists, reach for it rather than the bare skill:
 | Bundle | What it installs with it |
 |---|---|
 | `improve-codebase-architecture-bundle` | `improve-codebase-architecture`, `grilling`, `codebase-design`, `domain-modeling`, `agent-report-guard` |
-| `printing-press-bundle` | `printing-press`, `printing-press-polish`, `printing-press-score`, `printing-press-retro`, `printing-press-publish`, `printing-press-output-review`, `agent-report-guard` |
+| `printing-press-bundle` | `printing-press`, `printing-press-polish`, `printing-press-score`, `printing-press-retro`, `printing-press-publish`, `printing-press-output-review`, `printing-press-reprint`, `printing-press-import`, `printing-press-amend`, `agent-report-guard` |
 | `code-review-bundle` | `code-review`, `agent-report-guard` |
 | `implement-bundle` | `implement`, `tdd`, `code-review`, `agent-report-guard` |
 | `triage-bundle` | `triage`, `grilling`, `domain-modeling` |
@@ -295,6 +295,9 @@ Snapshot of the catalog — the source of truth is
 | `printing-press-output-review` | Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use. |
 | `printing-press-retro` | Run a retrospective after a printed-CLI run: surface systemic gaps (generator misses, scorer bugs, skill-doc drift) and file them upstream for the Printing Press maintainers. |
 | `printing-press-publish` | Publish a generated CLI to the public printing-press-library repo by opening a pull request. |
+| `printing-press-amend` | Amend a published CLI from session friction or direct asks (renames, new commands, bug fixes) and open a patch PR against the public printing-press-library repo. |
+| `printing-press-reprint` | Regenerate an existing printed CLI from scratch under the current Printing Press, carrying prior research, novel features, and patches into the new run. |
+| `printing-press-import` | Bring a published CLI from the public library into the internal library, identical to a freshly generated copy and ready for polish. |
 
 ### [wshobson/agents](https://github.com/wshobson/agents) — backend scaffolding
 
