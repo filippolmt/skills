@@ -961,8 +961,8 @@
         "source": "git-subdir",
         "url": "https://github.com/tt-a1i/archify",
         "path": "archify",
-        "ref": "v2.16.0",
-        "sha": "c826e6c3a7abad19c0f3cd1ca57207d54b1ad8de"
+        "ref": "v3.0.1",
+        "sha": "2ab3cae7ac2c2a55d7386ca789d03c4fcd31816c"
       },
       "description": "Create polished, validated architecture, workflow, sequence, data-flow, and lifecycle/state diagrams as explorable standalone HTML with inline SVG, dark/light themes, optional trace motion, and PNG/JPEG/WebP/SVG/WebM export. Accept plain-language requirements or pasted Mermaid flowchart, sequenceDiagram, and stateDiagram input; inspect repository evidence when the diagram must reflect real code."
     },
