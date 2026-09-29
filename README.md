@@ -186,19 +186,66 @@ To schedule updates, have cron, launchd or your system scheduler run the same
 `command -v pi`; the repository cannot safely opt a user's machine into
 background network access.
 
-**Selecting individual skills.** Everything is enabled by default. Run `pi config`
-for an interactive picker, or filter the package in
-`~/.pi/agent/settings.json`. An include-only profile names just the skills it
-needs:
+**Selecting global skills from GitHub.** A string package entry enables every
+skill. To keep the GitHub repository as the update source while making only
+chosen skills available in every project, use a filtered package entry in
+`~/.pi/agent/settings.json`:
 
 ```json
-{ "packages": [{ "source": "git:github.com/filippolmt/skills",
-                 "skills": ["skills/code-review/SKILL.md",
-                            "skills/tdd/SKILL.md"] }] }
+{
+  "packages": [
+    {
+      "source": "git:github.com/filippolmt/skills",
+      "autoload": false,
+      "skills": [
+        "+skills/ponytail"
+      ]
+    }
+  ]
+}
 ```
 
-Globs, `!` exclusions and `+`/`-` exact-path overrides are also supported. For
-example, load everything except a mode you do not use:
+`autoload: false` starts with no package resources; each `+skills/<name>` enables
+one exact skill. Add further entries to that array as needed. Pi clones the
+repository into its package cache, but the configured source remains GitHub;
+`pi update --extensions` refreshes that cache. Run `/reload` after changing the
+settings in an active session.
+
+This makes `ponytail` globally available for automatic model invocation. To
+require it for every coding task, also add this to
+`~/.pi/agent/APPEND_SYSTEM.md`:
+
+```markdown
+For every coding task, load and follow the globally available `ponytail` skill before acting.
+```
+
+**Selecting skills in one repository only.** Create or edit `.pi/settings.json`
+in that repository and list only the skills the project needs:
+
+```json
+{
+  "packages": [
+    {
+      "source": "git:github.com/filippolmt/skills",
+      "autoload": false,
+      "skills": [
+        "+skills/tdd",
+        "+skills/react-expert"
+      ]
+    }
+  ]
+}
+```
+
+Start Pi from that repository and grant project trust when prompted. Pi installs
+the missing project package on startup; `/reload` applies later settings changes.
+A project entry with `autoload: false` also works alongside a global filtered
+entry: global selections remain available and the project adds its own exact
+selections. Use `pi config --local` for the project-scoped interactive picker.
+
+Run `pi config` for the global interactive picker. Package filters also support
+globs, `!` exclusions, and `+`/`-` exact-path overrides. For example, load
+everything except a mode you do not use:
 
 ```json
 { "packages": [{ "source": "git:github.com/filippolmt/skills",
