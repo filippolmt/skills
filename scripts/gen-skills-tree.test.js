@@ -131,7 +131,7 @@ test('build throws, naming the entry, when a path does not resolve at its sha', 
     { LICENSE: 'MIT', 'skills/tdd/SKILL.md': skill('tdd') },
     [entry('tdd', 'skills/tdd'), entry('gone', 'skills/renamed-away')],
     ({ dest, plugins, deps }) => {
-      assert.throws(() => build(dest, plugins, deps), /will not resolve[\s\S]*gone/);
+      assert.throws(() => build(dest, plugins, deps), (e) => /will not resolve[\s\S]*gone/.test(e.message) && e.gone.join() === 'gone');
     }
   );
 });

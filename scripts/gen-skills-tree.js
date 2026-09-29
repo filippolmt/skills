@@ -187,6 +187,7 @@ function skillDirs(start) {
 function build(dest, plugins, deps = {}) {
   const fetch = deps.checkout || checkout;
   const unresolved = [];
+  const gone = [];
   const written = new Map();
 
   for (const entry of vendorList(plugins)) {
@@ -205,6 +206,7 @@ function build(dest, plugins, deps = {}) {
     // a renamed upstream folder walks into.
     if (!fs.existsSync(abs)) {
       unresolved.push(`  ${entry.name}: ${repo}@${sha.slice(0, 7)}:${rel || '.'} does not exist`);
+      gone.push(entry.name);
       continue;
     }
     if (!dest) continue;
@@ -243,7 +245,12 @@ function build(dest, plugins, deps = {}) {
   }
 
   if (unresolved.length) {
-    throw new Error(`${unresolved.length} catalog entr${unresolved.length === 1 ? 'y' : 'ies'} will not resolve:\n${unresolved.join('\n')}`);
+    // `gone` rides on the error so prune-removed.js can act on the same verdict
+    // instead of resolving every path a second way.
+    throw Object.assign(
+      new Error(`${unresolved.length} catalog entr${unresolved.length === 1 ? 'y' : 'ies'} will not resolve:\n${unresolved.join('\n')}`),
+      { gone }
+    );
   }
   return [...written.keys()].sort();
 }

@@ -70,6 +70,12 @@ dealt with. That workflow needs the **`REGEN_TOKEN`** secret: pushed with the
 default token instead, its `validate` run is parked awaiting an approval no
 workflow can give. An expired token fails the job's first step by name.
 
+A Renovate bump to a `sha` at which upstream deleted or renamed a skill folder
+cannot pass `validate`. The `prune-removed` workflow answers it with a PR of its
+own, the same bump with those entries dropped (`scripts/prune-removed.js`), and
+that PR is **never** merged unattended: a rename looks like a delete, and a
+removal breaks existing installs.
+
 ## Gotchas
 
 **The Renovate seam.** `renovate.json` matches the `git-subdir` entry shape with
