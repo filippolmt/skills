@@ -55,4 +55,4 @@ function readCatalog() {
   return { text, plugins: JSON.parse(text).plugins || [] };
 }
 
-module.exports = { readCatalog, isLocal, isGitSubdir, isBundle, repoOf, root };
+module.exports = { readCatalog, isLocal, isGitSubdir, isBundle, repoOf, root, MARKETPLACE };

@@ -64,6 +64,11 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   `regenerate` workflow opens, force-pushes onto and merges on green. Not a review
   request: the catalog entry it materialises is where the decision was reviewed, and
   this is the audit record (ADR-0011).
+- **Prune** — what a regeneration does to an entry whose `path` no longer exists at
+  its `sha`: the entry leaves the catalog, its name leaves every bundle's
+  `dependencies` (breaking bump), and the regeneration PR names it. Not a skip — a
+  removal, recorded (ADR-0015). Refused, turning the run red, when a non-bundle
+  depends on the entry or a bundle would lose the skill it is named after.
 - **Parked run** — the `pull_request` run of `validate` that a `GITHUB_TOKEN` push
   leaves `completed` with `conclusion: action_required` and no check runs: created,
   awaiting an approval no token inside a workflow can give. Not a missing check — a

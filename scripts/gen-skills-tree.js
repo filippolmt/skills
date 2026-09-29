@@ -16,36 +16,43 @@
 //
 // Two properties are deliberate:
 //
-//   - EVERY entry's `path` is resolved at its `sha`, even the ones not vendored,
-//     and an unresolvable one fails the whole run. Skipping it would drop a skill
-//     with nobody noticing — which is exactly how `sandbox-sdk` pointed at a
-//     deleted folder for months while every check stayed green.
+//   - EVERY entry's `path` is resolved at its `sha`, and an unresolvable one is
+//     PRUNED, never skipped: upstream deleted or renamed the folder, so the entry
+//     leaves the catalog, its name leaves every bundle's `dependencies`, and the
+//     regeneration PR carrying all of it names the removal. Skipping it would drop
+//     a skill with nobody noticing — which is exactly how `sandbox-sdk` pointed at
+//     a deleted folder for months while every check stayed green (ADR-0015).
 //   - A vendored copy is byte-identical to upstream. Adaptation belongs in
 //     overlays/<skill>.patch, applied with `git apply` afterwards, so an upstream
 //     that moves under a patch FAILS instead of silently freezing the skill.
 //
 // Usage:
-//   node scripts/gen-skills-tree.js                 # rewrite skills/ in place
-//   node scripts/gen-skills-tree.js --verify-paths  # resolve every path, copy nothing
+//   node scripts/gen-skills-tree.js                 # prune, then rewrite skills/ in place
+//   node scripts/gen-skills-tree.js --verify-paths  # resolve every path, name what a
+//                                                   # regeneration will prune, copy nothing
 //   node scripts/gen-skills-tree.js --check         # exit 1 if the tree is out of date
+//                                                   # or the catalog has something to prune
 //
 // The two checks are for different places, and the split is load-bearing. A Renovate
 // PR moves a `sha`, so the tree it finds committed is out of date BY DESIGN until
 // regeneration follows — running `--check` on pull requests would turn every one of
 // those PRs red and force regeneration back into them, which is the coupling the ADR
-// rejects. So CI runs `--verify-paths` on PRs (the guard a renamed upstream folder
-// walks into) and `--check` only where a stale tree is actionable: inside the
-// regeneration job, as the signal that there is something to regenerate.
+// rejects. So CI runs `--verify-paths` on PRs and `--check` only where a stale tree
+// is actionable: inside the regeneration job, as the signal that there is something
+// to regenerate. For the same reason `--verify-paths` does not fail on an entry
+// upstream removed: the Renovate PR moving its `sha` has to merge for regeneration
+// to run at all, and regeneration is where the prune happens.
 //
-// The pure functions (parseFrontmatter, renderSource, vendorList, treeFingerprint)
-// are exported for the test; the network and the file IO live in the CLI wrapper.
+// The pure functions (parseFrontmatter, renderSource, vendorList, treeFingerprint,
+// breakingBump, pruneManifest, formatLike) are exported for the test; the network
+// and the file IO live in the CLI wrapper.
 
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
-const { readCatalog, isGitSubdir, repoOf, root } = require('./catalog.js');
+const { readCatalog, isLocal, isGitSubdir, isBundle, repoOf, root, MARKETPLACE } = require('./catalog.js');
 
 const TREE = path.join(root, 'skills');
 const OVERLAYS = path.join(root, 'overlays');
@@ -120,6 +127,44 @@ function treeFingerprint(dir) {
   return out.join('\n');
 }
 
+// A breaking bump under CLAUDE.md's rule: below 1.0.0 it is a minor.
+function breakingBump(version) {
+  const [major, minor] = version.split('.').map(Number);
+  return major < 1 ? `0.${minor + 1}.0` : `${major + 1}.0.0`;
+}
+
+// A local plugin's manifest with the pruned names out of its `dependencies` and a
+// breaking bump, or null when it lists none of them. Throws on the two removals no
+// script should settle: a non-bundle's dependencies are behaviour (`mode-router`'s
+// hook routes to them), and a bundle losing the skill it is named after has no
+// reason left to exist.
+function pruneManifest(manifest, gone, bundle) {
+  const deps = manifest.dependencies || [];
+  const lost = deps.filter((d) => gone.includes(d));
+  if (!lost.length) return null;
+  if (!bundle) {
+    throw new Error(`${manifest.name} depends on ${lost.join(', ')}, removed upstream — it is not a bundle, so dropping the dependency changes what it does: decide by hand`);
+  }
+  const primary = manifest.name.replace(/-bundle$/, '');
+  if (lost.includes(primary)) {
+    throw new Error(`${manifest.name} loses ${primary}, the skill it bundles for, removed upstream — remove or rework the bundle by hand`);
+  }
+  return { ...manifest, version: breakingBump(manifest.version), dependencies: deps.filter((d) => !lost.includes(d)) };
+}
+
+// `obj` as JSON in the layout of `original`: two-space indent, and an array the
+// original kept on one line stays on one line. Without the second half a pruned
+// manifest's diff is mostly whitespace around the one name that left.
+function formatLike(original, obj) {
+  let out = JSON.stringify(obj, null, 2) + '\n';
+  for (const [, key] of original.matchAll(/"([^"]+)": \[[^\n\]]*\]/g)) {
+    out = out.replace(new RegExp(`"${key}": \\[[^\\]]*\\]`), (m) =>
+      m.replace(/\[\s+/, '[').replace(/\s+\]/, ']').replace(/,\s+/g, ', ')
+    );
+  }
+  return out;
+}
+
 // --- impure ----------------------------------------------------------------
 
 const git = (cwd, ...args) => execFileSync('git', args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -180,31 +225,63 @@ function skillDirs(start) {
   return found.sort();
 }
 
+// Where an entry's `path` lands in its checkout, and whether anything is there.
+function resolveEntry(entry, fetch) {
+  const repo = repoOf(entry);
+  const { url, sha, path: sub } = entry.source;
+  if (!sha) throw new Error(`entry ${entry.name}: no sha to resolve — every git-subdir entry must pin one`);
+  const repoDir = fetch(repo, url, sha);
+  // `.` is a whole-plugin entry's path (ADR-0008), `./x` and `x` are the same
+  // subdirectory — but a leading dot is not a prefix to strip: the real paths
+  // include `.claude/skills/…`, which loses its meaning the moment it becomes
+  // `claude/skills/…`.
+  const rel = sub === '.' ? '' : String(sub || '').replace(/^\.\//, '').replace(/\/$/, '');
+  const abs = rel ? path.join(repoDir, rel) : repoDir;
+  return { repo, sha, repoDir, rel, abs, exists: fs.existsSync(abs) };
+}
+
+// The names of the entries whose `path` no longer exists at their `sha`: what a
+// regeneration prunes. Checked for EVERY entry — this is the guard a deleted or
+// renamed upstream folder walks into.
+function unresolved(plugins, deps = {}) {
+  const fetch = deps.checkout || checkout;
+  return vendorList(plugins).filter((e) => !resolveEntry(e, fetch).exists).map((e) => e.name);
+}
+
+// Take the pruned entries out of the catalog and every local plugin's
+// `dependencies`, then regenerate the README, whose two regions both derive from
+// them. Every manifest is computed before anything is written, so a removal
+// pruneManifest refuses leaves the working tree untouched. Returns the surviving
+// plugins.
+function prune(text, gone) {
+  const doc = JSON.parse(text);
+  doc.plugins = doc.plugins.filter((p) => !gone.includes(p.name));
+  const writes = [[MARKETPLACE, formatLike(text, doc)]];
+  for (const p of doc.plugins.filter(isLocal)) {
+    const file = path.join(root, p.source, '.claude-plugin', 'plugin.json');
+    const raw = fs.readFileSync(file, 'utf8');
+    const pruned = pruneManifest(JSON.parse(raw), gone, isBundle(p));
+    if (pruned) writes.push([file, formatLike(raw, pruned)]);
+  }
+  for (const [file, body] of writes) fs.writeFileSync(file, body);
+  execFileSync('node', [path.join(root, 'scripts', 'gen-readme.js')], { stdio: 'inherit' });
+  return doc.plugins;
+}
+
 // Resolve every entry and copy each one's skills into `dest`. A null `dest` resolves
-// and copies nothing, which is what `--verify-paths` runs. Returns the vendored skill
-// names; throws on the first thing that would silently lose a skill. `deps` exists so
-// the test can hand over a fake checkout and exercise those throws without a network.
+// and copies nothing. Returns the vendored skill names; throws on the first thing
+// that would silently lose a skill — an unresolved entry included, since the CLI
+// prunes those before it builds. `deps` exists so the test can hand over a fake
+// checkout and exercise those throws without a network.
 function build(dest, plugins, deps = {}) {
   const fetch = deps.checkout || checkout;
-  const unresolved = [];
+  const missing = [];
   const written = new Map();
 
   for (const entry of vendorList(plugins)) {
-    const repo = repoOf(entry);
-    const { url, sha, path: sub } = entry.source;
-    if (!sha) throw new Error(`entry ${entry.name}: no sha to resolve — every git-subdir entry must pin one`);
-    const repoDir = fetch(repo, url, sha);
-    // `.` is a whole-plugin entry's path (ADR-0008), `./x` and `x` are the same
-    // subdirectory — but a leading dot is not a prefix to strip: the real paths
-    // include `.claude/skills/…`, which loses its meaning the moment it becomes
-    // `claude/skills/…`.
-    const rel = sub === '.' ? '' : String(sub || '').replace(/^\.\//, '').replace(/\/$/, '');
-    const abs = rel ? path.join(repoDir, rel) : repoDir;
-
-    // Resolution is checked for EVERY entry, vendored or not: this is the guard
-    // a renamed upstream folder walks into.
-    if (!fs.existsSync(abs)) {
-      unresolved.push(`  ${entry.name}: ${repo}@${sha.slice(0, 7)}:${rel || '.'} does not exist`);
+    const { repo, sha, repoDir, rel, abs, exists } = resolveEntry(entry, fetch);
+    if (!exists) {
+      missing.push(`  ${entry.name}: ${repo}@${sha.slice(0, 7)}:${rel || '.'} does not exist`);
       continue;
     }
     if (!dest) continue;
@@ -242,25 +319,45 @@ function build(dest, plugins, deps = {}) {
     }
   }
 
-  if (unresolved.length) {
-    throw new Error(`${unresolved.length} catalog entr${unresolved.length === 1 ? 'y' : 'ies'} will not resolve:\n${unresolved.join('\n')}`);
+  if (missing.length) {
+    throw new Error(`${missing.length} catalog entr${missing.length === 1 ? 'y' : 'ies'} will not resolve:\n${missing.join('\n')}`);
   }
   return [...written.keys()].sort();
 }
 
-module.exports = { parseFrontmatter, renderSource, vendorList, treeFingerprint, build };
+module.exports = {
+  parseFrontmatter,
+  renderSource,
+  vendorList,
+  treeFingerprint,
+  breakingBump,
+  pruneManifest,
+  formatLike,
+  unresolved,
+  build,
+};
 
 // --- cli -------------------------------------------------------------------
 
 if (require.main === module) {
   const check = process.argv.includes('--check');
-  const { plugins } = readCatalog();
+  const { text, plugins: catalog } = readCatalog();
+  const gone = unresolved(catalog);
+  const goneList = gone.map((n) => `  ${n}`).join('\n');
 
   if (process.argv.includes('--verify-paths')) {
-    build(null, plugins);
-    console.log(`every catalog path resolves at its pinned sha (${plugins.filter(isGitSubdir).length} entries).`);
+    const resolved = catalog.filter(isGitSubdir).length - gone.length;
+    console.log(`${resolved} catalog paths resolve at their pinned sha.`);
+    if (gone.length) console.log(`Removed upstream, pruned by the next regeneration:\n${goneList}`);
     process.exit(0);
   }
+  if (check && gone.length) {
+    console.error(`the catalog lists entries removed upstream:\n${goneList}\nRun: node scripts/gen-skills-tree.js`);
+    process.exit(1);
+  }
+
+  const plugins = gone.length ? prune(text, gone) : catalog;
+  if (gone.length) console.log(`pruned from the catalog, removed upstream:\n${goneList}`);
 
   const staging = fs.mkdtempSync(path.join(os.tmpdir(), 'skills-tree-out-'));
 

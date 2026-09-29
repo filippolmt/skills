@@ -70,6 +70,13 @@ dealt with. That workflow needs the **`REGEN_TOKEN`** secret: pushed with the
 default token instead, its `validate` run is parked awaiting an approval no
 workflow can give. An expired token fails the job's first step by name.
 
+An entry whose folder upstream deleted or renamed is **pruned** by that same
+regeneration: it leaves the catalog and every bundle's `dependencies` (breaking
+bump), the README is regenerated, and the self-merging PR names it
+(`docs/adr/0015-an-upstream-removal-is-pruned-at-regeneration.md`). A removal that
+would change a non-bundle's behaviour (`mode-router`) or strip a bundle of the skill
+it is named after turns the run red instead.
+
 ## Gotchas
 
 **The Renovate seam.** `renovate.json` matches the `git-subdir` entry shape with
@@ -93,7 +100,7 @@ loads the file twice (`Duplicate hooks file detected`). A stale entry in
 ```
 bash scripts/run-tests.sh             # every node test; CI runs this same script
 node scripts/gen-readme.js --check    # README's generated regions match the catalog
-node scripts/gen-skills-tree.js --verify-paths  # every entry's path resolves at its sha
+node scripts/gen-skills-tree.js --verify-paths  # resolve every path; name what regeneration will prune
 node scripts/check-renovate.js        # Renovate regexes cover every git-subdir entry
 node scripts/check-name-collisions.js # what validate does NOT cover
 claude plugin validate .              # marketplace + all local plugins

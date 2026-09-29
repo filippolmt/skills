@@ -116,6 +116,8 @@ For each `git-subdir` source repo in `marketplace.json` (or the one named):
      with no row → ask which kind it is and add the row.
    - **Removed** upstream (entry whose `path` no longer has `SKILL.md`) → list
      it, **ask to confirm**, then delete the entry (see **Removing an entry**).
+     Left alone, regeneration prunes it anyway once Renovate moves its `sha`
+     (ADR-0015); doing it here just gets there first.
    - Bump each surviving entry to the SHA its `ref` now resolves to: a
      tag-pinned entry moves `ref` and `sha` together to the latest tag, keeping
      its tag series; a branch-pinned entry takes that branch's HEAD. (Renovate

@@ -86,7 +86,10 @@ committed tree stale until regeneration follows, so comparing the tree on a PR w
 redden every Renovate PR and force regeneration back into it. The generator therefore
 has two modes: `--verify-paths` resolves every entry at its `sha` and runs on every
 PR — it is the `sandbox-sdk` guard — while `--check` compares the tree and runs only
-in the regeneration job, where a stale tree is the signal to act on.
+in the regeneration job, where a stale tree is the signal to act on. (Amended by
+[ADR-0015](0015-an-upstream-removal-is-pruned-at-regeneration.md): a path gone
+upstream is now pruned at regeneration, and `--verify-paths` names it instead of
+failing.)
 
 **How it is consumed.**
 
@@ -122,7 +125,8 @@ counterpart, and the 10 subagent files do not travel.
 over from ADR-0007 unchanged. A harness-specific edit lives beside the byte-identical
 copy as a unified diff, so upstream moving under it makes `git apply` fail instead of
 silently freezing a skill. An entry whose `path` will not resolve at its `sha` fails
-the whole generation.
+the whole generation — since ADR-0015, it is pruned from the catalog instead, in the
+regeneration PR that names it.
 
 ## Considered and rejected
 

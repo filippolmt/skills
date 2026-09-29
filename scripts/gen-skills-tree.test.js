@@ -8,7 +8,17 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { parseFrontmatter, renderSource, vendorList, treeFingerprint, build } = require('./gen-skills-tree.js');
+const {
+  parseFrontmatter,
+  renderSource,
+  vendorList,
+  treeFingerprint,
+  breakingBump,
+  pruneManifest,
+  formatLike,
+  unresolved,
+  build,
+} = require('./gen-skills-tree.js');
 
 const gitsub = (name, p) => ({
   name,
@@ -94,6 +104,37 @@ test('treeFingerprint sees a file added, not only a file changed', () => {
   }
 });
 
+// --- pruning ------------------------------------------------------------------
+
+test('a breaking bump is a minor below 1.0.0 and a major above', () => {
+  assert.equal(breakingBump('0.1.3'), '0.2.0');
+  assert.equal(breakingBump('1.4.2'), '2.0.0');
+});
+
+test('pruneManifest drops a helper from a bundle and bumps its version', () => {
+  const m = { name: 'triage-bundle', version: '0.1.0', dependencies: ['triage', 'grilling', 'domain-modeling'] };
+  assert.deepEqual(pruneManifest(m, ['grilling'], true), { ...m, version: '0.2.0', dependencies: ['triage', 'domain-modeling'] });
+});
+
+test('pruneManifest leaves a manifest that names none of the pruned alone', () => {
+  assert.equal(pruneManifest({ name: 'x-bundle', version: '0.1.0', dependencies: ['x'] }, ['grilling'], true), null);
+  assert.equal(pruneManifest({ name: 'guard', version: '0.1.0' }, ['grilling'], false), null);
+});
+
+test('pruneManifest refuses what a script should not settle', () => {
+  // mode-router is not a bundle: its hook routes to the modes it depends on.
+  assert.throws(() => pruneManifest({ name: 'mode-router', version: '0.9.0', dependencies: ['caveman', 'ponytail'] }, ['caveman'], false), /not a bundle/);
+  // A bundle losing the skill it is named after.
+  assert.throws(() => pruneManifest({ name: 'triage-bundle', version: '0.1.0', dependencies: ['triage', 'grilling'] }, ['triage'], true), /the skill it bundles for/);
+});
+
+test('formatLike keeps a one-line array on one line and a multi-line one multi-line', () => {
+  const one = '{\n  "name": "a",\n  "dependencies": ["x", "y", "z"]\n}\n';
+  assert.equal(formatLike(one, { name: 'a', dependencies: ['x', 'z'] }), '{\n  "name": "a",\n  "dependencies": ["x", "z"]\n}\n');
+  const multi = JSON.stringify({ name: 'a', dependencies: ['x', 'y'] }, null, 2) + '\n';
+  assert.equal(formatLike(multi, { name: 'a', dependencies: ['x'] }), JSON.stringify({ name: 'a', dependencies: ['x'] }, null, 2) + '\n');
+});
+
 // --- build(), against fake repositories -------------------------------------
 //
 // The three throws below are the generator's reason to exist: each one is a way a
@@ -132,6 +173,16 @@ test('build throws, naming the entry, when a path does not resolve at its sha', 
     [entry('tdd', 'skills/tdd'), entry('gone', 'skills/renamed-away')],
     ({ dest, plugins, deps }) => {
       assert.throws(() => build(dest, plugins, deps), /will not resolve[\s\S]*gone/);
+    }
+  );
+});
+
+test('unresolved names exactly the entries whose path is gone at their sha', () => {
+  withBuild(
+    { LICENSE: 'MIT', 'skills/tdd/SKILL.md': skill('tdd') },
+    [{ name: 'mode-router', source: './plugins/mode-router' }, entry('tdd', 'skills/tdd'), entry('gone', 'skills/renamed-away')],
+    ({ plugins, deps }) => {
+      assert.deepEqual(unresolved(plugins, deps), ['gone']);
     }
   );
 });
