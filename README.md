@@ -219,13 +219,33 @@ require it for every coding task, also add this to
 For every coding task, load and follow the globally available `ponytail` skill before acting.
 ```
 
-For a project-only selection, put the same filtered package entry in that
-project's `.pi/settings.json` instead. Project package settings load only after
-the project is trusted.
+**Selecting skills in one repository only.** Create or edit `.pi/settings.json`
+in that repository and list only the skills the project needs:
 
-Run `pi config` for an interactive picker. Package filters also support globs,
-`!` exclusions, and `+`/`-` exact-path overrides. For example, load everything
-except a mode you do not use:
+```json
+{
+  "packages": [
+    {
+      "source": "git:github.com/filippolmt/skills",
+      "autoload": false,
+      "skills": [
+        "+skills/tdd",
+        "+skills/react-expert"
+      ]
+    }
+  ]
+}
+```
+
+Start Pi from that repository and grant project trust when prompted. Pi installs
+the missing project package on startup; `/reload` applies later settings changes.
+A project entry with `autoload: false` also works alongside a global filtered
+entry: global selections remain available and the project adds its own exact
+selections. Use `pi config --local` for the project-scoped interactive picker.
+
+Run `pi config` for the global interactive picker. Package filters also support
+globs, `!` exclusions, and `+`/`-` exact-path overrides. For example, load
+everything except a mode you do not use:
 
 ```json
 { "packages": [{ "source": "git:github.com/filippolmt/skills",
