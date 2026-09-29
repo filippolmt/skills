@@ -140,7 +140,9 @@ also means:
   installed (`claude plugin list --json`, filter on `@filippo-skills`) and offer
   `claude plugin uninstall <name>@filippo-skills -s <scope>` for each — a
   `project` scope runs from that project's directory and edits its committed
-  `.claude/settings.json`, so ask before touching it.
+  `.claude/settings.json`, so ask before touching it. The README's *When a skill
+  leaves the catalog* gives other users the same steps; name the removed skills
+  in the PR body so they know what to uninstall.
 
 ## Regenerate the README
 

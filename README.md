@@ -54,6 +54,24 @@ To refresh after upstream updates:
 /plugin marketplace update filippo-skills
 ```
 
+### When a skill leaves the catalog
+
+A skill removed from the catalog stays installed wherever you had it, and
+updating it then fails with `Plugin "<name>" not found`. The marketplace update
+itself still succeeds. Uninstall the skill in each scope that has it — run the
+command from the project for a `project` scope:
+
+```
+/plugin uninstall <name>@filippo-skills
+```
+
+This includes skills a bundle installed as dependencies: updating the bundle
+does not remove a dependency it no longer lists.
+
+With pi or Codex nothing breaks: the skill leaves the tree on the next
+regeneration and disappears on your next update. If you named it in pi's
+`skills` filter, delete that line; it no longer matches anything.
+
 ### Bundles: a skill plus what it calls
 
 Some skills do not work alone. Two things break them, and a **bundle** — a local
