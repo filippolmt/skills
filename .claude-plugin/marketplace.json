@@ -351,6 +351,17 @@
       "description": "Turn a decision you can't fully answer into a questionnaire for someone else to fill in."
     },
     {
+      "name": "wait-what",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/productivity/wait-what",
+        "ref": "v1.2.3",
+        "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
+      },
+      "description": "Stop. That last message did not land — re-pitch it."
+    },
+    {
       "name": "setup-pre-commit",
       "source": {
         "source": "git-subdir",
@@ -921,6 +932,17 @@
         "sha": "626547c06881a20b3322bdc2ed6e6451b33a4fb6"
       },
       "description": "Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets."
+    },
+    {
+      "name": "nextjs-on-cloudflare",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/nextjs-on-cloudflare",
+        "ref": "main",
+        "sha": "626547c06881a20b3322bdc2ed6e6451b33a4fb6"
+      },
+      "description": "Build, migrate, and deploy Next.js apps on Cloudflare Workers with vinext."
     },
     {
       "name": "impeccable",

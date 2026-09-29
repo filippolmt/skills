@@ -97,7 +97,9 @@ manager, and that entry is then silently never updated again.
 6. **Regenerate the README** (see below), then validate.
 
 Done when every skill the discovery in step 2 turned up is either an entry in
-`marketplace.json` or named as deliberately left out.
+`marketplace.json` or named as deliberately left out, and the repo has a row in
+ADR-0014's source table — **whole** or **curated**, asked, never guessed. A
+skill left out of a whole source goes in its exclusions table, with the reason.
 
 ## Update mode
 
@@ -106,7 +108,12 @@ For each `git-subdir` source repo in `marketplace.json` (or the one named):
 1. Discover the repo's current skill folders, and its latest tag or branch HEAD
    to match how its entries are pinned.
 2. Reconcile against the existing entries:
-   - **New** upstream folder (no entry) → add an entry (as in add mode).
+   - **New** upstream folder (no entry) → look the repo up in
+     `docs/adr/0014-each-source-repo-is-whole-or-curated.md`. Skip a **catalog
+     exclusion** and a harness mirror or fixture silently. On a **whole source**,
+     add an entry (as in add mode). On a **curated source**, list it and **ask**;
+     one declined goes in the exclusions table so it is not asked again. A repo
+     with no row → ask which kind it is and add the row.
    - **Removed** upstream (entry whose `path` no longer has `SKILL.md`) → list
      it, **ask to confirm**, then delete the entry.
    - Bump each surviving entry to the SHA its `ref` now resolves to: a

@@ -263,6 +263,7 @@ Snapshot of the catalog — the source of truth is
 | `teach` | Teach the user a new skill or concept, within this workspace. |
 | `writing-for-agents` | Writing documents for agents. Use when creating or editing skills, or modifying AGENTS.md or CLAUDE.md. |
 | `to-questionnaire` | Turn a decision you can't fully answer into a questionnaire for someone else to fill in. |
+| `wait-what` | Stop. That last message did not land — re-pitch it. |
 | `setup-pre-commit` | Set up Husky pre-commit hooks with lint-staged (Prettier), type checking, and tests in the current repo. |
 | `git-guardrails-claude-code` | Set up Claude Code hooks to block dangerous git commands (push, reset --hard, clean, branch -D, etc.) before they execute. |
 
@@ -358,6 +359,7 @@ Snapshot of the catalog — the source of truth is
 | `web-perf` | Analyze web performance via Chrome DevTools MCP — Core Web Vitals, render-blocking resources, layout shifts, and caching. |
 | `workers-best-practices` | Review and author Cloudflare Workers code against production best practices and common anti-patterns. |
 | `wrangler` | Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets. |
+| `nextjs-on-cloudflare` | Build, migrate, and deploy Next.js apps on Cloudflare Workers with vinext. |
 
 ### [pbakaus/impeccable](https://github.com/pbakaus/impeccable) — frontend design fluency
 
