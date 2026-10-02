@@ -11,7 +11,7 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   marketplace offers. Every other tree in this repo is derived from it — the
   README's catalog projection and the skills tree pi reads.
 - **Plugin entry** — one object in the catalog. Either a **local plugin** (its
-  `source` is a repo-relative path, e.g. `./plugins/mode-router`) or a
+  `source` is a repo-relative path, e.g. `./plugins/agent-report-guard`) or a
   **git-subdir entry** (references an upstream folder, pins a `sha`).
 - **Whole-plugin entry** — a git-subdir entry whose `path` points at an upstream
   plugin root (its own `.claude-plugin/plugin.json`); installing it brings every
@@ -51,9 +51,6 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   Its **omit** list is not editorial in that sense and is empty: it once named
   the seven bundles, which the derived set has handled since — first by
   subtracting them, now by routing them to the bundle projection instead.
-- **Modes table** — the catalog projection's final table (`caveman`,
-  `ponytail`). Not configured in catalog-meta: derived from the local
-  `mode-router` plugin's `dependencies`.
 
 ## Agent distribution
 
@@ -86,7 +83,7 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Overlay drift** — an overlay whose upstream has moved under it. Surfaces as the
   patch failing to apply, which is the property the form is chosen for.
 - **Portable entry** — a catalog entry that has a vendored copy. Excluded are the
-  bundles, the guards and `mode-router`: neither agent has `dependencies` or a
+  bundles and the guards: neither agent has `dependencies` or a
   subagent a plugin can ship, and pi has no declarative hooks at all.
 - **pi package** — this repository installed whole, as one unit. There is exactly
   one, never one per entry, because pi has no per-subdirectory source.
@@ -136,54 +133,6 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   reports (`code-review`'s two axes, `research`, `printing-press`). It assumes an
   unnamed spawn; a named one leaves it waiting. The local `agent-report-guard`
   plugin is what enforces that assumption.
-
-## Mode router
-
-- **Mode** — one of `auto` / `caveman` / `ponytail` / `off`, chosen by the
-  control file `~/.config/mode-router/state.json`.
-- **Loaded-mode set** — the mode skills known to be present in the current
-  context. A mode is (re)invoked only when it is missing from the set. See
-  `plugins/mode-router/skills/mode-router/ROUTING.md`.
-- **Mode switch** — a request that classifies to the mode a context does not
-  hold, while it holds the other one; or the control file forcing that mode. The
-  router does not load the missing mode: the turn is spent on the **switch
-  notice**, and the user chooses.
-- **Switch clause** — what the router tells the model on a turn with one mode
-  loaded: apply that mode, or — on a mode switch — do not load the other and
-  answer with the switch notice instead.
-- **Switch notice** — the one-line answer the user sees on a mode switch: which
-  mode the request wanted, which one the context holds, the recommended
-  carryover and reset, and the word that declines it. A recommendation — the
-  router never demands the reset. Declining it gets the request answered in no
-  mode at all.
-- **Mode veto** — the router refusing a mode skill's invocation because the
-  context already holds the other mode. Backs up the switch clause; it stops the
-  model's call, never the user's typed slash — a forced mode included.
-- **Mid-turn arrival** — a mode reaching for a context that already holds the
-  other one *inside a turn routed from an empty set*: the model invokes the mode
-  it classified to, the work then shifts, and it reaches for the other. Named
-  because that turn was told to invoke and never saw a switch clause, which is
-  why the veto's deny reason carries the switch notice itself
-  (`docs/adr/0009-the-deny-reason-carries-the-procedure.md`).
-- **Mixed context** — a context holding both mode skills. Reached only by the
-  user typing the second mode; the router never produces one. Tolerated, not a
-  failure: per-turn suspension is how it still answers in exactly one mode.
-- **Per-turn suspension** — how a mixed context keeps exclusivity: the turn's
-  routing text applies the mode the request classifies to and declares the other
-  one to contribute nothing that turn, not even to the prose. Words rather than
-  enforcement, and per turn rather than per context — the suspended mode is still
-  loaded, just inert.
-- **Context reset** — the event that empties the loaded-mode set: session
-  startup, clear, compaction, or fork. A resume is not one: it rebuilds the same
-  context, so the loaded modes are still in it.
-- **Handoff note** — what a context leaves behind for the one that replaces it:
-  what has been established, what remains, and the prompt to re-send afterwards.
-  The user asks for it explicitly before a deliberate `/clear` — the router
-  recommends one on a mode switch and never demands it. Belongs to the project,
-  not to the session it was written in, so it survives the reset. The artifact,
-  not the act of producing it.
-- **Carryover** — the act of having the pending handoff note written. Named apart
-  from the note so that one word does not stand for both.
 
 ## Word splitting
 

@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0016
 ---
 
 # A dispatch turn routes the work, not the dispatch

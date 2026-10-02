@@ -23,14 +23,6 @@
       }
     },
     {
-      "name": "mode-router",
-      "source": "./plugins/mode-router",
-      "description": "Per-prompt router: classifies each request and invokes the caveman (terse output) or ponytail (minimal code) skill. One mode per context — a request that classifies the other way gets a switch notice recommending a carryover and a clear, never a second mode. Force a mode or turn it off via control file. Bundles both as dependencies.",
-      "author": {
-        "name": "Filippo Merante Caparrotta"
-      }
-    },
-    {
       "name": "improve-codebase-architecture-bundle",
       "source": "./plugins/improve-codebase-architecture-bundle",
       "description": "Install improve-codebase-architecture together with the mattpocock skills it calls at runtime (grilling, codebase-design, domain-modeling) and agent-report-guard, the hook that keeps their sub-agents reporting back. Bundles them as dependencies.",
@@ -525,28 +517,6 @@
         "sha": "ce26fc25c0e5e8cab638f883de62d9a86ee5e45b"
       },
       "description": "Anti-slop frontend skill for landing pages, portfolios, and redesigns."
-    },
-    {
-      "name": "caveman",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/juliusbrussee/caveman",
-        "path": "skills/caveman",
-        "ref": "v2.7.0",
-        "sha": "8b0c1d3699b8d83e87fe4605b378da20c41555e0"
-      },
-      "description": "Ultra-compressed communication mode."
-    },
-    {
-      "name": "ponytail",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/dietrichgebert/ponytail",
-        "path": "skills/ponytail",
-        "ref": "v4.10.0",
-        "sha": "1d95ff7d39de12d87014ea40d4e22201bddc501b"
-      },
-      "description": "Forces the laziest solution that actually works, simplest, shortest, most minimal."
     },
     {
       "name": "printing-press",

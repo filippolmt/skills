@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0016
 ---
 
 # The veto's deny reason carries the procedure, and the mid-turn arrival is why

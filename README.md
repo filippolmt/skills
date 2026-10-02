@@ -11,11 +11,9 @@ repository (see [ADR-0010](docs/adr/0010-vendor-a-shared-skills-tree-on-main.md)
 ```
 .claude-plugin/marketplace.json   # marketplace catalog — the source of truth
 plugins/
-  mode-router/
+  agent-report-guard/
     .claude-plugin/plugin.json     # plugin manifest
-    hooks/hooks.json               # UserPromptSubmit hook (auto-loaded)
-    skills/
-      mode-router/SKILL.md         # skill
+    hooks/hooks.json               # PreToolUse hook (auto-loaded)
   code-review-bundle/              # a bundle: dependencies only, no artifacts
 skills/                            # generated: vendored copies, read by pi and Codex
   tdd/
@@ -198,7 +196,7 @@ chosen skills available in every project, use a filtered package entry in
       "source": "git:github.com/filippolmt/skills",
       "autoload": false,
       "skills": [
-        "+skills/ponytail"
+        "+skills/tdd"
       ]
     }
   ]
@@ -211,12 +209,12 @@ repository into its package cache, but the configured source remains GitHub;
 `pi update --extensions` refreshes that cache. Run `/reload` after changing the
 settings in an active session.
 
-This makes `ponytail` globally available for automatic model invocation. To
-require it for every coding task, also add this to
+This makes `tdd` globally available for automatic model invocation. To
+require it for every feature or bug fix, also add this to
 `~/.pi/agent/APPEND_SYSTEM.md`:
 
 ```markdown
-For every coding task, load and follow the globally available `ponytail` skill before acting.
+For every feature or bug fix, load and follow the globally available `tdd` skill before acting.
 ```
 
 **Selecting skills in one repository only.** Create or edit `.pi/settings.json`
@@ -245,18 +243,18 @@ selections. Use `pi config --local` for the project-scoped interactive picker.
 
 Run `pi config` for the global interactive picker. Package filters also support
 globs, `!` exclusions, and `+`/`-` exact-path overrides. For example, load
-everything except a mode you do not use:
+everything except a skill you do not use:
 
 ```json
 { "packages": [{ "source": "git:github.com/filippolmt/skills",
-                 "skills": ["skills/*", "!skills/caveman"] }] }
+                 "skills": ["skills/*", "!skills/last30days"] }] }
 ```
 
 In Codex, name the skill in `~/.codex/config.toml`:
 
 ```toml
 [[skills.config]]
-path = "~/.agents/skills/caveman/SKILL.md"
+path = "~/.agents/skills/last30days/SKILL.md"
 enabled = false
 ```
 
@@ -298,7 +296,6 @@ Snapshot of the catalog — the source of truth is
 **Local:**
 - `agent-report-guard` — Drops `name` from Agent tool calls so the subagent reports back on its own: a named agent becomes a mailbox teammate that notifies idle without a report body, leaving fan-out skills (code-review, research, printing-press) chasing the report with SendMessage. Opt out per call with `[mailbox]` in the description, or session-wide with ALLOW_NAMED_AGENTS=1.
 - `zsh-wordsplit-guard` — Denies a Bash command looping over a bare expansion (`for x in $var`): the Bash tool runs zsh, where parameter expansion is not word-split, so the loop silently runs once over the whole string instead of per element. A glob or a path around the expansion (`for f in $D/*.log`) is left alone. The deny message names the splitting forms to use instead. Opt out per call with `[nosplit]` in the description, or session-wide with ALLOW_ZSH_NOSPLIT=1.
-- `mode-router` — Per-prompt router: classifies each request and invokes the caveman (terse output) or ponytail (minimal code) skill. One mode per context — a request that classifies the other way gets a switch notice recommending a carryover and a clear, never a second mode. Force a mode or turn it off via control file. Bundles both as dependencies.
 
 ### [mattpocock/skills](https://github.com/mattpocock/skills) — engineering & productivity
 
@@ -460,13 +457,6 @@ Snapshot of the catalog — the source of truth is
 | Skill | What it does |
 |---|---|
 | `security-audit` | Security guidance and vulnerability review for codebases, APIs, services, CLI tools, libraries, and daemons. Use for security questions, focused reviews, vulnerability research, security audits, or pen tests. Run the complete workflow only for explicit codebase audit or pen-test requests, full/comprehensive/end-to-end reviews, or requested report artifacts. |
-
-### Modes (bundled by the local `mode-router` plugin)
-
-| Skill | Source | What it does |
-|---|---|---|
-| `caveman` | [juliusbrussee/caveman](https://github.com/juliusbrussee/caveman) | Ultra-compressed communication mode. |
-| `ponytail` | [dietrichgebert/ponytail](https://github.com/dietrichgebert/ponytail) | Forces the laziest solution that actually works, simplest, shortest, most minimal. |
 <!-- catalog:end -->
 
 ## External skills (auto-updated by Renovate)
@@ -548,8 +538,6 @@ The folder pointed to by `path` must be a valid skill (contain `SKILL.md`).
 3. Write the operating instructions in the body. Done — invocable as
    `/<plugin>:<name>`.
 
-Fastest path: copy `plugins/mode-router/skills/mode-router/` as a starting point.
-
 ## Adding a new plugin
 
 1. Create `plugins/<plugin-name>/.claude-plugin/plugin.json`:
@@ -588,7 +576,7 @@ claude plugin validate .                        # marketplace + all local plugin
 ```
 
 Output must be clean — warnings count as failures. To check one plugin on its
-own: `claude plugin validate ./plugins/mode-router`.
+own: `claude plugin validate ./plugins/agent-report-guard`.
 
 ## Versioning
 
@@ -616,7 +604,7 @@ bump only for changes that leave every plugin's behaviour alone — repo docs,
   [ADR-0008](docs/adr/0008-whole-plugin-entries-cover-commands.md), why a few
   entries point at a whole plugin instead of a single skill.
 - [`CONTEXT.md`](CONTEXT.md) — the domain glossary, and the naming authority.
-  *Bundle*, *projection*, *overlay*, *guard*, *spawn*, *mode* and *carryover* are
+  *Bundle*, *projection*, *overlay*, *guard* and *spawn* are
   defined terms there, each narrower than its everyday sense.
 - [`CLAUDE.md`](CLAUDE.md) — the operating instructions for agents working in
   this repo.

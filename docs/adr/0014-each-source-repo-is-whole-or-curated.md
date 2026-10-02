@@ -79,8 +79,6 @@ the exclusions.
 | `nextlevelbuilder/ui-ux-pro-max-skill` | curated | |
 | `mvanhorn/cli-printing-press` | `printing-press-publish`, `printing-press-amend`, `printing-press-import` | Bound to the third-party public library `mvanhorn/printing-press-library` |
 | `mvanhorn/cli-printing-press` | `printing-press-retro` | Files findings for the Press's maintainers |
-| `juliusbrussee/caveman` | curated | `mode-router` depends on the core mode only |
-| `dietrichgebert/ponytail` | curated | `mode-router` depends on the core mode only |
 | `filippolmt/proximo` | curated | |
 | `tt-a1i/archify` | curated | |
 
@@ -90,8 +88,6 @@ the exclusions.
 | --- | --- | --- |
 | `mattpocock/skills` | `migrate-to-shoehorn` | Tied to one TypeScript test library |
 | `mattpocock/skills` | `scaffold-exercises` | Tied to the author's course format |
-| `juliusbrussee/caveman` | every skill but `caveman` | Companions trigger on their own; a context holds one mode (ADR-0006), and `caveman-review` overlaps `code-review` |
-| `dietrichgebert/ponytail` | every skill but `ponytail` | Same as `caveman`'s companions |
 | `filippolmt/proximo` | `.claude/skills/*` | Skills for developing proximo, not for using it |
 | `tt-a1i/archify` | `archify-review` | For archify's maintainers: triages its issues and links its `REVIEWING.md` by relative path |
 
