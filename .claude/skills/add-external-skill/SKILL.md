@@ -158,7 +158,7 @@ The README **Available skills** catalog is a **projection** of
   ```
   Use `"kind": "plugin"` for a whole-plugin entry (renders a "What it bundles"
   column). The generator **throws** if any git-subdir entry's repo has no group
-  (or is not omitted / a mode-router dependency), so this can't be silently
+  (or is not omitted), so this can't be silently
   missed.
 - Run the generator:
   ```bash

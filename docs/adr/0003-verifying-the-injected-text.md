@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0016
 ---
 
 # Verify the injected text on two layers, and keep the stochastic one out of CI

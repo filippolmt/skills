@@ -27,8 +27,8 @@ never `""` — an empty path matches neither Renovate manager
 (`docs/adr/0008-whole-plugin-entries-cover-commands.md`); see `diagram-design`.
 
 `CONTEXT.md` is the domain glossary — the naming authority. Read it before you
-coin a name, and whenever a task says *bundle*, *projection*, *overlay*, *guard*,
-*spawn*, *mode* or *carryover*: each is a defined term here, narrower than its
+coin a name, and whenever a task says *bundle*, *projection*, *overlay*, *guard* or
+*spawn*: each is a defined term here, narrower than its
 everyday sense.
 
 `docs/adr/` holds the decisions and their reasoning, one file per decision
@@ -74,7 +74,7 @@ An entry whose folder upstream deleted or renamed is **pruned** by that same
 regeneration: it leaves the catalog and every bundle's `dependencies` (breaking
 bump), the README is regenerated, and the self-merging PR names it
 (`docs/adr/0015-an-upstream-removal-is-pruned-at-regeneration.md`). A removal that
-would change a non-bundle's behaviour (`mode-router`) or strip a bundle of the skill
+would change a non-bundle's behaviour or strip a bundle of the skill
 it is named after turns the run red instead.
 
 ## Gotchas

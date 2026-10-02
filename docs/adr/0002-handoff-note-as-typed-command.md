@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0016
 ---
 
 # The handoff note is written by a typed `/handoff`, not by injected text

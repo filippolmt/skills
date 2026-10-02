@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 // gen-readme — render the README's two generated regions from marketplace.json.
 //
-// The catalog is a PROJECTION of three source-of-truth inputs:
+// The catalog is a PROJECTION of two source-of-truth inputs:
 //   - .claude-plugin/marketplace.json     — the plugin entries (names, descriptions, URLs)
 //   - scripts/catalog-meta.json           — editorial ordering + per-repo taglines + omissions
-//   - plugins/mode-router/.../plugin.json  — its `dependencies` define the "Modes" table
 // The rendered markdown is spliced into README.md between the markers
 //   <!-- catalog:start -->  …  <!-- catalog:end -->
 // Every description is rendered VERBATIM from marketplace.json — the JSON is the
@@ -40,26 +39,24 @@ function table(cols, rows) {
   return [header, sep, ...rows].join('\n');
 }
 
-// Pure: build the "Available skills" catalog markdown from the three inputs.
-// `modes` is the ordered list of skill names the local mode-router plugin bundles.
-function renderCatalog(marketplace, meta, modes) {
+// Pure: build the "Available skills" catalog markdown from the two inputs.
+function renderCatalog(marketplace, meta) {
   const plugins = marketplace.plugins || [];
   const omit = new Set(meta.omit || []);
-  const modeSet = new Set(modes || []);
   const out = [];
 
   // Local plugins (source is a path), minus anything explicitly omitted.
   const locals = plugins.filter((p) => isLocal(p) && !omit.has(p.name));
   if (locals.length) {
     // One per line: descriptions end in a full stop, so joining them inline
-    // produced `…on purpose.; \`mode-router\` — …`.
+    // produced `…on purpose.; \`next-plugin\` — …`.
     out.push(['**Local:**', ...locals.map((p) => `- \`${p.name}\` — ${p.description}`)].join('\n'));
   }
 
   // Grouped git-subdir entries, in the editorial order from catalog-meta.json.
   for (const g of meta.groups || []) {
     const entries = plugins.filter(
-      (p) => repoOf(p) === g.repo && !omit.has(p.name) && !modeSet.has(p.name)
+      (p) => repoOf(p) === g.repo && !omit.has(p.name)
     );
     if (!entries.length) continue;
     const cols =
@@ -68,34 +65,16 @@ function renderCatalog(marketplace, meta, modes) {
     out.push(table(cols, entries.map((p) => `| \`${p.name}\` | ${p.description} |`)));
   }
 
-  // Modes table — derived from the local mode-router plugin's dependencies.
-  const modeEntries = (modes || [])
-    .map((name) => plugins.find((p) => p.name === name))
-    .filter(Boolean);
-  if (modeEntries.length) {
-    out.push('### Modes (bundled by the local `mode-router` plugin)');
-    out.push(
-      table(
-        ['Skill', 'Source', 'What it does'],
-        modeEntries.map((p) => {
-          const repo = repoOf(p);
-          const src = repo ? `[${repo}](https://github.com/${repo})` : '';
-          return `| \`${p.name}\` | ${src} | ${p.description} |`;
-        })
-      )
-    );
-  }
-
-  // Drift guard: every git-subdir entry must be classified (grouped, a mode, or omitted).
+  // Drift guard: every git-subdir entry must be classified (grouped or omitted).
   const grouped = new Set((meta.groups || []).map((g) => g.repo));
   const unclassified = plugins
-    .filter((p) => repoOf(p) && !omit.has(p.name) && !modeSet.has(p.name))
+    .filter((p) => repoOf(p) && !omit.has(p.name))
     .filter((p) => !grouped.has(repoOf(p)))
     .map((p) => `${p.name} (${repoOf(p)})`);
   if (unclassified.length) {
     throw new Error(
       `catalog-meta.json is missing a group for: ${unclassified.join(', ')}. ` +
-        'Add the repo to "groups" (or the entry to "omit"/mode-router dependencies).'
+        'Add the repo to "groups" (or the entry to "omit").'
     );
   }
 
@@ -142,8 +121,6 @@ if (require.main === module) {
   const manifestOf = (entry) => JSON.parse(read(path.join(entry.source, '.claude-plugin/plugin.json')));
   const catalog = readCatalog();
   const meta = JSON.parse(read('scripts/catalog-meta.json'));
-  const routerManifest = JSON.parse(read('plugins/mode-router/.claude-plugin/plugin.json'));
-  const modes = routerManifest.dependencies || [];
 
   // Each local plugin's description is copied verbatim into the catalog, so it can
   // drift from the manifest it was copied from. Catch that here, not in review.
@@ -172,7 +149,7 @@ if (require.main === module) {
 
   const readmePath = path.join(root, 'README.md');
   const current = fs.readFileSync(readmePath, 'utf8');
-  let next = replaceBetweenMarkers(current, renderCatalog(catalog, { ...meta, omit }, modes));
+  let next = replaceBetweenMarkers(current, renderCatalog(catalog, { ...meta, omit }));
   next = replaceBetweenMarkers(next, renderBundles(bundles), BUNDLES_START, BUNDLES_END);
 
   if (process.argv.includes('--check')) {

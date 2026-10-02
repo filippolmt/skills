@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0016
 ---
 
 # The command that writes the note is `/carryover`, not `/handoff`
