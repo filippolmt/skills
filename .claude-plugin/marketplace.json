@@ -766,8 +766,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/react-expert",
-        "ref": "v0.4.16",
-        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
+        "ref": "v0.4.18",
+        "sha": "1be15d8064f88fc25216442406d40add8fd23b53"
       },
       "description": "Use when building React 18+ applications in .jsx or .tsx files, Next.js App Router projects, or create-react-app setups.",
       "author": {
@@ -781,8 +781,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/wordpress-pro",
-        "ref": "v0.4.16",
-        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
+        "ref": "v0.4.18",
+        "sha": "1be15d8064f88fc25216442406d40add8fd23b53"
       },
       "description": "Develops custom WordPress themes and plugins, creates and registers Gutenberg blocks and block patterns, configures WooCommerce stores, implements WordPress REST API endpoints, applies security hardening, and optimizes performance through caching and query tuning.",
       "author": {
@@ -796,8 +796,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/fastapi-expert",
-        "ref": "v0.4.16",
-        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
+        "ref": "v0.4.18",
+        "sha": "1be15d8064f88fc25216442406d40add8fd23b53"
       },
       "description": "Use when building high-performance async Python APIs with FastAPI and Pydantic V2.",
       "author": {
@@ -811,8 +811,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/kubernetes-specialist",
-        "ref": "v0.4.16",
-        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
+        "ref": "v0.4.18",
+        "sha": "1be15d8064f88fc25216442406d40add8fd23b53"
       },
       "description": "Use when deploying or managing Kubernetes workloads.",
       "author": {
@@ -826,8 +826,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/golang-pro",
-        "ref": "v0.4.16",
-        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
+        "ref": "v0.4.18",
+        "sha": "1be15d8064f88fc25216442406d40add8fd23b53"
       },
       "description": "Implements concurrent Go patterns using goroutines and channels, designs and builds microservices with gRPC or REST, optimizes Go application performance with pprof, and enforces idiomatic Go with generics, interfaces, and robust error handling.",
       "author": {
@@ -841,8 +841,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/cli-developer",
-        "ref": "v0.4.16",
-        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
+        "ref": "v0.4.18",
+        "sha": "1be15d8064f88fc25216442406d40add8fd23b53"
       },
       "description": "Use when building CLI tools, implementing argument parsing, or adding interactive prompts.",
       "author": {
@@ -856,8 +856,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/code-documenter",
-        "ref": "v0.4.16",
-        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
+        "ref": "v0.4.18",
+        "sha": "1be15d8064f88fc25216442406d40add8fd23b53"
       },
       "description": "Generates, formats, and validates technical documentation — including docstrings, OpenAPI/Swagger specs, JSDoc annotations, doc portals, and user guides.",
       "author": {
@@ -871,8 +871,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/database-optimizer",
-        "ref": "v0.4.16",
-        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
+        "ref": "v0.4.18",
+        "sha": "1be15d8064f88fc25216442406d40add8fd23b53"
       },
       "description": "Optimizes database queries and improves performance across PostgreSQL and MySQL systems.",
       "author": {
@@ -886,8 +886,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/playwright-expert",
-        "ref": "v0.4.16",
-        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
+        "ref": "v0.4.18",
+        "sha": "1be15d8064f88fc25216442406d40add8fd23b53"
       },
       "description": "Use when writing E2E tests with Playwright, setting up test infrastructure, or debugging flaky browser tests.",
       "author": {
@@ -901,8 +901,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Jeffallan/claude-skills",
         "path": "skills/sql-pro",
-        "ref": "v0.4.16",
-        "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
+        "ref": "v0.4.18",
+        "sha": "1be15d8064f88fc25216442406d40add8fd23b53"
       },
       "description": "Optimizes SQL queries, designs database schemas, and troubleshoots performance issues.",
       "author": {
