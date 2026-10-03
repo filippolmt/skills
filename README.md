@@ -301,11 +301,9 @@ Snapshot of the catalog — the source of truth is
 
 | Skill | What it does |
 |---|---|
-| `ask-matt` | Ask which skill or flow fits your situation. |
 | `diagnosing-bugs` | Diagnosis loop for hard bugs and performance regressions. |
 | `grill-with-docs` | A relentless interview to sharpen a plan or design, which also creates docs (ADR's and glossary) as we go. |
 | `triage` | Move issues and external PRs through a state machine of triage roles — categorise, verify, grill if needed, and write agent-ready briefs. |
-| `resolving-merge-conflicts` | Use when you need to resolve an in-progress git merge/rebase conflict. |
 | `wayfinder` | Plan a huge chunk of work — more than one agent session can hold — as a shared map of investigation tickets on your issue tracker, and resolve them one at a time until the way to the destination is clear. |
 | `improve-codebase-architecture` | Scan a codebase for deepening opportunities, present them as a visual HTML report, then grill through whichever one you pick. |
 | `setup-matt-pocock-skills` | Configure this repo for the engineering skills — set up its issue tracker, triage label vocabulary, and domain doc layout. |
@@ -325,9 +323,7 @@ Snapshot of the catalog — the source of truth is
 | `teach` | Teach the user a new skill or concept, within this workspace. |
 | `writing-for-agents` | Writing documents for agents. Use when creating or editing skills, or modifying AGENTS.md or CLAUDE.md. |
 | `to-questionnaire` | Turn a decision you can't fully answer into a questionnaire for someone else to fill in. |
-| `wait-what` | Stop. That last message did not land — re-pitch it. |
 | `setup-pre-commit` | Set up Husky pre-commit hooks with lint-staged (Prettier), type checking, and tests in the current repo. |
-| `git-guardrails-claude-code` | Set up Claude Code hooks to block dangerous git commands (push, reset --hard, clean, branch -D, etc.) before they execute. |
 
 ### [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) — frontend design & image-gen
 
