@@ -27,7 +27,8 @@
       "source": "./plugins/improve-codebase-architecture-bundle",
       "description": "Install improve-codebase-architecture together with the mattpocock skills it calls at runtime (grilling, codebase-design, domain-modeling) and agent-report-guard, the hook that keeps their sub-agents reporting back. Bundles them as dependencies.",
       "author": {
-        "name": "Filippo Merante Caparrotta"
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
       }
     },
     {
@@ -35,7 +36,8 @@
       "source": "./plugins/printing-press-bundle",
       "description": "Install printing-press with the sibling skills that create and maintain a CLI locally (printing-press-polish, printing-press-score, printing-press-reprint, and the internal printing-press-output-review) and agent-report-guard, the hook that keeps its subagents reporting back. Bundles them as dependencies.",
       "author": {
-        "name": "Filippo Merante Caparrotta"
+        "name": "Matt Van Horn and Trevin Chow",
+        "url": "https://github.com/mvanhorn/cli-printing-press"
       }
     },
     {
@@ -43,7 +45,8 @@
       "source": "./plugins/code-review-bundle",
       "description": "Install code-review together with agent-report-guard, the hook that keeps its two axis sub-agents reporting back instead of stalling. Bundles them as dependencies.",
       "author": {
-        "name": "Filippo Merante Caparrotta"
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
       }
     },
     {
@@ -51,7 +54,8 @@
       "source": "./plugins/implement-bundle",
       "description": "Install implement together with the skills it calls at runtime (tdd, code-review) and agent-report-guard, the hook that keeps code-review's sub-agents reporting back. Bundles them as dependencies.",
       "author": {
-        "name": "Filippo Merante Caparrotta"
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
       }
     },
     {
@@ -59,7 +63,8 @@
       "source": "./plugins/triage-bundle",
       "description": "Install triage together with the skills it calls at runtime (grilling, domain-modeling). Bundles them as dependencies.",
       "author": {
-        "name": "Filippo Merante Caparrotta"
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
       }
     },
     {
@@ -67,7 +72,8 @@
       "source": "./plugins/wayfinder-bundle",
       "description": "Install wayfinder together with the skills it calls at runtime (grilling, domain-modeling, prototype, research, setup-matt-pocock-skills) and agent-report-guard, the hook that keeps its research subagents reporting back. Bundles them as dependencies.",
       "author": {
-        "name": "Filippo Merante Caparrotta"
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
       }
     },
     {
@@ -75,19 +81,9 @@
       "source": "./plugins/grill-with-docs-bundle",
       "description": "Install grill-with-docs together with the skills it calls at runtime (grilling, domain-modeling). Bundles them as dependencies.",
       "author": {
-        "name": "Filippo Merante Caparrotta"
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
       }
-    },
-    {
-      "name": "ask-matt",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/mattpocock/skills",
-        "path": "skills/engineering/ask-matt",
-        "ref": "v1.2.3",
-        "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
-      },
-      "description": "Ask which skill or flow fits your situation."
     },
     {
       "name": "diagnosing-bugs",
@@ -98,7 +94,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Diagnosis loop for hard bugs and performance regressions."
+      "description": "Diagnosis loop for hard bugs and performance regressions.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "grill-with-docs",
@@ -109,7 +109,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "A relentless interview to sharpen a plan or design, which also creates docs (ADR's and glossary) as we go."
+      "description": "A relentless interview to sharpen a plan or design, which also creates docs (ADR's and glossary) as we go.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "triage",
@@ -120,18 +124,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Move issues and external PRs through a state machine of triage roles — categorise, verify, grill if needed, and write agent-ready briefs."
-    },
-    {
-      "name": "resolving-merge-conflicts",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/mattpocock/skills",
-        "path": "skills/engineering/resolving-merge-conflicts",
-        "ref": "v1.2.3",
-        "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
-      },
-      "description": "Use when you need to resolve an in-progress git merge/rebase conflict."
+      "description": "Move issues and external PRs through a state machine of triage roles — categorise, verify, grill if needed, and write agent-ready briefs.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "wayfinder",
@@ -142,7 +139,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Plan a huge chunk of work — more than one agent session can hold — as a shared map of investigation tickets on your issue tracker, and resolve them one at a time until the way to the destination is clear."
+      "description": "Plan a huge chunk of work — more than one agent session can hold — as a shared map of investigation tickets on your issue tracker, and resolve them one at a time until the way to the destination is clear.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "improve-codebase-architecture",
@@ -153,7 +154,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Scan a codebase for deepening opportunities, present them as a visual HTML report, then grill through whichever one you pick."
+      "description": "Scan a codebase for deepening opportunities, present them as a visual HTML report, then grill through whichever one you pick.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "setup-matt-pocock-skills",
@@ -164,7 +169,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Configure this repo for the engineering skills — set up its issue tracker, triage label vocabulary, and domain doc layout."
+      "description": "Configure this repo for the engineering skills — set up its issue tracker, triage label vocabulary, and domain doc layout.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "tdd",
@@ -175,7 +184,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Test-driven development."
+      "description": "Test-driven development.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "to-tickets",
@@ -186,7 +199,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Break a plan, spec, or the current conversation into a set of tracer-bullet tickets, each declaring its blocking edges, published to the configured tracker — edges as text in a local file, or native blocking links on a real tracker."
+      "description": "Break a plan, spec, or the current conversation into a set of tracer-bullet tickets, each declaring its blocking edges, published to the configured tracker — edges as text in a local file, or native blocking links on a real tracker.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "to-spec",
@@ -197,7 +214,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Turn the current conversation into a spec and publish it to the project issue tracker — no interview, just synthesis of what you've already discussed."
+      "description": "Turn the current conversation into a spec and publish it to the project issue tracker — no interview, just synthesis of what you've already discussed.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "implement",
@@ -208,7 +229,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Implement a piece of work based on a spec or set of tickets."
+      "description": "Implement a piece of work based on a spec or set of tickets.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "prototype",
@@ -219,7 +244,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Build a throwaway prototype to answer a design question."
+      "description": "Build a throwaway prototype to answer a design question.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "research",
@@ -230,7 +259,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Investigate a question against high-trust primary sources and capture the findings as a Markdown file in the repo."
+      "description": "Investigate a question against high-trust primary sources and capture the findings as a Markdown file in the repo.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "domain-modeling",
@@ -241,7 +274,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Build and sharpen a project's domain model."
+      "description": "Build and sharpen a project's domain model.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "codebase-design",
@@ -252,7 +289,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Shared vocabulary for designing deep modules."
+      "description": "Shared vocabulary for designing deep modules.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "code-review",
@@ -263,7 +304,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes — Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/PRD asked for?)."
+      "description": "Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes — Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/PRD asked for?).",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "wizard",
@@ -274,7 +319,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Generate an interactive bash wizard that walks a human through steps only they can perform. Use when provisioning infrastructure, setting up credentials or CI secrets, walking an unfamiliar third-party dashboard, or running a one-off migration or cutover."
+      "description": "Generate an interactive bash wizard that walks a human through steps only they can perform. Use when provisioning infrastructure, setting up credentials or CI secrets, walking an unfamiliar third-party dashboard, or running a one-off migration or cutover.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "grill-me",
@@ -285,7 +334,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "A relentless interview to sharpen a plan or design."
+      "description": "A relentless interview to sharpen a plan or design.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "grilling",
@@ -296,7 +349,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Grill the user relentlessly about a plan or design."
+      "description": "Grill the user relentlessly about a plan or design.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "handoff",
@@ -307,7 +364,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Compact the current conversation into a handoff document for another agent to pick up."
+      "description": "Compact the current conversation into a handoff document for another agent to pick up.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "teach",
@@ -318,7 +379,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Teach the user a new skill or concept, within this workspace."
+      "description": "Teach the user a new skill or concept, within this workspace.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "writing-for-agents",
@@ -329,7 +394,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Writing documents for agents. Use when creating or editing skills, or modifying AGENTS.md or CLAUDE.md."
+      "description": "Writing documents for agents. Use when creating or editing skills, or modifying AGENTS.md or CLAUDE.md.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "to-questionnaire",
@@ -340,18 +409,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Turn a decision you can't fully answer into a questionnaire for someone else to fill in."
-    },
-    {
-      "name": "wait-what",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/mattpocock/skills",
-        "path": "skills/productivity/wait-what",
-        "ref": "v1.2.3",
-        "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
-      },
-      "description": "Stop. That last message did not land — re-pitch it."
+      "description": "Turn a decision you can't fully answer into a questionnaire for someone else to fill in.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "setup-pre-commit",
@@ -362,18 +424,11 @@
         "ref": "v1.2.3",
         "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
       },
-      "description": "Set up Husky pre-commit hooks with lint-staged (Prettier), type checking, and tests in the current repo."
-    },
-    {
-      "name": "git-guardrails-claude-code",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/mattpocock/skills",
-        "path": "skills/misc/git-guardrails-claude-code",
-        "ref": "v1.2.3",
-        "sha": "6acc160e4e0cd062dbbbd7a1b26ae92855edf07e"
-      },
-      "description": "Set up Claude Code hooks to block dangerous git commands (push, reset --hard, clean, branch -D, etc.) before they execute."
+      "description": "Set up Husky pre-commit hooks with lint-staged (Prettier), type checking, and tests in the current repo.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
     },
     {
       "name": "brandkit",
@@ -384,7 +439,11 @@
         "ref": "main",
         "sha": "ce26fc25c0e5e8cab638f883de62d9a86ee5e45b"
       },
-      "description": "Premium brand-kit image generation skill for creating high-end brand-guidelines boards, logo systems, identity decks, and visual-world presentations."
+      "description": "Premium brand-kit image generation skill for creating high-end brand-guidelines boards, logo systems, identity decks, and visual-world presentations.",
+      "author": {
+        "name": "Leon Lin",
+        "url": "https://github.com/Leonxlnx"
+      }
     },
     {
       "name": "brutalist-skill",
@@ -395,7 +454,11 @@
         "ref": "main",
         "sha": "ce26fc25c0e5e8cab638f883de62d9a86ee5e45b"
       },
-      "description": "Raw mechanical interfaces fusing Swiss typographic print with military terminal aesthetics."
+      "description": "Raw mechanical interfaces fusing Swiss typographic print with military terminal aesthetics.",
+      "author": {
+        "name": "Leon Lin",
+        "url": "https://github.com/Leonxlnx"
+      }
     },
     {
       "name": "gpt-tasteskill",
@@ -406,7 +469,11 @@
         "ref": "main",
         "sha": "ce26fc25c0e5e8cab638f883de62d9a86ee5e45b"
       },
-      "description": "Elite UX/UI & Advanced GSAP Motion Engineer."
+      "description": "Elite UX/UI & Advanced GSAP Motion Engineer.",
+      "author": {
+        "name": "Leon Lin",
+        "url": "https://github.com/Leonxlnx"
+      }
     },
     {
       "name": "image-to-code-skill",
@@ -417,7 +484,11 @@
         "ref": "main",
         "sha": "ce26fc25c0e5e8cab638f883de62d9a86ee5e45b"
       },
-      "description": "Elite website image-to-code skill for Codex."
+      "description": "Elite website image-to-code skill for Codex.",
+      "author": {
+        "name": "Leon Lin",
+        "url": "https://github.com/Leonxlnx"
+      }
     },
     {
       "name": "imagegen-frontend-mobile",
@@ -428,7 +499,11 @@
         "ref": "main",
         "sha": "ce26fc25c0e5e8cab638f883de62d9a86ee5e45b"
       },
-      "description": "Elite mobile app image-generation skill for creating premium, app-native screen concepts and flows."
+      "description": "Elite mobile app image-generation skill for creating premium, app-native screen concepts and flows.",
+      "author": {
+        "name": "Leon Lin",
+        "url": "https://github.com/Leonxlnx"
+      }
     },
     {
       "name": "imagegen-frontend-web",
@@ -439,7 +514,11 @@
         "ref": "main",
         "sha": "ce26fc25c0e5e8cab638f883de62d9a86ee5e45b"
       },
-      "description": "Elite frontend image-direction skill for generating premium, conversion-aware website design references."
+      "description": "Elite frontend image-direction skill for generating premium, conversion-aware website design references.",
+      "author": {
+        "name": "Leon Lin",
+        "url": "https://github.com/Leonxlnx"
+      }
     },
     {
       "name": "minimalist-skill",
@@ -450,7 +529,11 @@
         "ref": "main",
         "sha": "ce26fc25c0e5e8cab638f883de62d9a86ee5e45b"
       },
-      "description": "Clean editorial-style interfaces."
+      "description": "Clean editorial-style interfaces.",
+      "author": {
+        "name": "Leon Lin",
+        "url": "https://github.com/Leonxlnx"
+      }
     },
     {
       "name": "output-skill",
@@ -461,7 +544,11 @@
         "ref": "main",
         "sha": "ce26fc25c0e5e8cab638f883de62d9a86ee5e45b"
       },
-      "description": "Overrides default LLM truncation behavior."
+      "description": "Overrides default LLM truncation behavior.",
+      "author": {
+        "name": "Leon Lin",
+        "url": "https://github.com/Leonxlnx"
+      }
     },
     {
       "name": "redesign-skill",
@@ -472,7 +559,11 @@
         "ref": "main",
         "sha": "ce26fc25c0e5e8cab638f883de62d9a86ee5e45b"
       },
-      "description": "Upgrades existing websites and apps to premium quality."
+      "description": "Upgrades existing websites and apps to premium quality.",
+      "author": {
+        "name": "Leon Lin",
+        "url": "https://github.com/Leonxlnx"
+      }
     },
     {
       "name": "soft-skill",
@@ -483,7 +574,11 @@
         "ref": "main",
         "sha": "ce26fc25c0e5e8cab638f883de62d9a86ee5e45b"
       },
-      "description": "Teaches the AI to design like a high-end agency."
+      "description": "Teaches the AI to design like a high-end agency.",
+      "author": {
+        "name": "Leon Lin",
+        "url": "https://github.com/Leonxlnx"
+      }
     },
     {
       "name": "stitch-skill",
@@ -494,7 +589,11 @@
         "ref": "main",
         "sha": "ce26fc25c0e5e8cab638f883de62d9a86ee5e45b"
       },
-      "description": "Semantic Design System Skill for Google Stitch."
+      "description": "Semantic Design System Skill for Google Stitch.",
+      "author": {
+        "name": "Leon Lin",
+        "url": "https://github.com/Leonxlnx"
+      }
     },
     {
       "name": "taste-skill-v1",
@@ -505,7 +604,11 @@
         "ref": "main",
         "sha": "ce26fc25c0e5e8cab638f883de62d9a86ee5e45b"
       },
-      "description": "The original v1 taste-skill, preserved for projects depending on its exact behavior."
+      "description": "The original v1 taste-skill, preserved for projects depending on its exact behavior.",
+      "author": {
+        "name": "Leon Lin",
+        "url": "https://github.com/Leonxlnx"
+      }
     },
     {
       "name": "taste-skill",
@@ -516,7 +619,11 @@
         "ref": "main",
         "sha": "ce26fc25c0e5e8cab638f883de62d9a86ee5e45b"
       },
-      "description": "Anti-slop frontend skill for landing pages, portfolios, and redesigns."
+      "description": "Anti-slop frontend skill for landing pages, portfolios, and redesigns.",
+      "author": {
+        "name": "Leon Lin",
+        "url": "https://github.com/Leonxlnx"
+      }
     },
     {
       "name": "printing-press",
@@ -527,7 +634,11 @@
         "ref": "v4.33.0",
         "sha": "a3136d1ea7dc66082187303f309d090c1e380a01"
       },
-      "description": "Generate a ship-ready CLI for an API via a lean research → generate → build → shipcheck loop."
+      "description": "Generate a ship-ready CLI for an API via a lean research → generate → build → shipcheck loop.",
+      "author": {
+        "name": "Matt Van Horn and Trevin Chow",
+        "url": "https://github.com/mvanhorn/cli-printing-press"
+      }
     },
     {
       "name": "printing-press-polish",
@@ -538,7 +649,11 @@
         "ref": "v4.33.0",
         "sha": "a3136d1ea7dc66082187303f309d090c1e380a01"
       },
-      "description": "Polish a generated CLI to pass verification and become publish-ready: runs diagnostics (dogfood, verify, scorecard, go vet, gosec), auto-fixes issues, and reports the before/after delta."
+      "description": "Polish a generated CLI to pass verification and become publish-ready: runs diagnostics (dogfood, verify, scorecard, go vet, gosec), auto-fixes issues, and reports the before/after delta.",
+      "author": {
+        "name": "Matt Van Horn and Trevin Chow",
+        "url": "https://github.com/mvanhorn/cli-printing-press"
+      }
     },
     {
       "name": "printing-press-score",
@@ -549,7 +664,11 @@
         "ref": "v4.33.0",
         "sha": "a3136d1ea7dc66082187303f309d090c1e380a01"
       },
-      "description": "Score a generated CLI against the Steinberger bar, or compare two CLIs side-by-side."
+      "description": "Score a generated CLI against the Steinberger bar, or compare two CLIs side-by-side.",
+      "author": {
+        "name": "Matt Van Horn and Trevin Chow",
+        "url": "https://github.com/mvanhorn/cli-printing-press"
+      }
     },
     {
       "name": "printing-press-output-review",
@@ -560,7 +679,11 @@
         "ref": "v4.33.0",
         "sha": "a3136d1ea7dc66082187303f309d090c1e380a01"
       },
-      "description": "Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use."
+      "description": "Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use.",
+      "author": {
+        "name": "Matt Van Horn and Trevin Chow",
+        "url": "https://github.com/mvanhorn/cli-printing-press"
+      }
     },
     {
       "name": "printing-press-reprint",
@@ -571,7 +694,11 @@
         "ref": "v4.33.0",
         "sha": "a3136d1ea7dc66082187303f309d090c1e380a01"
       },
-      "description": "Regenerate an existing printed CLI from scratch under the current Printing Press, carrying prior research, novel features, and patches into the new run."
+      "description": "Regenerate an existing printed CLI from scratch under the current Printing Press, carrying prior research, novel features, and patches into the new run.",
+      "author": {
+        "name": "Matt Van Horn and Trevin Chow",
+        "url": "https://github.com/mvanhorn/cli-printing-press"
+      }
     },
     {
       "name": "api-scaffolding",
@@ -582,7 +709,11 @@
         "ref": "main",
         "sha": "156b7a5e7a8b93642628a339ee4039c925b34c7f"
       },
-      "description": "REST and GraphQL API scaffolding: backend-architect, fastapi-pro, django-pro, and graphql-architect agents plus the fastapi-templates skill."
+      "description": "REST and GraphQL API scaffolding: backend-architect, fastapi-pro, django-pro, and graphql-architect agents plus the fastapi-templates skill.",
+      "author": {
+        "name": "Seth Hobson",
+        "url": "https://github.com/wshobson"
+      }
     },
     {
       "name": "shell-scripting",
@@ -593,7 +724,11 @@
         "ref": "main",
         "sha": "156b7a5e7a8b93642628a339ee4039c925b34c7f"
       },
-      "description": "Production-grade Bash scripting: bash-pro and posix-shell-pro agents plus the bash-defensive-patterns, bats-testing-patterns, and shellcheck-configuration skills."
+      "description": "Production-grade Bash scripting: bash-pro and posix-shell-pro agents plus the bash-defensive-patterns, bats-testing-patterns, and shellcheck-configuration skills.",
+      "author": {
+        "name": "Seth Hobson",
+        "url": "https://github.com/wshobson"
+      }
     },
     {
       "name": "nuxt",
@@ -604,7 +739,11 @@
         "ref": "main",
         "sha": "e53a142a2420e8cd812cfe9ed0484ab01bc856aa"
       },
-      "description": "Nuxt full-stack Vue framework with SSR, auto-imports, and file-based routing."
+      "description": "Nuxt full-stack Vue framework with SSR, auto-imports, and file-based routing.",
+      "author": {
+        "name": "Anthony Fu",
+        "url": "https://github.com/antfu"
+      }
     },
     {
       "name": "fastify-best-practices",
@@ -615,7 +754,11 @@
         "ref": "main",
         "sha": "856efd268ae85482d882f3d0bed869fd020b5c06"
       },
-      "description": "Guides development of Fastify Node.js backend servers and REST APIs using TypeScript or JavaScript."
+      "description": "Guides development of Fastify Node.js backend servers and REST APIs using TypeScript or JavaScript.",
+      "author": {
+        "name": "Matteo Collina",
+        "url": "https://github.com/mcollina"
+      }
     },
     {
       "name": "react-expert",
@@ -626,7 +769,11 @@
         "ref": "v0.4.16",
         "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
-      "description": "Use when building React 18+ applications in .jsx or .tsx files, Next.js App Router projects, or create-react-app setups."
+      "description": "Use when building React 18+ applications in .jsx or .tsx files, Next.js App Router projects, or create-react-app setups.",
+      "author": {
+        "name": "jeffallan",
+        "url": "https://github.com/Jeffallan"
+      }
     },
     {
       "name": "wordpress-pro",
@@ -637,7 +784,11 @@
         "ref": "v0.4.16",
         "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
-      "description": "Develops custom WordPress themes and plugins, creates and registers Gutenberg blocks and block patterns, configures WooCommerce stores, implements WordPress REST API endpoints, applies security hardening, and optimizes performance through caching and query tuning."
+      "description": "Develops custom WordPress themes and plugins, creates and registers Gutenberg blocks and block patterns, configures WooCommerce stores, implements WordPress REST API endpoints, applies security hardening, and optimizes performance through caching and query tuning.",
+      "author": {
+        "name": "jeffallan",
+        "url": "https://github.com/Jeffallan"
+      }
     },
     {
       "name": "fastapi-expert",
@@ -648,7 +799,11 @@
         "ref": "v0.4.16",
         "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
-      "description": "Use when building high-performance async Python APIs with FastAPI and Pydantic V2."
+      "description": "Use when building high-performance async Python APIs with FastAPI and Pydantic V2.",
+      "author": {
+        "name": "jeffallan",
+        "url": "https://github.com/Jeffallan"
+      }
     },
     {
       "name": "kubernetes-specialist",
@@ -659,7 +814,11 @@
         "ref": "v0.4.16",
         "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
-      "description": "Use when deploying or managing Kubernetes workloads."
+      "description": "Use when deploying or managing Kubernetes workloads.",
+      "author": {
+        "name": "jeffallan",
+        "url": "https://github.com/Jeffallan"
+      }
     },
     {
       "name": "golang-pro",
@@ -670,7 +829,11 @@
         "ref": "v0.4.16",
         "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
-      "description": "Implements concurrent Go patterns using goroutines and channels, designs and builds microservices with gRPC or REST, optimizes Go application performance with pprof, and enforces idiomatic Go with generics, interfaces, and robust error handling."
+      "description": "Implements concurrent Go patterns using goroutines and channels, designs and builds microservices with gRPC or REST, optimizes Go application performance with pprof, and enforces idiomatic Go with generics, interfaces, and robust error handling.",
+      "author": {
+        "name": "jeffallan",
+        "url": "https://github.com/Jeffallan"
+      }
     },
     {
       "name": "cli-developer",
@@ -681,7 +844,11 @@
         "ref": "v0.4.16",
         "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
-      "description": "Use when building CLI tools, implementing argument parsing, or adding interactive prompts."
+      "description": "Use when building CLI tools, implementing argument parsing, or adding interactive prompts.",
+      "author": {
+        "name": "jeffallan",
+        "url": "https://github.com/Jeffallan"
+      }
     },
     {
       "name": "code-documenter",
@@ -692,7 +859,11 @@
         "ref": "v0.4.16",
         "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
-      "description": "Generates, formats, and validates technical documentation — including docstrings, OpenAPI/Swagger specs, JSDoc annotations, doc portals, and user guides."
+      "description": "Generates, formats, and validates technical documentation — including docstrings, OpenAPI/Swagger specs, JSDoc annotations, doc portals, and user guides.",
+      "author": {
+        "name": "jeffallan",
+        "url": "https://github.com/Jeffallan"
+      }
     },
     {
       "name": "database-optimizer",
@@ -703,7 +874,11 @@
         "ref": "v0.4.16",
         "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
-      "description": "Optimizes database queries and improves performance across PostgreSQL and MySQL systems."
+      "description": "Optimizes database queries and improves performance across PostgreSQL and MySQL systems.",
+      "author": {
+        "name": "jeffallan",
+        "url": "https://github.com/Jeffallan"
+      }
     },
     {
       "name": "playwright-expert",
@@ -714,7 +889,11 @@
         "ref": "v0.4.16",
         "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
-      "description": "Use when writing E2E tests with Playwright, setting up test infrastructure, or debugging flaky browser tests."
+      "description": "Use when writing E2E tests with Playwright, setting up test infrastructure, or debugging flaky browser tests.",
+      "author": {
+        "name": "jeffallan",
+        "url": "https://github.com/Jeffallan"
+      }
     },
     {
       "name": "sql-pro",
@@ -725,7 +904,11 @@
         "ref": "v0.4.16",
         "sha": "d5d2dd8ae2ec3842a46e93894655be888fe29446"
       },
-      "description": "Optimizes SQL queries, designs database schemas, and troubleshoots performance issues."
+      "description": "Optimizes SQL queries, designs database schemas, and troubleshoots performance issues.",
+      "author": {
+        "name": "jeffallan",
+        "url": "https://github.com/Jeffallan"
+      }
     },
     {
       "name": "ui-ux-pro-max",
@@ -736,7 +919,11 @@
         "ref": "v2.15.0",
         "sha": "a38d04c3d5c298c851dbe5e6ee1965ee3de42cb5"
       },
-      "description": "UI/UX design intelligence for web and mobile."
+      "description": "UI/UX design intelligence for web and mobile.",
+      "author": {
+        "name": "Next Level Builder",
+        "url": "https://github.com/nextlevelbuilder"
+      }
     },
     {
       "name": "terraform-skill",
@@ -747,7 +934,11 @@
         "ref": "v1.17.1",
         "sha": "b59d2be9ff4db8f835c8459e05e325ba11e3a21f"
       },
-      "description": "Diagnose-first guidance for writing, reviewing, and debugging Terraform/OpenTofu modules, tests, CI, scans, and state ops — pinpoints the failure mode (identity churn, secrets, blast radius, CI drift, state corruption) with version-aware guards."
+      "description": "Diagnose-first guidance for writing, reviewing, and debugging Terraform/OpenTofu modules, tests, CI, scans, and state ops — pinpoints the failure mode (identity churn, secrets, blast radius, CI drift, state corruption) with version-aware guards.",
+      "author": {
+        "name": "Anton Babenko",
+        "url": "https://github.com/antonbabenko"
+      }
     },
     {
       "name": "agents-sdk",
@@ -758,7 +949,11 @@
         "ref": "main",
         "sha": "41e0d19858946d18af9ee2c2feebbe2e11d829ff"
       },
-      "description": "Build AI agents on Cloudflare Workers using the Agents SDK — stateful agents, durable workflows, WebSocket apps, scheduled tasks, MCP servers."
+      "description": "Build AI agents on Cloudflare Workers using the Agents SDK — stateful agents, durable workflows, WebSocket apps, scheduled tasks, MCP servers.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
     },
     {
       "name": "cloudflare-email-service",
@@ -769,7 +964,11 @@
         "ref": "main",
         "sha": "41e0d19858946d18af9ee2c2feebbe2e11d829ff"
       },
-      "description": "Send and receive transactional emails with Cloudflare Email Service (Email Sending + Email Routing)."
+      "description": "Send and receive transactional emails with Cloudflare Email Service (Email Sending + Email Routing).",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
     },
     {
       "name": "cloudflare-one-migrations",
@@ -780,7 +979,11 @@
         "ref": "main",
         "sha": "41e0d19858946d18af9ee2c2feebbe2e11d829ff"
       },
-      "description": "Plan migrations from Zscaler ZIA/ZPA, Palo Alto, legacy VPN, SWG, or SASE stacks to Cloudflare One."
+      "description": "Plan migrations from Zscaler ZIA/ZPA, Palo Alto, legacy VPN, SWG, or SASE stacks to Cloudflare One.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
     },
     {
       "name": "cloudflare-one",
@@ -791,7 +994,11 @@
         "ref": "main",
         "sha": "41e0d19858946d18af9ee2c2feebbe2e11d829ff"
       },
-      "description": "Guides Cloudflare One Zero Trust and SASE work across Access, Gateway, WARP, Tunnel, WAN, DLP, CASB, device posture, and identity."
+      "description": "Guides Cloudflare One Zero Trust and SASE work across Access, Gateway, WARP, Tunnel, WAN, DLP, CASB, device posture, and identity.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
     },
     {
       "name": "cloudflare",
@@ -802,7 +1009,11 @@
         "ref": "main",
         "sha": "41e0d19858946d18af9ee2c2feebbe2e11d829ff"
       },
-      "description": "Comprehensive Cloudflare platform skill: Workers, Pages, storage (KV, D1, R2), AI, networking, security, and infrastructure-as-code."
+      "description": "Comprehensive Cloudflare platform skill: Workers, Pages, storage (KV, D1, R2), AI, networking, security, and infrastructure-as-code.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
     },
     {
       "name": "durable-objects",
@@ -813,7 +1024,11 @@
         "ref": "main",
         "sha": "41e0d19858946d18af9ee2c2feebbe2e11d829ff"
       },
-      "description": "Create and review Cloudflare Durable Objects — stateful coordination, RPC methods, SQLite storage, alarms, and WebSockets."
+      "description": "Create and review Cloudflare Durable Objects — stateful coordination, RPC methods, SQLite storage, alarms, and WebSockets.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
     },
     {
       "name": "sandbox-migrate-to-next",
@@ -824,7 +1039,11 @@
         "ref": "main",
         "sha": "41e0d19858946d18af9ee2c2feebbe2e11d829ff"
       },
-      "description": "Migrate Cloudflare Sandbox apps from stable @cloudflare/sandbox to @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-next for apps already on the preview."
+      "description": "Migrate Cloudflare Sandbox apps from stable @cloudflare/sandbox to @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-next for apps already on the preview.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
     },
     {
       "name": "sandbox-next",
@@ -835,7 +1054,11 @@
         "ref": "main",
         "sha": "41e0d19858946d18af9ee2c2feebbe2e11d829ff"
       },
-      "description": "Build or maintain Cloudflare Sandbox apps on @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-migrate-to-next when porting a stable app."
+      "description": "Build or maintain Cloudflare Sandbox apps on @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-migrate-to-next when porting a stable app.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
     },
     {
       "name": "sandbox-stable",
@@ -846,7 +1069,11 @@
         "ref": "main",
         "sha": "41e0d19858946d18af9ee2c2feebbe2e11d829ff"
       },
-      "description": "Build or maintain Cloudflare Sandbox apps on the stable @cloudflare/sandbox package. Use sandbox-next for preview apps and sandbox-migrate-to-next for stable-to-preview migrations."
+      "description": "Build or maintain Cloudflare Sandbox apps on the stable @cloudflare/sandbox package. Use sandbox-next for preview apps and sandbox-migrate-to-next for stable-to-preview migrations.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
     },
     {
       "name": "turnstile-spin",
@@ -857,7 +1084,11 @@
         "ref": "main",
         "sha": "41e0d19858946d18af9ee2c2feebbe2e11d829ff"
       },
-      "description": "Set up Cloudflare Turnstile end-to-end — scan the codebase, create the widget, deploy the siteverify Worker, and write frontend snippets."
+      "description": "Set up Cloudflare Turnstile end-to-end — scan the codebase, create the widget, deploy the siteverify Worker, and write frontend snippets.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
     },
     {
       "name": "web-perf",
@@ -868,7 +1099,11 @@
         "ref": "main",
         "sha": "41e0d19858946d18af9ee2c2feebbe2e11d829ff"
       },
-      "description": "Analyze web performance via Chrome DevTools MCP — Core Web Vitals, render-blocking resources, layout shifts, and caching."
+      "description": "Analyze web performance via Chrome DevTools MCP — Core Web Vitals, render-blocking resources, layout shifts, and caching.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
     },
     {
       "name": "workers-best-practices",
@@ -879,7 +1114,11 @@
         "ref": "main",
         "sha": "41e0d19858946d18af9ee2c2feebbe2e11d829ff"
       },
-      "description": "Review and author Cloudflare Workers code against production best practices and common anti-patterns."
+      "description": "Review and author Cloudflare Workers code against production best practices and common anti-patterns.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
     },
     {
       "name": "wrangler",
@@ -890,7 +1129,11 @@
         "ref": "main",
         "sha": "41e0d19858946d18af9ee2c2feebbe2e11d829ff"
       },
-      "description": "Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets."
+      "description": "Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
     },
     {
       "name": "nextjs-on-cloudflare",
@@ -901,7 +1144,11 @@
         "ref": "main",
         "sha": "41e0d19858946d18af9ee2c2feebbe2e11d829ff"
       },
-      "description": "Build, migrate, and deploy Next.js apps on Cloudflare Workers with vinext."
+      "description": "Build, migrate, and deploy Next.js apps on Cloudflare Workers with vinext.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
     },
     {
       "name": "impeccable",
@@ -912,7 +1159,11 @@
         "ref": "skill-v4.5.0",
         "sha": "508d7e8955de3b3caf2d8676e85206723d41a887"
       },
-      "description": "Design fluency for frontend development. 1 skill with 23 commands (/impeccable polish, /impeccable audit, /impeccable critique, etc.) and curated anti-pattern detection."
+      "description": "Design fluency for frontend development. 1 skill with 23 commands (/impeccable polish, /impeccable audit, /impeccable critique, etc.) and curated anti-pattern detection.",
+      "author": {
+        "name": "Paul Bakaus",
+        "url": "https://github.com/pbakaus"
+      }
     },
     {
       "name": "last30days",
@@ -923,7 +1174,11 @@
         "ref": "v3.26.0",
         "sha": "5103ba478b380552207a3754b74c7655d64208cd"
       },
-      "description": "Research what people actually say about any topic in the last 30 days. Pulls posts and engagement from Reddit, X, YouTube, TikTok, Hacker News, Polymarket, GitHub, and the web. Includes a doctor health check to diagnose broken or missing sources."
+      "description": "Research what people actually say about any topic in the last 30 days. Pulls posts and engagement from Reddit, X, YouTube, TikTok, Hacker News, Polymarket, GitHub, and the web. Includes a doctor health check to diagnose broken or missing sources.",
+      "author": {
+        "name": "Matt Van Horn",
+        "url": "https://github.com/mvanhorn"
+      }
     },
     {
       "name": "proximo",
@@ -934,7 +1189,11 @@
         "ref": "v0.16.0",
         "sha": "4a11e23a5eb3bace85030b3b9006e0950f0e3a89"
       },
-      "description": "Makes local Docker containers reachable at https://<name>.test with trusted HTTPS and local DNS. Use when exposing a container through proximo.* labels, or when diagnosing a broken one: a .test host that does not answer, a 502/503, an untrusted local certificate, or a page that loads and then breaks."
+      "description": "Makes local Docker containers reachable at https://<name>.test with trusted HTTPS and local DNS. Use when exposing a container through proximo.* labels, or when diagnosing a broken one: a .test host that does not answer, a 502/503, an untrusted local certificate, or a page that loads and then breaks.",
+      "author": {
+        "name": "Filippo Merante Caparrotta",
+        "url": "https://github.com/filippolmt"
+      }
     },
     {
       "name": "archify",
@@ -945,7 +1204,11 @@
         "ref": "v3.0.1",
         "sha": "2ab3cae7ac2c2a55d7386ca789d03c4fcd31816c"
       },
-      "description": "Create polished, validated architecture, workflow, sequence, data-flow, and lifecycle/state diagrams as explorable standalone HTML with inline SVG, dark/light themes, optional trace motion, and PNG/JPEG/WebP/SVG/WebM export. Accept plain-language requirements or pasted Mermaid flowchart, sequenceDiagram, and stateDiagram input; inspect repository evidence when the diagram must reflect real code."
+      "description": "Create polished, validated architecture, workflow, sequence, data-flow, and lifecycle/state diagrams as explorable standalone HTML with inline SVG, dark/light themes, optional trace motion, and PNG/JPEG/WebP/SVG/WebM export. Accept plain-language requirements or pasted Mermaid flowchart, sequenceDiagram, and stateDiagram input; inspect repository evidence when the diagram must reflect real code.",
+      "author": {
+        "name": "tt-a1i",
+        "url": "https://github.com/tt-a1i"
+      }
     },
     {
       "name": "diagram-design",
@@ -956,7 +1219,11 @@
         "ref": "main",
         "sha": "f903933a534ba92cde1c85a28186267b3a317bb2"
       },
-      "description": "An opinionated editorial diagram system, drawn to one house style and branded from your own tokens: architecture, flowchart, sequence, state, ER, timeline, swimlane, quadrant, radar, Gantt, Sankey, fishbone, Wardley map, kanban and journey diagrams as self-contained HTML/SVG/PNG. Bundles the diagram-design skill plus the doctor, export-diagram, import-drawio, import-mermaid and profile commands — redraw .drawio or Mermaid sources at a chosen size and detail, onboard brand tokens from a website, add semantic patterns, callouts, accessible motion or sketchy styling."
+      "description": "An opinionated editorial diagram system, drawn to one house style and branded from your own tokens: architecture, flowchart, sequence, state, ER, timeline, swimlane, quadrant, radar, Gantt, Sankey, fishbone, Wardley map, kanban and journey diagrams as self-contained HTML/SVG/PNG. Bundles the diagram-design skill plus the doctor, export-diagram, import-drawio, import-mermaid and profile commands — redraw .drawio or Mermaid sources at a chosen size and detail, onboard brand tokens from a website, add semantic patterns, callouts, accessible motion or sketchy styling.",
+      "author": {
+        "name": "Cathryn Lavery",
+        "url": "https://github.com/cathrynlavery"
+      }
     },
     {
       "name": "security-audit",
@@ -967,7 +1234,11 @@
         "ref": "main",
         "sha": "c1c8a8c1471069fb0e188eeaff69b8e8db6564a8"
       },
-      "description": "Security guidance and vulnerability review for codebases, APIs, services, CLI tools, libraries, and daemons. Use for security questions, focused reviews, vulnerability research, security audits, or pen tests. Run the complete workflow only for explicit codebase audit or pen-test requests, full/comprehensive/end-to-end reviews, or requested report artifacts."
+      "description": "Security guidance and vulnerability review for codebases, APIs, services, CLI tools, libraries, and daemons. Use for security questions, focused reviews, vulnerability research, security audits, or pen tests. Run the complete workflow only for explicit codebase audit or pen-test requests, full/comprehensive/end-to-end reviews, or requested report artifacts.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
     }
   ]
 }

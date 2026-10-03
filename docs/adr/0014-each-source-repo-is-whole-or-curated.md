@@ -63,7 +63,7 @@ the exclusions.
 
 | Repo | Kind | Notes |
 | --- | --- | --- |
-| `mattpocock/skills` | whole | `skills/in-progress/` is unreleased work, not a skill of the repo |
+| `mattpocock/skills` | curated | Workflow routers and thin prompt macros are reviewed before admission; `skills/in-progress/` is unreleased work ([ADR-0017](0017-curate-the-matt-pocock-source.md)) |
 | `Leonxlnx/taste-skill` | whole | |
 | `cloudflare/skills` | whole | |
 | `mvanhorn/cli-printing-press` | whole | |
@@ -86,8 +86,12 @@ the exclusions.
 
 | Repo | Skill | Reason |
 | --- | --- | --- |
+| `mattpocock/skills` | `ask-matt` | Routes across the author's whole suite, but this catalog installs skills individually |
+| `mattpocock/skills` | `git-guardrails-claude-code` | Configures Claude Code only; it is not portable across the three harnesses this catalog serves |
 | `mattpocock/skills` | `migrate-to-shoehorn` | Tied to one TypeScript test library |
+| `mattpocock/skills` | `resolving-merge-conflicts` | Upstream has scheduled its removal |
 | `mattpocock/skills` | `scaffold-exercises` | Tied to the author's course format |
+| `mattpocock/skills` | `wait-what` | Thin rephrasing prompt rather than a reusable workflow |
 | `filippolmt/proximo` | `.claude/skills/*` | Skills for developing proximo, not for using it |
 | `tt-a1i/archify` | `archify-review` | For archify's maintainers: triages its issues and links its `REVIEWING.md` by relative path |
 

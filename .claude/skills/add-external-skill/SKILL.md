@@ -39,6 +39,10 @@ first sentence:
 ```bash
 curl -fsSL "https://raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>/SKILL.md"
 ```
+The upstream author comes from the source that owns the attribution: its plugin
+manifest first, then its licence, then the GitHub owner's profile. Preserve
+multiple credited authors; do not substitute the marketplace owner.
+
 If `curl` is blocked/redirected here, fetch the same URLs via any HTTP tool — the
 endpoints are identical.
 
@@ -73,8 +77,8 @@ manager, and that entry is then silently never updated again.
    that SHA.
 4. `name` = arg (single) or folder basename (batch). Confirm **every** name is
    free in `marketplace.json` — report collisions and ask before proceeding.
-5. For each skill, fetch its upstream `description` one-liner. Append each entry
-   to the `plugins` array (match existing formatting exactly):
+5. For each skill, fetch its upstream `description` one-liner and author. Append
+   each entry to the `plugins` array (match existing formatting exactly):
    ```json
    {
      "name": "<name>",
@@ -85,7 +89,11 @@ manager, and that entry is then silently never updated again.
        "ref": "<tag or branch>",
        "sha": "<sha>"
      },
-     "description": "<one line saying what the skill does>"
+     "description": "<one line saying what the skill does>",
+     "author": {
+       "name": "<upstream author>",
+       "url": "<upstream author or repo URL>"
+     }
    }
    ```
    The `description` says what the skill does: upstream's one-liner, or a
@@ -122,8 +130,8 @@ For each `git-subdir` source repo in `marketplace.json` (or the one named):
      tag-pinned entry moves `ref` and `sha` together to the latest tag, keeping
      its tag series; a branch-pinned entry takes that branch's HEAD. (Renovate
      also does this; harmless to set now.)
-   - Refresh each entry's `description` from upstream. `marketplace.json` is the
-     source of truth, so this is what the README shows.
+   - Refresh each entry's `description` and `author` from upstream.
+     `marketplace.json` is the source of truth, so this is what consumers see.
 3. **Regenerate the README**, then validate.
 
 Done when every `git-subdir` repo in scope is accounted for — reconciled, or
