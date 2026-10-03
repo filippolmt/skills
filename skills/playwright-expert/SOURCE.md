@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/Jeffallan/claude-skills/tree/d5d2dd8ae2ec3842a46e93894655be888fe29446/skills/playwright-expert
-- **Commit**: `d5d2dd8ae2ec3842a46e93894655be888fe29446`
+- **Upstream**: https://github.com/Jeffallan/claude-skills/tree/1be15d8064f88fc25216442406d40add8fd23b53/skills/playwright-expert
+- **Commit**: `1be15d8064f88fc25216442406d40add8fd23b53`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `playwright-expert` in `.claude-plugin/marketplace.json`
