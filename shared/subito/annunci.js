@@ -4,9 +4,9 @@
 // skills/<skill>/scripts/ (docs/adr/0019-share-files-between-local-plugins-by-symlink.md).
 // Uso: playwright-cli -s=subito eval "$(cat scripts/annunci.js)"
 // Una riga per annuncio: titolo | prezzo | km | anno | stato | spedibile | foto |
-// città | venditore | url | testo (primi 200 caratteri). Campi vuoti dove la
-// categoria non li ha. venditore: privato / pro (concessionari e negozi, che
-// includono garanzia).
+// città | venditore | data | url | testo (primi 200 caratteri). Campi vuoti dove
+// la categoria non li ha. venditore: privato / pro (concessionari e negozi, che
+// includono garanzia). data: giorno di pubblicazione (AAAA-MM-GG).
 () => {
   const data = JSON.parse(document.getElementById('__NEXT_DATA__').textContent);
   const seen = new Set();
@@ -29,6 +29,7 @@
         `${(o.images || []).length} foto`,
         o.geo?.town?.value || '',
         o.advertiser?.type ? 'pro' : 'privato',
+        (o.date || '').slice(0, 10),
         o.urls.default,
         (o.body || '').replace(/\s+/g, ' ').slice(0, 200),
       ].join(' | '));

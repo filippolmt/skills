@@ -37,6 +37,15 @@ ricevute. Leggili come **sintomi**:
   foto, informazioni mancanti
 - messaggi solo con offerte basse → prezzo sopra il mercato
 
+Controlla poi le **impostazioni** dell'annuncio contro l'oggetto reale; un errore qui
+è un difetto grave, da correggere anche se il resto è buono:
+
+- spedizione: TuttoSubito attivo (tasto Acquista, costo di spedizione) solo se
+  l'oggetto imballato sta nei 20 kg; oltre, solo consegna a mano
+- condizione: quella selezionata corrisponde allo stato reale ("in confezione
+  originale" solo se la confezione c'è)
+- pagamento e consegna: coerenti con la descrizione
+
 La scheda si ricava dall'annuncio; chiedi solo ciò che manca. I passi 2–5 valgono
 uguali, con l'annuncio attuale come punto di confronto, escluso dai comparabili.
 
@@ -76,11 +85,15 @@ un browser vero, **playwright-cli** (`@playwright/cli`, Node 18+).
 - Sulle ricerche Subito estrai gli annunci con
   [`scripts/annunci.js`](scripts/annunci.js):
   `playwright-cli -s=subito eval "$(cat <cartella della skill>/scripts/annunci.js)"`.
-  Restituisce una riga per annuncio, privato o pro: confronta privato con privato.
+  Restituisce una riga per annuncio, con data di pubblicazione e venditore privato
+  o pro: confronta privato con privato. "privato" è solo il tipo di account: leggi
+  il testo, e chi produce o vende in serie ("produciamo…", "disponibili in più
+  misure") contalo come pro.
 - Naviga a ritmo umano, una pagina alla volta, poche pagine per fonte; chiudi la
   sessione a fine ricerca.
-- Una pagina "Access Denied" o un captcha è un rifiuto del sito: rispettalo e passa
-  al ripiego.
+- Una pagina "Access Denied", un captcha o una pagina d'errore di qualunque tipo
+  (eBay risponde anche "Something went wrong") è un rifiuto del sito: rispettalo e
+  passa al ripiego.
 
 Ripiego, in ordine: `WebSearch` con `site:subito.it` / `site:ebay.it` e il modello,
 leggendo i prezzi dagli snippet; poi chiedi all'utente di incollare i risultati di
@@ -108,7 +121,8 @@ Restituisci tre numeri:
 - **vendita rapida** — per l'obiettivo "in fretta"
 
 Arrotonda a cifre tonde o psicologiche (95, 149, 290). Accompagna i numeri con la
-tabella dei comparabili e una confidenza (alta / media / bassa) motivata.
+tabella dei comparabili e una confidenza (alta / media / bassa) motivata. Senza
+alcun **venduto** la confidenza è al massimo media.
 
 ## 4. Foto
 
@@ -174,8 +188,8 @@ Un unico blocco finale:
 5. titolo, con il conteggio dei caratteri
 6. descrizione, con il conteggio dei caratteri
 
-Per un annuncio già pubblicato apri il blocco con la diagnosi (sintomi e causa
-probabile) e mostra ogni parte modificata come prima → dopo, motivata. Ciò che è già
+Per un annuncio già pubblicato apri il blocco con la diagnosi (sintomi, causa
+probabile, impostazioni da correggere) e mostra ogni parte modificata come prima → dopo, motivata. Ciò che è già
 buono resta com'è, dichiarato tale.
 
 Fatto quando titolo e descrizione rientrano nei limiti e ogni affermazione della

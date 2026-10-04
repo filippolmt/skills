@@ -1,7 +1,7 @@
 {
   "name": "subito-research",
   "description": "Searches Subito.it for buyers: filters listings by criteria, judges each price against the market, checks scam signals, and prepares seller questions and an offer. Reads subito.it with playwright-cli.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Filippo Merante Caparrotta"
   }
