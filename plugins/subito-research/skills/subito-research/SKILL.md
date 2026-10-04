@@ -60,7 +60,8 @@ modello, e ogni annuncio tenuto ha prezzo, città e link.
 
 **Mercato**: mediana dei prezzi degli annunci tenuti, a parità di anno e stato
 (per i veicoli anche di km). Confronta privato con privato: il pro include
-garanzia e chiede di più. Giudica ogni annuncio **sotto**, **in linea** o
+garanzia e chiede di più. "privato" è solo il tipo di account: chi produce o vende
+in serie, a leggere il testo, contalo come pro. Giudica ogni annuncio **sotto**, **in linea** o
 **sopra** mercato, con lo scarto in percentuale.
 
 Per i migliori candidati, al massimo 10, apri l'annuncio e leggi descrizione,

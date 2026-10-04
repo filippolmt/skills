@@ -37,11 +37,11 @@ ricevute. Leggili come **sintomi**:
   foto, informazioni mancanti
 - messaggi solo con offerte basse → prezzo sopra il mercato
 
-Controlla poi le **impostazioni** dell'annuncio contro l'oggetto reale; un errore qui
-è un difetto grave, da correggere anche se il resto è buono:
+Controlla poi le **impostazioni** dell'annuncio contro l'oggetto reale:
 
 - spedizione: TuttoSubito attivo (tasto Acquista, costo di spedizione) solo se
-  l'oggetto imballato sta nei 20 kg; oltre, solo consegna a mano
+  l'oggetto imballato rientra nei [vincoli della piattaforma](#vincoli-della-piattaforma);
+  altrimenti solo consegna a mano
 - condizione: quella selezionata corrisponde allo stato reale ("in confezione
   originale" solo se la confezione c'è)
 - pagamento e consegna: coerenti con la descrizione
@@ -189,8 +189,8 @@ Un unico blocco finale:
 6. descrizione, con il conteggio dei caratteri
 
 Per un annuncio già pubblicato apri il blocco con la diagnosi (sintomi, causa
-probabile, impostazioni da correggere) e mostra ogni parte modificata come prima → dopo, motivata. Ciò che è già
-buono resta com'è, dichiarato tale.
+probabile, impostazioni da correggere) e mostra ogni parte modificata come
+prima → dopo, motivata. Ciò che è già buono resta com'è, dichiarato tale.
 
 Fatto quando titolo e descrizione rientrano nei limiti e ogni affermazione della
 descrizione corrisponde a una foto o a un dato fornito dall'utente.
