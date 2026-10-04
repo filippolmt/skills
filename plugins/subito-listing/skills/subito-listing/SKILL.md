@@ -90,6 +90,8 @@ un browser vero, **playwright-cli** (`@playwright/cli`, Node 18+).
   più basso dei vicini tradisce un annuncio vecchio). Confronta privato con
   privato. "privato" è solo il tipo di account: leggi il testo, e chi produce o
   vende in serie ("produciamo…", "disponibili in più misure") contalo come pro.
+  Un annuncio ripubblicato compare due volte con ID diversi (stesso testo, prezzo
+  e km): contalo una volta.
 - Naviga a ritmo umano, una pagina alla volta, poche pagine per fonte; chiudi la
   sessione a fine ricerca.
 - Una pagina "Access Denied", un captcha o una pagina d'errore di qualunque tipo
