@@ -6,7 +6,8 @@
 // Una riga per annuncio: titolo | prezzo | km | anno | stato | spedibile | foto |
 // città | venditore | data | url | testo (primi 200 caratteri). Campi vuoti dove
 // la categoria non li ha. venditore: privato / pro (concessionari e negozi, che
-// includono garanzia). data: giorno di pubblicazione (AAAA-MM-GG).
+// includono garanzia). data: ultima pubblicazione (AAAA-MM-GG); un rinnovo
+// la sposta in avanti, un ID molto più basso dei vicini tradisce un annuncio vecchio.
 () => {
   const data = JSON.parse(document.getElementById('__NEXT_DATA__').textContent);
   const seen = new Set();

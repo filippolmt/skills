@@ -41,7 +41,8 @@ vero, **playwright-cli** (`@playwright/cli`, Node 18+).
     per vedere chi accetta trattativa
 - Estrai gli annunci con [`scripts/annunci.js`](scripts/annunci.js):
   `playwright-cli -s=subito eval "$(cat <cartella della skill>/scripts/annunci.js)"`.
-  Una riga per annuncio: titolo, prezzo, km, anno, città, privato o pro, data, link.
+  Una riga per annuncio: titolo, prezzo, km, anno, città, privato o pro, data
+  dell'ultima pubblicazione (un rinnovo la sposta in avanti), link.
 - Ripeti con le grafie alternative del modello ("tracer 9 gt", "tracer 900 gt",
   "tracer9") e scorri le pagine con `&o=2`, `&o=3`…
 - Naviga a ritmo umano, una pagina alla volta; chiudi la sessione a fine ricerca.

@@ -85,10 +85,11 @@ un browser vero, **playwright-cli** (`@playwright/cli`, Node 18+).
 - Sulle ricerche Subito estrai gli annunci con
   [`scripts/annunci.js`](scripts/annunci.js):
   `playwright-cli -s=subito eval "$(cat <cartella della skill>/scripts/annunci.js)"`.
-  Restituisce una riga per annuncio, con data di pubblicazione e venditore privato
-  o pro: confronta privato con privato. "privato" è solo il tipo di account: leggi
-  il testo, e chi produce o vende in serie ("produciamo…", "disponibili in più
-  misure") contalo come pro.
+  Restituisce una riga per annuncio, con venditore privato o pro e data
+  dell'ultima pubblicazione (un rinnovo la sposta in avanti: un ID nell'URL molto
+  più basso dei vicini tradisce un annuncio vecchio). Confronta privato con
+  privato. "privato" è solo il tipo di account: leggi il testo, e chi produce o
+  vende in serie ("produciamo…", "disponibili in più misure") contalo come pro.
 - Naviga a ritmo umano, una pagina alla volta, poche pagine per fonte; chiudi la
   sessione a fine ricerca.
 - Una pagina "Access Denied", un captcha o una pagina d'errore di qualunque tipo
