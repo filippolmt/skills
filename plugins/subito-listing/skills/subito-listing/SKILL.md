@@ -32,7 +32,8 @@ il venditore: giorni online, visualizzazioni, preferiti, messaggi e offerte
 ricevute. Leggili come **sintomi**:
 
 - poche visualizzazioni → l'annuncio non viene trovato o non attira: titolo,
-  categoria, foto principale
+  categoria, foto principale. Cercalo su Subito come farebbe un compratore,
+  modello scritto giusto: se non esce, il titolo è la causa
 - visualizzazioni ma nessun messaggio → lo scartano dopo averlo aperto: prezzo,
   foto, informazioni mancanti
 - messaggi solo con offerte basse → prezzo sopra il mercato
