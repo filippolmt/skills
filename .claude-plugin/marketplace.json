@@ -23,6 +23,14 @@
       }
     },
     {
+      "name": "subito-listing",
+      "source": "./plugins/subito-listing",
+      "description": "Prepares a Subito.it sale listing, or diagnoses and improves one already live: a price grounded in comparables researched on the web (sold vs asking, read with playwright-cli), a numbered photo shot list, and a title and description ready to paste within the platform limits.",
+      "author": {
+        "name": "Filippo Merante Caparrotta"
+      }
+    },
+    {
       "name": "improve-codebase-architecture-bundle",
       "source": "./plugins/improve-codebase-architecture-bundle",
       "description": "Install improve-codebase-architecture together with the mattpocock skills it calls at runtime (grilling, codebase-design, domain-modeling) and agent-report-guard, the hook that keeps their sub-agents reporting back. Bundles them as dependencies.",
