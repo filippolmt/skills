@@ -1,8 +1,10 @@
 // Annunci di una pagina di ricerca Subito, letti dal JSON di Next.js
 // (__NEXT_DATA__) invece che dal DOM: sopravvive ai cambi di layout.
 // Uso: playwright-cli -s=subito eval "$(cat scripts/annunci.js)"
-// Una riga per annuncio: titolo | prezzo | km | anno | città | venditore | url.
-// venditore: privato / pro (concessionari e negozi, che includono garanzia).
+// Una riga per annuncio: titolo | prezzo | km | anno | stato | spedibile | foto |
+// città | venditore | url | testo (primi 200 caratteri). Campi vuoti dove la
+// categoria non li ha. venditore: privato / pro (concessionari e negozi, che
+// includono garanzia).
 () => {
   const data = JSON.parse(document.getElementById('__NEXT_DATA__').textContent);
   const seen = new Set();
@@ -20,9 +22,13 @@
         f['/price'] || '',
         f['/mileage_scalar'] || f['/mileage'] || '',
         f['/registration_date'] || f['/year'] || '',
+        f['/item_condition'] || '',
+        f['/item_shippable'] || '',
+        `${(o.images || []).length} foto`,
         o.geo?.town?.value || '',
         o.advertiser?.type ? 'pro' : 'privato',
         o.urls.default,
+        (o.body || '').replace(/\s+/g, ' ').slice(0, 200),
       ].join(' | '));
       return;
     }
