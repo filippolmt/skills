@@ -77,7 +77,14 @@ convertile in PNG per guardarle (`uvx --with pillow python -c "from PIL import I
   prima di vedere l'oggetto
 
 Un segnale va citato con l'elemento che lo prova; due o più escludono l'annuncio
-dalla shortlist, e lo dici.
+dalla shortlist, e lo dici. Pesano soprattutto sul ritiro a mano e su chi spinge a
+pagare fuori piattaforma: un acquisto con TuttoSubito è coperto dalla Protezione
+Acquisti se l'oggetto non è conforme.
+
+Un numero dichiarato vale quanto la sua fonte. "Batteria 100%" può essere il
+livello di carica, o la capacità di una batteria sostituita non originale; i km
+vanno visti sul cruscotto. Leggi il testo intero, e dove la fonte manca mettila
+tra le domande (schermata di Impostazioni → Batteria, foto del cruscotto).
 
 ## 4. Consegna
 
