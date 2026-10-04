@@ -41,7 +41,8 @@ vero, **playwright-cli** (`@playwright/cli`, Node 18+).
     per vedere chi accetta trattativa
 - Estrai gli annunci con [`scripts/annunci.js`](scripts/annunci.js):
   `playwright-cli -s=subito eval "$(cat <cartella della skill>/scripts/annunci.js)"`.
-  Una riga per annuncio: titolo, prezzo, km, anno, città, privato o pro, link.
+  Una riga per annuncio: titolo, prezzo, km, anno, città, privato o pro, data
+  dell'ultima pubblicazione (un rinnovo la sposta in avanti), link.
 - Ripeti con le grafie alternative del modello ("tracer 9 gt", "tracer 900 gt",
   "tracer9") e scorri le pagine con `&o=2`, `&o=3`…
 - Naviga a ritmo umano, una pagina alla volta; chiudi la sessione a fine ricerca.
@@ -60,7 +61,8 @@ modello, e ogni annuncio tenuto ha prezzo, città e link.
 
 **Mercato**: mediana dei prezzi degli annunci tenuti, a parità di anno e stato
 (per i veicoli anche di km). Confronta privato con privato: il pro include
-garanzia e chiede di più. Giudica ogni annuncio **sotto**, **in linea** o
+garanzia e chiede di più. "privato" è solo il tipo di account: chi produce o vende
+in serie, a leggere il testo, contalo come pro. Giudica ogni annuncio **sotto**, **in linea** o
 **sopra** mercato, con lo scarto in percentuale.
 
 Per i migliori candidati, al massimo 10, apri l'annuncio e leggi descrizione,
