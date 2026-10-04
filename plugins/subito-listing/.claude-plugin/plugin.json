@@ -1,7 +1,7 @@
 {
   "name": "subito-listing",
   "description": "Prepares a Subito.it sale listing, or diagnoses and improves one already live: a price grounded in comparables researched on the web (sold vs asking, read with playwright-cli), a numbered photo shot list, and a title and description ready to paste within the platform limits.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Filippo Merante Caparrotta"
   }
