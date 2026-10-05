@@ -1,7 +1,7 @@
 {
   "name": "implement-bundle",
-  "description": "Install implement together with the skills it calls at runtime (tdd, code-review) and agent-report-guard, the hook that keeps code-review's sub-agents reporting back. Bundles them as dependencies.",
-  "version": "0.2.1",
+  "description": "Install implement together with the skills it calls at runtime (tdd, codebase-design, code-review) and agent-report-guard, the hook that keeps code-review's sub-agents reporting back. Bundles them as dependencies.",
+  "version": "0.3.0",
   "author": {
     "name": "Matt Pocock",
     "url": "https://github.com/mattpocock"
@@ -9,6 +9,7 @@
   "dependencies": [
     "implement",
     "tdd",
+    "codebase-design",
     "code-review",
     "agent-report-guard"
   ]

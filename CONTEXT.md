@@ -26,10 +26,11 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   listed with its reason in ADR-0014. Neither added nor reported by
   `/add-external-skill update`.
 - **Bundle** — a local plugin that ships no artifacts of its own: its entry
-  exists to pull dependencies in, so installing it brings a skill plus everything
-  that skill calls at runtime. A local plugin with no `skills/`, `commands/`,
-  `hooks/` or `agents/` directory IS one — derived, never listed. It appears in
-  the **bundle projection** and nowhere else in the README.
+  exists only to pull dependencies in. A targeted bundle brings one skill plus
+  everything it calls at runtime; a suite bundle brings a curated set of
+  workflows used together. A local plugin with no `skills/`, `commands/`, `hooks/` or
+  `agents/` directory IS one — derived, never listed. It appears in the **bundle
+  projection** and nowhere else in the README.
 - **Catalog projection** — the README "Available skills" section. NOT a source
   of truth: it is generated from the catalog by `scripts/gen-readme.js` and
   spliced between the `<!-- catalog:start -->` / `<!-- catalog:end -->` markers.

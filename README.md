@@ -102,10 +102,11 @@ Where a bundle exists, reach for it rather than the bare skill:
 | `improve-codebase-architecture-bundle` | `improve-codebase-architecture`, `grilling`, `codebase-design`, `domain-modeling`, `agent-report-guard` |
 | `printing-press-bundle` | `printing-press`, `printing-press-polish`, `printing-press-score`, `printing-press-output-review`, `printing-press-reprint`, `agent-report-guard` |
 | `code-review-bundle` | `code-review`, `agent-report-guard` |
-| `implement-bundle` | `implement`, `tdd`, `code-review`, `agent-report-guard` |
+| `implement-bundle` | `implement`, `tdd`, `codebase-design`, `code-review`, `agent-report-guard` |
 | `triage-bundle` | `triage`, `grilling`, `domain-modeling` |
 | `wayfinder-bundle` | `wayfinder`, `grilling`, `domain-modeling`, `prototype`, `research`, `setup-matt-pocock-skills`, `agent-report-guard` |
 | `grill-with-docs-bundle` | `grill-with-docs`, `grilling`, `domain-modeling` |
+| `matt-pocock-bundle` | `wayfinder`, `writing-for-agents`, `implement`, `improve-codebase-architecture`, `code-review`, `retro`, `grilling`, `domain-modeling`, `prototype`, `research`, `setup-matt-pocock-skills`, `tdd`, `codebase-design`, `agent-report-guard` |
 <!-- bundles:end -->
 
 That table is generated from each bundle's own `dependencies`
@@ -318,6 +319,7 @@ Snapshot of the catalog — the source of truth is
 | `domain-modeling` | Build and sharpen a project's domain model. |
 | `codebase-design` | Shared vocabulary for designing deep modules. |
 | `code-review` | Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes — Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/PRD asked for?). |
+| `retro` | Conduct a retrospective on a coding session. |
 | `wizard` | Generate an interactive bash wizard that walks a human through steps only they can perform. Use when provisioning infrastructure, setting up credentials or CI secrets, walking an unfamiliar third-party dashboard, or running a one-off migration or cutover. |
 | `grill-me` | A relentless interview to sharpen a plan or design. |
 | `grilling` | Grill the user relentlessly about a plan or design. |
