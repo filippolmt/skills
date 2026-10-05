@@ -39,6 +39,14 @@
       }
     },
     {
+      "name": "settings-validator",
+      "source": "./plugins/settings-validator",
+      "description": "Validates and improves a Claude Code settings.json, for an organization (managed settings) or a single user: asks the scope and the intended configuration, checks every key against the official docs and the published JSON schema (including unknown keys the admin console flags without naming), applies best practice, and returns the complete corrected JSON.",
+      "author": {
+        "name": "Filippo Merante Caparrotta"
+      }
+    },
+    {
       "name": "printing-press-bundle",
       "source": "./plugins/printing-press-bundle",
       "description": "Install printing-press with the sibling skills that create and maintain a CLI locally (printing-press-polish, printing-press-score, printing-press-reprint, and the internal printing-press-output-review) and agent-report-guard, the hook that keeps its subagents reporting back. Bundles them as dependencies.",

@@ -1,0 +1,8 @@
+{
+  "name": "settings-validator",
+  "description": "Validates and improves a Claude Code settings.json, for an organization (managed settings) or a single user: asks the scope and the intended configuration, checks every key against the official docs and the published JSON schema (including unknown keys the admin console flags without naming), applies best practice, and returns the complete corrected JSON.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Filippo Merante Caparrotta"
+  }
+}
