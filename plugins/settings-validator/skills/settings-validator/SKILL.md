@@ -1,6 +1,6 @@
 ---
 name: settings-validator
-description: Validates, improves or designs a Claude Code settings.json (organization or single user) against the official docs and JSON schema, fills the gaps the user's goals call for, and returns the corrected JSON. Use when the user pastes or names a settings.json, managed settings or the admin console configuration, or asks to check or design one.
+description: Validate or design a Claude Code settings.json (managed, user or project) against the official docs and JSON schema. Use when the user pastes or names a settings.json, managed settings or the admin console configuration, or asks to check or write one.
 ---
 
 # Validate or design a Claude Code settings.json
@@ -12,9 +12,10 @@ organization or single user.
 ## 1. Scope and intent
 
 Ask with `AskUserQuestion` when available, in rounds of up to four questions
-with concrete options; wait for each round before the next.
+with concrete options, and only what the request leaves open: a pasted file
+already answers the starting point.
 
-**Round 1**, always:
+**Round 1**:
 
 - **scope**: *organization* (managed settings: admin console, file or MDM),
   *user*, or *project*
@@ -43,7 +44,7 @@ existing file ask only those the file leaves open:
 - model: default and fallback
 - commit and PR attribution, language, UI
 
-Done when you know the scope, the starting point, the posture, and an intent for
+Done when you know the scope, the starting point, the posture, and a goal for
 every area the file touches or the answers call for. An area the user declines
 to decide keeps its current value, or its default from scratch.
 
@@ -95,8 +96,8 @@ Done when every key has been checked against reference and schema, and
 ## 4. Best practice
 
 Apply [`references/best-practice.md`](references/best-practice.md) and the
-secondary source to every area touched, measured against the intent from step 1.
-A best practice that contradicts a stated intent becomes a warning with its risk,
+secondary source to every area touched, measured against the goals from step 1.
+A best practice that contradicts a stated goal becomes a warning with its risk,
 not an imposed fix.
 
 Then look for the **gaps**: keys absent from the file that serve a stated goal
@@ -115,7 +116,7 @@ none is needed.
   key, the problem, the source (docs page or schema), and whether it is a
   verified fact or an inference.
 - **The complete corrected JSON**, never a fragment: the user pastes it whole.
-  Run it through `check.py` before delivering. From scratch, write only keys
+  From scratch, write only keys
   that serve an answer: a key restating its default adds nothing to maintain.
 - Below the JSON, what you changed and what you left alone on purpose.
 - *Organization*: the JSON to paste into the console, plus how to confirm it

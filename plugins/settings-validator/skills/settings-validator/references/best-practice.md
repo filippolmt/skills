@@ -1,15 +1,15 @@
 # settings.json best practice
 
 What the docs don't say in one place, or what only shows up by running Claude
-Code. Each item says whether it is documented or observed: re-verify an observed
-item before presenting it as fact.
+Code. An item marked *observed* or *inferred* is not in the docs: re-verify it
+before presenting it as fact; unmarked items are documented, or advice.
 
 ## Permissions and sandbox
 
 - **`Read(...)` rules in `deny` do not stop Bash.** They govern the Read tool; a
   `cat ~/.ssh/id_ed25519` is stopped only by the sandbox. A list of secrets in
   `deny` with the sandbox off or broken is partial protection: say so.
-  (inferred from the sandbox's filesystem deny list, which mirrors the `Read`
+  (*inferred* from the sandbox's filesystem deny list, which mirrors the `Read`
   rules)
 - **Sandbox in an unprivileged Docker container.** bwrap fails with `Can't mount
   proc on /newroot/proc: Operation not permitted` because Docker's masked paths
@@ -17,7 +17,7 @@ item before presenting it as fact.
   `bwrap --ro-bind / / --dev /dev --unshare-pid --proc /proc true` fails, the
   same line without `--proc /proc` passes. Fix: `sandbox.enableWeakerNestedSandbox:
   true`, weaker than the full sandbox but far stronger than none.
-  (observed on Docker Desktop, linuxkit kernel)
+  (*observed* on Docker Desktop, linuxkit kernel)
 - **`allowUnsandboxedCommands`.** `true`: a blocked command may leave the
   sandbox, and that retry goes through the permission check. `false`: it fails,
   and every legitimate need (network, sockets, `gh`, `claude plugin install`)
@@ -35,7 +35,7 @@ item before presenting it as fact.
   `dependencies`.** The bundle is enabled, its dependencies are missing, and
   `Dependency "<name>" is not installed` names them one at a time. List every
   dependency in `enabledPlugins` next to the bundle. Installed with `/plugin
-  install`, the bundle does bring its dependencies. (observed)
+  install`, the bundle does bring its dependencies. (*observed*)
 - **`autoUpdate: true` on a third-party marketplace** ships every upstream push
   to everyone unreviewed, including hooks that run every session. For a
   marketplace enforced through managed settings, flag it; the choice stays the
@@ -53,7 +53,7 @@ item before presenting it as fact.
   key; removing it cleared the warning. Report every `UNKNOWN` key as a likely
   cause of that warning. Before removing one, check the docs for whether Claude
   Code reads it anyway: without the key the default applies, which can change
-  behaviour. (observed, for one top-level key)
+  behaviour. (*observed*, for one top-level key)
 - **`forceRemoteSettingsRefresh: true`** blocks startup until the settings are
   fetched: right when they act as security policy, but it leaves Claude Code
   unusable without network.
