@@ -10,6 +10,7 @@
     { "repo": "Jeffallan/claude-skills", "tagline": "React", "kind": "skill" },
     { "repo": "nextlevelbuilder/ui-ux-pro-max-skill", "tagline": "UI/UX design", "kind": "skill" },
     { "repo": "antonbabenko/terraform-skill", "tagline": "Terraform/OpenTofu IaC", "kind": "skill" },
+    { "repo": "hashicorp/agent-skills", "tagline": "Terraform provider development", "kind": "skill" },
     { "repo": "cloudflare/skills", "tagline": "Cloudflare developer platform", "kind": "skill" },
     { "repo": "pbakaus/impeccable", "tagline": "frontend design fluency", "kind": "plugin" },
     { "repo": "mvanhorn/last30days-skill", "tagline": "multi-source trend research", "kind": "skill" },

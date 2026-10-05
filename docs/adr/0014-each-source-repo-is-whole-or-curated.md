@@ -81,6 +81,7 @@ the exclusions.
 | `mvanhorn/cli-printing-press` | `printing-press-retro` | Files findings for the Press's maintainers |
 | `filippolmt/proximo` | curated | |
 | `tt-a1i/archify` | curated | |
+| `hashicorp/agent-skills` | curated | Only Terraform provider development; Terraform-usage and Packer skills not picked |
 
 ### Catalog exclusions
 
@@ -94,6 +95,8 @@ the exclusions.
 | `mattpocock/skills` | `wait-what` | Thin rephrasing prompt rather than a reusable workflow |
 | `filippolmt/proximo` | `.claude/skills/*` | Skills for developing proximo, not for using it |
 | `tt-a1i/archify` | `archify-review` | For archify's maintainers: triages its issues and links its `REVIEWING.md` by relative path |
+| `hashicorp/agent-skills` | `azure-verified-modules`, `refactor-module`, `terraform-policy`, `terraform-search-import`, `terraform-stacks`, `terraform-style-guide`, `terraform-test` | For writing Terraform configuration, not providers; `terraform-skill` already covers that ground |
+| `hashicorp/agent-skills` | `plugins/packer/skills/*` | Packer image building, outside the provider-development pick |
 
 ## Considered options
 

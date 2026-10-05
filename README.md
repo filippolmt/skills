@@ -401,6 +401,20 @@ Snapshot of the catalog — the source of truth is
 |---|---|
 | `terraform-skill` | Diagnose-first guidance for writing, reviewing, and debugging Terraform/OpenTofu modules, tests, CI, scans, and state ops — pinpoints the failure mode (identity churn, secrets, blast radius, CI drift, state corruption) with version-aware guards. |
 
+### [hashicorp/agent-skills](https://github.com/hashicorp/agent-skills) — Terraform provider development
+
+| Skill | What it does |
+|---|---|
+| `new-terraform-provider` | Scaffold a new Terraform provider with the Plugin Framework: workspace layout, Go module, provider server main.go, and a provider.go with schema and Configure. |
+| `provider-actions` | Implement Terraform provider actions with the Plugin Framework — imperative operations that run at lifecycle events (before/after create, update, destroy). |
+| `provider-configuration` | Implement Terraform provider configuration and authentication with the Plugin Framework: credential schema, env var fallbacks, credential chains, unknown-value guards, and secret redaction. |
+| `provider-docs` | Create, update, and review Terraform provider documentation for the Registry using tfplugindocs templates and schema descriptions. |
+| `provider-ephemeral-resources` | Implement Terraform provider ephemeral resources with the Plugin Framework: Open/Renew/Close lifecycle, ephemeral schema design, and flowing values into write-only attributes. |
+| `provider-framework-migration` | Migrate Terraform provider resources and data sources from Plugin SDKv2 to the Plugin Framework, muxing both in one provider and mapping schemas per resource. |
+| `provider-resources` | Implement Terraform provider resources and data sources with the Plugin Framework: CRUD, schema design, plan modifiers and validators, waiters, import, and acceptance test coverage. |
+| `provider-test-patterns` | Terraform provider acceptance test patterns with terraform-plugin-testing: TestCase/TestStep, state and plan checks, cross-step comparisons, import testing, and sweepers. |
+| `run-acceptance-tests` | Run Terraform provider acceptance tests (TestAcc*): required environment variables and diagnosing failing or suspiciously passing tests. |
+
 ### [cloudflare/skills](https://github.com/cloudflare/skills) — Cloudflare developer platform
 
 | Skill | What it does |

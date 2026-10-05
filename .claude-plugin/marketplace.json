@@ -1255,6 +1255,141 @@
         "name": "Cloudflare",
         "url": "https://github.com/cloudflare"
       }
+    },
+    {
+      "name": "new-terraform-provider",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/hashicorp/agent-skills",
+        "path": "plugins/terraform/skills/new-terraform-provider",
+        "ref": "main",
+        "sha": "f706481af9b8fedb66de909f6243ad29601afa0c"
+      },
+      "description": "Scaffold a new Terraform provider with the Plugin Framework: workspace layout, Go module, provider server main.go, and a provider.go with schema and Configure.",
+      "author": {
+        "name": "HashiCorp",
+        "url": "https://github.com/hashicorp"
+      }
+    },
+    {
+      "name": "provider-actions",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/hashicorp/agent-skills",
+        "path": "plugins/terraform/skills/provider-actions",
+        "ref": "main",
+        "sha": "f706481af9b8fedb66de909f6243ad29601afa0c"
+      },
+      "description": "Implement Terraform provider actions with the Plugin Framework — imperative operations that run at lifecycle events (before/after create, update, destroy).",
+      "author": {
+        "name": "HashiCorp",
+        "url": "https://github.com/hashicorp"
+      }
+    },
+    {
+      "name": "provider-configuration",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/hashicorp/agent-skills",
+        "path": "plugins/terraform/skills/provider-configuration",
+        "ref": "main",
+        "sha": "f706481af9b8fedb66de909f6243ad29601afa0c"
+      },
+      "description": "Implement Terraform provider configuration and authentication with the Plugin Framework: credential schema, env var fallbacks, credential chains, unknown-value guards, and secret redaction.",
+      "author": {
+        "name": "HashiCorp",
+        "url": "https://github.com/hashicorp"
+      }
+    },
+    {
+      "name": "provider-docs",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/hashicorp/agent-skills",
+        "path": "plugins/terraform/skills/provider-docs",
+        "ref": "main",
+        "sha": "f706481af9b8fedb66de909f6243ad29601afa0c"
+      },
+      "description": "Create, update, and review Terraform provider documentation for the Registry using tfplugindocs templates and schema descriptions.",
+      "author": {
+        "name": "HashiCorp",
+        "url": "https://github.com/hashicorp"
+      }
+    },
+    {
+      "name": "provider-ephemeral-resources",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/hashicorp/agent-skills",
+        "path": "plugins/terraform/skills/provider-ephemeral-resources",
+        "ref": "main",
+        "sha": "f706481af9b8fedb66de909f6243ad29601afa0c"
+      },
+      "description": "Implement Terraform provider ephemeral resources with the Plugin Framework: Open/Renew/Close lifecycle, ephemeral schema design, and flowing values into write-only attributes.",
+      "author": {
+        "name": "HashiCorp",
+        "url": "https://github.com/hashicorp"
+      }
+    },
+    {
+      "name": "provider-framework-migration",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/hashicorp/agent-skills",
+        "path": "plugins/terraform/skills/provider-framework-migration",
+        "ref": "main",
+        "sha": "f706481af9b8fedb66de909f6243ad29601afa0c"
+      },
+      "description": "Migrate Terraform provider resources and data sources from Plugin SDKv2 to the Plugin Framework, muxing both in one provider and mapping schemas per resource.",
+      "author": {
+        "name": "HashiCorp",
+        "url": "https://github.com/hashicorp"
+      }
+    },
+    {
+      "name": "provider-resources",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/hashicorp/agent-skills",
+        "path": "plugins/terraform/skills/provider-resources",
+        "ref": "main",
+        "sha": "f706481af9b8fedb66de909f6243ad29601afa0c"
+      },
+      "description": "Implement Terraform provider resources and data sources with the Plugin Framework: CRUD, schema design, plan modifiers and validators, waiters, import, and acceptance test coverage.",
+      "author": {
+        "name": "HashiCorp",
+        "url": "https://github.com/hashicorp"
+      }
+    },
+    {
+      "name": "provider-test-patterns",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/hashicorp/agent-skills",
+        "path": "plugins/terraform/skills/provider-test-patterns",
+        "ref": "main",
+        "sha": "f706481af9b8fedb66de909f6243ad29601afa0c"
+      },
+      "description": "Terraform provider acceptance test patterns with terraform-plugin-testing: TestCase/TestStep, state and plan checks, cross-step comparisons, import testing, and sweepers.",
+      "author": {
+        "name": "HashiCorp",
+        "url": "https://github.com/hashicorp"
+      }
+    },
+    {
+      "name": "run-acceptance-tests",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/hashicorp/agent-skills",
+        "path": "plugins/terraform/skills/run-acceptance-tests",
+        "ref": "main",
+        "sha": "f706481af9b8fedb66de909f6243ad29601afa0c"
+      },
+      "description": "Run Terraform provider acceptance tests (TestAcc*): required environment variables and diagnosing failing or suspiciously passing tests.",
+      "author": {
+        "name": "HashiCorp",
+        "url": "https://github.com/hashicorp"
+      }
     }
   ]
 }
