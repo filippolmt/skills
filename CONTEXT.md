@@ -39,8 +39,8 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   `scripts/gen-readme.js` generates, spliced between the
   `<!-- bundles:start -->` / `<!-- bundles:end -->` markers. It lives under the
   README's "Installing skills" heading, beside the install instructions rather
-  than in the catalog projection, because a reader choosing between `code-review`
-  and `code-review-bundle` needs it at that moment. Its cells name each bundle's
+  than in the catalog projection, because a reader choosing between an individual
+  skill and a suite bundle needs it at that moment. Its cells name each bundle's
   `dependencies`, not its description. Never hand-edited. Its content is
   **disjoint** from the catalog projection's: the one derived set of bundles is
   subtracted from that one and selected for this one

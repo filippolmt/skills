@@ -14,7 +14,7 @@ plugins/
   agent-report-guard/
     .claude-plugin/plugin.json     # plugin manifest
     hooks/hooks.json               # PreToolUse hook (auto-loaded)
-  code-review-bundle/              # a bundle: dependencies only, no artifacts
+  matt-pocock-bundle/              # a bundle: dependencies only, no artifacts
 skills/                            # generated: vendored copies, read by pi and Codex
   tdd/
     SKILL.md                       # byte-identical to upstream at the pinned sha
@@ -90,22 +90,17 @@ and `domain-modeling`, `implement` calls `tdd` and `code-review`,
 `printing-press` calls three siblings. Install the skill by itself and those calls
 find nothing — no error, just a skill quietly doing less than it says.
 
-Where a bundle exists, reach for it rather than the bare skill:
+For the core Matt Pocock workflows, install the consolidated bundle; individual
+skills remain available when you want a smaller setup:
 
 ```
-/plugin install code-review-bundle     # not: /plugin install code-review
+/plugin install matt-pocock-bundle
 ```
 
 <!-- bundles:start -->
 | Bundle | What it installs with it |
 |---|---|
-| `improve-codebase-architecture-bundle` | `improve-codebase-architecture`, `grilling`, `codebase-design`, `domain-modeling`, `agent-report-guard` |
 | `printing-press-bundle` | `printing-press`, `printing-press-polish`, `printing-press-score`, `printing-press-output-review`, `printing-press-reprint`, `agent-report-guard` |
-| `code-review-bundle` | `code-review`, `agent-report-guard` |
-| `implement-bundle` | `implement`, `tdd`, `codebase-design`, `code-review`, `agent-report-guard` |
-| `triage-bundle` | `triage`, `grilling`, `domain-modeling` |
-| `wayfinder-bundle` | `wayfinder`, `grilling`, `domain-modeling`, `prototype`, `research`, `setup-matt-pocock-skills`, `agent-report-guard` |
-| `grill-with-docs-bundle` | `grill-with-docs`, `grilling`, `domain-modeling` |
 | `matt-pocock-bundle` | `wayfinder`, `writing-for-agents`, `implement`, `improve-codebase-architecture`, `code-review`, `retro`, `grilling`, `domain-modeling`, `prototype`, `research`, `setup-matt-pocock-skills`, `tdd`, `codebase-design`, `agent-report-guard` |
 <!-- bundles:end -->
 
@@ -114,9 +109,8 @@ That table is generated from each bundle's own `dependencies`
 bundle never appears under **Available skills** below, and a skill listed there
 never says which bundle wraps it — so look here first.
 
-Not every fan-out skill has one: `research`, `codebase-design` and `impeccable`
-have no bundle, so install the guard alongside them yourself. It is also what you
-want if you already have the skills and only need the fix:
+For an individual fan-out skill outside a bundle, install the guard alongside it.
+It is also what you want if you already have the skills and only need the fix:
 
 ```
 /plugin install agent-report-guard

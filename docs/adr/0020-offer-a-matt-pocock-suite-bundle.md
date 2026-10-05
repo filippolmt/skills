@@ -2,20 +2,26 @@
 status: accepted
 ---
 
-# Offer a core Matt Pocock bundle
+# Consolidate Matt Pocock bundles
 
-The catalog installs skills independently. Targeted bundles make one
-orchestrator usable, but the workflows commonly used together still require
-several separate installs.
+The catalog installs skills independently. Six targeted bundles made individual
+orchestrators complete, but the workflows commonly used together still required
+several separate installs and left users choosing among overlapping bundles.
 
 ## Decision
 
-Add `matt-pocock-bundle` as the all-in-one install for the core workflows:
-`wayfinder`, `writing-for-agents`, `implement`,
-`improve-codebase-architecture`, `code-review`, and `retro`.
+Use one `matt-pocock-bundle` for the core workflows: `wayfinder`,
+`writing-for-agents`, `implement`, `improve-codebase-architecture`, `code-review`,
+and `retro`.
 
-The bundle also installs their complete runtime dependency closure, including
-`agent-report-guard` for workflows that spawn sub-agents. Existing targeted
-bundles remain compatible for users who prefer smaller installations; new
-one-skill bundles are unnecessary when the core bundle already covers the
-workflow.
+The bundle installs their complete runtime dependency closure, including
+`agent-report-guard` for workflows that spawn sub-agents. Remove the six targeted
+Matt Pocock bundles; every underlying skill remains available as an independent
+catalog entry for smaller installations.
+
+## Migration
+
+Existing installations of `improve-codebase-architecture-bundle`,
+`code-review-bundle`, `implement-bundle`, `triage-bundle`, `wayfinder-bundle`, or
+`grill-with-docs-bundle` must uninstall the old bundle and install either
+`matt-pocock-bundle` or the desired individual skills.

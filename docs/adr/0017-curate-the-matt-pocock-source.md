@@ -27,9 +27,8 @@ written. Keep the catalog on the latest semver tag:
 - admit `pr` as a standalone entry;
 - admit `retro` through the core `matt-pocock-bundle`, which also installs
   `writing-for-agents`;
-- admit `implement-spec` only together with an `implement-spec-bundle` that
-  installs `setup-matt-pocock-skills`, `tdd`, `code-review`, and
-  `agent-report-guard`.
+- admit `implement-spec` through `matt-pocock-bundle`, together with
+  `setup-matt-pocock-skills`, `tdd`, `code-review`, and `agent-report-guard`.
 
 The raw entries remain necessary because bundles name catalog entries as
 dependencies. The bundle is what makes each orchestrator a complete install.

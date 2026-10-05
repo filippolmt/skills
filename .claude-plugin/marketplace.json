@@ -39,66 +39,12 @@
       }
     },
     {
-      "name": "improve-codebase-architecture-bundle",
-      "source": "./plugins/improve-codebase-architecture-bundle",
-      "description": "Install improve-codebase-architecture together with the mattpocock skills it calls at runtime (grilling, codebase-design, domain-modeling) and agent-report-guard, the hook that keeps their sub-agents reporting back. Bundles them as dependencies.",
-      "author": {
-        "name": "Matt Pocock",
-        "url": "https://github.com/mattpocock"
-      }
-    },
-    {
       "name": "printing-press-bundle",
       "source": "./plugins/printing-press-bundle",
       "description": "Install printing-press with the sibling skills that create and maintain a CLI locally (printing-press-polish, printing-press-score, printing-press-reprint, and the internal printing-press-output-review) and agent-report-guard, the hook that keeps its subagents reporting back. Bundles them as dependencies.",
       "author": {
         "name": "Matt Van Horn and Trevin Chow",
         "url": "https://github.com/mvanhorn/cli-printing-press"
-      }
-    },
-    {
-      "name": "code-review-bundle",
-      "source": "./plugins/code-review-bundle",
-      "description": "Install code-review together with agent-report-guard, the hook that keeps its two axis sub-agents reporting back instead of stalling. Bundles them as dependencies.",
-      "author": {
-        "name": "Matt Pocock",
-        "url": "https://github.com/mattpocock"
-      }
-    },
-    {
-      "name": "implement-bundle",
-      "source": "./plugins/implement-bundle",
-      "description": "Install implement together with the skills it calls at runtime (tdd, codebase-design, code-review) and agent-report-guard, the hook that keeps code-review's sub-agents reporting back. Bundles them as dependencies.",
-      "author": {
-        "name": "Matt Pocock",
-        "url": "https://github.com/mattpocock"
-      }
-    },
-    {
-      "name": "triage-bundle",
-      "source": "./plugins/triage-bundle",
-      "description": "Install triage together with the skills it calls at runtime (grilling, domain-modeling). Bundles them as dependencies.",
-      "author": {
-        "name": "Matt Pocock",
-        "url": "https://github.com/mattpocock"
-      }
-    },
-    {
-      "name": "wayfinder-bundle",
-      "source": "./plugins/wayfinder-bundle",
-      "description": "Install wayfinder together with the skills it calls at runtime (grilling, domain-modeling, prototype, research, setup-matt-pocock-skills) and agent-report-guard, the hook that keeps its research subagents reporting back. Bundles them as dependencies.",
-      "author": {
-        "name": "Matt Pocock",
-        "url": "https://github.com/mattpocock"
-      }
-    },
-    {
-      "name": "grill-with-docs-bundle",
-      "source": "./plugins/grill-with-docs-bundle",
-      "description": "Install grill-with-docs together with the skills it calls at runtime (grilling, domain-modeling). Bundles them as dependencies.",
-      "author": {
-        "name": "Matt Pocock",
-        "url": "https://github.com/mattpocock"
       }
     },
     {
