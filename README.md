@@ -101,7 +101,7 @@ skills remain available when you want a smaller setup:
 | Bundle | What it installs with it |
 |---|---|
 | `printing-press-bundle` | `printing-press`, `printing-press-polish`, `printing-press-score`, `printing-press-output-review`, `printing-press-reprint`, `agent-report-guard` |
-| `matt-pocock-bundle` | `wayfinder`, `grill-with-docs`, `writing-for-agents`, `implement`, `improve-codebase-architecture`, `code-review`, `retro`, `grilling`, `domain-modeling`, `prototype`, `research`, `setup-matt-pocock-skills`, `tdd`, `codebase-design`, `agent-report-guard` |
+| `matt-pocock-bundle` | `wayfinder`, `grill-with-docs`, `diagnosing-bugs`, `writing-for-agents`, `implement`, `improve-codebase-architecture`, `code-review`, `retro`, `grilling`, `domain-modeling`, `prototype`, `research`, `setup-matt-pocock-skills`, `tdd`, `codebase-design`, `agent-report-guard` |
 <!-- bundles:end -->
 
 That table is generated from each bundle's own `dependencies`
