@@ -41,7 +41,7 @@
     {
       "name": "settings-validator",
       "source": "./plugins/settings-validator",
-      "description": "Validates and improves a Claude Code settings.json, for an organization (managed settings) or a single user: asks the scope and the intended configuration, checks every key against the official docs and the published JSON schema (including unknown keys the admin console flags without naming), applies best practice, and returns the complete corrected JSON.",
+      "description": "Validates and improves Claude Code managed, user, shared-project, or project-local settings: confirms the intended configuration, checks every key against the official docs and published JSON schema, applies best practice, and returns complete corrected JSON.",
       "author": {
         "name": "Filippo Merante Caparrotta"
       }
