@@ -26,10 +26,11 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   listed with its reason in ADR-0014. Neither added nor reported by
   `/add-external-skill update`.
 - **Bundle** — a local plugin that ships no artifacts of its own: its entry
-  exists to pull dependencies in, so installing it brings a skill plus everything
-  that skill calls at runtime. A local plugin with no `skills/`, `commands/`,
-  `hooks/` or `agents/` directory IS one — derived, never listed. It appears in
-  the **bundle projection** and nowhere else in the README.
+  exists only to pull dependencies in. A targeted bundle brings one skill plus
+  everything it calls at runtime; a suite bundle brings a curated set of
+  workflows used together. A local plugin with no `skills/`, `commands/`, `hooks/` or
+  `agents/` directory IS one — derived, never listed. It appears in the **bundle
+  projection** and nowhere else in the README.
 - **Catalog projection** — the README "Available skills" section. NOT a source
   of truth: it is generated from the catalog by `scripts/gen-readme.js` and
   spliced between the `<!-- catalog:start -->` / `<!-- catalog:end -->` markers.
@@ -38,8 +39,8 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   `scripts/gen-readme.js` generates, spliced between the
   `<!-- bundles:start -->` / `<!-- bundles:end -->` markers. It lives under the
   README's "Installing skills" heading, beside the install instructions rather
-  than in the catalog projection, because a reader choosing between `code-review`
-  and `code-review-bundle` needs it at that moment. Its cells name each bundle's
+  than in the catalog projection, because a reader choosing between an individual
+  skill and a suite bundle needs it at that moment. Its cells name each bundle's
   `dependencies`, not its description. Never hand-edited. Its content is
   **disjoint** from the catalog projection's: the one derived set of bundles is
   subtracted from that one and selected for this one

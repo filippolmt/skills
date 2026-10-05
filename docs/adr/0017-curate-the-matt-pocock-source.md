@@ -19,17 +19,16 @@ The source is now **curated**. Four entries leave the catalog:
 - `resolving-merge-conflicts` already has an upstream changeset scheduling its
   removal.
 
-## Next upstream release
+## Additions from v1.3.1
 
-Upstream `main` also contains three unreleased skills. Keep the catalog on the
-latest semver tag; when a release contains them:
+Upstream v1.3.1 contains three skills that were unreleased when this decision was
+written. Keep the catalog on the latest semver tag:
 
 - admit `pr` as a standalone entry;
-- admit `retro` together with a `retro-bundle` that installs
+- admit `retro` through the core `matt-pocock-bundle`, which also installs
   `writing-for-agents`;
-- admit `implement-spec` only together with an `implement-spec-bundle` that
-  installs `setup-matt-pocock-skills`, `tdd`, `code-review`, and
-  `agent-report-guard`.
+- admit `implement-spec` through `matt-pocock-bundle`, together with
+  `setup-matt-pocock-skills`, `tdd`, `code-review`, and `agent-report-guard`.
 
 The raw entries remain necessary because bundles name catalog entries as
 dependencies. The bundle is what makes each orchestrator a complete install.

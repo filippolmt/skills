@@ -39,15 +39,6 @@
       }
     },
     {
-      "name": "improve-codebase-architecture-bundle",
-      "source": "./plugins/improve-codebase-architecture-bundle",
-      "description": "Install improve-codebase-architecture together with the mattpocock skills it calls at runtime (grilling, codebase-design, domain-modeling) and agent-report-guard, the hook that keeps their sub-agents reporting back. Bundles them as dependencies.",
-      "author": {
-        "name": "Matt Pocock",
-        "url": "https://github.com/mattpocock"
-      }
-    },
-    {
       "name": "printing-press-bundle",
       "source": "./plugins/printing-press-bundle",
       "description": "Install printing-press with the sibling skills that create and maintain a CLI locally (printing-press-polish, printing-press-score, printing-press-reprint, and the internal printing-press-output-review) and agent-report-guard, the hook that keeps its subagents reporting back. Bundles them as dependencies.",
@@ -57,45 +48,9 @@
       }
     },
     {
-      "name": "code-review-bundle",
-      "source": "./plugins/code-review-bundle",
-      "description": "Install code-review together with agent-report-guard, the hook that keeps its two axis sub-agents reporting back instead of stalling. Bundles them as dependencies.",
-      "author": {
-        "name": "Matt Pocock",
-        "url": "https://github.com/mattpocock"
-      }
-    },
-    {
-      "name": "implement-bundle",
-      "source": "./plugins/implement-bundle",
-      "description": "Install implement together with the skills it calls at runtime (tdd, code-review) and agent-report-guard, the hook that keeps code-review's sub-agents reporting back. Bundles them as dependencies.",
-      "author": {
-        "name": "Matt Pocock",
-        "url": "https://github.com/mattpocock"
-      }
-    },
-    {
-      "name": "triage-bundle",
-      "source": "./plugins/triage-bundle",
-      "description": "Install triage together with the skills it calls at runtime (grilling, domain-modeling). Bundles them as dependencies.",
-      "author": {
-        "name": "Matt Pocock",
-        "url": "https://github.com/mattpocock"
-      }
-    },
-    {
-      "name": "wayfinder-bundle",
-      "source": "./plugins/wayfinder-bundle",
-      "description": "Install wayfinder together with the skills it calls at runtime (grilling, domain-modeling, prototype, research, setup-matt-pocock-skills) and agent-report-guard, the hook that keeps its research subagents reporting back. Bundles them as dependencies.",
-      "author": {
-        "name": "Matt Pocock",
-        "url": "https://github.com/mattpocock"
-      }
-    },
-    {
-      "name": "grill-with-docs-bundle",
-      "source": "./plugins/grill-with-docs-bundle",
-      "description": "Install grill-with-docs together with the skills it calls at runtime (grilling, domain-modeling). Bundles them as dependencies.",
+      "name": "matt-pocock-bundle",
+      "source": "./plugins/matt-pocock-bundle",
+      "description": "Install the core Matt Pocock workflows used together (wayfinder, writing-for-agents, implement, improve-codebase-architecture, code-review, and retro) with their runtime dependencies. Bundles them as dependencies.",
       "author": {
         "name": "Matt Pocock",
         "url": "https://github.com/mattpocock"
@@ -321,6 +276,21 @@
         "sha": "24fe0ef7737efae15c87225755e9f6f5965e4888"
       },
       "description": "Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes — Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/PRD asked for?).",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
+    },
+    {
+      "name": "retro",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/retro",
+        "ref": "v1.3.1",
+        "sha": "24fe0ef7737efae15c87225755e9f6f5965e4888"
+      },
+      "description": "Conduct a retrospective on a coding session.",
       "author": {
         "name": "Matt Pocock",
         "url": "https://github.com/mattpocock"

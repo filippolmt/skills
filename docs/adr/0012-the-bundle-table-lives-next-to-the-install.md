@@ -5,12 +5,11 @@ status: accepted
 # The bundle table lives next to the install
 
 A **bundle** is a local plugin that ships no artifacts of its own: its
-`plugin.json` carries only `dependencies`, so installing it pulls in a skill plus
-everything that skill calls at runtime. Seven exist — `code-review-bundle`,
-`implement-bundle`, `triage-bundle`, `wayfinder-bundle`, `printing-press-bundle`,
-`grill-with-docs-bundle` and `improve-codebase-architecture-bundle`.
+`plugin.json` carries only `dependencies`. At the time of this decision seven
+targeted bundles existed; later decisions may consolidate them or add suite
+bundles.
 
-Until now they were **invisible**. `isBundle()` in `scripts/catalog.js` derives
+They were **invisible**. `isBundle()` in `scripts/catalog.js` derives
 bundle-ness from the absence of a `skills/`, `commands/`, `hooks/` or `agents/`
 directory, and `gen-readme.js` folds that set into the `omit` list, so no bundle
 reaches the catalog projection. The comment in `catalog.js` stated the reasoning
