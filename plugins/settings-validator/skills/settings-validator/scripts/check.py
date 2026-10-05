@@ -3,12 +3,13 @@
 
 Usage: check.py <settings.json> [--schema <file or URL>]
 
+--schema points at a local copy when the default URL can't be fetched.
+
 Reports one line per problem:
   SYNTAX   invalid JSON (line and column)
   DUP      key repeated in the same object (the last one wins, silently)
   SCHEMA   schema violation (type, enum, key not allowed in a closed object)
-  UNKNOWN  key the schema does not list but accepts, because the object is open:
-           the schema lets it through, the claude.ai admin console flags it
+  UNKNOWN  key the schema does not list in an object that accepts any key
 Exit 0 when clean, 1 on problems, 2 when jsonschema or the schema is missing.
 """
 import json
@@ -18,7 +19,8 @@ import urllib.request
 SCHEMA_URL = "https://json.schemastore.org/claude-code-settings.json"
 
 
-def load_settings(path):
+def parse(text):
+    """Return (data, duplicate keys); raises json.JSONDecodeError."""
     dups = []
 
     def hook(pairs):
@@ -29,13 +31,7 @@ def load_settings(path):
             seen.add(k)
         return dict(pairs)
 
-    with open(path, encoding="utf-8") as f:
-        text = f.read()
-    try:
-        return json.loads(text, object_pairs_hook=hook), dups
-    except json.JSONDecodeError as e:
-        print(f"SYNTAX line {e.lineno} column {e.colno}: {e.msg}")
-        sys.exit(1)
+    return json.loads(text, object_pairs_hook=hook), dups
 
 
 def load_schema(src):
@@ -47,19 +43,24 @@ def load_schema(src):
 
 
 def unknown_keys(node, schema, path=""):
-    """Keys not listed in schema objects that accept them anyway."""
+    """Keys the schema does not list, in objects that accept any key.
+
+    An object whose additionalProperties is a schema (env) accepts arbitrary
+    names by design: its extra keys are not reported. Only plain `properties`
+    are followed; in the current schema the top level is the one open object.
+    """
     if not isinstance(node, dict) or not isinstance(schema, dict):
         return
     props = schema.get("properties")
     if props is None:
         return
+    open_object = schema.get("additionalProperties", True) is True
     for k, v in node.items():
-        if k == "$schema":
-            continue
+        where = f"{path}.{k}" if path else k
         if k in props:
-            yield from unknown_keys(v, props[k], f"{path}.{k}" if path else k)
-        elif schema.get("additionalProperties", True) is not False:
-            yield f"{path}.{k}" if path else k
+            yield from unknown_keys(v, props[k], where)
+        elif open_object and k != "$schema":
+            yield where
 
 
 def main():
@@ -73,7 +74,13 @@ def main():
         schema_src = args[i + 1]
         del args[i:i + 2]
 
-    data, dups = load_settings(args[0])
+    with open(args[0], encoding="utf-8") as f:
+        text = f.read()
+    try:
+        data, dups = parse(text)
+    except json.JSONDecodeError as e:
+        print(f"SYNTAX line {e.lineno} column {e.colno}: {e.msg}")
+        sys.exit(1)
     try:
         schema = load_schema(schema_src)
     except Exception as e:  # network or file: without the schema the check means nothing

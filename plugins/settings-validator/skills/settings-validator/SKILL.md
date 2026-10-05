@@ -16,11 +16,8 @@ with concrete options; wait for each round before the next.
 
 **Round 1**, always:
 
-- **scope**:
-  - *organization*: managed settings from the claude.ai admin console, a
-    `managed-settings.json` or MDM; applies to everyone and nothing overrides it
-  - *user*: `~/.claude/settings.json`
-  - *project*: shared `.claude/settings.json`, or `.claude/settings.local.json`
+- **scope**: *organization* (managed settings: admin console, file or MDM),
+  *user*, or *project*
 - **starting point**: an existing file (ask the user to paste it; for user or
   project scope you may read it yourself if the user prefers), or **from
   scratch**
@@ -59,33 +56,41 @@ Read on every run: keys change often and memory goes stale.
   (`Any file`, `Managed`), default and an example
 - the schema `https://json.schemastore.org/claude-code-settings.json`
 - for the areas touched, the pages the reference links: `permissions`,
-  `sandboxing`, `managed-settings`, `server-managed-settings`, `plugins/org`
+  `sandboxing`, `managed-settings`, `server-managed-settings`, `plugins/org`,
+  `plugin-marketplaces`
 - **secondary source** for best practice:
   `https://github.com/shanraisshan/claude-code-best-practice/blob/main/best-practice/claude-settings.md`
   (read it with `gh api` or `WebFetch`). It is a third-party copy and may lag:
   where it disagrees with the official docs, the docs win, and the disagreement
   is reported.
 
-Done when every page covering a key present in the file, or proposed, has been
-read.
+Done when every page covering a key in the file, or an area the answers call
+for, has been read.
 
 ## 3. Validation
 
+From scratch there is no file yet: skip to step 4, and run this step on the
+draft before delivering it.
+
 1. Run [`scripts/check.py`](scripts/check.py) on the JSON saved to a temp file:
    `python3 <skill dir>/scripts/check.py <file>`.
-   It reports `SYNTAX`, `DUP`, `SCHEMA` and `UNKNOWN`. Without the `jsonschema`
-   module (exit 2), install it into a temp directory as the script says and
-   rerun. `UNKNOWN` matters: the schema accepts extra top-level keys, but the
-   claude.ai admin console flags them with a generic schema-error warning that
-   names no key.
+   It reports `SYNTAX`, `DUP`, `SCHEMA` and `UNKNOWN`; `UNKNOWN` is weighed in
+   [`references/best-practice.md`](references/best-practice.md). Exit 2 means
+   the check did not run:
+   - `jsonschema` missing: install it into a temp directory as the script says
+   - schema not loaded: fetch the schema URL another way (`curl`, `WebFetch`)
+     into a file and rerun with `--schema <file>`
+
+   A check that never ran is reported as such: the verdict says the schema
+   was not checked, never that the file is clean.
 2. Check every key against the reference:
    - **scope**: a `Managed` key in a user or project file is ignored
    - **values**: types, enums, limits (e.g. `fallbackModel` takes at most 3
      entries)
    - **deprecated or renamed keys**
 
-Done when every key in the file has been checked against reference and schema,
-and `check.py` is clean or every line it reports is explained.
+Done when every key has been checked against reference and schema, and
+`check.py` ran and is clean or every line it reports is explained.
 
 ## 4. Best practice
 
@@ -116,3 +121,7 @@ none is needed.
 - *Organization*: the JSON to paste into the console, plus how to confirm it
   applies (`/status`, the `Setting sources` line). *User* or *project*: write
   the file only after the user's yes, and look at what it holds first.
+
+Done when `check.py` is clean on the delivered JSON, or each remaining line is
+an accepted trade-off named in the verdict, and every verdict item names its
+source.

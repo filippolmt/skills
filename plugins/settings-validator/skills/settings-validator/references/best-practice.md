@@ -21,8 +21,8 @@ item before presenting it as fact.
 - **`allowUnsandboxedCommands`.** `true`: a blocked command may leave the
   sandbox, and that retry goes through the permission check. `false`: it fails,
   and every legitimate need (network, sockets, `gh`, `claude plugin install`)
-  needs an explicit exception. Ask which friction the user accepts; don't
-  impose `false`.
+  needs an explicit exception. Ask which friction the user accepts, and set the
+  value that matches it.
 - **`failIfUnavailable`** blocks startup wherever the sandbox can't start. In
   managed settings, propose it only once the sandbox has been tested on every
   kind of machine in the team.
@@ -42,19 +42,18 @@ item before presenting it as fact.
   user's.
 - **`strictKnownMarketplaces`** is an allowlist of sources: a marketplace
   declared in `extraKnownMarketplaces` but missing here is refused.
-- **`claude-plugins-official`** is a name reserved for Anthropic's official
-  marketplaces (documented), and Claude Code registers it on its own.
 - A plugin enabled in both managed and user settings is a duplicate: propose
   removing it from the user file.
 
 ## Managed settings
 
-- **Unknown keys in the admin console** produce a generic schema-error warning
-  that names no key: `check.py` lists them as `UNKNOWN`. Before removing one,
-  check the docs for whether Claude Code reads it anyway: without the key the
-  default applies, which can change behaviour.
+- **`UNKNOWN` keys.** The schema accepts extra top-level keys, so they pass
+  schema validation, but the claude.ai admin console answered one
+  (`syncClaudeAiPlugins`) with a generic schema-error warning that named no
+  key; removing it cleared the warning. Report every `UNKNOWN` key as a likely
+  cause of that warning. Before removing one, check the docs for whether Claude
+  Code reads it anyway: without the key the default applies, which can change
+  behaviour. (observed, for one top-level key)
 - **`forceRemoteSettingsRefresh: true`** blocks startup until the settings are
   fetched: right when they act as security policy, but it leaves Claude Code
   unusable without network.
-- **Precedence**: managed beats everything, bar a few documented exceptions. A
-  key set in the user file to "fix" a managed one has no effect.
