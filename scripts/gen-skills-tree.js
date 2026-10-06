@@ -226,7 +226,7 @@ function skillDirs(start) {
 }
 
 // Where an entry's `path` lands in its checkout, and whether anything is there.
-function resolveEntry(entry, fetch) {
+function resolveEntry(entry, fetch = checkout) {
   const repo = repoOf(entry);
   const { url, sha, path: sub } = entry.source;
   if (!sha) throw new Error(`entry ${entry.name}: no sha to resolve — every git-subdir entry must pin one`);
@@ -335,6 +335,8 @@ module.exports = {
   formatLike,
   unresolved,
   build,
+  checkout,
+  resolveEntry,
 };
 
 // --- cli -------------------------------------------------------------------
@@ -349,6 +351,9 @@ if (require.main === module) {
     const resolved = catalog.filter(isGitSubdir).length - gone.length;
     console.log(`${resolved} catalog paths resolve at their pinned sha.`);
     if (gone.length) console.log(`Removed upstream, pruned by the next regeneration:\n${goneList}`);
+    // Artifact classification belongs to pull-request validation too: a path can
+    // still resolve while a new command, agent, hook, or MCP capability appears.
+    execFileSync('node', [path.join(root, 'scripts', 'gen-distribution.js'), '--verify'], { stdio: 'inherit' });
     process.exit(0);
   }
   if (check && gone.length) {

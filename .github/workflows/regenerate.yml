@@ -31,9 +31,14 @@ on:
     paths:
       - .claude-plugin/marketplace.json
       - scripts/gen-skills-tree.js
+      - scripts/gen-distribution.js
+      - scripts/distribution.js
+      - scripts/distribution-meta.json
+      - plugins/**
       - overlays/**
-      # A hand-edit of the tree belongs here too: regeneration is what undoes it.
+      # A hand-edit of a projection belongs here too: regeneration undoes it.
       - skills/**
+      - docs/distribution-parity.md
   workflow_dispatch:
 
 # `GITHUB_TOKEN` does none of the work below — `REGEN_TOKEN` does, so that the push
@@ -86,7 +91,9 @@ jobs:
           node-version: 24
       - name: Regenerate skills/, pruning what upstream removed
         run: node scripts/gen-skills-tree.js
-      - name: Stop here when the tree is already current
+      - name: Regenerate the distribution parity matrix
+        run: node scripts/gen-distribution.js
+      - name: Stop here when the projections are already current
         id: diff
         # The whole working tree, not only skills/: a prune also rewrites the
         # catalog, the bundles it touched and the README.
@@ -107,6 +114,7 @@ jobs:
           node scripts/check-renovate.js
           node scripts/check-name-collisions.js
           node scripts/gen-skills-tree.js --check
+          node scripts/gen-distribution.js --check
         shell: bash
       - name: Open or update the regeneration PR
         if: steps.diff.outputs.changed == 'true'

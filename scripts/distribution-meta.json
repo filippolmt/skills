@@ -1,0 +1,72 @@
+{
+  "runtimeDependencies": {
+    "grill-me": ["grilling"],
+    "grill-with-docs": ["grilling", "domain-modeling"],
+    "implement": ["tdd", "code-review"],
+    "improve-codebase-architecture": ["codebase-design", "grilling", "domain-modeling"],
+    "printing-press-polish": ["printing-press-output-review"],
+    "printing-press-reprint": ["printing-press"],
+    "retro": ["writing-for-agents"],
+    "triage": ["grilling", "domain-modeling"],
+    "wayfinder": ["grilling", "domain-modeling", "research", "prototype"]
+  },
+  "artifacts": {
+    "agent-report-guard/hook:hooks/hooks.json#PreToolUse[0]": {
+      "codex": {
+        "disposition": "unsupported",
+        "limitation": "Codex does not have Claude's named-spawn mailbox behavior, so the guard's condition does not exist.",
+        "fallback": "Use Codex subagents normally; no guard is needed."
+      },
+      "pi": {
+        "disposition": "unsupported",
+        "limitation": "pi packages cannot install declarative lifecycle hooks.",
+        "fallback": "Spawn reporting subagents without a name."
+      }
+    },
+    "zsh-wordsplit-guard/hook:hooks/hooks.json#PreToolUse[0]": {
+      "codex": {
+        "disposition": "unsupported",
+        "limitation": "Codex shell execution does not reproduce Claude's zsh silent non-split condition.",
+        "fallback": "Use the shell's native word-splitting rules; no guard is needed."
+      },
+      "pi": {
+        "disposition": "unsupported",
+        "limitation": "pi packages cannot install declarative lifecycle hooks.",
+        "fallback": "Use zsh splitting expansions such as ${=var}, ${(f)var}, or an array explicitly."
+      }
+    },
+    "impeccable/hook:hooks/hooks.json#PostToolUse[0]": {
+      "codex": {
+        "disposition": "adapted",
+        "detail": "Use Codex lifecycle hooks to run the packaged Impeccable detector after edits."
+      },
+      "pi": {
+        "disposition": "unsupported",
+        "limitation": "pi packages cannot install declarative lifecycle hooks.",
+        "fallback": "Run the packaged Impeccable detector manually."
+      }
+    },
+    "impeccable/hook:hooks/hooks.json#SessionStart[0]": {
+      "codex": {
+        "disposition": "adapted",
+        "detail": "Use Codex lifecycle hooks to prepare the Impeccable session."
+      },
+      "pi": {
+        "disposition": "unsupported",
+        "limitation": "pi packages cannot install declarative lifecycle hooks.",
+        "fallback": "Run the packaged Impeccable context command manually at session start."
+      }
+    },
+    "impeccable/hook:hooks/hooks.json#Stop[0]": {
+      "codex": {
+        "disposition": "adapted",
+        "detail": "Use Codex lifecycle hooks to run the Impeccable final design pass."
+      },
+      "pi": {
+        "disposition": "unsupported",
+        "limitation": "pi packages cannot install declarative lifecycle hooks.",
+        "fallback": "Run the packaged Impeccable detector manually before finishing."
+      }
+    }
+  }
+}
