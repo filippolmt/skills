@@ -53,6 +53,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 const { readCatalog, isLocal, isGitSubdir, isBundle, repoOf, root, MARKETPLACE } = require('./catalog.js');
+const { discoverArtifacts } = require('./distribution.js');
 
 const TREE = path.join(root, 'skills');
 const OVERLAYS = path.join(root, 'overlays');
@@ -208,23 +209,6 @@ function copyDir(src, dst) {
   }
 }
 
-// Every SKILL.md at or under `start`, as the directories holding them. An entry
-// is usually one skill, but not always: `shell-scripting` is one entry over
-// three, and a whole-plugin entry's path is the repo root.
-function skillDirs(start) {
-  const found = [];
-  const walk = (d) => {
-    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
-      if (e.name === '.git') continue;
-      const abs = path.join(d, e.name);
-      if (e.isDirectory()) walk(abs);
-      else if (e.name === 'SKILL.md') found.push(d);
-    }
-  };
-  walk(start);
-  return found.sort();
-}
-
 // Where an entry's `path` lands in its checkout, and whether anything is there.
 function resolveEntry(entry, fetch = checkout) {
   const repo = repoOf(entry);
@@ -289,7 +273,9 @@ function build(dest, plugins, deps = {}) {
     const licence = licenceIn(repoDir);
     if (!licence) throw new Error(`entry ${entry.name}: ${repo} ships no licence — no licence, no right to redistribute`);
 
-    for (const skillDir of skillDirs(abs)) {
+    const skills = discoverArtifacts(entry, abs).filter((item) => item.kind === 'skill');
+    for (const skill of skills) {
+      const skillDir = path.dirname(path.join(abs, skill.path));
       const md = fs.readFileSync(path.join(skillDir, 'SKILL.md'), 'utf8');
       const { name } = parseFrontmatter(md);
       if (!name) throw new Error(`entry ${entry.name}: ${path.relative(repoDir, skillDir)}/SKILL.md has no frontmatter name`);

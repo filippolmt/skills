@@ -9,6 +9,9 @@ const MANIFEST_METADATA = new Set([
   'keywords', 'skills', 'commands', 'agents', 'hooks', 'mcpServers', 'dependencies',
 ]);
 const STATUSES = new Set(['native', 'adapted', 'unsupported']);
+const METADATA_FIELDS = new Set(['runtimeDependencies', 'artifacts', 'presentationOverrides']);
+const OUTCOME_FIELDS = new Set(['disposition', 'detail', 'limitation', 'fallback', 'sourcePath', 'evidencePath']);
+const PRESENTATION_FIELDS = new Set(['displayName', 'description']);
 const posix = (p) => p.split(path.sep).join('/');
 
 function filesUnder(dir, accept) {
@@ -23,6 +26,24 @@ function filesUnder(dir, accept) {
   };
   walk(dir);
   return out;
+}
+
+function declaredFiles(root, value, defaults, accept, label) {
+  const paths = [...defaults, ...(value === undefined ? [] : Array.isArray(value) ? value : [value])];
+  if (paths.some((item) => typeof item !== 'string')) throw new Error(`${label} paths must be strings`);
+  const files = new Set();
+  for (const item of paths) {
+    const target = path.resolve(root, item);
+    if (target !== root && !target.startsWith(`${root}${path.sep}`)) throw new Error(`${label} path escapes plugin root: ${item}`);
+    if (!fs.existsSync(target)) {
+      if (!defaults.includes(item)) throw new Error(`${label} path does not exist: ${item}`);
+      continue;
+    }
+    if (fs.statSync(target).isDirectory()) {
+      for (const file of filesUnder(target, accept)) files.add(file);
+    } else if (accept(target)) files.add(target);
+  }
+  return [...files];
 }
 
 function artifact(entry, root, kind, file, suffix = '') {
@@ -49,22 +70,21 @@ function discoverArtifacts(entry, root) {
   if (isBundle(entry)) return [{ entry: entry.name, kind: 'bundle', path: null, id: 'bundle:dependencies' }];
   const manifestFile = path.join(root, '.claude-plugin', 'plugin.json');
   const plugin = fs.existsSync(manifestFile);
+  const manifest = plugin ? json(manifestFile, 'invalid plugin manifest') : {};
   const out = [];
 
-  const skillRoot = plugin ? path.join(root, 'skills') : root;
-  for (const file of filesUnder(skillRoot, (f) => path.basename(f) === 'SKILL.md')) {
+  for (const file of declaredFiles(root, manifest.skills, plugin ? ['skills'] : ['.'], (f) => path.basename(f) === 'SKILL.md', 'skills')) {
     out.push(artifact(entry, root, 'skill', file));
   }
   if (plugin) {
-    for (const [dir, kind] of [['commands', 'command'], ['agents', 'agent']]) {
-      for (const file of filesUnder(path.join(root, dir), (f) => f.endsWith('.md'))) {
+    for (const [key, kind] of [['commands', 'command'], ['agents', 'agent']]) {
+      for (const file of declaredFiles(root, manifest[key], [key], (f) => f.endsWith('.md'), key)) {
         out.push(artifact(entry, root, kind, file));
       }
     }
   }
 
-  const hooksFile = path.join(root, 'hooks', 'hooks.json');
-  if (fs.existsSync(hooksFile)) {
+  for (const hooksFile of declaredFiles(root, manifest.hooks, ['hooks/hooks.json'], () => true, 'hooks')) {
     const hooks = json(hooksFile, 'invalid hook configuration').hooks || {};
     for (const event of Object.keys(hooks).sort()) {
       const registrations = Array.isArray(hooks[event]) ? hooks[event] : [];
@@ -72,47 +92,49 @@ function discoverArtifacts(entry, root) {
     }
   }
 
-  for (const name of ['mcp.json', '.mcp.json']) {
-    const file = path.join(root, name);
-    if (!fs.existsSync(file)) continue;
+  const mcpPaths = typeof manifest.mcpServers === 'string' || Array.isArray(manifest.mcpServers)
+    ? manifest.mcpServers
+    : undefined;
+  for (const file of declaredFiles(root, mcpPaths, ['mcp.json', '.mcp.json'], () => true, 'mcpServers')) {
     const config = json(file, 'invalid MCP configuration');
     const servers = config.mcpServers || config;
     for (const server of Object.keys(servers).sort()) out.push(artifact(entry, root, 'mcp', file, `#${server}`));
   }
 
   if (plugin) {
-    const manifest = json(manifestFile, 'invalid plugin manifest');
     for (const key of Object.keys(manifest).filter((key) => !MANIFEST_METADATA.has(key)).sort()) {
       out.push(artifact(entry, root, 'manifest-capability', manifestFile, `#${key}`));
     }
-    for (const server of Object.keys(manifest.mcpServers || {}).sort()) {
-      out.push(artifact(entry, root, 'mcp', manifestFile, `#mcpServers.${server}`));
+    if (manifest.mcpServers && typeof manifest.mcpServers === 'object' && !Array.isArray(manifest.mcpServers)) {
+      for (const server of Object.keys(manifest.mcpServers).sort()) {
+        out.push(artifact(entry, root, 'mcp', manifestFile, `#mcpServers.${server}`));
+      }
     }
   }
 
-  return out.sort((a, b) => a.id.localeCompare(b.id));
+  return [...new Map(out.map((item) => [item.id, item])).values()].sort((a, b) => a.id.localeCompare(b.id));
 }
 
 const derived = {
   skill: {
-    codex: { disposition: 'native', detail: 'Packaged as an Agent Skill.' },
+    codex: { disposition: 'native', detail: 'Will be packaged as an Agent Skill.' },
     pi: { disposition: 'native', detail: 'Published in the root skills tree.' },
   },
   command: {
-    codex: { disposition: 'adapted', detail: 'Converted to a deterministic namespaced skill.' },
-    pi: { disposition: 'adapted', detail: 'Converted to a deterministic namespaced skill.' },
+    codex: { disposition: 'adapted', detail: 'Will be converted to a deterministic namespaced skill.' },
+    pi: { disposition: 'adapted', detail: 'Will be converted to a deterministic namespaced skill.' },
   },
   agent: {
-    codex: { disposition: 'adapted', detail: 'Converted to a deterministic namespaced skill.' },
-    pi: { disposition: 'adapted', detail: 'Converted to a deterministic namespaced skill.' },
+    codex: { disposition: 'adapted', detail: 'Will be converted to a deterministic namespaced skill.' },
+    pi: { disposition: 'adapted', detail: 'Will be converted to a deterministic namespaced skill.' },
   },
   mcp: {
-    codex: { disposition: 'native', detail: 'Preserved as package MCP configuration.' },
+    codex: { disposition: 'native', detail: 'Will be preserved as package MCP configuration.' },
     pi: { disposition: 'unsupported', limitation: 'pi packages cannot declare MCP servers.', fallback: 'Configure the server in pi settings.' },
   },
   bundle: {
-    codex: { disposition: 'adapted', detail: 'Materialised as a self-contained plugin runtime closure.' },
-    pi: { disposition: 'adapted', detail: 'Published as a generated package-filter snippet.' },
+    codex: { disposition: 'adapted', detail: 'Will be materialised as a self-contained plugin runtime closure.' },
+    pi: { disposition: 'adapted', detail: 'Will be published as a generated package-filter snippet.' },
   },
 };
 
@@ -131,13 +153,48 @@ function classify(item, metadata) {
   return decision;
 }
 
+function validateMetadata(metadata) {
+  for (const key of Object.keys(metadata)) {
+    if (!METADATA_FIELDS.has(key)) throw new Error(`unknown distribution metadata field: ${key}`);
+  }
+  for (const [key, decision] of Object.entries(metadata.artifacts || {})) {
+    if (!decision || typeof decision !== 'object' || Array.isArray(decision)) throw new Error(`${key}: artifact decision must be an object`);
+    for (const harness of Object.keys(decision)) {
+      if (!['codex', 'pi'].includes(harness)) throw new Error(`${key}: unknown harness: ${harness}`);
+      const outcome = decision[harness];
+      if (!outcome || typeof outcome !== 'object' || Array.isArray(outcome)) throw new Error(`${key}: ${harness} outcome must be an object`);
+      for (const field of Object.keys(outcome)) {
+        if (!OUTCOME_FIELDS.has(field)) throw new Error(`${key}: unknown ${harness} outcome field: ${field}`);
+      }
+      for (const field of ['sourcePath', 'evidencePath']) {
+        if (outcome[field] !== undefined && typeof outcome[field] !== 'string') throw new Error(`${key}: ${harness} ${field} must be a string`);
+        if (outcome[field] !== undefined && outcome.disposition !== 'adapted') throw new Error(`${key}: ${harness} ${field} requires an adapted disposition`);
+      }
+    }
+  }
+  for (const [entry, override] of Object.entries(metadata.presentationOverrides || {})) {
+    if (!override || typeof override !== 'object' || Array.isArray(override)) throw new Error(`${entry}: presentation override must be an object`);
+    for (const field of Object.keys(override)) {
+      if (!PRESENTATION_FIELDS.has(field)) throw new Error(`${entry}: unknown presentation override field: ${field}`);
+      if (typeof override[field] !== 'string') throw new Error(`${entry}: presentation override ${field} must be a string`);
+    }
+  }
+  for (const [entry, targets] of Object.entries(metadata.runtimeDependencies || {})) {
+    if (!Array.isArray(targets) || targets.some((target) => typeof target !== 'string')) throw new Error(`${entry}: runtime dependencies must be catalog names`);
+  }
+}
+
 function validateDistribution(inventory, metadata = {}, options = {}) {
+  validateMetadata(metadata);
   const absent = new Set(options.absentEntries || []);
   const entries = new Set([...inventory.map((entry) => entry.name), ...absent]);
   const artifacts = new Set(inventory.flatMap((entry) => entry.artifacts.map((item) => `${entry.name}/${item.id}`)));
   for (const key of Object.keys(metadata.artifacts || {})) {
     const owner = key.split('/', 1)[0];
     if (!artifacts.has(key) && !absent.has(owner)) throw new Error(`orphaned artifact metadata: ${key}`);
+  }
+  for (const entry of Object.keys(metadata.presentationOverrides || {})) {
+    if (!entries.has(entry)) throw new Error(`orphaned presentation override: ${entry}`);
   }
   for (const from of Object.keys(metadata.runtimeDependencies || {})) {
     if (!entries.has(from)) throw new Error(`orphaned runtime dependency source: ${from}`);
@@ -155,6 +212,22 @@ function validateDistribution(inventory, metadata = {}, options = {}) {
       artifacts: entry.artifacts.map((item) => ({ ...item, dispositions: classify(item, metadata) })),
     };
   });
+
+  for (const entry of result) {
+    for (const item of entry.artifacts) {
+      for (const [harness, outcome] of Object.entries(item.dispositions)) {
+        for (const [field, label] of [['sourcePath', 'adaptation source'], ['evidencePath', 'adaptation evidence']]) {
+          if (!outcome[field]) continue;
+          if (!entry.repoRoot) throw new Error(`${entry.name}/${item.id}: cannot verify ${harness} ${label} without repository root`);
+          const file = path.resolve(entry.repoRoot, outcome[field]);
+          if (file !== entry.repoRoot && !file.startsWith(`${entry.repoRoot}${path.sep}`)) {
+            throw new Error(`${entry.name}/${item.id}: ${harness} ${label} escapes repository: ${outcome[field]}`);
+          }
+          if (!fs.existsSync(file)) throw new Error(`${entry.name}/${item.id}: ${harness} ${label} does not exist: ${outcome[field]}`);
+        }
+      }
+    }
+  }
 
   const graph = new Map(result.map((entry) => [entry.name, entry.runtimeDependencies.filter((name) => !absent.has(name))]));
   const visiting = new Set();
@@ -190,7 +263,7 @@ function renderParity(inventory) {
   return [
     '# Distribution parity', '',
     '<!-- generated by `node scripts/gen-distribution.js`; do not edit -->', '',
-    'Every catalog artifact has one required target outcome for Codex and pi. Claude Code reads the canonical marketplace directly; generated projections must realise these outcomes before they become user-facing.', '',
+    'Target dispositions for every catalog artifact. Adapted outcomes are plans until their generated projections and required behavior tests land; Claude Code reads the canonical marketplace directly.', '',
     '| Catalog entry | Artifact | Runtime dependencies | Codex | pi |',
     '| --- | --- | --- | --- | --- |',
     ...rows, '',

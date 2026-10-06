@@ -16,14 +16,19 @@ function buildInventory(plugins, deps = {}) {
   const inventory = [];
   for (const entry of plugins) {
     let dir;
-    if (isLocal(entry)) dir = path.join(root, entry.source);
-    else {
+    let repoRoot;
+    if (isLocal(entry)) {
+      dir = path.join(root, entry.source);
+      repoRoot = root;
+    } else {
       const source = resolve(entry);
       if (!source.exists) { missing.push(entry.name); continue; }
       dir = source.abs;
+      repoRoot = source.repoDir;
     }
     inventory.push({
       name: entry.name,
+      repoRoot,
       declaredDependencies: declaredDependencies(dir),
       artifacts: discoverArtifacts(entry, dir),
     });
