@@ -55,9 +55,30 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 
 ## Agent distribution
 
+- **Artifact inventory** — the complete set of skills, commands, agents, hooks,
+  MCP configuration and other distribution-relevant artifacts discovered under one
+  plugin entry's source. Unknown artifacts fail validation rather than disappearing.
+- **Harness disposition** — one artifact's outcome for one harness: **native** when
+  it travels unchanged, **adapted** when it keeps its user-facing outcome through a
+  harness-specific representation, or **unsupported** with an exact limitation and
+  fallback. A manual workaround is unsupported with a fallback, not parity.
+- **Runtime closure** — the transitive set of skills and adaptations an installable
+  workflow needs to work in a fresh session. It is declared where it cannot be
+  derived; it is not guessed from prose.
+- **Parity matrix** — the generated, human-readable join of the artifact inventory
+  and harness dispositions. It reports every catalog entry and artifact for Codex
+  and pi; it is not a second catalog.
+- **Codex package projection** — the generated, self-contained native Codex plugin
+  for one marketplace catalog entry. Its runtime closure is materialised inside the
+  package; unsupported entries receive no installable stub.
 - **Skills tree** — `skills/`, one directory per portable skill. A further **catalog
   projection**: derived from the marketplace catalog, checked in CI, never
-  hand-edited. What pi and Codex read; Claude reads the catalog instead.
+  hand-edited. It is pi's **loose-skill projection**; Codex's legacy scan-root route
+  remains only until the native package projection replaces it (ADR-0021). Claude
+  reads the catalog instead.
+- **Loose-skill projection** — a harness-neutral tree of unbundled skills, without
+  plugin identity, hooks or MCP configuration. Here it is the skills tree consumed
+  by pi; it is a fallback rather than first-class Codex distribution.
 - **Regeneration PR** — the single long-lived `chore/regenerate-skills-tree` PR the
   `regenerate` workflow opens, force-pushes onto and merges on green. Not a review
   request: the catalog entry it materialises is where the decision was reviewed, and
@@ -95,8 +116,10 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   manifest field naming it. Where the skills tree lives, and the reason this repo
   needs no `package.json`.
 - **Shared location** — `.agents/skills`, the Agent Skills standard's path, scanned
-  by pi and Codex with nothing installed. Here it is a **symlink** to the skills
-  tree, never a second copy — which is the distinction the term exists to keep.
+  by pi and Codex with nothing installed. Here it is currently a **symlink** to the
+  skills tree, never a second copy. ADR-0021 removes it when Codex's native package
+  projection lands, avoiding duplicate loose and plugin-bundled skills; pi continues
+  to consume the root convention directory.
 - **Pinned source** — a pi package source carrying any `ref` — branch, tag or
   commit. Beware the inversion: in pi's vocabulary *pinned* means **never
   advanced**, where a pinned `sha` in this catalog is what Renovate advances.
