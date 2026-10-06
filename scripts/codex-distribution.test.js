@@ -54,6 +54,28 @@ test('writes an installable marketplace package from the shared inventory', () =
   }
 });
 
+test('preserves MCP server configuration in the Codex package', () => {
+  const { root, source } = fixture();
+  const out = path.join(root, '.agents', 'plugins');
+  fs.writeFileSync(path.join(source, 'mcp.json'), JSON.stringify({ mcpServers: { docs: { url: 'https://example.test/mcp' } } }));
+  const plugins = [{ name: 'one', description: 'One.', source: './plugins/one' }];
+  const inventory = [{
+    name: 'one', sourceRoot: source, repoRoot: root, runtimeDependencies: [],
+    artifacts: [
+      { kind: 'skill', path: 'skill-one/SKILL.md', dispositions: { codex: { disposition: 'native' } } },
+      { kind: 'mcp', id: 'mcp:mcp.json#docs', path: 'mcp.json', dispositions: { codex: { disposition: 'native' } } },
+    ],
+  }];
+  try {
+    assert.deepEqual(writeCodexDistribution(plugins, inventory, out), { written: ['one'], omitted: [] });
+    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(out, 'packages', 'one', 'mcp.json'))), {
+      mcpServers: { docs: { url: 'https://example.test/mcp' } },
+    });
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('converts a Claude agent into a namespaced Codex skill', () => {
   const { root, source } = fixture();
   const out = path.join(root, '.agents', 'plugins');

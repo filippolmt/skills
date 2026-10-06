@@ -21,7 +21,7 @@ function packageable(entry) {
   if (unsupported(entry)) return false;
   return entry.artifacts.every((artifact) =>
     codexOutcome(artifact).disposition === 'unsupported' ||
-    ['skill', 'command', 'agent', 'hook', 'bundle'].includes(artifact.kind)
+    ['skill', 'command', 'agent', 'hook', 'mcp', 'bundle'].includes(artifact.kind)
   );
 }
 
@@ -74,6 +74,28 @@ function writeHooks(entries, packageRoot) {
   fs.writeFileSync(path.join(dir, 'hooks.json'), `${JSON.stringify({ hooks }, null, 2)}\n`);
 }
 
+function writeMcp(entries, packageRoot) {
+  const mcpServers = {};
+  for (const entry of entries) {
+    for (const artifact of entry.artifacts.filter((item) => item.kind === 'mcp' && codexOutcome(item).disposition !== 'unsupported')) {
+      const outcome = codexOutcome(artifact);
+      const file = outcome.sourcePath
+        ? path.join(entry.repoRoot, outcome.sourcePath)
+        : path.join(entry.sourceRoot, artifact.path);
+      const config = JSON.parse(fs.readFileSync(file, 'utf8'));
+      const servers = config.mcpServers || config;
+      const suffix = artifact.id.split('#').at(-1);
+      const name = suffix.startsWith('mcpServers.') ? suffix.slice('mcpServers.'.length) : suffix;
+      if (!servers[name]) throw new Error(`${entry.name}/${artifact.id}: MCP source has no server ${name}`);
+      if (mcpServers[name]) throw new Error(`${entry.name}/${artifact.id}: duplicate MCP server ${name}`);
+      mcpServers[name] = rewritePluginPaths(servers[name]);
+    }
+  }
+  if (Object.keys(mcpServers).length) {
+    fs.writeFileSync(path.join(packageRoot, 'mcp.json'), `${JSON.stringify({ mcpServers }, null, 2)}\n`);
+  }
+}
+
 function validateCodexPackages(packages) {
   for (const item of fs.readdirSync(packages, { withFileTypes: true })) {
     if (!item.isDirectory()) throw new Error(`unexpected generated package entry: ${item.name}`);
@@ -87,6 +109,13 @@ function validateCodexPackages(packages) {
     const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
     if (manifest.name !== item.name || typeof manifest.version !== 'string' || manifest.skills !== './skills/') {
       throw new Error(`${item.name}: invalid plugin.json`);
+    }
+    const mcpFile = path.join(packageRoot, 'mcp.json');
+    if (fs.existsSync(mcpFile)) {
+      const mcp = JSON.parse(fs.readFileSync(mcpFile, 'utf8'));
+      if (!mcp.mcpServers || typeof mcp.mcpServers !== 'object' || !Object.keys(mcp.mcpServers).length) {
+        throw new Error(`${item.name}: invalid mcp.json`);
+      }
     }
   }
 }
@@ -154,6 +183,7 @@ function writeCodexDistribution(plugins, inventory, output) {
       }
     }
     writeHooks(entries, packageRoot);
+    writeMcp(entries, packageRoot);
 
     const sourceId = typeof plugin.source === 'object' ? plugin.source.sha.slice(0, 12) : 'local';
     const fingerprint = crypto.createHash('sha256')
