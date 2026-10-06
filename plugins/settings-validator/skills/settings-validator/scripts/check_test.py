@@ -36,7 +36,7 @@ assert found == ["syncClaudeAiPlugins"], found
 
 REFERENCE = """### `cleanupPeriodDays`
 
-Set how many days... see `### \`notAKey\`` inline.
+Set how many days; an inline `### ` mention is not a section.
 
 ### `permissions.disableBypassPermissionsMode`
 #### `Allowed source types`

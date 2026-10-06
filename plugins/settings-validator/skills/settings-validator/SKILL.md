@@ -19,9 +19,7 @@ already answers the starting point.
 - **settings source**: *managed*, *user*, *shared project*
   (`.claude/settings.json`), or *project local* (`.claude/settings.local.json`);
   for *managed*, also the **delivery**: admin console (server-managed), MDM, or
-  `managed-settings.json` file. By default only the highest-priority managed
-  source that carries a policy key applies, so the delivery decides which
-  other managed sources the file overrides
+  `managed-settings.json` file
 - **starting point**: an existing file (ask the user to paste it; for a local
   file you may read it yourself if the user prefers), or **from scratch**
 - **environment**: OS and runtime, including WSL, container or CI constraints
@@ -55,7 +53,7 @@ declines to decide keeps its current value, or its default from scratch.
 
 Read on every run: keys change often and memory goes stale. Download each
 docs page as raw Markdown and read a key's type, enum, default and scope from
-its own `### \`<key>\`` section (nested keys use the dotted path):
+its own `` ### `<key>` `` section (nested keys use the dotted path):
 
 ```bash
 curl -sfL https://code.claude.com/docs/en/<page>.md -o <tmp>/<page>.md
@@ -148,7 +146,8 @@ none is needed.
 - The secondary source's last commit date, and each disagreement with the
   official docs.
 - *Managed*: the JSON for its delivery, and which other managed sources it
-  overrides. Once the user confirms it is deployed, verify each changed key
+  overrides (*Managed settings* in
+  [`references/best-practice.md`](references/best-practice.md)). Once the user confirms it is deployed, verify each changed key
   yourself with the probes in
   [`references/verify-managed.md`](references/verify-managed.md), and hand the
   user only the checks the CLI cannot make. *User*, *shared project*, or

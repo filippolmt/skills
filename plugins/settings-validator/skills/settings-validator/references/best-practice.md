@@ -69,9 +69,12 @@ before presenting it as fact; unmarked items are documented, or advice.
   `--agents` and non-SDK `--mcp-config`. Propose it whenever an allowlist is
   set. Its cost: plugin authors lose `--plugin-dir` for local development. The
   user decides.
-- **Auto-update is off by default for every marketplace that is not
-  Anthropic's official one** (`plugins/loading` § Which marketplaces and
-  plugins auto-update). To decide it for the fleet, set `autoUpdate` on the
+- **Auto-update is off by default for a private or third-party marketplace**
+  (`plugins/loading` § Which marketplaces and plugins auto-update). It is on
+  only for Anthropic's official marketplaces, such as
+  `claude-plugins-official`, and for marketplaces added from claude.ai; even
+  Anthropic's `knowledge-work-plugins` and `first-party-plugins` start off.
+  To decide it for the fleet, set `autoUpdate` on the
   managed `extraKnownMarketplaces` entry: a managed value locks the user's
   `/plugin` toggle, an unset one leaves it to the user (`plugins/org` § Turn
   auto-update on or off per marketplace). A managed entry replaces a same-name
@@ -86,32 +89,48 @@ before presenting it as fact; unmarked items are documented, or advice.
   version until `/reload-plugins`, and the next launch loads the new one.
 - **Private git marketplaces update only with non-interactive credentials**
   (`plugins/host-marketplace` § What background auto-update does with
-  credentials). SSH needs the key loaded in `ssh-agent`; HTTPS needs a
-  credential helper that answers without prompting. A provider token in the
-  environment does nothing without a helper that reads it. A failed check
-  stays quiet; `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE=1` skips the
-  re-clone it triggers. Give the user a probe to run on each kind of machine:
-  `GIT_TERMINAL_PROMPT=0 git ls-remote <url> HEAD`. A host missing from
-  `known_hosts` fails the same way. (*inferred*, not in the docs)
+  credentials, § Grant access to a private marketplace). SSH needs a key that
+  works without a passphrase prompt, such as one loaded in `ssh-agent`, and
+  the host already in `known_hosts`; HTTPS needs a credential helper that
+  answers without prompting. A provider token in the environment does nothing
+  without a helper that reads it. A failed check stays quiet;
+  `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE=1` skips the re-clone it
+  triggers. Give the user the unattended-update probe in
+  [`verify-managed.md`](verify-managed.md) for each kind of machine.
 - A plugin enabled in both managed and user settings is a duplicate: propose
   removing it from the user file.
 
+## `UNKNOWN` keys
+
+They pass schema validation, since the top level accepts any key. Weigh each
+by its `check.py` tag:
+
+- `(documented)`: the schema lags behind the docs. Report it as informational,
+  with the Claude Code version the reference requires.
+- `(undocumented)`: likely a typo, a removed key, or one Claude Code never
+  reads. Report it as a warning.
+
+**Managed: the admin console's schema warning.** The claude.ai admin console
+answered `syncClaudeAiPlugins` with a generic schema-error warning that named
+no key, and removing it cleared the warning; it accepted
+`disableCommandPluginSources` with no warning. Both are absent from the
+schema, and both are documented today, so the tag does not predict the
+warning: report every `UNKNOWN` key in a managed file as a possible cause.
+Before removing one, check the docs for whether Claude Code reads it anyway:
+without the key the default applies, which can change behaviour. (*observed*,
+one key each way)
+
 ## Managed settings
 
-- **`UNKNOWN` keys** pass schema validation, since the top level accepts any
-  key. Weigh each by its `check.py` tag:
-  - `(documented)`: the schema lags behind the docs. Report it as
-    informational, with the Claude Code version the reference requires.
-  - `(undocumented)`: likely a typo, a removed key, or one Claude Code never
-    reads. Report it as a warning.
-
-  The claude.ai admin console answered `syncClaudeAiPlugins` with a generic
-  schema-error warning that named no key, and removing it cleared the warning;
-  it accepted `disableCommandPluginSources` with no warning. Both are absent
-  from the schema, and both are documented today. So report every `UNKNOWN`
-  key as a possible cause of that warning. Before removing one, check the docs
-  for whether Claude Code reads it anyway: without the key the default
-  applies, which can change behaviour. (*observed*, one key each way)
+- **Only one managed source applies by default** (`managed-settings` § How
+  Claude Code combines managed sources): the highest-ranked of server-managed,
+  MDM and `managed-settings.json` that delivers a policy key, and the others
+  are ignored without a warning. The exception is the keys in § Keys read from
+  every admin source (sandbox locks, `forceRemoteSettingsRefresh`, `env` per
+  variable, and a few more), which a lower source can still set.
+  `managedSourcesBehavior: "merge"` combines every source instead. Name in the
+  verdict which sources the delivered file overrides, and which keys those
+  sources can still set.
 - **`forceRemoteSettingsRefresh: true`** blocks startup until the settings are
   fetched: right when they act as security policy, but it leaves Claude Code
   unusable without network. It acts only on server-managed settings.

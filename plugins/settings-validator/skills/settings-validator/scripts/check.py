@@ -15,7 +15,8 @@ Reports one line per problem:
   DUP      key repeated in the same object (the last one wins, silently)
   SCHEMA   schema violation (type, enum, key not allowed in a closed object)
   UNKNOWN  key the schema does not list in an object that accepts any key
-Exit 0 when clean, 1 on problems, 2 when jsonschema or the schema is missing.
+Exit 0 when clean, 1 on problems, 2 when jsonschema, the schema, the reference
+or an option's value is missing.
 """
 import json
 import re
@@ -75,9 +76,13 @@ def documented_keys(reference):
 
 
 def take_option(args, name):
+    """Remove `name <value>` from args and return the value, or None if absent."""
     if name not in args:
         return None
     i = args.index(name)
+    if i + 1 == len(args) or args[i + 1].startswith("--"):
+        print(f"{name} needs a value\n\n{__doc__}")
+        sys.exit(2)
     value = args[i + 1]
     del args[i:i + 2]
     return value
@@ -111,8 +116,16 @@ def main():
         sys.exit(2)
     documented = None
     if reference_src:
-        with open(reference_src, encoding="utf-8") as f:
-            documented = documented_keys(f.read())
+        try:
+            with open(reference_src, encoding="utf-8") as f:
+                documented = documented_keys(f.read())
+        except OSError as e:
+            print(f"Reference not loaded from {reference_src}: {e}")
+            sys.exit(2)
+        if not documented:  # a changed heading format would tag every key undocumented
+            print(f"No `### `<key>`` sections in {reference_src}: not the settings reference, "
+                  "or its heading format changed")
+            sys.exit(2)
 
     problems = [f"DUP {k}" for k in dups]
     validator = jsonschema.validators.validator_for(schema)(schema)
@@ -120,7 +133,9 @@ def main():
         where = ".".join(str(p) for p in e.absolute_path) or "(root)"
         problems.append(f"SCHEMA {where}: {e.message[:300]}")
     for k in unknown_keys(data, schema):
-        tag = "" if documented is None else (" (documented)" if k in documented else " (undocumented)")
+        tag = ""
+        if documented is not None:
+            tag = " (documented)" if k in documented else " (undocumented)"
         problems.append(f"UNKNOWN {k}{tag}")
 
     for p in problems:

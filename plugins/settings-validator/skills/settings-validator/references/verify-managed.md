@@ -38,6 +38,8 @@ For a key with no probe here, look for a CLI subcommand that prints its effect
 
 Name these in the delivery, each with where the user looks:
 
+- which managed source applied and which were skipped: `/status`, since
+  Claude Code warns about none of them
 - a marketplace's auto-update state: `/plugin` → Marketplaces, since
   `claude plugin marketplace list` does not show it
 - machines you can't reach from this shell, such as macOS hosts whose SSH key
