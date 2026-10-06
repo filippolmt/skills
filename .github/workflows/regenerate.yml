@@ -173,7 +173,7 @@ jobs:
           )"
           if [ -n "$pruned" ]; then
             body+=$'\n\n'"**Pruned from the catalog** — removed or renamed upstream (ADR-0015):"$'\n'"$(bullets "$pruned")"
-            body+=$'\n\n'"Installed copies break: \`claude plugin update\` on these names fails with \`Plugin \"<name>\" not found\`. Uninstall each with \`/plugin uninstall <name>@filippo-skills\` in every scope that has it (README, *When a skill leaves the catalog*). A rename upstream is pruned the same way: re-add the new folder with \`/add-external-skill\`."
+            body+=$'\n\n'"Installed copies remain stale after the catalog entry leaves. Claude: run \`/plugin uninstall <name>@filippo-skills\` in every installed scope. Codex: run \`codex plugin remove <name>@filippo-skills\`. Then refresh the marketplace. A rename upstream is pruned the same way: remove the old name and re-add the new folder with \`/add-external-skill\`."
           fi
           if [ -n "$dropped" ]; then
             body+=$'\n\n'"**Skills leaving the tree:**"$'\n'"$(bullets "$dropped")"$'\n\n'"A bundle or entry description naming one of these is prose, and still needs a hand edit."

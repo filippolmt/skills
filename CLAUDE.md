@@ -117,7 +117,7 @@ node scripts/gen-distribution.js --check # parity matrix matches the inventory
 node scripts/gen-pi.js --check        # pi bundle filters match runtime closures
 node scripts/gen-codex.js --check     # native Codex packages match the inventory
 bash scripts/test-pi-package.sh       # pi 1.0.4 package/filter smoke
-bash scripts/test-codex-marketplace.sh # Codex 0.160.1 black-box install smoke
+bash scripts/test-codex-marketplace.sh # Codex 0.160.1 lifecycle/hook smoke
 node scripts/check-renovate.js        # Renovate regexes cover every git-subdir entry
 node scripts/check-name-collisions.js # what validate does NOT cover
 claude plugin validate .              # marketplace + all local plugins

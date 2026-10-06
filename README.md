@@ -69,10 +69,21 @@ Refresh the marketplace snapshot after updates:
 codex plugin marketplace upgrade filippo-skills
 ```
 
+Observed with Codex `0.160.1`: upgrade refreshes the configured Git snapshot and
+reports any errors; installed plugins remain enabled. Start a new Codex session
+before relying on refreshed content. For a clean reinstall, run
+`codex plugin remove <name>@filippo-skills`, then add it again. Bundle and component
+plugins can coexist under Codex namespacing; the integration test installs both
+`tdd` and `matt-pocock-bundle` together.
+
 The native marketplace contains every supported entry with its complete runtime
 closure. Claude-only guards that have no Codex condition are documented rather
 than exposed as installable stubs; see
 [`docs/distribution-parity.md`](docs/distribution-parity.md).
+
+The tested target is local Codex CLI. ChatGPT desktop and Work are best effort:
+cloud execution cannot run every packaged local executable, lifecycle hook, or
+stdio MCP server.
 
 ### When a skill leaves the catalog
 
