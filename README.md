@@ -293,6 +293,7 @@ Snapshot of the catalog — the source of truth is
 - `zsh-wordsplit-guard` — Denies a Bash command looping over a bare expansion (`for x in $var`): the Bash tool runs zsh, where parameter expansion is not word-split, so the loop silently runs once over the whole string instead of per element. A glob or a path around the expansion (`for f in $D/*.log`) is left alone. The deny message names the splitting forms to use instead. Opt out per call with `[nosplit]` in the description, or session-wide with ALLOW_ZSH_NOSPLIT=1.
 - `subito-listing` — Prepares a Subito.it sale listing, or diagnoses and improves one already live: a price grounded in comparables researched on the web (sold vs asking, read with playwright-cli), a numbered photo shot list, and a title and description ready to paste within the platform limits.
 - `subito-research` — Searches Subito.it for buyers: filters listings by criteria, judges each price against the market, checks scam signals, and prepares seller questions and an offer. Reads subito.it with playwright-cli.
+- `settings-validator` — Validates and improves Claude Code managed, user, shared-project, or project-local settings: confirms the intended configuration, checks every key against the official docs and published JSON schema, applies best practice, and returns complete corrected JSON.
 
 ### [mattpocock/skills](https://github.com/mattpocock/skills) — engineering & productivity
 

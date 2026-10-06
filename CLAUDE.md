@@ -100,7 +100,7 @@ loads the file twice (`Duplicate hooks file detected`). A stale entry in
 ## Validate before committing
 
 ```
-bash scripts/run-tests.sh             # every node test; CI runs this same script
+bash scripts/run-tests.sh             # every test; CI runs this same script
 node scripts/gen-readme.js --check    # README's generated regions match the catalog
 node scripts/gen-skills-tree.js --verify-paths  # resolve every path; name what regeneration will prune
 node scripts/check-renovate.js        # Renovate regexes cover every git-subdir entry
