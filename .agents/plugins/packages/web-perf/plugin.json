@@ -1,0 +1,11 @@
+{
+  "name": "web-perf",
+  "version": "0.0.0+catalog.41e0d1985894.0470e408788b",
+  "description": "Analyze web performance via Chrome DevTools MCP — Core Web Vitals, render-blocking resources, layout shifts, and caching.",
+  "author": {
+    "name": "Cloudflare",
+    "url": "https://github.com/cloudflare"
+  },
+  "repository": "https://github.com/cloudflare/skills",
+  "skills": "./skills/"
+}

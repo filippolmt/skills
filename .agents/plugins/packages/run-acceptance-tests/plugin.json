@@ -1,0 +1,11 @@
+{
+  "name": "run-acceptance-tests",
+  "version": "0.0.0+catalog.f706481af9b8.0febc7683630",
+  "description": "Run Terraform provider acceptance tests (TestAcc*): required environment variables and diagnosing failing or suspiciously passing tests.",
+  "author": {
+    "name": "HashiCorp",
+    "url": "https://github.com/hashicorp"
+  },
+  "repository": "https://github.com/hashicorp/agent-skills",
+  "skills": "./skills/"
+}

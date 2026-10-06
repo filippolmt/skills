@@ -1,0 +1,10 @@
+{
+  "name": "printing-press-bundle",
+  "version": "0.4.1+catalog.local.9f68ef3facd1",
+  "description": "Install printing-press with the sibling skills that create and maintain a CLI locally (printing-press-polish, printing-press-score, printing-press-reprint, and the internal printing-press-output-review) and agent-report-guard, the hook that keeps its subagents reporting back. Bundles them as dependencies.",
+  "author": {
+    "name": "Matt Van Horn and Trevin Chow",
+    "url": "https://github.com/mvanhorn/cli-printing-press"
+  },
+  "skills": "./skills/"
+}

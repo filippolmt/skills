@@ -1,0 +1,11 @@
+{
+  "name": "brutalist-skill",
+  "version": "0.0.0+catalog.ce26fc25c0e5.8a2658f661b4",
+  "description": "Raw mechanical interfaces fusing Swiss typographic print with military terminal aesthetics.",
+  "author": {
+    "name": "Leon Lin",
+    "url": "https://github.com/Leonxlnx"
+  },
+  "repository": "https://github.com/Leonxlnx/taste-skill",
+  "skills": "./skills/"
+}

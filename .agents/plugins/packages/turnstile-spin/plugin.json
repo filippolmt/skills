@@ -1,0 +1,11 @@
+{
+  "name": "turnstile-spin",
+  "version": "0.0.0+catalog.41e0d1985894.1b831301c305",
+  "description": "Set up Cloudflare Turnstile end-to-end — scan the codebase, create the widget, deploy the siteverify Worker, and write frontend snippets.",
+  "author": {
+    "name": "Cloudflare",
+    "url": "https://github.com/cloudflare"
+  },
+  "repository": "https://github.com/cloudflare/skills",
+  "skills": "./skills/"
+}

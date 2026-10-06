@@ -1,0 +1,11 @@
+{
+  "name": "cloudflare",
+  "version": "0.0.0+catalog.41e0d1985894.4eb764ccd013",
+  "description": "Comprehensive Cloudflare platform skill: Workers, Pages, storage (KV, D1, R2), AI, networking, security, and infrastructure-as-code.",
+  "author": {
+    "name": "Cloudflare",
+    "url": "https://github.com/cloudflare"
+  },
+  "repository": "https://github.com/cloudflare/skills",
+  "skills": "./skills/"
+}

@@ -1,0 +1,11 @@
+{
+  "name": "to-questionnaire",
+  "version": "1.3.1+catalog.24fe0ef7737e.ac3324ff0d7f",
+  "description": "Turn a decision you can't fully answer into a questionnaire for someone else to fill in.",
+  "author": {
+    "name": "Matt Pocock",
+    "url": "https://github.com/mattpocock"
+  },
+  "repository": "https://github.com/mattpocock/skills",
+  "skills": "./skills/"
+}

@@ -1,0 +1,11 @@
+{
+  "name": "cloudflare-one-migrations",
+  "version": "0.0.0+catalog.41e0d1985894.1e0129cb2904",
+  "description": "Plan migrations from Zscaler ZIA/ZPA, Palo Alto, legacy VPN, SWG, or SASE stacks to Cloudflare One.",
+  "author": {
+    "name": "Cloudflare",
+    "url": "https://github.com/cloudflare"
+  },
+  "repository": "https://github.com/cloudflare/skills",
+  "skills": "./skills/"
+}

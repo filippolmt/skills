@@ -1,0 +1,11 @@
+{
+  "name": "ui-ux-pro-max",
+  "version": "2.15.0+catalog.a38d04c3d5c2.c930cb07de3f",
+  "description": "UI/UX design intelligence for web and mobile.",
+  "author": {
+    "name": "Next Level Builder",
+    "url": "https://github.com/nextlevelbuilder"
+  },
+  "repository": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+  "skills": "./skills/"
+}

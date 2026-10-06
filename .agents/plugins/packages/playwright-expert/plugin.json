@@ -1,0 +1,11 @@
+{
+  "name": "playwright-expert",
+  "version": "0.4.18+catalog.1be15d8064f8.106f5ca58af7",
+  "description": "Use when writing E2E tests with Playwright, setting up test infrastructure, or debugging flaky browser tests.",
+  "author": {
+    "name": "jeffallan",
+    "url": "https://github.com/Jeffallan"
+  },
+  "repository": "https://github.com/Jeffallan/claude-skills",
+  "skills": "./skills/"
+}

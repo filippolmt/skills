@@ -1,0 +1,11 @@
+{
+  "name": "terraform-skill",
+  "version": "1.17.1+catalog.b59d2be9ff4d.03b2a1ba493b",
+  "description": "Diagnose-first guidance for writing, reviewing, and debugging Terraform/OpenTofu modules, tests, CI, scans, and state ops — pinpoints the failure mode (identity churn, secrets, blast radius, CI drift, state corruption) with version-aware guards.",
+  "author": {
+    "name": "Anton Babenko",
+    "url": "https://github.com/antonbabenko"
+  },
+  "repository": "https://github.com/antonbabenko/terraform-skill",
+  "skills": "./skills/"
+}

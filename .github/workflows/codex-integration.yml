@@ -1,0 +1,47 @@
+name: codex-integration
+
+on:
+  pull_request:
+    paths:
+      - .agents/plugins/**
+      - .claude-plugin/marketplace.json
+      - .github/workflows/codex-integration.yml
+      - plugins/**
+      - overlays/**
+      - scripts/distribution-meta.json
+      - scripts/distribution.js
+      - scripts/gen-codex.js
+      - scripts/gen-distribution.js
+      - scripts/gen-skills-tree.js
+      - scripts/test-codex-marketplace.sh
+      - skills/**
+  push:
+    branches: [main]
+    paths:
+      - .agents/plugins/**
+      - .claude-plugin/marketplace.json
+      - .github/workflows/codex-integration.yml
+      - plugins/**
+      - overlays/**
+      - scripts/distribution-meta.json
+      - scripts/distribution.js
+      - scripts/gen-codex.js
+      - scripts/gen-distribution.js
+      - scripts/gen-skills-tree.js
+      - scripts/test-codex-marketplace.sh
+      - skills/**
+
+jobs:
+  marketplace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Install the tested Codex CLI
+        run: npm install --global @openai/codex@0.160.1
+      - name: Check generated packages
+        run: node scripts/gen-codex.js --check
+      - name: Install representative plugins in an isolated Codex home
+        run: bash scripts/test-codex-marketplace.sh

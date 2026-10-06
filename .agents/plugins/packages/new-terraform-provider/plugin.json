@@ -1,0 +1,11 @@
+{
+  "name": "new-terraform-provider",
+  "version": "0.0.0+catalog.f706481af9b8.7848deb21d4a",
+  "description": "Scaffold a new Terraform provider with the Plugin Framework: workspace layout, Go module, provider server main.go, and a provider.go with schema and Configure.",
+  "author": {
+    "name": "HashiCorp",
+    "url": "https://github.com/hashicorp"
+  },
+  "repository": "https://github.com/hashicorp/agent-skills",
+  "skills": "./skills/"
+}

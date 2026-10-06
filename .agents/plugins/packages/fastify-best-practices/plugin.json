@@ -1,0 +1,11 @@
+{
+  "name": "fastify-best-practices",
+  "version": "0.0.0+catalog.72b727514771.8a53d246afc7",
+  "description": "Guides development of Fastify Node.js backend servers and REST APIs using TypeScript or JavaScript.",
+  "author": {
+    "name": "Matteo Collina",
+    "url": "https://github.com/mcollina"
+  },
+  "repository": "https://github.com/mcollina/skills",
+  "skills": "./skills/"
+}
