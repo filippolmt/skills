@@ -1,11 +1,11 @@
 ---
 name: add-external-skill
-description: "Add or update external skills in this marketplace as git-subdir entries and keep the README catalog in sync. Usage: /add-external-skill <owner/repo> [path] [name] | /add-external-skill update"
+description: "Add or update external skills, their Codex/pi outcomes, and the generated catalog. Usage: /add-external-skill <owner/repo> [path] [name] | /add-external-skill update"
 disable-model-invocation: true
 ---
 
-Keep `.claude-plugin/marketplace.json` and the README **Available skills** catalog
-in sync with upstream external skills.
+Keep the marketplace catalog, cross-harness distribution metadata, and generated
+documentation in sync with upstream external skills.
 
 Arguments: `$ARGUMENTS`
 - `<owner/repo> [path] [name]` → **add mode** (default).
@@ -61,6 +61,33 @@ Renovate updates an entry only when its `ref` has one of two shapes — one
 
 A `ref` of any other value (`1.2.0`, `release-2026`, a bare SHA) matches neither
 manager, and that entry is then silently never updated again.
+
+## Check upstream Codex parity
+
+After resolving the pinned SHA in either mode, inspect the **whole upstream repo**,
+not only the Claude catalog path. Search its tree for native Codex surfaces such as
+root `plugin.json`, `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json`,
+`.agents/skills/`, `.codex/hooks.json`, skill-adjacent `agents/*.toml`, and OpenAI
+plugin build/test files.
+
+For every discovered Claude artifact:
+
+1. A normal Agent Skill is native unless upstream ships a Codex-specific variant;
+   prefer that variant when it exists.
+2. Compare commands, agents, hooks and MCP configuration with candidate Codex
+   files by behavior, not filename. A native manifest that omits a Claude agent is
+   evidence of a gap, not an equivalent.
+3. When upstream owns an equivalent, record the Codex artifact as `adapted` in
+   `scripts/distribution-meta.json`, with repo-relative `sourcePath` and a test or
+   executable proof in `evidencePath`. The generator verifies both paths at the
+   pinned SHA. Prefer this upstream implementation over generating a translation.
+4. When no equivalent exists, keep the explicit generated adaptation or
+   unsupported limitation and fallback. Never infer parity from a manifest alone.
+
+Run `node scripts/gen-distribution.js --verify`, then regenerate
+`docs/distribution-parity.md` with `node scripts/gen-distribution.js`. Done means
+every artifact has one Codex and pi disposition, every recorded upstream equivalent
+exists at the pinned SHA, and the report names every remaining behavioral gap.
 
 ## Add mode
 
@@ -176,7 +203,9 @@ The README **Available skills** catalog is a **projection** of
 ## Finish
 
 ```bash
-node scripts/gen-readme.js --check   # README catalog is in sync with marketplace.json
+node scripts/gen-readme.js --check        # README catalog matches marketplace.json
+node scripts/gen-distribution.js --verify # Codex/pi outcomes and upstream equivalents resolve
+node scripts/gen-distribution.js --check  # parity document matches those decisions
 claude plugin validate .
 ```
 Report what changed (added / removed / description updates). Do not commit —
