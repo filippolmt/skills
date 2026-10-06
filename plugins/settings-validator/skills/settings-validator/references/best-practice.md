@@ -111,14 +111,14 @@ by its `check.py` tag:
   reads. Report it as a warning.
 
 **Managed: the admin console's schema warning.** The claude.ai admin console
-answered `syncClaudeAiPlugins` with a generic schema-error warning that named
-no key, and removing it cleared the warning; it accepted
-`disableCommandPluginSources` with no warning. Both are absent from the
-schema, and both are documented today, so the tag does not predict the
-warning: report every `UNKNOWN` key in a managed file as a possible cause.
-Before removing one, check the docs for whether Claude Code reads it anyway:
-without the key the default applies, which can change behaviour. (*observed*,
-one key each way)
+answered the undocumented `syncClaudeAiPlugins` with a generic schema-error
+warning that named no key, and removing it cleared the warning; it accepted
+the documented `disableCommandPluginSources` with no warning. Both are absent
+from the schema. Treat the documented key as informational and the
+undocumented key as a likely cause of the console warning. Before removing an
+undocumented key, check whether Claude Code reads it anyway: without the key
+the default applies, which can change behaviour. (*observed*, one key each
+way)
 
 ## Managed settings
 

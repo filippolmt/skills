@@ -57,6 +57,7 @@ its own `` ### `<key>` `` section (nested keys use the dotted path):
 
 ```bash
 curl -sfL https://code.claude.com/docs/en/<page>.md -o <tmp>/<page>.md
+grep -n -F '### `<key>`' <tmp>/<page>.md
 ```
 
 A summarizing fetch (`WebFetch`) reads only the first 100 KB of the 400 KB
