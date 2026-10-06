@@ -1,0 +1,11 @@
+{
+  "name": "security-audit",
+  "version": "0.0.0+catalog.c1c8a8c14710.16a7d0677d49",
+  "description": "Security guidance and vulnerability review for codebases, APIs, services, CLI tools, libraries, and daemons. Use for security questions, focused reviews, vulnerability research, security audits, or pen tests. Run the complete workflow only for explicit codebase audit or pen-test requests, full/comprehensive/end-to-end reviews, or requested report artifacts.",
+  "author": {
+    "name": "Cloudflare",
+    "url": "https://github.com/cloudflare"
+  },
+  "repository": "https://github.com/cloudflare/security-audit-skill",
+  "skills": "./skills/"
+}

@@ -115,11 +115,11 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Convention directory** — `skills/` at the root of a pi package, served with no
   manifest field naming it. Where the skills tree lives, and the reason this repo
   needs no `package.json`.
-- **Shared location** — `.agents/skills`, the Agent Skills standard's path, scanned
-  by pi and Codex with nothing installed. Here it is currently a **symlink** to the
-  skills tree, never a second copy. ADR-0021 removes it when Codex's native package
-  projection lands, avoiding duplicate loose and plugin-bundled skills; pi continues
-  to consume the root convention directory.
+- **Shared location** — `.agents/skills`, the Agent Skills standard's loose-skill
+  path. This repository deliberately has no shared location: ADR-0021 removed the
+  former symlink once every supported Codex package was materialised, preventing
+  duplicate loose and plugin-bundled identities. pi continues to consume the root
+  convention directory.
 - **Pinned source** — a pi package source carrying any `ref` — branch, tag or
   commit. Beware the inversion: in pi's vocabulary *pinned* means **never
   advanced**, where a pinned `sha` in this catalog is what Renovate advances.

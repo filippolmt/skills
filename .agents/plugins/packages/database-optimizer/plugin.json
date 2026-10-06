@@ -1,0 +1,11 @@
+{
+  "name": "database-optimizer",
+  "version": "0.4.18+catalog.1be15d8064f8.854f12edf377",
+  "description": "Optimizes database queries and improves performance across PostgreSQL and MySQL systems.",
+  "author": {
+    "name": "jeffallan",
+    "url": "https://github.com/Jeffallan"
+  },
+  "repository": "https://github.com/Jeffallan/claude-skills",
+  "skills": "./skills/"
+}

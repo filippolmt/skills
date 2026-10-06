@@ -1,0 +1,11 @@
+{
+  "name": "agents-sdk",
+  "version": "0.0.0+catalog.41e0d1985894.d08dbe96a033",
+  "description": "Build AI agents on Cloudflare Workers using the Agents SDK — stateful agents, durable workflows, WebSocket apps, scheduled tasks, MCP servers.",
+  "author": {
+    "name": "Cloudflare",
+    "url": "https://github.com/cloudflare"
+  },
+  "repository": "https://github.com/cloudflare/skills",
+  "skills": "./skills/"
+}

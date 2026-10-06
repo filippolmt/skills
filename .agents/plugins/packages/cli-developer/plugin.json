@@ -1,0 +1,11 @@
+{
+  "name": "cli-developer",
+  "version": "0.4.18+catalog.1be15d8064f8.360df28d381b",
+  "description": "Use when building CLI tools, implementing argument parsing, or adding interactive prompts.",
+  "author": {
+    "name": "jeffallan",
+    "url": "https://github.com/Jeffallan"
+  },
+  "repository": "https://github.com/Jeffallan/claude-skills",
+  "skills": "./skills/"
+}

@@ -1,0 +1,1112 @@
+{
+  "name": "filippo-skills",
+  "interface": {
+    "displayName": "Filippo Skills"
+  },
+  "plugins": [
+    {
+      "name": "subito-listing",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/subito-listing"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "subito-research",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/subito-research"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "settings-validator",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/settings-validator"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "printing-press-bundle",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/printing-press-bundle"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "matt-pocock-bundle",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/matt-pocock-bundle"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "diagnosing-bugs",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/diagnosing-bugs"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "grill-with-docs",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/grill-with-docs"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "triage",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/triage"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "wayfinder",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/wayfinder"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "improve-codebase-architecture",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/improve-codebase-architecture"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "setup-matt-pocock-skills",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/setup-matt-pocock-skills"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "tdd",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/tdd"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "to-tickets",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/to-tickets"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "to-spec",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/to-spec"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "implement",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/implement"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "prototype",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/prototype"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "research",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/research"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "domain-modeling",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/domain-modeling"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "codebase-design",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/codebase-design"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "code-review",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/code-review"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "retro",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/retro"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "wizard",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/wizard"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "grill-me",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/grill-me"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "grilling",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/grilling"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "handoff",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/handoff"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "teach",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/teach"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "writing-for-agents",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/writing-for-agents"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "to-questionnaire",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/to-questionnaire"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "setup-pre-commit",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/setup-pre-commit"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "brandkit",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/brandkit"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "brutalist-skill",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/brutalist-skill"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "gpt-tasteskill",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/gpt-tasteskill"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "image-to-code-skill",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/image-to-code-skill"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "imagegen-frontend-mobile",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/imagegen-frontend-mobile"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "imagegen-frontend-web",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/imagegen-frontend-web"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "minimalist-skill",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/minimalist-skill"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "output-skill",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/output-skill"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "redesign-skill",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/redesign-skill"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "soft-skill",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/soft-skill"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "stitch-skill",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/stitch-skill"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "taste-skill-v1",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/taste-skill-v1"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "taste-skill",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/taste-skill"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "printing-press",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/printing-press"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "printing-press-polish",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/printing-press-polish"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "printing-press-score",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/printing-press-score"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "printing-press-output-review",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/printing-press-output-review"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "printing-press-reprint",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/printing-press-reprint"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "api-scaffolding",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/api-scaffolding"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "shell-scripting",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/shell-scripting"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "nuxt",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/nuxt"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "fastify-best-practices",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/fastify-best-practices"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "react-expert",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/react-expert"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "wordpress-pro",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/wordpress-pro"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "fastapi-expert",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/fastapi-expert"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "kubernetes-specialist",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/kubernetes-specialist"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "golang-pro",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/golang-pro"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "cli-developer",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/cli-developer"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "code-documenter",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/code-documenter"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "database-optimizer",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/database-optimizer"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "playwright-expert",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/playwright-expert"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "sql-pro",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/sql-pro"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "ui-ux-pro-max",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/ui-ux-pro-max"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "terraform-skill",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/terraform-skill"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "agents-sdk",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/agents-sdk"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "cloudflare-email-service",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/cloudflare-email-service"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "cloudflare-one-migrations",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/cloudflare-one-migrations"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "cloudflare-one",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/cloudflare-one"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "cloudflare",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/cloudflare"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "durable-objects",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/durable-objects"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "sandbox-migrate-to-next",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/sandbox-migrate-to-next"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "sandbox-next",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/sandbox-next"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "sandbox-stable",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/sandbox-stable"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "turnstile-spin",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/turnstile-spin"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "web-perf",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/web-perf"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "workers-best-practices",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/workers-best-practices"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "wrangler",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/wrangler"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "nextjs-on-cloudflare",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/nextjs-on-cloudflare"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "impeccable",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/impeccable"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "last30days",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/last30days"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "proximo",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/proximo"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "archify",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/archify"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "diagram-design",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/diagram-design"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "security-audit",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/security-audit"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "new-terraform-provider",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/new-terraform-provider"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "provider-actions",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/provider-actions"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "provider-configuration",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/provider-configuration"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "provider-docs",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/provider-docs"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "provider-ephemeral-resources",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/provider-ephemeral-resources"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "provider-framework-migration",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/provider-framework-migration"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "provider-resources",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/provider-resources"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "provider-test-patterns",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/provider-test-patterns"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "run-acceptance-tests",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/run-acceptance-tests"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

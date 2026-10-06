@@ -1,0 +1,11 @@
+{
+  "name": "provider-docs",
+  "version": "0.0.0+catalog.f706481af9b8.b1a15a48b7dd",
+  "description": "Create, update, and review Terraform provider documentation for the Registry using tfplugindocs templates and schema descriptions.",
+  "author": {
+    "name": "HashiCorp",
+    "url": "https://github.com/hashicorp"
+  },
+  "repository": "https://github.com/hashicorp/agent-skills",
+  "skills": "./skills/"
+}

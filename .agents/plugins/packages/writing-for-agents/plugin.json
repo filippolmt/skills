@@ -1,0 +1,11 @@
+{
+  "name": "writing-for-agents",
+  "version": "1.3.1+catalog.24fe0ef7737e.3079f39278e1",
+  "description": "Writing documents for agents. Use when creating or editing skills, or modifying AGENTS.md or CLAUDE.md.",
+  "author": {
+    "name": "Matt Pocock",
+    "url": "https://github.com/mattpocock"
+  },
+  "repository": "https://github.com/mattpocock/skills",
+  "skills": "./skills/"
+}

@@ -1,0 +1,11 @@
+{
+  "name": "archify",
+  "version": "3.0.1+catalog.2ab3cae7ac2c.0b1840ec1dd2",
+  "description": "Create polished, validated architecture, workflow, sequence, data-flow, and lifecycle/state diagrams as explorable standalone HTML with inline SVG, dark/light themes, optional trace motion, and PNG/JPEG/WebP/SVG/WebM export. Accept plain-language requirements or pasted Mermaid flowchart, sequenceDiagram, and stateDiagram input; inspect repository evidence when the diagram must reflect real code.",
+  "author": {
+    "name": "tt-a1i",
+    "url": "https://github.com/tt-a1i"
+  },
+  "repository": "https://github.com/tt-a1i/archify",
+  "skills": "./skills/"
+}

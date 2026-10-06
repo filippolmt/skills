@@ -1,0 +1,11 @@
+{
+  "name": "minimalist-skill",
+  "version": "0.0.0+catalog.ce26fc25c0e5.e5a2cc5fb76d",
+  "description": "Clean editorial-style interfaces.",
+  "author": {
+    "name": "Leon Lin",
+    "url": "https://github.com/Leonxlnx"
+  },
+  "repository": "https://github.com/Leonxlnx/taste-skill",
+  "skills": "./skills/"
+}

@@ -1,0 +1,11 @@
+{
+  "name": "provider-ephemeral-resources",
+  "version": "0.0.0+catalog.f706481af9b8.13c59b49f37d",
+  "description": "Implement Terraform provider ephemeral resources with the Plugin Framework: Open/Renew/Close lifecycle, ephemeral schema design, and flowing values into write-only attributes.",
+  "author": {
+    "name": "HashiCorp",
+    "url": "https://github.com/hashicorp"
+  },
+  "repository": "https://github.com/hashicorp/agent-skills",
+  "skills": "./skills/"
+}

@@ -1,0 +1,11 @@
+{
+  "name": "brandkit",
+  "version": "0.0.0+catalog.ce26fc25c0e5.02373d2b96a4",
+  "description": "Premium brand-kit image generation skill for creating high-end brand-guidelines boards, logo systems, identity decks, and visual-world presentations.",
+  "author": {
+    "name": "Leon Lin",
+    "url": "https://github.com/Leonxlnx"
+  },
+  "repository": "https://github.com/Leonxlnx/taste-skill",
+  "skills": "./skills/"
+}

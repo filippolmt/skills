@@ -1,0 +1,11 @@
+{
+  "name": "react-expert",
+  "version": "0.4.18+catalog.1be15d8064f8.0a6d7694526a",
+  "description": "Use when building React 18+ applications in .jsx or .tsx files, Next.js App Router projects, or create-react-app setups.",
+  "author": {
+    "name": "jeffallan",
+    "url": "https://github.com/Jeffallan"
+  },
+  "repository": "https://github.com/Jeffallan/claude-skills",
+  "skills": "./skills/"
+}

@@ -1,0 +1,11 @@
+{
+  "name": "api-scaffolding",
+  "version": "0.0.0+catalog.46891e7e60da.a61ff80bc744",
+  "description": "REST and GraphQL API scaffolding: backend-architect, fastapi-pro, django-pro, and graphql-architect agents plus the fastapi-templates skill.",
+  "author": {
+    "name": "Seth Hobson",
+    "url": "https://github.com/wshobson"
+  },
+  "repository": "https://github.com/wshobson/agents",
+  "skills": "./skills/"
+}

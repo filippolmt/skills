@@ -1,0 +1,11 @@
+{
+  "name": "printing-press-reprint",
+  "version": "4.33.0+catalog.a3136d1ea7dc.3a014521218a",
+  "description": "Regenerate an existing printed CLI from scratch under the current Printing Press, carrying prior research, novel features, and patches into the new run.",
+  "author": {
+    "name": "Matt Van Horn and Trevin Chow",
+    "url": "https://github.com/mvanhorn/cli-printing-press"
+  },
+  "repository": "https://github.com/mvanhorn/cli-printing-press",
+  "skills": "./skills/"
+}

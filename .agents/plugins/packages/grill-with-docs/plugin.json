@@ -1,0 +1,11 @@
+{
+  "name": "grill-with-docs",
+  "version": "1.3.1+catalog.24fe0ef7737e.eef060a2413e",
+  "description": "A relentless interview to sharpen a plan or design, which also creates docs (ADR's and glossary) as we go.",
+  "author": {
+    "name": "Matt Pocock",
+    "url": "https://github.com/mattpocock"
+  },
+  "repository": "https://github.com/mattpocock/skills",
+  "skills": "./skills/"
+}

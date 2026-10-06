@@ -1,0 +1,11 @@
+{
+  "name": "sql-pro",
+  "version": "0.4.18+catalog.1be15d8064f8.a9bd59f6dee6",
+  "description": "Optimizes SQL queries, designs database schemas, and troubleshoots performance issues.",
+  "author": {
+    "name": "jeffallan",
+    "url": "https://github.com/Jeffallan"
+  },
+  "repository": "https://github.com/Jeffallan/claude-skills",
+  "skills": "./skills/"
+}

@@ -4,6 +4,7 @@
     "grill-with-docs": ["grilling", "domain-modeling"],
     "implement": ["tdd", "code-review"],
     "improve-codebase-architecture": ["codebase-design", "grilling", "domain-modeling"],
+    "printing-press": ["printing-press-polish", "printing-press-output-review"],
     "printing-press-polish": ["printing-press-output-review"],
     "printing-press-reprint": ["printing-press"],
     "retro": ["writing-for-agents"],
@@ -14,7 +15,7 @@
     "diagram-design/command:commands/doctor.md": {
       "codex": {
         "disposition": "adapted",
-        "detail": "Upstream routes the Codex workflow through the shared doctor reference in its native Codex package.",
+        "detail": "Uses the shared doctor reference from upstream's native Codex package.",
         "sourcePath": "skills/diagram-design/references/doctor.md",
         "evidencePath": "scripts/test-verify-docs-sync.py"
       },
@@ -26,7 +27,7 @@
     "diagram-design/command:commands/export-diagram.md": {
       "codex": {
         "disposition": "adapted",
-        "detail": "Upstream routes the Codex workflow through the shared export reference in its native Codex package.",
+        "detail": "Uses the shared export reference from upstream's native Codex package.",
         "sourcePath": "skills/diagram-design/references/export.md",
         "evidencePath": "scripts/test-verify-docs-sync.py"
       },
@@ -38,7 +39,7 @@
     "diagram-design/command:commands/import-drawio.md": {
       "codex": {
         "disposition": "adapted",
-        "detail": "Upstream routes the Codex workflow through the shared draw.io import reference in its native Codex package.",
+        "detail": "Uses the shared draw.io import reference from upstream's native Codex package.",
         "sourcePath": "skills/diagram-design/references/import-drawio.md",
         "evidencePath": "scripts/test-verify-docs-sync.py"
       },
@@ -50,7 +51,7 @@
     "diagram-design/command:commands/import-excalidraw.md": {
       "codex": {
         "disposition": "adapted",
-        "detail": "Upstream routes the Codex workflow through the shared Excalidraw import reference in its native Codex package.",
+        "detail": "Uses the shared Excalidraw import reference from upstream's native Codex package.",
         "sourcePath": "skills/diagram-design/references/import-excalidraw.md",
         "evidencePath": "scripts/test-verify-docs-sync.py"
       },
@@ -62,7 +63,7 @@
     "diagram-design/command:commands/import-mermaid.md": {
       "codex": {
         "disposition": "adapted",
-        "detail": "Upstream routes the Codex workflow through the shared Mermaid import reference in its native Codex package.",
+        "detail": "Uses the shared Mermaid import reference from upstream's native Codex package.",
         "sourcePath": "skills/diagram-design/references/import-mermaid.md",
         "evidencePath": "scripts/test-verify-docs-sync.py"
       },
@@ -74,7 +75,7 @@
     "diagram-design/command:commands/profile.md": {
       "codex": {
         "disposition": "adapted",
-        "detail": "Upstream routes the Codex workflow through the shared profiles reference in its native Codex package.",
+        "detail": "Uses the shared profiles reference from upstream's native Codex package.",
         "sourcePath": "skills/diagram-design/references/profiles.md",
         "evidencePath": "scripts/test-verify-docs-sync.py"
       },
@@ -86,7 +87,7 @@
     "impeccable/skill:skills/impeccable/SKILL.md": {
       "codex": {
         "disposition": "adapted",
-        "detail": "Will use Impeccable's upstream Codex-specific Agent Skill payload.",
+        "detail": "Uses Impeccable's upstream Codex-specific Agent Skill payload.",
         "sourcePath": ".agents/skills/impeccable/SKILL.md",
         "evidencePath": "tests/skill-behavior-harness.test.mjs"
       },
@@ -98,7 +99,7 @@
     "impeccable/agent:agents/impeccable-asset-producer.md": {
       "codex": {
         "disposition": "adapted",
-        "detail": "Will use Impeccable's upstream Codex-native TOML subagent.",
+        "detail": "Uses Impeccable's upstream Codex-native TOML subagent.",
         "sourcePath": ".agents/skills/impeccable/agents/impeccable_asset_producer.toml",
         "evidencePath": "tests/build.test.js"
       },
@@ -110,7 +111,7 @@
     "impeccable/agent:agents/impeccable-documenter.md": {
       "codex": {
         "disposition": "adapted",
-        "detail": "Will use Impeccable's upstream Codex-native TOML subagent.",
+        "detail": "Uses Impeccable's upstream Codex-native TOML subagent.",
         "sourcePath": ".agents/skills/impeccable/agents/impeccable_documenter.toml",
         "evidencePath": "tests/build.test.js"
       },
@@ -122,7 +123,7 @@
     "impeccable/agent:agents/impeccable-finish-reviewer.md": {
       "codex": {
         "disposition": "adapted",
-        "detail": "Will use Impeccable's upstream Codex-native TOML subagent.",
+        "detail": "Uses Impeccable's upstream Codex-native TOML subagent.",
         "sourcePath": ".agents/skills/impeccable/agents/impeccable_finish_reviewer.toml",
         "evidencePath": "tests/build.test.js"
       },
@@ -134,7 +135,7 @@
     "impeccable/agent:agents/impeccable-manual-edit-applier.md": {
       "codex": {
         "disposition": "adapted",
-        "detail": "Will use Impeccable's upstream Codex-native TOML subagent.",
+        "detail": "Uses Impeccable's upstream Codex-native TOML subagent.",
         "sourcePath": ".agents/skills/impeccable/agents/impeccable_manual_edit_applier.toml",
         "evidencePath": "tests/build.test.js"
       },
@@ -170,7 +171,7 @@
     "impeccable/hook:hooks/hooks.json#PostToolUse[0]": {
       "codex": {
         "disposition": "adapted",
-        "detail": "Will use Impeccable's upstream Codex PostToolUse hook, which is covered by its provider smoke test.",
+        "detail": "Uses Impeccable's upstream Codex PostToolUse hook, covered by its provider smoke test.",
         "sourcePath": ".codex/hooks.json",
         "evidencePath": "scripts/smoke-provider-hooks.mjs"
       },
@@ -195,7 +196,7 @@
     "impeccable/hook:hooks/hooks.json#Stop[0]": {
       "codex": {
         "disposition": "adapted",
-        "detail": "Will use Impeccable's upstream Codex Stop hook, which is covered by its provider smoke test.",
+        "detail": "Uses Impeccable's upstream Codex Stop hook, covered by its provider smoke test.",
         "sourcePath": ".codex/hooks.json",
         "evidencePath": "scripts/smoke-provider-hooks.mjs"
       },

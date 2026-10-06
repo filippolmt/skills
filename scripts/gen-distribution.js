@@ -28,6 +28,7 @@ function buildInventory(plugins, deps = {}) {
     }
     inventory.push({
       name: entry.name,
+      sourceRoot: dir,
       repoRoot,
       declaredDependencies: declaredDependencies(dir),
       artifacts: discoverArtifacts(entry, dir),
