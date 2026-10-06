@@ -1,0 +1,49 @@
+name: pi-integration
+
+on:
+  pull_request:
+    paths:
+      - .claude-plugin/marketplace.json
+      - .github/workflows/pi-integration.yml
+      - docs/pi-package-filters.md
+      - plugins/**
+      - scripts/distribution-meta.json
+      - scripts/distribution.js
+      - scripts/gen-distribution.js
+      - scripts/gen-pi.js
+      - scripts/gen-skills-tree.js
+      - scripts/portable-artifacts.js
+      - scripts/test-pi-package.sh
+      - skills/**
+  push:
+    branches: [main]
+    paths:
+      - .claude-plugin/marketplace.json
+      - .github/workflows/pi-integration.yml
+      - docs/pi-package-filters.md
+      - plugins/**
+      - scripts/distribution-meta.json
+      - scripts/distribution.js
+      - scripts/gen-distribution.js
+      - scripts/gen-pi.js
+      - scripts/gen-skills-tree.js
+      - scripts/portable-artifacts.js
+      - scripts/test-pi-package.sh
+      - skills/**
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Install the tested pi CLI
+        run: npm install --global @earendil-works/pi-coding-agent@1.0.4
+      - name: Check generated pi projections
+        run: |
+          node scripts/gen-skills-tree.js --check
+          node scripts/gen-pi.js --check
+      - name: Load representative package resources in an isolated pi home
+        run: bash scripts/test-pi-package.sh

@@ -85,8 +85,8 @@ For every discovered Claude artifact:
    unsupported limitation and fallback. Never infer parity from a manifest alone.
 
 Run `node scripts/gen-distribution.js --verify`, then regenerate the parity matrix
-and installable packages with `node scripts/gen-distribution.js` and
-`node scripts/gen-codex.js`. Done means every artifact has one Codex and pi
+and installable packages with `node scripts/gen-distribution.js`,
+`node scripts/gen-pi.js`, and `node scripts/gen-codex.js`. Done means every artifact has one Codex and pi
 disposition, every recorded upstream equivalent exists at the pinned SHA, and
 partial Codex packages stay out of the marketplace.
 
@@ -207,6 +207,7 @@ The README **Available skills** catalog is a **projection** of
 node scripts/gen-readme.js --check        # README catalog matches marketplace.json
 node scripts/gen-distribution.js --verify # Codex/pi outcomes and upstream equivalents resolve
 node scripts/gen-distribution.js --check  # parity document matches those decisions
+node scripts/gen-pi.js --check           # pi bundle filters match runtime closures
 node scripts/gen-codex.js --check        # Codex packages match the inventory
 claude plugin validate .
 ```

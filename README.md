@@ -169,7 +169,7 @@ uses the native marketplace above.
 There is deliberately no `.agents/skills` symlink: exposing loose skills beside
 installed plugins would give Codex duplicate identities.
 
-**As a pi package:**
+**As a pi package** (tested with pi `1.0.4`):
 
 ```
 pi install git:github.com/filippolmt/skills
@@ -193,6 +193,10 @@ To schedule updates, have cron, launchd or your system scheduler run the same
 `pi update --extensions` command. Use the absolute path reported by
 `command -v pi`; the repository cannot safely opt a user's machine into
 background network access.
+
+Generated pi equivalents for the Claude bundles, including their complete
+portable runtime closures, are in
+[`docs/pi-package-filters.md`](docs/pi-package-filters.md).
 
 **Selecting global skills from GitHub.** A string package entry enables every
 skill. To keep the GitHub repository as the update source while making only
@@ -260,8 +264,9 @@ everything except a skill you do not use:
                  "skills": ["skills/*", "!skills/last30days"] }] }
 ```
 
-**Scope.** Every catalogued portable skill is vendored. There is no allow-list to
-maintain: adding an entry to the catalog
+**Scope.** Every catalogued portable skill and deterministic command/agent
+conversion is generated into the tree. There is no allow-list to maintain: adding
+an entry to the catalog
 is what puts its skill in the tree, on the next regeneration. Note what that means
 in practice: this repo **redistributes other people's code**, each copy carrying
 that upstream's own licence and a `SOURCE.md`, and a repository with no licence is
