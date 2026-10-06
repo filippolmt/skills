@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["jsonschema"]
+# ///
 """Check a Claude Code settings.json against the published schema.
 
-Usage: check.py <settings.json> [--schema <file or URL>]
+Usage: check.py <settings.json> [--schema <file or URL>] [--reference <file>]
 
 --schema points at a local copy when the default URL can't be fetched.
+--reference is the raw settings-reference.md: each UNKNOWN key is then tagged
+(documented) when the reference has a `### `<key>`` section, else (undocumented).
 
 Reports one line per problem:
   SYNTAX   invalid JSON (line and column)
@@ -13,6 +18,7 @@ Reports one line per problem:
 Exit 0 when clean, 1 on problems, 2 when jsonschema or the schema is missing.
 """
 import json
+import re
 import sys
 import urllib.request
 
@@ -63,16 +69,27 @@ def unknown_keys(node, schema, path=""):
             yield where
 
 
+def documented_keys(reference):
+    """Key names that have their own `### `<key>`` section in the reference."""
+    return set(re.findall(r"^### `([^`]+)`\s*$", reference, re.MULTILINE))
+
+
+def take_option(args, name):
+    if name not in args:
+        return None
+    i = args.index(name)
+    value = args[i + 1]
+    del args[i:i + 2]
+    return value
+
+
 def main():
     args = sys.argv[1:]
+    schema_src = take_option(args, "--schema") or SCHEMA_URL
+    reference_src = take_option(args, "--reference")
     if not args:
         print(__doc__)
         sys.exit(2)
-    schema_src = SCHEMA_URL
-    if "--schema" in args:
-        i = args.index("--schema")
-        schema_src = args[i + 1]
-        del args[i:i + 2]
 
     with open(args[0], encoding="utf-8") as f:
         text = f.read()
@@ -89,16 +106,22 @@ def main():
     try:
         import jsonschema
     except ImportError:
-        print("jsonschema module missing: python3 -m pip install --target <dir> jsonschema, "
-              "then rerun with PYTHONPATH=<dir>")
+        print("jsonschema module missing: rerun with `uv run check.py ...`, or "
+              "python3 -m pip install --target <dir> jsonschema, then rerun with PYTHONPATH=<dir>")
         sys.exit(2)
+    documented = None
+    if reference_src:
+        with open(reference_src, encoding="utf-8") as f:
+            documented = documented_keys(f.read())
 
     problems = [f"DUP {k}" for k in dups]
     validator = jsonschema.validators.validator_for(schema)(schema)
     for e in sorted(validator.iter_errors(data), key=lambda e: list(e.absolute_path)):
         where = ".".join(str(p) for p in e.absolute_path) or "(root)"
         problems.append(f"SCHEMA {where}: {e.message[:300]}")
-    problems += [f"UNKNOWN {k}" for k in unknown_keys(data, schema)]
+    for k in unknown_keys(data, schema):
+        tag = "" if documented is None else (" (documented)" if k in documented else " (undocumented)")
+        problems.append(f"UNKNOWN {k}{tag}")
 
     for p in problems:
         print(p)

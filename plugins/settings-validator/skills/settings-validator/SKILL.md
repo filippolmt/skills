@@ -16,9 +16,12 @@ already answers the starting point.
 
 **Round 1**:
 
-- **settings source**: *managed* (admin console, file or MDM), *user*, *shared
-  project* (`.claude/settings.json`), or *project local*
-  (`.claude/settings.local.json`)
+- **settings source**: *managed*, *user*, *shared project*
+  (`.claude/settings.json`), or *project local* (`.claude/settings.local.json`);
+  for *managed*, also the **delivery**: admin console (server-managed), MDM, or
+  `managed-settings.json` file. By default only the highest-priority managed
+  source that carries a policy key applies, so the delivery decides which
+  other managed sources the file overrides
 - **starting point**: an existing file (ask the user to paste it; for a local
   file you may read it yourself if the user prefers), or **from scratch**
 - **environment**: OS and runtime, including WSL, container or CI constraints
@@ -50,7 +53,17 @@ declines to decide keeps its current value, or its default from scratch.
 
 ## 2. Sources
 
-Read on every run: keys change often and memory goes stale.
+Read on every run: keys change often and memory goes stale. Download each
+docs page as raw Markdown and read a key's type, enum, default and scope from
+its own `### \`<key>\`` section (nested keys use the dotted path):
+
+```bash
+curl -sfL https://code.claude.com/docs/en/<page>.md -o <tmp>/<page>.md
+```
+
+A summarizing fetch (`WebFetch`) reads only the first 100 KB of the 400 KB
+reference and returned wrong types, enums and defaults: use it to find pages,
+never as the source of a key's facts.
 
 - `https://code.claude.com/docs/en/settings`: scopes and precedence
 - `https://code.claude.com/docs/en/settings-reference`: every key with its scope
@@ -58,29 +71,40 @@ Read on every run: keys change often and memory goes stale.
 - the schema `https://json.schemastore.org/claude-code-settings.json`
 - for the areas touched, the pages the reference links: `permissions`,
   `sandboxing`, `managed-settings`, `server-managed-settings`, `plugins/org`,
-  `plugin-marketplaces`
-- **secondary source** for best practice:
-  `https://github.com/shanraisshan/claude-code-best-practice/blob/main/best-practice/claude-settings.md`
-  (read it with `gh api` or `WebFetch`). It is a third-party copy and may lag:
-  where it disagrees with the official docs, the docs win, and the disagreement
-  is reported.
+  `plugins/loading`, `plugins/host-marketplace`, `plugin-marketplaces`
+- **secondary source** for best practice, a third-party copy that may lag:
+
+  ```bash
+  gh api repos/shanraisshan/claude-code-best-practice/contents/best-practice/claude-settings.md --jq .content | base64 -d
+  gh api 'repos/shanraisshan/claude-code-best-practice/commits?path=best-practice/claude-settings.md&per_page=1' --jq '.[0].commit.committer.date'
+  ```
+
+  Where it disagrees with the official docs, the docs win and the disagreement
+  is reported; the known ones are under *Secondary-source errata* in
+  [`references/best-practice.md`](references/best-practice.md).
 
 Done when every page covering a key in the file, or an area the answers call
-for, has been read.
+for, has been read, and you hold the secondary source's last commit date.
 
 ## 3. Validation
 
 From scratch there is no file yet: skip to step 4, and run this step on the
 draft before delivering it.
 
-1. Run [`scripts/check.py`](scripts/check.py) on the JSON saved to a temp file:
-   `python3 <skill dir>/scripts/check.py <file>`.
-   It reports `SYNTAX`, `DUP`, `SCHEMA` and `UNKNOWN`; `UNKNOWN` is weighed in
-   [`references/best-practice.md`](references/best-practice.md). Exit 2 means
-   the check did not run:
-   - `jsonschema` missing: install it into a temp directory as the script says
-   - schema not loaded: fetch the schema URL another way (`curl`, `WebFetch`)
-     into a file and rerun with `--schema <file>`
+1. Run [`scripts/check.py`](scripts/check.py) on the JSON saved to a temp file,
+   with the reference downloaded in step 2:
+
+   ```bash
+   uv run <skill dir>/scripts/check.py <file> --reference <tmp>/settings-reference.md
+   ```
+
+   `uv run` installs `jsonschema` from the script's header; without `uv`, use
+   `python3` and, if `jsonschema` is missing, install it as the script says.
+   It reports `SYNTAX`, `DUP`, `SCHEMA` and `UNKNOWN`, the last tagged
+   `(documented)` or `(undocumented)`; weigh each `UNKNOWN` as
+   [`references/best-practice.md`](references/best-practice.md) says. Exit 2
+   means the check did not run; when the schema did not load, fetch its URL
+   with `curl` into a file and rerun with `--schema <file>`.
 
    A check that never ran is reported as such: the verdict says the schema
    was not checked, never that the file is clean.
@@ -88,6 +112,8 @@ draft before delivering it.
    - **scope**: confirm that the chosen settings source supports the key; flag
      global-config keys because they belong in `~/.claude.json`
    - **values**: types, enums and limits
+   - **default**: on an existing file, a value equal to the documented default
+     is redundant; report it as informational
    - **deprecated or renamed keys**
 
 Done when every key has been checked against reference and schema, and
@@ -119,11 +145,17 @@ none is needed.
   From scratch, write only keys
   that serve an answer: a key restating its default adds nothing to maintain.
 - Below the JSON, what you changed and what you left alone on purpose.
-- *Managed*: the JSON to paste into the console, plus how to confirm it applies
-  (`/status`, the `Setting sources` line). *User*, *shared project*, or *project
-  local*: write the file only after the user's yes, and read its current
-  contents first.
+- The secondary source's last commit date, and each disagreement with the
+  official docs.
+- *Managed*: the JSON for its delivery, and which other managed sources it
+  overrides. Once the user confirms it is deployed, verify each changed key
+  yourself with the probes in
+  [`references/verify-managed.md`](references/verify-managed.md), and hand the
+  user only the checks the CLI cannot make. *User*, *shared project*, or
+  *project local*: write the file only after the user's yes, and read its
+  current contents first.
 
 Done when `check.py` is clean on the delivered JSON, or each remaining line is
-an accepted trade-off named in the verdict, and every verdict item names its
-source.
+an accepted trade-off named in the verdict; every verdict item names its
+source; and, for managed settings the user deployed, every changed key is
+verified or listed as a manual check.

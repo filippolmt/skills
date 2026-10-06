@@ -6,7 +6,7 @@ import sys
 
 sys.dont_write_bytecode = True  # no __pycache__ inside the shipped skill
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from check import parse, unknown_keys  # noqa: E402
+from check import documented_keys, parse, unknown_keys  # noqa: E402
 
 SCHEMA = {
     "properties": {
@@ -33,5 +33,15 @@ found = list(unknown_keys({
     "env": {"MY_VAR": "1"},  # env takes any name: never reported
 }, SCHEMA))
 assert found == ["syncClaudeAiPlugins"], found
+
+REFERENCE = """### `cleanupPeriodDays`
+
+Set how many days... see `### \`notAKey\`` inline.
+
+### `permissions.disableBypassPermissionsMode`
+#### `Allowed source types`
+"""
+assert documented_keys(REFERENCE) == {
+    "cleanupPeriodDays", "permissions.disableBypassPermissionsMode"}, documented_keys(REFERENCE)
 
 print("check.py: all checks passed")
