@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 // Generate the installable Codex marketplace from the validated shared inventory.
-// This first writer publishes entries whose complete runtime closure is already
-// representable as Agent Skills; adapted hooks, agents, commands, and MCP follow
-// in their dedicated writers rather than shipping partial plugins.
+// It packages every supported runtime closure, reusing pi's portable conversions
+// and applying Codex-specific skill, agent, and hook adaptations where declared.
 const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
@@ -10,29 +9,10 @@ const path = require('path');
 const { readCatalog, root } = require('./catalog.js');
 const { generate } = require('./gen-distribution.js');
 const { parseFrontmatter, treeFingerprint } = require('./gen-skills-tree.js');
+const { addProvenance, convertedSkillName, copySelfContained, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
 
 const OUTPUT = path.join(root, '.agents', 'plugins');
 const META = path.join(root, 'scripts', 'distribution-meta.json');
-
-function copySelfContained(source, destination) {
-  fs.mkdirSync(destination, { recursive: true });
-  for (const item of fs.readdirSync(source, { withFileTypes: true })) {
-    const from = path.join(source, item.name);
-    const to = path.join(destination, item.name);
-    if (item.isDirectory()) copySelfContained(from, to);
-    else if (item.isSymbolicLink()) {
-      const target = fs.realpathSync(from);
-      if (fs.statSync(target).isDirectory()) copySelfContained(target, to);
-      else {
-        fs.copyFileSync(target, to);
-        fs.chmodSync(to, fs.statSync(target).mode & 0o777);
-      }
-    } else if (item.isFile()) {
-      fs.copyFileSync(from, to);
-      fs.chmodSync(to, fs.statSync(from).mode & 0o777);
-    }
-  }
-}
 
 const codexOutcome = (artifact) => artifact.dispositions.codex;
 const unsupported = (entry) => entry.artifacts.every((artifact) => codexOutcome(artifact).disposition === 'unsupported');
@@ -58,36 +38,6 @@ function closure(name, byName, trail = []) {
     result.push(...nested);
   }
   return [...new Map(result.map((item) => [item.name, item])).values()];
-}
-
-function addProvenance(entry, plugin, destination, sourcePath, transformation) {
-  const licence = fs.readdirSync(entry.repoRoot).find((name) => /^(LICEN[SC]E|COPYING)(\..*)?$/i.test(name));
-  if (licence && !fs.existsSync(path.join(destination, licence))) fs.copyFileSync(path.join(entry.repoRoot, licence), path.join(destination, licence));
-  if (fs.existsSync(path.join(destination, 'SOURCE.md'))) return;
-  const upstream = typeof plugin.source === 'object'
-    ? `${plugin.source.url}/tree/${plugin.source.sha}/${sourcePath}`
-    : sourcePath;
-  fs.writeFileSync(path.join(destination, 'SOURCE.md'), [
-    '# Source', '',
-    `- **Source**: ${upstream}`,
-    `- **Catalog entry**: \`${entry.name}\``,
-    `- **Transformation**: ${transformation}`,
-    '',
-  ].join('\n'));
-}
-
-function convertedSkill(entry, plugin, artifact, destination) {
-  const source = path.join(entry.sourceRoot, artifact.path);
-  const text = fs.readFileSync(source, 'utf8');
-  const frontmatter = parseFrontmatter(text);
-  const basename = path.basename(artifact.path, path.extname(artifact.path));
-  const name = `${entry.name}-${basename}`;
-  const body = text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
-  const description = frontmatter.description || `${artifact.kind === 'agent' ? 'Run' : 'Execute'} the ${basename} workflow from ${entry.name}.`;
-  fs.mkdirSync(destination, { recursive: true });
-  fs.writeFileSync(path.join(destination, 'SKILL.md'), `---\nname: ${name}\ndescription: ${JSON.stringify(description)}\n---\n\n${body}`);
-  addProvenance(entry, plugin, destination, artifact.path, `Converted ${artifact.kind} to a deterministic namespaced Agent Skill.`);
-  return name;
 }
 
 function rewritePluginPaths(value) {
@@ -128,29 +78,9 @@ function validateCodexPackages(packages) {
   for (const item of fs.readdirSync(packages, { withFileTypes: true })) {
     if (!item.isDirectory()) throw new Error(`unexpected generated package entry: ${item.name}`);
     const packageRoot = path.join(packages, item.name);
-    const walk = (dir) => {
-      for (const child of fs.readdirSync(dir, { withFileTypes: true })) {
-        const file = path.join(dir, child.name);
-        if (child.isSymbolicLink()) throw new Error(`${file}: generated package contains symlink`);
-        if (child.isDirectory()) walk(file);
-      }
-    };
-    walk(packageRoot);
-
     const skills = path.join(packageRoot, 'skills');
     if (!fs.existsSync(skills)) throw new Error(`${item.name}: generated package has no skills directory`);
-    for (const skill of fs.readdirSync(skills, { withFileTypes: true })) {
-      if (!skill.isDirectory()) throw new Error(`${item.name}: unexpected entry in skills/: ${skill.name}`);
-      const file = path.join(skills, skill.name, 'SKILL.md');
-      if (!fs.existsSync(file)) throw new Error(`${item.name}/${skill.name}: missing SKILL.md`);
-      const text = fs.readFileSync(file, 'utf8');
-      const frontmatter = parseFrontmatter(text);
-      if (!frontmatter.name || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(frontmatter.name) || frontmatter.name.length > 64) {
-        throw new Error(`${item.name}/${skill.name}: invalid skill name ${frontmatter.name || '(missing)'}`);
-      }
-      if (frontmatter.name !== skill.name) throw new Error(`${item.name}/${skill.name}: directory does not match skill name ${frontmatter.name}`);
-      if (!/^description:[ \t]*(?:\S.*|[>|])[ \t]*$/m.test(text)) throw new Error(`${item.name}/${skill.name}: missing skill description`);
-    }
+    validateSkillDirectories(skills);
 
     const manifestFile = path.join(packageRoot, 'plugin.json');
     if (!fs.existsSync(manifestFile)) throw new Error(`${item.name}: missing plugin.json`);
@@ -212,9 +142,15 @@ function writeCodexDistribution(plugins, inventory, output) {
         if (outcome.sourcePath) addProvenance(member, catalog.get(member.name), destination, outcome.sourcePath, 'Used the upstream Codex-specific Agent Skill payload.');
       }
       for (const artifact of member.artifacts.filter((item) => ['command', 'agent'].includes(item.kind) && codexOutcome(item).disposition === 'adapted' && !codexOutcome(item).sourcePath)) {
-        const name = `${member.name}-${path.basename(artifact.path, path.extname(artifact.path))}`;
+        const name = convertedSkillName(member, artifact);
         if (names.has(name)) throw new Error(`${plugin.name}: duplicate runtime skill ${name}`);
-        names.add(convertedSkill(member, catalog.get(member.name), artifact, path.join(skillsRoot, name)));
+        const projected = path.join(root, 'skills', name);
+        if (fs.existsSync(path.join(projected, 'SKILL.md'))) {
+          copySelfContained(projected, path.join(skillsRoot, name));
+          names.add(name);
+        } else {
+          names.add(writeConvertedSkill(member, catalog.get(member.name), artifact, path.join(skillsRoot, name)));
+        }
       }
     }
     writeHooks(entries, packageRoot);

@@ -18,6 +18,7 @@ const {
   formatLike,
   unresolved,
   build,
+  buildFromInventory,
 } = require('./gen-skills-tree.js');
 
 const gitsub = (name, p) => ({
@@ -234,6 +235,39 @@ test("build keeps a skill's own licence rather than overwriting it", () => {
       assert.equal(fs.readFileSync(path.join(dest, 'tdd', 'LICENSE'), 'utf8'), 'the skill/s own licence');
     }
   );
+});
+
+test('shared inventory projects upstream, local, and converted skills together', () => {
+  const repo = fakeRepo({
+    LICENSE: 'MIT',
+    'external/skills/core/SKILL.md': skill('core'),
+    'external/agents/reviewer.md': '---\nname: reviewer\ndescription: Review.\n---\n# Review\n',
+    'local/skills/local/SKILL.md': skill('local'),
+  });
+  const dest = fs.mkdtempSync(path.join(os.tmpdir(), 'inventory-tree-'));
+  const plugins = [entry('external', 'external'), { name: 'local', source: './plugins/local' }];
+  const inventory = [
+    {
+      name: 'external', sourceRoot: path.join(repo, 'external'), repoRoot: repo, runtimeDependencies: [],
+      artifacts: [
+        { kind: 'skill', path: 'skills/core/SKILL.md' },
+        { kind: 'agent', path: 'agents/reviewer.md' },
+      ],
+    },
+    {
+      name: 'local', sourceRoot: path.join(repo, 'local'), repoRoot: repo, runtimeDependencies: [],
+      artifacts: [{ kind: 'skill', path: 'skills/local/SKILL.md' }],
+    },
+  ];
+  try {
+    assert.deepEqual(buildFromInventory(dest, plugins, inventory), ['core', 'external-reviewer', 'local']);
+    for (const name of ['core', 'external-reviewer', 'local']) assert.ok(fs.existsSync(path.join(dest, name, 'SKILL.md')));
+    assert.ok(fs.existsSync(path.join(dest, 'external-reviewer', 'SOURCE.md')));
+    assert.ok(fs.existsSync(path.join(dest, 'local', 'SOURCE.md')));
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+    fs.rmSync(dest, { recursive: true, force: true });
+  }
 });
 
 test('build with a null dest resolves every path and copies nothing', () => {

@@ -1,6 +1,6 @@
 {
   "name": "settings-validator",
-  "version": "0.2.0+catalog.local.c11b260c41b2",
+  "version": "0.2.0+catalog.local.9c55ceea84a1",
   "description": "Validates and improves Claude Code managed, user, shared-project, or project-local settings: confirms the intended configuration, checks every key against the official docs and published JSON schema, applies best practice, and returns complete corrected JSON.",
   "author": {
     "name": "Filippo Merante Caparrotta"

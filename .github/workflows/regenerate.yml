@@ -33,6 +33,8 @@ on:
       - scripts/gen-skills-tree.js
       - scripts/gen-distribution.js
       - scripts/gen-codex.js
+      - scripts/gen-pi.js
+      - scripts/portable-artifacts.js
       - scripts/distribution.js
       - scripts/distribution-meta.json
       - plugins/**
@@ -41,6 +43,7 @@ on:
       - skills/**
       - .agents/plugins/**
       - docs/distribution-parity.md
+      - docs/pi-package-filters.md
   workflow_dispatch:
 
 # `GITHUB_TOKEN` does none of the work below — `REGEN_TOKEN` does, so that the push
@@ -93,9 +96,10 @@ jobs:
           node-version: 24
       - name: Regenerate skills/, pruning what upstream removed
         run: node scripts/gen-skills-tree.js
-      - name: Regenerate the parity matrix and Codex marketplace
+      - name: Regenerate cross-harness projections
         run: |
           node scripts/gen-distribution.js
+          node scripts/gen-pi.js
           node scripts/gen-codex.js
       - name: Stop here when the projections are already current
         id: diff
@@ -119,6 +123,7 @@ jobs:
           node scripts/check-name-collisions.js
           node scripts/gen-skills-tree.js --check
           node scripts/gen-distribution.js --check
+          node scripts/gen-pi.js --check
           node scripts/gen-codex.js --check
         shell: bash
       - name: Open or update the regeneration PR

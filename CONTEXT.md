@@ -71,9 +71,9 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Codex package projection** — the generated, self-contained native Codex plugin
   for one marketplace catalog entry. Its runtime closure is materialised inside the
   package; unsupported entries receive no installable stub.
-- **Skills tree** — `skills/`, one directory per portable skill. A further **catalog
-  projection**: derived from the marketplace catalog, checked in CI, never
-  hand-edited. It is pi's **loose-skill projection**; Codex's legacy scan-root route
+- **Skills tree** — `skills/`, one directory per portable skill or deterministic
+  command/agent conversion. A further **catalog projection**: derived from the
+  marketplace catalog, checked in CI, never hand-edited. It is pi's **loose-skill projection**; Codex's legacy scan-root route
   remains only until the native package projection replaces it (ADR-0021). Claude
   reads the catalog instead.
 - **Loose-skill projection** — a harness-neutral tree of unbundled skills, without

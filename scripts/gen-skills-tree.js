@@ -3,16 +3,14 @@
 //
 // The tree is a PROJECTION of .claude-plugin/marketplace.json, in the same sense
 // the README's catalog table is: derived, checked in CI, never hand-edited. It
-// exists because neither pi nor Codex can address a subdirectory of somebody
-// else's repository, which is what all our git-subdir entries are — see
-// docs/adr/0010-vendor-a-shared-skills-tree-on-main.md.
+// exists because pi cannot address a subdirectory of somebody else's repository,
+// which is what all our git-subdir entries are — see ADR-0010 and ADR-0021.
 //
 // The tree lives at `skills/` because that is pi's package convention directory: a
 // package is served from it with no manifest field naming it, which is why this repo
-// needs no package.json. `.agents/skills` — the Agent Skills standard's shared path,
-// which pi and Codex scan with nothing installed — is a committed SYMLINK to it, so
-// there is still exactly one copy. Claude does not read the tree at all; it installs
-// from the catalog, referencing upstream.
+// needs no package.json. It also holds portable command/agent conversions and local
+// plugin skills. Codex packages consume this same projection where possible; Claude
+// installs references from the catalog.
 //
 // Two properties are deliberate:
 //
@@ -22,9 +20,9 @@
 //     regeneration PR carrying all of it names the removal. Skipping it would drop
 //     a skill with nobody noticing — which is exactly how `sandbox-sdk` pointed at
 //     a deleted folder for months while every check stayed green (ADR-0015).
-//   - A vendored copy is byte-identical to upstream. Adaptation belongs in
-//     overlays/<skill>.patch, applied with `git apply` afterwards, so an upstream
-//     that moves under a patch FAILS instead of silently freezing the skill.
+//   - A native vendored skill is byte-identical to upstream before overlays.
+//     Deterministic command/agent conversions carry explicit provenance; an
+//     upstream that moves under an overlay still FAILS rather than freezing.
 //
 // Usage:
 //   node scripts/gen-skills-tree.js                 # prune, then rewrite skills/ in place
@@ -54,6 +52,7 @@ const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 const { readCatalog, isLocal, isGitSubdir, isBundle, repoOf, root, MARKETPLACE } = require('./catalog.js');
 const { discoverArtifacts } = require('./distribution.js');
+const { addProvenance, convertedSkillName, copySelfContained, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
 
 const TREE = path.join(root, 'skills');
 const OVERLAYS = path.join(root, 'overlays');
@@ -79,10 +78,9 @@ function parseFrontmatter(text) {
   return { name: field('name'), description: field('description') };
 }
 
-// Which entries get copied: every git-subdir entry, always. Adding one to the
-// catalog is what puts its skill in the tree — there is no second list to keep in
-// step. Bundles and local plugins never appear: they have no upstream to vendor,
-// and neither agent has a `dependencies` field for a bundle to be.
+// Which entries need an upstream checkout: every git-subdir entry, always. Local
+// plugin artifacts are projected in a second pass; bundles remain filter snippets,
+// not skill directories.
 function vendorList(plugins) {
   return plugins.filter(isGitSubdir);
 }
@@ -257,6 +255,57 @@ function prune(text, gone) {
 // that would silently lose a skill — an unresolved entry included, since the CLI
 // prunes those before it builds. `deps` exists so the test can hand over a fake
 // checkout and exercise those throws without a network.
+function buildFromInventory(dest, plugins, inventory) {
+  const catalog = new Map(plugins.map((entry) => [entry.name, entry]));
+  const written = new Map();
+  const claim = (name, owner) => {
+    if (written.has(name)) throw new Error(`skill name '${name}' comes from both ${written.get(name)} and ${owner}`);
+    written.set(name, owner);
+  };
+
+  for (const entry of inventory) {
+    const plugin = catalog.get(entry.name);
+    if (!plugin) throw new Error(`inventory entry has no catalog entry: ${entry.name}`);
+    for (const artifact of entry.artifacts.filter((item) => ['skill', 'command', 'agent'].includes(item.kind))) {
+      if (artifact.kind !== 'skill') {
+        const name = convertedSkillName(entry, artifact);
+        claim(name, entry.name);
+        if (dest) writeConvertedSkill(entry, plugin, artifact, path.join(dest, name));
+        continue;
+      }
+
+      const source = path.dirname(path.join(entry.sourceRoot, artifact.path));
+      const name = parseFrontmatter(fs.readFileSync(path.join(source, 'SKILL.md'), 'utf8')).name;
+      if (!name) throw new Error(`entry ${entry.name}: ${artifact.path} has no frontmatter name`);
+      claim(name, entry.name);
+      if (!dest) continue;
+      const out = path.join(dest, name);
+      if (isGitSubdir(plugin)) {
+        const licence = licenceIn(entry.repoRoot);
+        if (!licence) throw new Error(`entry ${entry.name}: ${repoOf(plugin)} ships no licence — no licence, no right to redistribute`);
+        copyDir(source, out);
+        const own = licenceIn(out);
+        if (!own) fs.copyFileSync(path.join(entry.repoRoot, licence), path.join(out, licence));
+        const patch = path.join(OVERLAYS, `${name}.patch`);
+        const overlay = fs.existsSync(patch);
+        if (overlay) git(out, 'apply', patch);
+        fs.writeFileSync(path.join(out, 'SOURCE.md'), renderSource({
+          entry: entry.name,
+          repo: repoOf(plugin),
+          sha: plugin.source.sha,
+          dir: path.relative(entry.repoRoot, source) || '.',
+          licence: own || licence,
+          overlay: overlay ? `${name}.patch` : null,
+        }));
+      } else {
+        copySelfContained(source, out);
+        addProvenance(entry, plugin, out, path.join(plugin.source, artifact.path), 'Copied local Agent Skill into the pi package projection.');
+      }
+    }
+  }
+  return [...written.keys()].sort();
+}
+
 function build(dest, plugins, deps = {}) {
   const fetch = deps.checkout || checkout;
   const missing = [];
@@ -273,7 +322,9 @@ function build(dest, plugins, deps = {}) {
     const licence = licenceIn(repoDir);
     if (!licence) throw new Error(`entry ${entry.name}: ${repo} ships no licence — no licence, no right to redistribute`);
 
-    const skills = discoverArtifacts(entry, abs).filter((item) => item.kind === 'skill');
+    const artifacts = discoverArtifacts(entry, abs);
+    const portableEntry = { name: entry.name, sourceRoot: abs, repoRoot: repoDir };
+    const skills = artifacts.filter((item) => item.kind === 'skill');
     for (const skill of skills) {
       const skillDir = path.dirname(path.join(abs, skill.path));
       const md = fs.readFileSync(path.join(skillDir, 'SKILL.md'), 'utf8');
@@ -303,6 +354,38 @@ function build(dest, plugins, deps = {}) {
         renderSource({ entry: entry.name, repo, sha, dir: dirRel, licence: own || licence, overlay: overlay ? `${name}.patch` : null })
       );
     }
+
+    for (const artifact of artifacts.filter((item) => ['command', 'agent'].includes(item.kind))) {
+      const name = convertedSkillName(portableEntry, artifact);
+      if (written.has(name)) throw new Error(`skill name '${name}' comes from both ${written.get(name)} and ${entry.name}`);
+      written.set(name, entry.name);
+      writeConvertedSkill(portableEntry, entry, artifact, path.join(dest, name));
+    }
+  }
+
+  for (const entry of plugins.filter((item) => isLocal(item) && !isBundle(item))) {
+    const sourceRoot = path.join(root, entry.source);
+    const portableEntry = { name: entry.name, sourceRoot, repoRoot: root };
+    for (const artifact of discoverArtifacts(entry, sourceRoot).filter((item) => ['skill', 'command', 'agent'].includes(item.kind))) {
+      let name;
+      if (artifact.kind === 'skill') {
+        const source = path.dirname(path.join(sourceRoot, artifact.path));
+        name = parseFrontmatter(fs.readFileSync(path.join(source, 'SKILL.md'), 'utf8')).name;
+        if (!name) throw new Error(`entry ${entry.name}: ${artifact.path} has no frontmatter name`);
+        if (written.has(name)) throw new Error(`skill name '${name}' comes from both ${written.get(name)} and ${entry.name}`);
+        written.set(name, entry.name);
+        if (dest) {
+          const out = path.join(dest, name);
+          copySelfContained(source, out);
+          addProvenance(portableEntry, entry, out, path.join(entry.source, artifact.path), 'Copied local Agent Skill into the pi package projection.');
+        }
+      } else {
+        name = convertedSkillName(portableEntry, artifact);
+        if (written.has(name)) throw new Error(`skill name '${name}' comes from both ${written.get(name)} and ${entry.name}`);
+        written.set(name, entry.name);
+        if (dest) writeConvertedSkill(portableEntry, entry, artifact, path.join(dest, name));
+      }
+    }
   }
 
   if (missing.length) {
@@ -321,6 +404,7 @@ module.exports = {
   formatLike,
   unresolved,
   build,
+  buildFromInventory,
   checkout,
   resolveEntry,
 };
@@ -353,7 +437,11 @@ if (require.main === module) {
   const staging = fs.mkdtempSync(path.join(os.tmpdir(), 'skills-tree-out-'));
 
   try {
-    const names = build(staging, plugins);
+    const metadata = JSON.parse(fs.readFileSync(path.join(root, 'scripts', 'distribution-meta.json'), 'utf8'));
+    const { generate } = require('./gen-distribution.js');
+    const { inventory } = generate(plugins, metadata);
+    const names = buildFromInventory(staging, plugins, inventory);
+    validateSkillDirectories(staging);
 
     if (check) {
       if (treeFingerprint(staging) === treeFingerprint(TREE)) {
