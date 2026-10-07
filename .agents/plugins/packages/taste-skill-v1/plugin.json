@@ -1,6 +1,6 @@
 {
   "name": "taste-skill-v1",
-  "version": "0.0.0+catalog.ce26fc25c0e5.a09d4ff459aa",
+  "version": "0.0.0+catalog.b482f7a970ab.89f2537a6109",
   "description": "The original v1 taste-skill, preserved for projects depending on its exact behavior.",
   "author": {
     "name": "Leon Lin",
