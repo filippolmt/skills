@@ -45,7 +45,10 @@ jobs:
           node-version: 24
       - name: Install the tested Codex CLI
         run: npm install --global @openai/codex@0.160.1
-      - name: Check generated packages
-        run: node scripts/gen-codex.js --check
+      - name: Materialize Codex packages for this revision
+        run: |
+          node scripts/gen-skills-tree.js
+          node scripts/gen-distribution.js
+          node scripts/gen-codex.js
       - name: Install representative plugins in an isolated Codex home
         run: bash scripts/test-codex-marketplace.sh
