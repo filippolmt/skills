@@ -308,6 +308,7 @@ function buildFromInventory(dest, plugins, inventory) {
 
 function build(dest, plugins, deps = {}) {
   const fetch = deps.checkout || checkout;
+  const overlays = deps.overlays || OVERLAYS;
   const missing = [];
   const written = new Map();
 
@@ -344,7 +345,7 @@ function build(dest, plugins, deps = {}) {
 
       // An overlay is a diff against the skill's own files, so it applies from
       // inside the vendored copy — `git apply` needs no repository for that.
-      const patch = path.join(OVERLAYS, `${name}.patch`);
+      const patch = path.join(overlays, `${name}.patch`);
       const overlay = fs.existsSync(patch);
       if (overlay) git(out, 'apply', patch);
 
