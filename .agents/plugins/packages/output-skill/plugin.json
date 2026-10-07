@@ -1,6 +1,6 @@
 {
   "name": "output-skill",
-  "version": "0.0.0+catalog.ce26fc25c0e5.bc166713031f",
+  "version": "0.0.0+catalog.b482f7a970ab.8c15a2e0a927",
   "description": "Overrides default LLM truncation behavior.",
   "author": {
     "name": "Leon Lin",
