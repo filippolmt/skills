@@ -1,6 +1,6 @@
 {
   "name": "printing-press-output-review",
-  "version": "4.33.0+catalog.a3136d1ea7dc.2f09444ff66f",
+  "version": "4.33.1+catalog.d7809436888d.f74accd8333c",
   "description": "Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use.",
   "author": {
     "name": "Matt Van Horn and Trevin Chow",
