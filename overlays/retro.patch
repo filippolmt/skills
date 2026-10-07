@@ -1,0 +1,11 @@
+--- a/SKILL.md
++++ b/SKILL.md
+@@ -8,7 +8,7 @@
+ 
+ ## Steps
+ 
+-1. Call the Skill tool with `writing-for-agents` for the writing style guide.
++1. Load and follow `writing-for-agents` using the current harness's skill-loading mechanism.
+ 
+ 2. Read the primary sources for the session the user specifies. This may mean searching through session logs on this machine. If the user doesn't specify a session, default to the current one.
+ 

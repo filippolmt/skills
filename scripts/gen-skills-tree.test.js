@@ -160,11 +160,13 @@ const entry = (name, p) => ({
 function withBuild(files, plugins, fn) {
   const repo = fakeRepo(files);
   const dest = fs.mkdtempSync(path.join(os.tmpdir(), 'fake-tree-'));
+  const overlays = fs.mkdtempSync(path.join(os.tmpdir(), 'fake-overlays-'));
   try {
-    return fn({ dest, plugins, deps: { checkout: () => repo } });
+    return fn({ dest, plugins, deps: { checkout: () => repo, overlays } });
   } finally {
     fs.rmSync(repo, { recursive: true, force: true });
     fs.rmSync(dest, { recursive: true, force: true });
+    fs.rmSync(overlays, { recursive: true, force: true });
   }
 }
 
