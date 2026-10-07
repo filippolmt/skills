@@ -493,10 +493,17 @@ Snapshot of the catalog — the source of truth is
 
 ## External skills (auto-updated by Renovate)
 
-Third-party skills (e.g. `mattpocock/skills`) are referenced upstream via
-`git-subdir` — no files are copied. Each skill subdirectory becomes a
-single-skill plugin you can install on its own. Renovate bumps the pinned commit
-whenever upstream changes (automerge enabled).
+For Claude, third-party entries (e.g. `mattpocock/skills`) reference their
+upstream folder via `git-subdir`; Claude installs from that reference rather than
+from a copy in this repository. The post-merge regeneration then vendors each
+portable artifact into `skills/` for pi and into self-contained native packages
+under `.agents/plugins/` for Codex.
+
+Most entries point at one skill folder and become one independently installable
+Claude plugin. Whole-plugin entries instead point at an upstream plugin root so
+its commands, agents, hooks, and further skills stay together. An entry can also
+project several discovered artifacts into pi and Codex. Renovate updates the
+pinned commit when upstream moves; eligible updates merge automatically.
 
 The fastest way to add one is the `/add-external-skill` skill, which automates
 every step below. Point it at a skill folder to add one skill, or at a repo /
@@ -594,9 +601,9 @@ which is what routes it to the bundle table instead of **Available skills**.
 
 ## Validating
 
-What CI runs (`.github/workflows/validate.yml`), so run it before opening a PR —
-`claude plugin validate` alone covers neither the README's generated regions nor
-command/skill name collisions:
+The `validate` workflow runs the checks below on pull requests, so run them
+before opening one. `claude plugin validate` alone covers neither the README's
+generated regions nor command/skill name collisions:
 
 ```
 bash scripts/run-tests.sh                       # every node test; CI runs this same script
@@ -607,8 +614,12 @@ node scripts/check-name-collisions.js           # what validate does NOT cover
 claude plugin validate .                        # marketplace + all local plugins
 ```
 
-Output must be clean — warnings count as failures. To check one plugin on its
-own: `claude plugin validate ./plugins/agent-report-guard`.
+Output must be clean — warnings count as failures. Path-filtered pi and Codex
+integration workflows separately materialize the current revision in their
+workspaces before running package smoke tests. Committed projection comparisons
+remain in the post-merge `regenerate` workflow because a catalog-only SHA bump
+makes those projections stale by design. To check one plugin on its own:
+`claude plugin validate ./plugins/agent-report-guard`.
 
 ## Versioning
 
