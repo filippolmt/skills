@@ -1,6 +1,6 @@
 {
   "name": "matt-pocock-bundle",
-  "version": "0.3.0+catalog.local.c9cf96cba3f6",
+  "version": "0.3.0+catalog.local.2b30e5079c62",
   "description": "Install the core Matt Pocock workflows used together (wayfinder, grill-with-docs, diagnosing-bugs, writing-for-agents, implement, improve-codebase-architecture, code-review, and retro) with their runtime dependencies. Bundles them as dependencies.",
   "author": {
     "name": "Matt Pocock",
