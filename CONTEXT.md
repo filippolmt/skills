@@ -135,13 +135,16 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 
 ## Guards
 
-- **Guard** — a local plugin whose whole content is a `PreToolUse` hook standing
+- **Guard** — a local plugin whose whole content is `PreToolUse` hooks standing
   between a tool call and a known-wrong form of it: `agent-report-guard` on
   `Agent`, `zsh-wordsplit-guard` on `Bash`. Rewrites the call or denies it, and
   says which.
-- **Opt-out** — how a deliberate use survives a guard: a marker in the call's
-  `description` for one call (`[mailbox]`, `[nosplit]`), or an environment
-  variable for the session (`ALLOW_NAMED_AGENTS=1`, `ALLOW_ZSH_NOSPLIT=1`).
+- **Opt-out** — how a deliberate use survives a guard rule whose fix changes
+  what the call does: a marker in the call's `description` for one call
+  (`[mailbox]`, `[nosplit]`), or an environment variable for the session
+  (`ALLOW_NAMED_AGENTS=1`, `ALLOW_ZSH_NOSPLIT=1`). A rule whose fix is a
+  same-meaning rewrite — quoting, escaping — has none: the rewrite is the way
+  through.
 
 ## Agent spawns
 
@@ -172,3 +175,8 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   `$var,`, `${var}x`. The only shape a guard can call a silent non-split, since
   a glob or a path separator around the expansion decides the word count
   instead — see `docs/adr/0005-what-the-wordsplit-guard-flags.md`.
+- **Expansion trap** — a word zsh expands where bash would take it literally:
+  a leading `=` (equals expansion), a glob in a `--flag=value` word, parentheses
+  in a `${var/pattern/…}` pattern. The wordsplit guard's second rule set; its fix
+  is quoting or escaping, so it carries no opt-out — see
+  `docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md`.

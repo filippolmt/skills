@@ -1,0 +1,91 @@
+#!/usr/bin/env node
+// Self-check for expansion.js. Run: node expansion.test.js
+// The denied commands fail or give a wrong result under zsh 5.9; the allowed
+// ones are the nearby forms that run as written, including the correct rewrite
+// of each denied one.
+const assert = require('assert');
+const { run, bash, denied, allowed } = require('./testing').harness('expansion.js');
+
+// --- equals expansion ---------------------------------------------------------
+let reason = denied('echo =====');
+assert.ok(/'====='/.test(reason), 'names the quoted form');
+assert.ok(/\$\{commands\[name\]\}/.test(reason), 'names the command-path form');
+denied('echo =ls');                       // silently prints /usr/bin/ls
+denied('echo foo =bar');
+reason = denied('[ "$a" == "$b" ] && echo same'); // `==` is a word to `[`
+assert.ok(/^- Equals expansion: `==`\. [^\n]*Inside `\[ \]` or `test`, compare with a single `=`/m.test(reason),
+  'for `==`, the `[ ]` rewrite comes first');
+assert.ok(!/run the command again/.test(reason), 'no closing line restating the rewrite');
+denied('test a == b');
+denied('echo ok; echo ==');
+
+allowed("echo '====='");
+allowed('echo "====="');
+allowed('echo \\=====');
+allowed('X=1 cmd');
+allowed('echo a==b --x=y');
+allowed('[[ $a == $b ]] && echo same');
+allowed('[[ $a == b && $c == d ]]');
+allowed('[ "$a" = "$b" ]');
+allowed('(( a == b ))');
+allowed('echo $(( 1 == 1 ))');
+allowed('echo =');                        // a lone `=` is literal
+allowed('diff =(sort a) =(sort b)');      // process substitution
+allowed('a=(x y)');
+allowed('echo hi # ===== a comment');
+
+// --- glob in a flag value ------------------------------------------------------
+reason = denied('grep -rn --include=*.md pattern .');
+assert.ok(/--include='\*\.md'/.test(reason), 'names the quoted flag');
+assert.ok(/no matches found/.test(reason), 'names the failure');
+denied('grep -r --exclude-dir=node_* x .');
+denied('rg --glob=*.ts foo');
+denied('git log --format=[%h] -1');
+denied('ls --x=?');
+
+allowed("grep -rn --include='*.md' pattern .");
+allowed('grep -rn --include="*.md" pattern .');
+allowed('grep -rn --include=\\*.md pattern .');
+allowed('grep -rn --include=README.md pattern .');
+allowed('ls *.md');                       // a plain glob is what the author wants
+allowed('cmd --x=${a[1]}');               // subscript, not a glob
+allowed('echo --x=$a[1]');                // zsh array subscript, prints --x=p
+allowed("bash -c 'grep --include=*.md x .'");
+
+// --- parentheses in a parameter pattern ---------------------------------------
+reason = denied('b="see (issue tracker, domain docs)"; echo "${b/(issue tracker, domain docs)/X}"');
+assert.ok(/python or sed/.test(reason), 'names the out-of-shell replacement');
+assert.ok(/\\\(/.test(reason), 'names the escape');
+denied('echo ${b//(x)/y}');
+denied('echo ${b%(z)}');
+denied('echo ${b#x(}');
+denied('echo ${x:/(a)/b}');               // whole-match form
+denied('echo ${x/${y}(a)/b}');            // a nested expansion before the group
+
+allowed('echo ${b/\\(x\\)/y}');            // escaped
+allowed('echo ${b/(a|b)/Q}');             // alternation, on purpose
+allowed('echo ${b/(#b)(foo)/$match[1]}'); // pattern flags, on purpose
+allowed('echo ${b/$(date)/now}');         // command substitution in the pattern
+allowed('print -r -- ${x/[(]/b}');        // bracket class: a literal parenthesis
+allowed('echo ${b/x/(y)}');               // parentheses in the replacement
+allowed('echo ${b//[^a-z]/}');            // a glob class: same meaning as in bash
+allowed('echo ${(f)b} ${#b} ${=b}');
+allowed("echo '${b/(x)/y}'");             // single quotes: not expanded
+
+// --- several rules, heredoc, unrelated calls -----------------------------------
+reason = denied('echo ===== && grep --include=*.md x .');
+assert.ok(/Equals expansion/.test(reason) && /Glob in a flag value/.test(reason), 'reports every rule hit');
+
+allowed('cat <<EOF\necho =====\ngrep --include=*.md x .\nEOF');
+denied('cat <<EOF\nx\nEOF\necho =ls');       // zsh again after the terminator
+denied('echo "$(echo =ls)"');             // a substitution inside quotes is zsh
+allowed('echo "$(echo \'=ls\')"');
+denied('echo =====\ncat <<EOF\ntext\nEOF');
+denied('echo ===== <<<"seed"');
+
+assert.strictEqual(run({ hook_event_name: 'PreToolUse', tool_name: 'Agent', tool_input: {} }), null,
+  'another tool is not this hook business');
+assert.strictEqual(run(bash('')), null, 'no command, nothing to check');
+assert.strictEqual(run({}), null, 'empty payload is silent');
+
+console.log('zsh-wordsplit-guard expansion rules: all checks passed');
