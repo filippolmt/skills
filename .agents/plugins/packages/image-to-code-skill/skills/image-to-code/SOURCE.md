@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/Leonxlnx/taste-skill/tree/b482f7a970abb98c4108d4a9f761e458c64cefc8/skills/image-to-code-skill
-- **Commit**: `b482f7a970abb98c4108d4a9f761e458c64cefc8`
+- **Upstream**: https://github.com/Leonxlnx/taste-skill/tree/18dfc928b135629e0eddfdd445a06400d04ed439/skills/image-to-code-skill
+- **Commit**: `18dfc928b135629e0eddfdd445a06400d04ed439`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `image-to-code-skill` in `.claude-plugin/marketplace.json`
