@@ -1,6 +1,6 @@
 {
   "name": "printing-press-reprint",
-  "version": "4.33.1+catalog.d7809436888d.01351739d74c",
+  "version": "4.33.2+catalog.02139522e95b.cedc35dd7037",
   "description": "Regenerate an existing printed CLI from scratch under the current Printing Press, carrying prior research, novel features, and patches into the new run.",
   "author": {
     "name": "Matt Van Horn and Trevin Chow",
