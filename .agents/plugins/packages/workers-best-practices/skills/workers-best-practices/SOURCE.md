@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/cloudflare/skills/tree/41e0d19858946d18af9ee2c2feebbe2e11d829ff/skills/workers-best-practices
-- **Commit**: `41e0d19858946d18af9ee2c2feebbe2e11d829ff`
+- **Upstream**: https://github.com/cloudflare/skills/tree/a84b615ff9d40e7f99755aea23d65e52d645bd42/skills/workers-best-practices
+- **Commit**: `a84b615ff9d40e7f99755aea23d65e52d645bd42`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `workers-best-practices` in `.claude-plugin/marketplace.json`
