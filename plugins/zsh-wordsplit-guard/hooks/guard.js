@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// zsh-wordsplit-guard — one PreToolUse hook on the Bash tool.
+// zsh-wordsplit-guard, loop rule — a PreToolUse hook on the Bash tool, beside
+// expansion.js, which flags three other zsh expansions.
 //
 // The Bash tool runs zsh, where `SH_WORD_SPLIT` is off: parameter expansion is
 // NOT word-split, while command substitution is. So `v="a b c"; for x in $v`
@@ -19,7 +20,7 @@
 // Deny rather than warn: an advisory arrives after the wrong output is already
 // in context, and the construct is narrow enough that a hit is almost always a
 // real bug. Flipping to `"ask"` is a one-line change if false positives show up.
-const fs = require('fs');
+const { readBashInput, deny, maskedViews } = require('./scan');
 
 const NOSPLIT_OPT_OUT = /\[nosplit\]/i;
 // Explicit values only: `ALLOW_ZSH_NOSPLIT=0` must mean off, not "non-empty
@@ -44,46 +45,27 @@ const NONSPLIT_EXPANSION = /\$(?:\{([A-Za-z_]\w*)(?:[:#%/][^}]*)?\}|([A-Za-z_]\w
 // on — `$v,`, `$v.log`, `${v}x`, `$v$w` — still runs the body once, so it is
 // still a hit.
 const HARMLESS_AROUND = /[*?[/]/;
-// `<<` heredoc, but not `<<<`, which is a zsh here-string.
-const HEREDOC = /(?<!<)<<(?!<)/;
-
-let input = {};
-try { input = JSON.parse(fs.readFileSync(0, 'utf8')) || {}; } catch (e) { /* no stdin */ }
-
-const toolInput = input.tool_input || {};
-const command = String(toolInput.command || '');
+const input = readBashInput();
 const optedOut =
   ON.has(String(process.env.ALLOW_ZSH_NOSPLIT || '').toLowerCase()) ||
-  NOSPLIT_OPT_OUT.test(toolInput.description || '');
+  NOSPLIT_OPT_OUT.test((input || {}).description || '');
 
-if (input.tool_name !== 'Bash' || !command || optedOut) process.exit(0);
+if (!input || optedOut) process.exit(0);
 
-// Blanking, in this order, removes three things at once: a header that is only
-// text (`echo "for x in $v"`), the forms that are already correct inside a real
-// header (`"$v"`, `"${a[@]}"`, `$(cmd)`), and a `#` comment — which must be
-// found only AFTER quotes are gone, so that a `#` inside a string is not read as
-// one. The cost is honest and one-sided: a real loop nested inside a quoted
-// payload is invisible too, so `bash -c '... for x in $v ...'` — which does run
-// under a shell that splits — needs no special case, and `zsh -c '…'` slips
-// through with it. False negative over a wrong deny on the critical path.
-const scannable = command
-  .replace(/\\\n/g, ' ')
+// The masked view (scan.js) already drops what zsh does not run here: quoted
+// text, so a header that is only text (`echo "for x in $v"`) and the correct
+// forms `"$v"` and `"${a[@]}"` are gone, a `#` comment, and a heredoc body. On
+// top of it, a command substitution is blanked: `$(cmd)` is a splitting form.
+// The cost is honest and one-sided: a real loop nested inside a quoted payload
+// is invisible too, so `bash -c '... for x in $v ...'` — which does run under a
+// shell that splits — needs no special case, and `zsh -c '…'` slips through
+// with it. False negative over a wrong deny on the critical path.
+const scannable = maskedViews(input.command).words
   .replace(/\$\((?:[^()]|\([^()]*\))*\)/g, ' ')
-  .replace(/`[^`]*`/g, ' ')
-  .replace(/"(?:\\.|[^"\\])*"/g, ' ')
-  .replace(/'[^']*'/g, ' ')
-  .replace(/(^|\s)#[^\n]*/g, '$1 ');
-
-// ponytail: everything from the first `<<` on is treated as heredoc body, since
-// finding the terminator means real parsing. A loop BEFORE the heredoc is still
-// checked; one after it is not. Narrow the limit to the terminator if that
-// blind spot ever bites.
-const heredocAt = scannable.search(HEREDOC);
-const limit = heredocAt === -1 ? scannable.length : heredocAt;
+  .replace(/`[^`]*`/g, ' ');
 
 let hit = null;
 for (const header of scannable.matchAll(FOR_HEADER)) {
-  if (header.index >= limit) break;
   const found = (header[1].match(WORD) || [])
     .filter((word) => !HARMLESS_AROUND.test(word.replace(/\$\{[^}]*\}/g, '')))
     .map((word) => NONSPLIT_EXPANSION.exec(word))
@@ -99,21 +81,15 @@ for (const header of scannable.matchAll(FOR_HEADER)) {
 
 if (!hit) process.exit(0);
 
-process.stdout.write(JSON.stringify({
-  hookSpecificOutput: {
-    hookEventName: 'PreToolUse',
-    permissionDecision: 'deny',
-    permissionDecisionReason:
-      'zsh-wordsplit-guard: silent non-split. `' + hit.header + '` iterates ONCE ' +
-      'over the whole string: the Bash tool runs zsh, where parameter expansion ' +
-      'is not word-split, so ' + hit.expansion + ' stays one word. No error — a ' +
-      'wrong result from the second element on. Rewrite as one of:\n' +
-      '  - `${=' + hit.name + '}` — split on IFS\n' +
-      '  - `${(f)' + hit.name + '}` — split per line (safe with paths containing spaces)\n' +
-      '  - `arr=(...)` then `for x in "${arr[@]}"` — for values you build yourself\n' +
-      '  - a literal list, or `$(cmd)` directly, which does split in zsh\n' +
-      'Keep the split at the call site: `setopt shwordsplit` would change every ' +
-      'later expansion in that shell. Deliberate non-split: [nosplit] in the ' +
-      'description, or ALLOW_ZSH_NOSPLIT=1 for the session.',
-  },
-}));
+deny(
+  'zsh-wordsplit-guard: silent non-split. `' + hit.header + '` iterates ONCE ' +
+  'over the whole string: the Bash tool runs zsh, where parameter expansion ' +
+  'is not word-split, so ' + hit.expansion + ' stays one word. No error — a ' +
+  'wrong result from the second element on. Rewrite as one of:\n' +
+  '  - `${=' + hit.name + '}` — split on IFS\n' +
+  '  - `${(f)' + hit.name + '}` — split per line (safe with paths containing spaces)\n' +
+  '  - `arr=(...)` then `for x in "${arr[@]}"` — for values you build yourself\n' +
+  '  - a literal list, or `$(cmd)` directly, which does split in zsh\n' +
+  'Keep the split at the call site: `setopt shwordsplit` would change every ' +
+  'later expansion in that shell. Deliberate non-split: [nosplit] in the ' +
+  'description, or ALLOW_ZSH_NOSPLIT=1 for the session.');

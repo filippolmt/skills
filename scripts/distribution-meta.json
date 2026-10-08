@@ -159,13 +159,13 @@
     "zsh-wordsplit-guard/hook:hooks/hooks.json#PreToolUse[0]": {
       "codex": {
         "disposition": "unsupported",
-        "limitation": "Codex shell execution does not reproduce Claude's zsh silent non-split condition.",
-        "fallback": "Use the shell's native word-splitting rules; no guard is needed."
+        "limitation": "Codex shell execution does not reproduce the zsh behaviour of Claude's Bash tool that the guard catches.",
+        "fallback": "Use the shell's native rules; no guard is needed."
       },
       "pi": {
         "disposition": "unsupported",
         "limitation": "pi packages cannot install declarative lifecycle hooks.",
-        "fallback": "Use zsh splitting expansions such as ${=var}, ${(f)var}, or an array explicitly."
+        "fallback": "Under zsh, use splitting expansions such as ${=var}, ${(f)var}, or an array, and quote words starting with =, glob flag values and parenthesised parameter patterns."
       }
     },
     "impeccable/hook:hooks/hooks.json#PostToolUse[0]": {

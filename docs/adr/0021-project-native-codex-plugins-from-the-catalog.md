@@ -73,7 +73,8 @@ artifact, path, transformation and catalog entry.
 same runtime condition exists and an end-to-end test proves the behavior. Codex
 support for `PreToolUse` does not by itself make a Claude guard portable:
 `agent-report-guard` addresses Claude mailbox semantics, while
-`zsh-wordsplit-guard` would be wrong under a shell that performs word splitting.
+`zsh-wordsplit-guard` targets expansions of Claude's zsh Bash tool that another
+shell need not share.
 Installed Codex hooks are considered functional when Codex discovers them,
 requests trust, and they pass after the user approves them. The trust step and any
 surface limitation are documented.

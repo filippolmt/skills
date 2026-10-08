@@ -5,37 +5,7 @@
 // form that is actually correct, which is where a guard this narrow earns its
 // keep or becomes noise.
 const assert = require('assert');
-const { spawnSync } = require('child_process');
-const path = require('path');
-
-const SCRIPT = path.join(__dirname, 'guard.js');
-
-function run(payload, env) {
-  const r = spawnSync(process.execPath, [SCRIPT], {
-    input: JSON.stringify(payload),
-    encoding: 'utf8',
-    env: Object.assign({}, process.env, { ALLOW_ZSH_NOSPLIT: '' }, env || {}),
-  });
-  assert.strictEqual(r.status, 0, 'hook exited ' + r.status + ': ' + r.stderr);
-  return r.stdout.trim() ? JSON.parse(r.stdout) : null;
-}
-
-const bash = (command, extra) => ({
-  hook_event_name: 'PreToolUse',
-  tool_name: 'Bash',
-  tool_input: Object.assign({ command: command, description: 'Run a loop' }, extra),
-});
-
-const denied = (command, extra) => {
-  const out = run(bash(command, extra));
-  assert.ok(out, 'expected a deny for: ' + command);
-  assert.strictEqual(out.hookSpecificOutput.permissionDecision, 'deny', command);
-  assert.strictEqual(out.hookSpecificOutput.hookEventName, 'PreToolUse');
-  return out.hookSpecificOutput.permissionDecisionReason;
-};
-
-const allowed = (command, extra) =>
-  assert.strictEqual(run(bash(command, extra)), null, 'expected no deny for: ' + command);
+const { run, bash, denied, allowed } = require('./testing').harness('guard.js');
 
 // --- the pattern that is silently wrong ---------------------------------------
 const reason = denied('v="a b c"; for x in $v; do echo $x; done');
@@ -112,10 +82,14 @@ allowed('echo hi # for x in $v; do :; done');
 denied('for x in $v; do echo $x; done # iterate the changed files');
 allowed('echo "no # comment here"');
 
-// Everything from the first `<<` on is treated as heredoc body; before it is
-// still zsh, and a here-string (`<<<`) is zsh throughout.
+// A heredoc body is text up to its terminator line; around it is still zsh,
+// and a here-string (`<<<`) is zsh throughout.
 allowed('cat <<EOF\nfor x in $v; do echo $x; done\nEOF');
+allowed("cat <<'EOF'\nfor x in $v; do echo $x; done\nEOF");
+allowed('cat <<-EOF\n\tfor x in $v; do :; done\n\tEOF');
 denied('for f in $v; do echo $f; done\ncat <<EOF\nplain text\nEOF');
+denied('cat <<EOF\nplain text\nEOF\nfor f in $v; do echo $f; done');
+denied('cat <<-EOF\n\tplain\n\tEOF\nfor f in $v; do :; done');
 denied('for x in $v; do echo $x; done <<<"seed"');
 
 // The array escape hatch is ordered: only an assignment BEFORE the loop counts.

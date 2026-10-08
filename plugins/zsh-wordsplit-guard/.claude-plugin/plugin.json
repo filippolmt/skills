@@ -1,7 +1,7 @@
 {
   "name": "zsh-wordsplit-guard",
-  "description": "Denies a Bash command looping over a bare expansion (`for x in $var`): the Bash tool runs zsh, where parameter expansion is not word-split, so the loop silently runs once over the whole string instead of per element. A glob or a path around the expansion (`for f in $D/*.log`) is left alone. The deny message names the splitting forms to use instead. Opt out per call with `[nosplit]` in the description, or session-wide with ALLOW_ZSH_NOSPLIT=1.",
-  "version": "0.1.1",
+  "description": "Denies Bash commands that zsh, the Bash tool's shell, runs differently from bash. A loop over a bare expansion (`for x in $var`) runs once over the whole string, since zsh does not word-split it; a glob or a path around the expansion (`for f in $D/*.log`) is left alone. Also denied: an unquoted word starting with `=` (`echo =====`, `[ a == b ]`), which zsh expands to a command path; a glob in a `--flag=value` word (`--include=*.md`), which aborts on `no matches found`; and parentheses in a `${var/pattern/…}` pattern, which zsh reads as a glob group. Each deny message names the form to use instead. The loop rule opts out per call with `[nosplit]` in the description, or session-wide with ALLOW_ZSH_NOSPLIT=1; the other rules are fixed by quoting or escaping the word.",
+  "version": "0.2.0",
   "author": {
     "name": "Filippo Merante Caparrotta"
   }
