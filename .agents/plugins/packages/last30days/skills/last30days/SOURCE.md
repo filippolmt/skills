@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/mvanhorn/last30days-skill/tree/5103ba478b380552207a3754b74c7655d64208cd/skills/last30days
-- **Commit**: `5103ba478b380552207a3754b74c7655d64208cd`
+- **Upstream**: https://github.com/mvanhorn/last30days-skill/tree/b96afd53998458e6ef068633719e84f6659014e8/skills/last30days
+- **Commit**: `b96afd53998458e6ef068633719e84f6659014e8`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `last30days` in `.claude-plugin/marketplace.json`
