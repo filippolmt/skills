@@ -23,11 +23,16 @@ function deny(reason) {
 }
 
 // The delimiter of a heredoc opened at `at` (the first `<`), or null for the
-// `<<<` here-string. Quotes and backslashes around the word are not part of it.
+// `<<<` here-string. Quotes and backslashes around the word are not part of it;
+// any of them makes the body literal, otherwise zsh expands parameters in it.
 function heredocAt(text, at) {
   const m = /^<<(-?)[ \t]*((?:'[^'\n]*'|"[^"\n]*"|\\.|[^\s;&|<>()])+)/.exec(text.slice(at));
   if (!m || text[at + 2] === '<') return null;
-  return { delimiter: m[2].replace(/['"\\]/g, ''), stripTabs: m[1] === '-' };
+  return {
+    delimiter: m[2].replace(/['"\\]/g, ''),
+    stripTabs: m[1] === '-',
+    expands: !/['"\\]/.test(m[2]),
+  };
 }
 
 // Two views of the command, each the same length as it, so a position in one is
@@ -36,7 +41,8 @@ function heredocAt(text, at) {
 // terminator line. `words` also blanks double-quoted text, where neither word
 // splitting, equals expansion nor globbing happens, except for a `$(…)` or
 // backtick inside it, which is a shell of its own. `patterns` keeps
-// double-quoted text, because `"${v/(x)/y}"` still matches a pattern.
+// double-quoted text, because `"${v/(x)/y}"` still matches a pattern, and the
+// body of a heredoc with an unquoted delimiter, which zsh expands the same way.
 // A quote character becomes `_`, so `'a'b` stays one word.
 function maskedViews(text) {
   let words = '';
@@ -87,12 +93,18 @@ function maskedViews(text) {
       keep(ch);
       // The bodies start on the next line, one after another, each ending on a
       // line that is exactly its delimiter.
-      for (const { delimiter, stripTabs } of pending.splice(0)) {
+      for (const { delimiter, stripTabs, expands } of pending.splice(0)) {
         while (i + 1 < text.length) {
           const end = text.indexOf('\n', i + 1);
           const line = text.slice(i + 1, end === -1 ? text.length : end);
           const last = (stripTabs ? line.replace(/^\t+/, '') : line) === delimiter;
-          for (const c of line) blank(c);
+          if (expands && !last) {
+            // `\$`, `\`` and `\\` are the escapes an expanding body honours.
+            words += line.replace(/[^\n]/g, '_');
+            patterns += line.replace(/\\[$`\\]/g, '__');
+          } else {
+            for (const c of line) blank(c);
+          }
           i += line.length;
           if (end === -1) break;
           if (!last) { blank('\n'); i++; continue; }

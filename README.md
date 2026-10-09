@@ -163,10 +163,12 @@ local `zsh-wordsplit-guard` plugin denies the bare expansion and names the fixes
 /plugin install zsh-wordsplit-guard
 ```
 
-The same plugin denies three more zsh traps, each with its quoted or escaped
-rewrite: a word starting with `=` (`echo =====`, `[ a == b ]`), a glob in a flag
-value (`--include=*.md`), and parentheses in a `${var/pattern/…}` pattern
-([ADR-0022](docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md)).
+The same plugin denies four more zsh traps, each with its zsh rewrite: a word
+starting with `=` (`echo =====`, `[ a == b ]`), a glob in a flag value
+(`--include=*.md`), parentheses in a `${var/pattern/…}` pattern
+([ADR-0022](docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md)), and
+bash's `${!name}`
+([ADR-0023](docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md)).
 
 Nothing depends on it — install it if your Bash commands run under zsh.
 
@@ -318,7 +320,7 @@ Snapshot of the catalog — the source of truth is
 <!-- catalog:start -->
 **Local:**
 - `agent-report-guard` — Drops `name` from Agent tool calls so the subagent reports back on its own: a named agent becomes a mailbox teammate that notifies idle without a report body, leaving fan-out skills (code-review, research, printing-press) chasing the report with SendMessage. Opt out per call with `[mailbox]` in the description, or session-wide with ALLOW_NAMED_AGENTS=1.
-- `zsh-wordsplit-guard` — Denies Bash commands that zsh, the Bash tool's shell, runs differently from bash. A loop over a bare expansion (`for x in $var`) runs once over the whole string, since zsh does not word-split it; a glob or a path around the expansion (`for f in $D/*.log`) is left alone. Also denied: an unquoted word starting with `=` (`echo =====`, `[ a == b ]`), which zsh expands to a command path; a glob in a `--flag=value` word (`--include=*.md`), which aborts on `no matches found`; and parentheses in a `${var/pattern/…}` pattern, which zsh reads as a glob group. Each deny message names the form to use instead. The loop rule opts out per call with `[nosplit]` in the description, or session-wide with ALLOW_ZSH_NOSPLIT=1; the other rules are fixed by quoting or escaping the word.
+- `zsh-wordsplit-guard` — Denies Bash commands that zsh, the Bash tool's shell, runs differently from bash. A loop over a bare expansion (`for x in $var`) runs once over the whole string, since zsh does not word-split it; a glob or a path around the expansion (`for f in $D/*.log`) is left alone. Also denied: an unquoted word starting with `=` (`echo =====`, `[ a == b ]`), which zsh expands to a command path; a glob in a `--flag=value` word (`--include=*.md`), which aborts on `no matches found`; parentheses in a `${var/pattern/…}` pattern, which zsh reads as a glob group; and bash's `${!name}` forms, which zsh aborts on or reads as `$!`. Each deny message names the form to use instead. The loop rule opts out per call with `[nosplit]` in the description, or session-wide with ALLOW_ZSH_NOSPLIT=1; the other rules opt out by the rewrite their deny message names.
 - `subito-listing` — Prepares a Subito.it sale listing, or diagnoses and improves one already live: a price grounded in comparables researched on the web (sold vs asking, read with playwright-cli), a numbered photo shot list, and a title and description ready to paste within the platform limits.
 - `subito-research` — Searches Subito.it for buyers: filters listings by criteria, judges each price against the market, checks scam signals, and prepares seller questions and an offer. Reads subito.it with playwright-cli.
 - `settings-validator` — Validates and improves Claude Code managed, user, shared-project, or project-local settings: confirms the intended configuration, checks every key against the official docs and published JSON schema, applies best practice, and returns complete corrected JSON.
