@@ -10,7 +10,7 @@ Review every change to cross-harness distribution behavior or the prose that exp
 
 ## Guard rules
 
-A rule added to `zsh-wordsplit-guard` is reviewed against every context its masked view in `hooks/scan.js` exposes (plain, double-quoted, `$(…)`, unquoted heredoc body): its tests deny the trap in each, and each rewrite its message names is a case in `rewrites.test.js`.
+A rule added to `zsh-wordsplit-guard` is reviewed against every context its masked view in `hooks/scan.js` exposes (plain, double-quoted, `$(…)`, unquoted heredoc body): its tests deny the trap in each. `rewrites.test.js` checks the rewrites mechanically.
 
 ## Local plugin descriptions
 

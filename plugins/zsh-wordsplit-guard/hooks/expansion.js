@@ -142,8 +142,8 @@ const RULES = [
         const [, name, each] = keys;
         const flags = each === '@' ? '@k' : 'k';
         return trap('Key list') + 'Write `${(' + flags + ')' + name + '}` for the ' +
-          'keys of an associative array, `$(seq $#' + name + ')` outside double ' +
-          'quotes for the indices of an array.';
+          'keys of an associative array; for the indices of an array, loop with ' +
+          '`for ((i = 1; i <= $#' + name + '; i++))`, zsh indices starting at 1.';
       }
       const prefix = /^(\w+)([@*])$/.exec(inner);
       if (prefix) {

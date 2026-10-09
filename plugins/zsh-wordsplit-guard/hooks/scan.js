@@ -42,15 +42,17 @@ function heredocAt(text, at) {
 // splitting, equals expansion nor globbing happens, except for a `$(…)` or
 // backtick inside it, which is a shell of its own. `patterns` keeps
 // double-quoted text, because `"${v/(x)/y}"` still matches a pattern, and the
-// body of a heredoc with an unquoted delimiter, which zsh expands the same way.
+// body of a heredoc with an unquoted delimiter, which zsh expands the same way:
+// such a body reads like double-quoted text whose `"` is literal, with its
+// `$(…)` and backticks a shell of their own in both views.
 // A quote character becomes `_`, so `'a'b` stays one word.
-function maskedViews(text) {
+function maskedViews(text, context) {
   let words = '';
   let patterns = '';
   const keep = (ch) => { words += ch; patterns += ch; };
   const blank = (ch) => keep(ch === '\n' ? '\n' : '_');
   // Each frame is a quoting context; `depth` counts open `(` inside a `$(…)`.
-  const stack = [{ kind: 'plain', depth: 0 }];
+  const stack = [{ kind: context || 'plain', depth: 0 }];
   const pending = [];
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
@@ -64,8 +66,8 @@ function maskedViews(text) {
     } else if (ch === '\\' && i + 1 < text.length) {
       if (text[i + 1] === '\n') keep('  '); else blank('__');
       i++;
-    } else if (top.kind === 'double') {
-      if (ch === '"') { stack.pop(); words += '_'; patterns += ch; }
+    } else if (top.kind === 'double' || top.kind === 'body') {
+      if (ch === '"' && top.kind === 'double') { stack.pop(); words += '_'; patterns += ch; }
       else if (ch === '$' && text[i + 1] === '(') { keep('$('); i++; stack.push({ kind: 'subst', depth: 0 }); }
       else if (ch === '`') { keep(ch); stack.push({ kind: 'backtick', depth: 0 }); }
       else { words += ch === '\n' ? '\n' : '_'; patterns += ch; }
@@ -94,22 +96,22 @@ function maskedViews(text) {
       // The bodies start on the next line, one after another, each ending on a
       // line that is exactly its delimiter.
       for (const { delimiter, stripTabs, expands } of pending.splice(0)) {
-        while (i + 1 < text.length) {
-          const end = text.indexOf('\n', i + 1);
-          const line = text.slice(i + 1, end === -1 ? text.length : end);
-          const last = (stripTabs ? line.replace(/^\t+/, '') : line) === delimiter;
-          if (expands && !last) {
-            // `\$`, `\`` and `\\` are the escapes an expanding body honours.
-            words += line.replace(/[^\n]/g, '_');
-            patterns += line.replace(/\\[$`\\]/g, '__');
-          } else {
-            for (const c of line) blank(c);
-          }
-          i += line.length;
-          if (end === -1) break;
-          if (!last) { blank('\n'); i++; continue; }
-          break;
+        // Every line up to the terminator, each with its newline, is body.
+        let body = '';
+        let terminator = '';
+        for (let at = i + 1; ;) {
+          const end = text.indexOf('\n', at);
+          const line = text.slice(at, end === -1 ? text.length : end);
+          if ((stripTabs ? line.replace(/^\t+/, '') : line) === delimiter) { terminator = line; break; }
+          if (end === -1) { body += line; break; }
+          body += line + '\n';
+          at = end + 1;
         }
+        const views = expands ? maskedViews(body, 'body') : null;
+        if (views) { words += views.words; patterns += views.patterns; }
+        else for (const c of body) blank(c);
+        for (const c of terminator) blank(c);
+        i += body.length + terminator.length;
       }
     } else {
       keep(ch);

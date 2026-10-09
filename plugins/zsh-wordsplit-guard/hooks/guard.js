@@ -84,7 +84,7 @@ if (!hit) process.exit(0);
 deny(
   'zsh-wordsplit-guard: silent non-split. `' + hit.header + '` iterates ONCE ' +
   'over the whole string: the Bash tool runs zsh, where parameter expansion ' +
-  'is not word-split, so ' + hit.expansion + ' stays one word. No error — a ' +
+  'is not word-split, so `' + hit.expansion + '` stays one word. No error — a ' +
   'wrong result from the second element on. Rewrite as one of:\n' +
   '  - `${=' + hit.name + '}` — split on IFS\n' +
   '  - `${(f)' + hit.name + '}` — split per line (safe with paths containing spaces)\n' +

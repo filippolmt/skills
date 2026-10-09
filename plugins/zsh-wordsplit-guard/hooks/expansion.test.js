@@ -62,6 +62,10 @@ denied('echo ${b#x(}');
 denied('echo ${x:/(a)/b}');               // whole-match form
 denied('echo ${x/${y}(a)/b}');            // a nested expansion before the group
 denied('cat <<EOF\n${b/(x)/y}\nEOF');      // an unquoted heredoc body expands
+denied('cat <<EOF\nnow $(echo =ls)\nEOF');  // a substitution in the body is zsh
+denied('cat <<EOF\n`grep --include=*.md x .`\nEOF');
+allowed("cat <<'EOF'\n$(echo =ls)\nEOF");   // a quoted delimiter: literal body
+allowed('cat <<EOF\n"=ls" --include=*.md\nEOF'); // body text is not a word
 
 allowed('echo ${b/\\(x\\)/y}');            // escaped
 allowed('echo ${b/(a|b)/Q}');             // alternation, on purpose
@@ -90,7 +94,7 @@ assert.ok(/`\$\{\(@ok\)parameters\[\(I\)GIT_\*\]\}`/.test(reason), '`@` keeps wo
 reason = denied('for k in "${!h[@]}"; do echo $k; done');
 assert.ok(/^- Key list: /m.test(reason), 'labels the key list');
 assert.ok(/`\$\{\(@k\)h\}`/.test(reason), 'keys: one word each, quoted or not');
-assert.ok(/\$\(seq \$#h\)` outside double quotes/.test(reason), 'indices: empty-safe, unquoted');
+assert.ok(/`for \(\(i = 1; i <= \$#h; i\+\+\)\)`/.test(reason), 'indices: an arithmetic loop');
 reason = denied('echo "${!#}"');
 assert.ok(/^- Last argument: `\$\{!#\}`\./m.test(reason), 'labelled like the other reasons');
 assert.ok(/\$\{argv\[-1\]\}/.test(reason) && /no error/.test(reason), 'last argument: silent');
