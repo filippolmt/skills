@@ -1,6 +1,6 @@
 {
   "name": "cloudflare-one",
-  "version": "0.0.0+catalog.a84b615ff9d4.455585a396ee",
+  "version": "0.0.0+catalog.a18ffe2a9944.43c1a6979f5f",
   "description": "Guides Cloudflare One Zero Trust and SASE work across Access, Gateway, WARP, Tunnel, WAN, DLP, CASB, device posture, and identity.",
   "author": {
     "name": "Cloudflare",
