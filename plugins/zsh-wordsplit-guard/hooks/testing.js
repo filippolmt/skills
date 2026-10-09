@@ -2,6 +2,7 @@
 // PreToolUse payload and assert its verdict.
 const assert = require('assert');
 const { spawnSync } = require('child_process');
+const fs = require('fs');
 const path = require('path');
 
 function harness(scriptName) {
@@ -28,7 +29,10 @@ function harness(scriptName) {
     assert.ok(out, 'expected a deny for: ' + command);
     assert.strictEqual(out.hookSpecificOutput.permissionDecision, 'deny', command);
     assert.strictEqual(out.hookSpecificOutput.hookEventName, 'PreToolUse');
-    return out.hookSpecificOutput.permissionDecisionReason;
+    const reason = out.hookSpecificOutput.permissionDecisionReason;
+    // rewrites.test.js collects every reason the suites produce, one JSON per line.
+    if (process.env.ZSH_GUARD_REASONS) fs.appendFileSync(process.env.ZSH_GUARD_REASONS, JSON.stringify(reason) + '\n');
+    return reason;
   };
 
   const allowed = (command, extra) =>

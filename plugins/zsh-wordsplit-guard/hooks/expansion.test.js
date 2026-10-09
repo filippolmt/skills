@@ -62,6 +62,10 @@ denied('echo ${b#x(}');
 denied('echo ${x:/(a)/b}');               // whole-match form
 denied('echo ${x/${y}(a)/b}');            // a nested expansion before the group
 denied('cat <<EOF\n${b/(x)/y}\nEOF');      // an unquoted heredoc body expands
+denied('cat <<EOF\nnow $(echo =ls)\nEOF');  // a substitution in the body is zsh
+denied('cat <<EOF\n`grep --include=*.md x .`\nEOF');
+allowed("cat <<'EOF'\n$(echo =ls)\nEOF");   // a quoted delimiter: literal body
+allowed('cat <<EOF\n"=ls" --include=*.md\nEOF'); // body text is not a word
 
 allowed('echo ${b/\\(x\\)/y}');            // escaped
 allowed('echo ${b/(a|b)/Q}');             // alternation, on purpose
@@ -84,12 +88,13 @@ reason = denied('set -- HOME; echo ${!1}');  // positional indirection
 assert.ok(/`\$\{\(P\)1\}`/.test(reason), 'positional rewrite');
 reason = denied('echo ${!T*}');
 assert.ok(/^- Name list: /m.test(reason), 'labels the name list');
-assert.ok(/\$\{\(ok\)parameters\[\(I\)T\*\]\}/.test(reason), 'names the sorted parameters lookup');
-denied('echo "${!GIT_@}"');
+assert.ok(/`\$\{\(ok\)parameters\[\(I\)T\*\]\}`/.test(reason), '`*` joins: no `@` flag');
+reason = denied('echo "${!GIT_@}"');
+assert.ok(/`\$\{\(@ok\)parameters\[\(I\)GIT_\*\]\}`/.test(reason), '`@` keeps words: `@` flag');
 reason = denied('for k in "${!h[@]}"; do echo $k; done');
 assert.ok(/^- Key list: /m.test(reason), 'labels the key list');
-assert.ok(/"\$\{\(@k\)h\}"/.test(reason), 'keys: a form that survives double quotes');
-assert.ok(/\$\(seq \$#h\)` outside double quotes/.test(reason), 'indices: empty-safe, unquoted');
+assert.ok(/`\$\{\(@k\)h\}`/.test(reason), 'keys: one word each, quoted or not');
+assert.ok(/`for \(\(i = 1; i <= \$#h; i\+\+\)\)`/.test(reason), 'indices: an arithmetic loop');
 reason = denied('echo "${!#}"');
 assert.ok(/^- Last argument: `\$\{!#\}`\./m.test(reason), 'labelled like the other reasons');
 assert.ok(/\$\{argv\[-1\]\}/.test(reason) && /no error/.test(reason), 'last argument: silent');

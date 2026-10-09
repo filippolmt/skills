@@ -15,6 +15,10 @@ jobs:
           node-version: 24
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code
+      - name: Install zsh
+        # rewrites.test.js runs each deny's rewrite under zsh against bash; it
+        # fails, not skips, when zsh is absent.
+        run: sudo apt-get update -q && sudo apt-get install -y -q zsh
       - name: Test repo scripts and local plugin hooks
         # The globs, their empty guard and their reasoning live in the script, so
         # `regenerate` runs the same suite instead of a copy that drifts from it.

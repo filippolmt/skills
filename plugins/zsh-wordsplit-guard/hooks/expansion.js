@@ -135,17 +135,22 @@ const RULES = [
           'substitution`. Write `$!` for the PID of the last background job, ' +
           (inner === '$' ? '`$$` for the PID of the shell.' : '`"$@"` for the arguments.');
       }
-      const keys = /^(\w+)\[[@*]\]$/.exec(inner);
+      // bash's `@` keeps one word per name inside double quotes and `*` joins
+      // them; zsh's `(@)` flag is the `@` and its absence the `*`.
+      const keys = /^(\w+)\[([@*])\]$/.exec(inner);
       if (keys) {
-        const name = keys[1];
-        return trap('Key list') + 'Write `"${(@k)' + name + '}"` for the keys of ' +
-          'an associative array, `$(seq $#' + name + ')` outside double quotes ' +
-          'for the indices of an array.';
+        const [, name, each] = keys;
+        const flags = each === '@' ? '@k' : 'k';
+        return trap('Key list') + 'Write `${(' + flags + ')' + name + '}` for the ' +
+          'keys of an associative array; for the indices of an array, loop with ' +
+          '`for ((i = 1; i <= $#' + name + '; i++))`, zsh indices starting at 1.';
       }
-      const prefix = /^(\w+)[@*]$/.exec(inner);
+      const prefix = /^(\w+)([@*])$/.exec(inner);
       if (prefix) {
+        const [, start, each] = prefix;
         // `(o)` sorts the names, as bash does.
-        return trap('Name list') + 'Write `${(ok)parameters[(I)' + prefix[1] + '*]}`.';
+        const flags = each === '@' ? '@ok' : 'ok';
+        return trap('Name list') + 'Write `${(' + flags + ')parameters[(I)' + start + '*]}`.';
       }
       // `(P)` takes the place of `!` and keeps any modifier: `${(P)t:-d}`.
       return trap('Indirect expansion') + 'Write `${(P)' + inner + '}`.';

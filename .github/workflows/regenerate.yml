@@ -117,6 +117,7 @@ jobs:
       - name: Validate before proposing
         if: steps.diff.outputs.changed == 'true'
         run: |
+          sudo apt-get update -q && sudo apt-get install -y -q zsh  # rewrites.test.js
           bash scripts/run-tests.sh
           node scripts/gen-readme.js --check
           node scripts/check-renovate.js
