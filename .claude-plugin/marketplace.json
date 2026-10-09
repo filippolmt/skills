@@ -731,7 +731,7 @@
         "url": "https://github.com/antfu/skills",
         "path": "skills/nuxt",
         "ref": "main",
-        "sha": "e53a142a2420e8cd812cfe9ed0484ab01bc856aa"
+        "sha": "feb0f3aba6566426f12230e7fc7a10d97c1293bb"
       },
       "description": "Nuxt full-stack Vue framework with SSR, auto-imports, and file-based routing.",
       "author": {
