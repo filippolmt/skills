@@ -7,3 +7,11 @@ When a change moves an artifact between the Claude, Codex, or pi projections, it
 ## Distribution documentation
 
 Review every change to cross-harness distribution behavior or the prose that explains it against the manual sections of `README.md`, the matching definitions in `CONTEXT.md`, the applicable ADRs, and the workflows or generators that implement it. Report contradictions even when generated-region checks pass: those checks do not cover the README's manual architecture prose.
+
+## Guard rules
+
+A rule added to `zsh-wordsplit-guard` is reviewed against every context its masked view in `hooks/scan.js` exposes (plain, double-quoted, `$(…)`, unquoted heredoc body): its tests deny the trap in each, and each rewrite its message names is a case in `rewrites.test.js`.
+
+## Local plugin descriptions
+
+A local plugin's description is one text kept in three places — its `plugin.json`, its `marketplace.json` entry and the README catalog — and `gen-readme.js --check` fails when they drift. Review checks that the three agree.

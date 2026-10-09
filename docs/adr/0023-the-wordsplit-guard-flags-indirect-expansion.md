@@ -30,13 +30,17 @@ Each deny names the zsh form of what bash meant:
 | bash | zsh |
 |---|---|
 | `${!t}`, `${!t:-d}` | `${(P)t}`, `${(P)t:-d}`: `(P)` replaces `!` and keeps the modifier |
-| `${!T*}` | `${(ok)parameters[(I)T*]}`: `(o)` sorts, as bash does |
-| `${!h[@]}` | `"${(@k)h}"` for keys; `$(seq $#h)`, unquoted, for indices |
+| `${!T@}`, `${!T*}` | `${(@ok)parameters[(I)T*]}`, `${(ok)parameters[(I)T*]}`: `(o)` sorts, as bash does |
+| `${!h[@]}`, `${!h[*]}` | `${(@k)h}`, `${(k)h}` for keys; `$(seq $#h)`, unquoted, for indices |
 | `${!#}` | `${argv[-1]}` |
 | `${!@}`, `${!*}`, `${!$}` | `"$@"`, `$$`, or `$!`: bash rejects the first two too |
 
-The index form avoids two traps of `{1..$#h}`: in double quotes it is the literal
-`{1..3}`, and on an empty array it yields `1 0`.
+Inside double quotes bash's `@` keeps one word per name and `*` joins them; zsh's
+`(@)` flag is that `@`, so each rewrite carries it exactly when the bash form
+does. The index form avoids two traps of `{1..$#h}`: in double quotes it is the
+literal `{1..3}`, and on an empty array it yields `1 0`. `rewrites.test.js` runs
+each rewrite under zsh against the bash form under bash, quoted and on empty
+arrays included.
 
 ## Why with the expansion rules, and why no opt-out
 
