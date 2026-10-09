@@ -72,6 +72,30 @@ allowed('echo ${b//[^a-z]/}');            // a glob class: same meaning as in ba
 allowed('echo ${(f)b} ${#b} ${=b}');
 allowed("echo '${b/(x)/y}'");             // single quotes: not expanded
 
+// --- indirect expansion -------------------------------------------------------
+reason = denied('for n in 0 1 2; do t="T$n"; gh issue create -f title="${!t}"; done');
+assert.ok(/^- Indirect expansion: `\$\{!t\}`\./m.test(reason), 'quotes the form');
+assert.ok(/bad substitution/.test(reason), 'names the failure');
+assert.ok(/Write `\$\{\(P\)t\}`\.$/.test(reason), 'names the exact rewrite');
+reason = denied('echo ${!t:-default}');
+assert.ok(/`\$\{\(P\)t:-default\}`/.test(reason), 'the rewrite keeps the modifier');
+reason = denied('set -- HOME; echo ${!1}');  // positional indirection
+assert.ok(/`\$\{\(P\)1\}`/.test(reason), 'positional rewrite');
+reason = denied('echo ${!T*}');
+assert.ok(/\$\{\(k\)parameters\[\(I\)T\*\]\}/.test(reason), 'names the parameters lookup');
+denied('echo "${!GIT_@}"');
+reason = denied('for k in "${!h[@]}"; do echo $k; done');
+assert.ok(/\$\{\(k\)h\}/.test(reason) && /\{1\.\.\$#h\}/.test(reason), 'names keys and indices');
+reason = denied('echo "${!#}"');
+assert.ok(/\$\{argv\[-1\]\}/.test(reason) && /no error/.test(reason), 'last argument: silent');
+
+allowed('sleep 1 & echo ${!} $!');        // `${!}` is `$!` in both shells
+allowed('echo ${!-none} ${!:-none}');
+allowed('echo ${(P)t} ${#t} ${(k)h}');
+allowed("echo '${!t}'");                  // single quotes: not expanded
+allowed('echo \\${!t}');
+allowed("bash -c 'echo ${!t}'");
+
 // --- several rules, heredoc, unrelated calls -----------------------------------
 reason = denied('echo ===== && grep --include=*.md x .');
 assert.ok(/Equals expansion/.test(reason) && /Glob in a flag value/.test(reason), 'reports every rule hit');

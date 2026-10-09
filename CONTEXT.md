@@ -175,8 +175,9 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   `$var,`, `${var}x`. The only shape a guard can call a silent non-split, since
   a glob or a path separator around the expansion decides the word count
   instead — see `docs/adr/0005-what-the-wordsplit-guard-flags.md`.
-- **Expansion trap** — a word zsh expands where bash would take it literally:
-  a leading `=` (equals expansion), a glob in a `--flag=value` word, parentheses
-  in a `${var/pattern/…}` pattern. The wordsplit guard's second rule set; its fix
-  is quoting or escaping, so it carries no opt-out — see
-  `docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md`.
+- **Expansion trap** — a form zsh expands differently from bash: a leading `=`
+  (equals expansion), a glob in a `--flag=value` word, parentheses in a
+  `${var/pattern/…}` pattern, bash's `${!…}`. The wordsplit guard's second rule
+  set; each deny names the zsh rewrite, so it carries no opt-out — see
+  `docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md` and
+  `docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md`.
