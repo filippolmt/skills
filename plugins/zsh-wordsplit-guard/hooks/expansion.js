@@ -18,9 +18,9 @@
 //
 // A fourth form is bash syntax zsh lacks:
 //
-//   4. `${!…}`. `${!t}`, `${!T*}`, `${!arr[@]}` and `${!1}` abort with `bad
-//      substitution` once the commands before them have run; `${!#}` gives `$!`
-//      instead of the last argument, no error.
+//   4. `${!…}`. `${!t}`, `${!T*}`, `${!arr[@]}`, `${!1}` and `${!@}` abort with
+//      `bad substitution` once the commands before them have run; `${!#}`
+//      gives `$!` instead of the last argument, no error.
 //
 // Scope and the missing opt-out: docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md,
 // docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md.
@@ -114,27 +114,41 @@ const RULES = [
     // bash's `${!…}`: indirection, name and key lists, last argument. `${!}`,
     // `${!-x}` and `${!:-x}` are `$!` in both shells.
     view: patterns,
-    regex: /\$\{!(?:\w|#\})/g,
+    regex: /\$\{!(?:[\w@*$]|#\})/g,
     reason(m) {
       const { end } = patternAt(patterns, m.index + 2, false);
-      const form = quote(m.index, end + 1 - m.index);
-      const inner = command.slice(m.index + 3, end);
+      // Unlike rule 3's pattern, the quoted form includes the closing `}`; an
+      // unterminated one stops at the first blank and is quoted closed.
+      const closed = patterns[end] === '}';
+      const inner = closed
+        ? command.slice(m.index + 3, end)
+        : /^[^\s}]*/.exec(command.slice(m.index + 3))[0];
+      const form = '${!' + inner + '}';
+      const trap = (what) => what + ': `' + form + '`. It is bash syntax: zsh ' +
+        'aborts with `bad substitution`. ';
       if (inner === '#') {
-        return 'Last argument as `${!#}`. zsh expands it to `$!`, the PID of ' +
-          'the last background job: a wrong result, no error. Write `${argv[-1]}`.';
+        return 'Last argument: `${!#}`. zsh expands it to `$!`, the PID of the ' +
+          'last background job: a wrong result, no error. Write `${argv[-1]}`.';
       }
-      // bash's own reading, then the zsh form for it.
+      if (/^[@*$]$/.test(inner)) {
+        return 'Not a parameter: `' + form + '`. zsh aborts with `bad ' +
+          'substitution`. Write `$!` for the PID of the last background job, ' +
+          (inner === '$' ? '`$$` for the PID of the shell.' : '`"$@"` for the arguments.');
+      }
       const keys = /^(\w+)\[[@*]\]$/.exec(inner);
+      if (keys) {
+        const name = keys[1];
+        return trap('Key list') + 'Write `"${(@k)' + name + '}"` for the keys of ' +
+          'an associative array, `$(seq $#' + name + ')` outside double quotes ' +
+          'for the indices of an array.';
+      }
       const prefix = /^(\w+)[@*]$/.exec(inner);
-      const [what, fix] = keys
-        ? ['Key list', 'Write `${(k)' + keys[1] + '}` for the keys of an associative ' +
-          'array, `{1..$#' + keys[1] + '}` for the indices of an array.']
-        : prefix
-          ? ['Name list', 'Write `${(k)parameters[(I)' + prefix[1] + '*]}`.']
-          // `(P)` takes the place of `!` and keeps any modifier: `${(P)t:-d}`.
-          : ['Indirect expansion', 'Write `${(P)' + form.slice(3) + '`.'];
-      return what + ': `' + form + '`. It is bash syntax: zsh aborts with ' +
-        '`bad substitution`. ' + fix;
+      if (prefix) {
+        // `(o)` sorts the names, as bash does.
+        return trap('Name list') + 'Write `${(ok)parameters[(I)' + prefix[1] + '*]}`.';
+      }
+      // `(P)` takes the place of `!` and keeps any modifier: `${(P)t:-d}`.
+      return trap('Indirect expansion') + 'Write `${(P)' + inner + '}`.';
     },
   },
 ];

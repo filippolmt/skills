@@ -61,6 +61,7 @@ denied('echo ${b%(z)}');
 denied('echo ${b#x(}');
 denied('echo ${x:/(a)/b}');               // whole-match form
 denied('echo ${x/${y}(a)/b}');            // a nested expansion before the group
+denied('cat <<EOF\n${b/(x)/y}\nEOF');      // an unquoted heredoc body expands
 
 allowed('echo ${b/\\(x\\)/y}');            // escaped
 allowed('echo ${b/(a|b)/Q}');             // alternation, on purpose
@@ -82,12 +83,25 @@ assert.ok(/`\$\{\(P\)t:-default\}`/.test(reason), 'the rewrite keeps the modifie
 reason = denied('set -- HOME; echo ${!1}');  // positional indirection
 assert.ok(/`\$\{\(P\)1\}`/.test(reason), 'positional rewrite');
 reason = denied('echo ${!T*}');
-assert.ok(/\$\{\(k\)parameters\[\(I\)T\*\]\}/.test(reason), 'names the parameters lookup');
+assert.ok(/^- Name list: /m.test(reason), 'labels the name list');
+assert.ok(/\$\{\(ok\)parameters\[\(I\)T\*\]\}/.test(reason), 'names the sorted parameters lookup');
 denied('echo "${!GIT_@}"');
 reason = denied('for k in "${!h[@]}"; do echo $k; done');
-assert.ok(/\$\{\(k\)h\}/.test(reason) && /\{1\.\.\$#h\}/.test(reason), 'names keys and indices');
+assert.ok(/^- Key list: /m.test(reason), 'labels the key list');
+assert.ok(/"\$\{\(@k\)h\}"/.test(reason), 'keys: a form that survives double quotes');
+assert.ok(/\$\(seq \$#h\)` outside double quotes/.test(reason), 'indices: empty-safe, unquoted');
 reason = denied('echo "${!#}"');
+assert.ok(/^- Last argument: `\$\{!#\}`\./m.test(reason), 'labelled like the other reasons');
 assert.ok(/\$\{argv\[-1\]\}/.test(reason) && /no error/.test(reason), 'last argument: silent');
+reason = denied('echo ${!@}');            // zsh aborts; bash rejects it too
+assert.ok(/"\$@"/.test(reason), 'names the arguments');
+denied('echo ${!*}');
+reason = denied('echo ${!$}');
+assert.ok(/`\$\$`/.test(reason), 'names the shell PID');
+reason = denied('echo ${!t');              // unterminated: the rewrite is closed
+assert.ok(/`\$\{!t\}`/.test(reason) && /Write `\$\{\(P\)t\}`\.$/.test(reason), 'quoted closed');
+denied('cat <<EOF\ntitle: ${!t}\nEOF');    // an unquoted heredoc body expands
+denied('cat <<-EOF\n\t${!t}\n\tEOF');
 
 allowed('sleep 1 & echo ${!} $!');        // `${!}` is `$!` in both shells
 allowed('echo ${!-none} ${!:-none}');
@@ -95,6 +109,11 @@ allowed('echo ${(P)t} ${#t} ${(k)h}');
 allowed("echo '${!t}'");                  // single quotes: not expanded
 allowed('echo \\${!t}');
 allowed("bash -c 'echo ${!t}'");
+allowed("cat <<'EOF'\n${!t}\nEOF");      // a quoted delimiter: literal body
+allowed('cat <<"EOF"\n${!t}\nEOF');
+allowed('cat <<\\EOF\n${!t}\nEOF');
+allowed('cat <<EOF\n\\${!t}\nEOF');       // escaped in the body
+allowed("cat <<EOF\nit's fine\nEOF");     // a quote in an expanding body is literal
 
 // --- several rules, heredoc, unrelated calls -----------------------------------
 reason = denied('echo ===== && grep --include=*.md x .');
