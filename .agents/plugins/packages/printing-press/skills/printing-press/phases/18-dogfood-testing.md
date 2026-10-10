@@ -109,6 +109,14 @@ rerun live dogfood. The runner writes `phase5-acceptance.json` on every outcome
 failure), so the [Phase 5.6](20-promote-and-archive.md) gate always has a marker to read. Do not hand-edit
 `phase5-acceptance.json`; it must come from the runner.
 
+When `hollow_features` lists a mutating novel command that only previews unless
+a confirm flag is passed, annotate it `pp:preview-happy-path` (see
+[Phase 3](11-build-the-goat.md)) and rerun without `--allow-destructive`; the
+runner runs that preview for real. When a failure is an endpoint input no
+portable fixture can satisfy (a continuation cursor, an account-specific path,
+a resource URL), declare it as `--flag=example-value` in `pp:happy-args` so the
+row lands as `blocked-fixture` instead of baking real account data into the CLI.
+
 **Quick check (auto-selected test subset):**
 1. `doctor` — auth valid, API reachable.
 2. 3-5 list commands — return data, not empty.
@@ -225,6 +233,23 @@ On `Gate: FAIL` the same path is written with `status: "fail"` and a
 For `level: "quick"`, `tests_failed` may be `1` only when the Quick Check
 threshold still passed (`matrix_size: 6`, `tests_passed >= 5`) and the miss was
 not auth or sync related. For `level: "full"`, `tests_failed` must be `0`.
+
+**Proof-backed coverage for state-dependent features.** A novel command
+annotated `pp:verified-by-proof` (see [Phase 3](11-build-the-goat.md)) is
+listed as `"proof_covered_features": [{"command": "<cmd>", "proof": "<file>.md"}]`
+instead of in `hollow_features` when its proof file sits in `$PROOFS_DIR` beside
+the acceptance marker. Write that proof before running `dogfood --live`. It
+must record:
+- every command run for the write lifecycle, verbatim, with its exit code
+  (the write that creates the state, the state-dependent command itself, and
+  any verification read);
+- the sandbox used (a disposable folder, test account, or scratch resource,
+  described generically, never real account data or PII);
+- the cleanup performed and its result.
+
+Use it only for features that need state a prior real write created. It is not
+a substitute for a runnable happy path, and the gate fails if a listed proof
+file is missing beside `phase5-acceptance.json`.
 
 If Phase 5 is legitimately skipped because the API requires API-key or bearer
 auth and no credential was available, write:

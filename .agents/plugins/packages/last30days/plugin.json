@@ -1,6 +1,6 @@
 {
   "name": "last30days",
-  "version": "3.27.1+catalog.b96afd539984.f61613757833",
+  "version": "3.27.2+catalog.267d50f7fcba.56e2eb79bb03",
   "description": "Research what people actually say about any topic in the last 30 days. Pulls posts and engagement from Reddit, X, YouTube, TikTok, Hacker News, Polymarket, GitHub, and the web. Includes a doctor health check to diagnose broken or missing sources.",
   "author": {
     "name": "Matt Van Horn",
