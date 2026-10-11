@@ -1,6 +1,6 @@
 {
   "name": "wrangler",
-  "version": "0.0.0+catalog.0871daceb347.f5dfa6de437b",
+  "version": "0.0.0+catalog.c430dd965cea.bf9795ab8d7b",
   "description": "Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets.",
   "author": {
     "name": "Cloudflare",
