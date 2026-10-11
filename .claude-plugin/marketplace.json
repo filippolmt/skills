@@ -941,7 +941,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/agents-sdk",
         "ref": "main",
-        "sha": "0871daceb347e3c51693fbe9c77555468df7e410"
+        "sha": "c430dd965cea3a8faf0ef035e3b3d73b38518081"
       },
       "description": "Build AI agents on Cloudflare Workers using the Agents SDK — stateful agents, durable workflows, WebSocket apps, scheduled tasks, MCP servers.",
       "author": {
@@ -956,7 +956,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/cloudflare-email-service",
         "ref": "main",
-        "sha": "0871daceb347e3c51693fbe9c77555468df7e410"
+        "sha": "c430dd965cea3a8faf0ef035e3b3d73b38518081"
       },
       "description": "Send and receive transactional emails with Cloudflare Email Service (Email Sending + Email Routing).",
       "author": {
@@ -971,7 +971,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/cloudflare-one-migrations",
         "ref": "main",
-        "sha": "0871daceb347e3c51693fbe9c77555468df7e410"
+        "sha": "c430dd965cea3a8faf0ef035e3b3d73b38518081"
       },
       "description": "Plan migrations from Zscaler ZIA/ZPA, Palo Alto, legacy VPN, SWG, or SASE stacks to Cloudflare One.",
       "author": {
@@ -986,7 +986,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/cloudflare-one",
         "ref": "main",
-        "sha": "0871daceb347e3c51693fbe9c77555468df7e410"
+        "sha": "c430dd965cea3a8faf0ef035e3b3d73b38518081"
       },
       "description": "Guides Cloudflare One Zero Trust and SASE work across Access, Gateway, WARP, Tunnel, WAN, DLP, CASB, device posture, and identity.",
       "author": {
@@ -1001,7 +1001,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/cloudflare",
         "ref": "main",
-        "sha": "0871daceb347e3c51693fbe9c77555468df7e410"
+        "sha": "c430dd965cea3a8faf0ef035e3b3d73b38518081"
       },
       "description": "Comprehensive Cloudflare platform skill: Workers, Pages, storage (KV, D1, R2), AI, networking, security, and infrastructure-as-code.",
       "author": {
@@ -1016,7 +1016,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/durable-objects",
         "ref": "main",
-        "sha": "0871daceb347e3c51693fbe9c77555468df7e410"
+        "sha": "c430dd965cea3a8faf0ef035e3b3d73b38518081"
       },
       "description": "Create and review Cloudflare Durable Objects — stateful coordination, RPC methods, SQLite storage, alarms, and WebSockets.",
       "author": {
@@ -1031,7 +1031,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/sandbox-migrate-to-next",
         "ref": "main",
-        "sha": "0871daceb347e3c51693fbe9c77555468df7e410"
+        "sha": "c430dd965cea3a8faf0ef035e3b3d73b38518081"
       },
       "description": "Migrate Cloudflare Sandbox apps from stable @cloudflare/sandbox to @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-next for apps already on the preview.",
       "author": {
@@ -1046,7 +1046,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/sandbox-next",
         "ref": "main",
-        "sha": "0871daceb347e3c51693fbe9c77555468df7e410"
+        "sha": "c430dd965cea3a8faf0ef035e3b3d73b38518081"
       },
       "description": "Build or maintain Cloudflare Sandbox apps on @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-migrate-to-next when porting a stable app.",
       "author": {
@@ -1061,7 +1061,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/sandbox-stable",
         "ref": "main",
-        "sha": "0871daceb347e3c51693fbe9c77555468df7e410"
+        "sha": "c430dd965cea3a8faf0ef035e3b3d73b38518081"
       },
       "description": "Build or maintain Cloudflare Sandbox apps on the stable @cloudflare/sandbox package. Use sandbox-next for preview apps and sandbox-migrate-to-next for stable-to-preview migrations.",
       "author": {
@@ -1076,7 +1076,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/turnstile-spin",
         "ref": "main",
-        "sha": "0871daceb347e3c51693fbe9c77555468df7e410"
+        "sha": "c430dd965cea3a8faf0ef035e3b3d73b38518081"
       },
       "description": "Set up Cloudflare Turnstile end-to-end — scan the codebase, create the widget, deploy the siteverify Worker, and write frontend snippets.",
       "author": {
@@ -1091,7 +1091,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/web-perf",
         "ref": "main",
-        "sha": "0871daceb347e3c51693fbe9c77555468df7e410"
+        "sha": "c430dd965cea3a8faf0ef035e3b3d73b38518081"
       },
       "description": "Analyze web performance via Chrome DevTools MCP — Core Web Vitals, render-blocking resources, layout shifts, and caching.",
       "author": {
@@ -1106,7 +1106,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/workers-best-practices",
         "ref": "main",
-        "sha": "0871daceb347e3c51693fbe9c77555468df7e410"
+        "sha": "c430dd965cea3a8faf0ef035e3b3d73b38518081"
       },
       "description": "Review and author Cloudflare Workers code against production best practices and common anti-patterns.",
       "author": {
@@ -1121,7 +1121,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/wrangler",
         "ref": "main",
-        "sha": "0871daceb347e3c51693fbe9c77555468df7e410"
+        "sha": "c430dd965cea3a8faf0ef035e3b3d73b38518081"
       },
       "description": "Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets.",
       "author": {
@@ -1136,7 +1136,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/nextjs-on-cloudflare",
         "ref": "main",
-        "sha": "0871daceb347e3c51693fbe9c77555468df7e410"
+        "sha": "c430dd965cea3a8faf0ef035e3b3d73b38518081"
       },
       "description": "Build, migrate, and deploy Next.js apps on Cloudflare Workers with vinext.",
       "author": {
