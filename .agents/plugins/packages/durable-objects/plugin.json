@@ -1,6 +1,6 @@
 {
   "name": "durable-objects",
-  "version": "0.0.0+catalog.0871daceb347.0ed8b016e705",
+  "version": "0.0.0+catalog.c430dd965cea.067f6da7342e",
   "description": "Create and review Cloudflare Durable Objects — stateful coordination, RPC methods, SQLite storage, alarms, and WebSockets.",
   "author": {
     "name": "Cloudflare",
