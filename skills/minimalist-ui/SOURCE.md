@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/Leonxlnx/taste-skill/tree/717446e07a78d4e6d7918b1fde1a263378eebac9/skills/minimalist-skill
-- **Commit**: `717446e07a78d4e6d7918b1fde1a263378eebac9`
+- **Upstream**: https://github.com/Leonxlnx/taste-skill/tree/d237dd399d57524945c0c81327da5da19f7a468d/skills/minimalist-skill
+- **Commit**: `d237dd399d57524945c0c81327da5da19f7a468d`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `minimalist-skill` in `.claude-plugin/marketplace.json`
