@@ -53,6 +53,7 @@ Source read and output write failures return exit 2 with an error diagnostic. Th
    - Unwrap CDATA sections in SVG stylesheet text before parsing rules, then strip CSS comments, so neither XML delimiters nor a comment becomes part of a selector. Keep CDATA content as raw text rather than XML-decoding it; the carried copy is XML-escaped below. The original embedded stylesheet stays in the SVG. CDATA-looking text in an HTML stylesheet remains literal, including inside SVG `foreignObject`, `desc`, or `title` elements. A nested `<svg>` inside HTML switches back to SVG stylesheet handling.
    - Re-scope `:root { … }` custom properties onto `#<slug>-root` so the figure keeps its own tokens.
    - Start selectors that begin at the `<svg>` element at the root instead: `svg .zone` becomes `#<slug>-root .zone` and `svg text` becomes `#<slug>-root text`. The exported root element is the `<svg>` itself, so `#<slug>-root svg .zone` would match nothing.
+   - Split selector lists only at top-level commas. Preserve quoted and escaped attribute values, function arguments, and meaningful whitespace while scoping.
    - Prefix every other kept selector with `#<slug>-root ` (e.g. `.station` → `#example-loop-root .station`).
    - **Drop** page chrome: `*`, `html`, `body`, `main`, `h1`/`h2`/`h3`, `p`, `.frame`, `.eyebrow`, `.summary`, `.card(s)`, `.footer`, `.header`, and the bare `svg { min-width: … }` layout rule. Only the bare `svg` selector is layout; `svg .zone` and `svg text` are diagram rules (see above). Those must not follow a fragment.
    - Carry `color` and `font-family` from the dropped `body` rule onto `#<slug>-root`. SVG content inherits both: `stroke="currentColor"` reads `color`, and text without its own font rule reads `font-family`.
@@ -404,3 +405,5 @@ If the target aspect ratio doesn't match the `viewBox` aspect ratio, say so and 
 - Adds export buttons or `<script>` tags. Static diagrams remain script-free; an already motion-enabled source may retain the scoped controller from [`animation.md`](animation.md), but export never injects another controller.
 - Auto-emits `.svg` or `.png` alongside HTML generation. Manual on every call.
 - Embeds an HTML wrapper (cards, headers) into the SVG via `foreignObject`. Too fragile across renderers.
+
+The exporter keeps optional defs in comments namespaced so they can be uncommented later. Only referenceable defs element types have their IDs renamed; live titles and other elements retain their IDs and accessibility references.
