@@ -1,5 +1,5 @@
 # Source
 
-- **Source**: https://github.com/cathrynlavery/diagram-design/tree/11b08eade8049c441ed3df1895e3b527c26c0fbe/commands/import-drawio.md
+- **Source**: https://github.com/cathrynlavery/diagram-design/tree/d97c5c7477e54cee17cfa6459190610da0643a05/commands/import-drawio.md
 - **Catalog entry**: `diagram-design`
 - **Transformation**: Converted command to a deterministic namespaced Agent Skill.
