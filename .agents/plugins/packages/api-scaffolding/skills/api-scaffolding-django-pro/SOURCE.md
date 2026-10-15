@@ -1,5 +1,5 @@
 # Source
 
-- **Source**: https://github.com/wshobson/agents/tree/46891e7e60da0e52baf1050b7b6391b64e84c6d9/agents/django-pro.md
+- **Source**: https://github.com/wshobson/agents/tree/044b4b21f083948e69ec878a7b07c8d0951a6ffa/agents/django-pro.md
 - **Catalog entry**: `api-scaffolding`
 - **Transformation**: Converted agent to a deterministic namespaced Agent Skill.
