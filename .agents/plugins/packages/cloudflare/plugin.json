@@ -1,6 +1,6 @@
 {
   "name": "cloudflare",
-  "version": "0.0.0+catalog.88dd7f479358.1dde1dfd9387",
+  "version": "0.0.0+catalog.be68fd8db614.a31e14277ad5",
   "description": "Comprehensive Cloudflare platform skill: Workers, Pages, storage (KV, D1, R2), AI, networking, security, and infrastructure-as-code.",
   "author": {
     "name": "Cloudflare",

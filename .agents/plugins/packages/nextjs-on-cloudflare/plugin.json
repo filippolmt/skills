@@ -1,6 +1,6 @@
 {
   "name": "nextjs-on-cloudflare",
-  "version": "0.0.0+catalog.88dd7f479358.990a0f20a28a",
+  "version": "0.0.0+catalog.be68fd8db614.2cefe1309e5c",
   "description": "Build, migrate, and deploy Next.js apps on Cloudflare Workers with vinext.",
   "author": {
     "name": "Cloudflare",
