@@ -1,6 +1,6 @@
 {
   "name": "workers-best-practices",
-  "version": "0.0.0+catalog.88dd7f479358.b35aa5c62af1",
+  "version": "0.0.0+catalog.be68fd8db614.6e5c87a506dd",
   "description": "Review and author Cloudflare Workers code against production best practices and common anti-patterns.",
   "author": {
     "name": "Cloudflare",
