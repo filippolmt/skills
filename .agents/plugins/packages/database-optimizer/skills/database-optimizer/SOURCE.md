@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/Jeffallan/claude-skills/tree/1be15d8064f88fc25216442406d40add8fd23b53/skills/database-optimizer
-- **Commit**: `1be15d8064f88fc25216442406d40add8fd23b53`
+- **Upstream**: https://github.com/Jeffallan/claude-skills/tree/6b0f7ffb816ea7f0e9e3ff01e544b95f7b9867a7/skills/database-optimizer
+- **Commit**: `6b0f7ffb816ea7f0e9e3ff01e544b95f7b9867a7`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `database-optimizer` in `.claude-plugin/marketplace.json`
