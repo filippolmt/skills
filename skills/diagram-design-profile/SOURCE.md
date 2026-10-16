@@ -1,5 +1,5 @@
 # Source
 
-- **Source**: https://github.com/cathrynlavery/diagram-design/tree/d97c5c7477e54cee17cfa6459190610da0643a05/commands/profile.md
+- **Source**: https://github.com/cathrynlavery/diagram-design/tree/b46c9701f035844a20b13ab0551315977188933b/commands/profile.md
 - **Catalog entry**: `diagram-design`
 - **Transformation**: Converted command to a deterministic namespaced Agent Skill.
