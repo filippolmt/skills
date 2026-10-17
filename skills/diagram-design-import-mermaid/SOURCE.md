@@ -1,5 +1,5 @@
 # Source
 
-- **Source**: https://github.com/cathrynlavery/diagram-design/tree/b46c9701f035844a20b13ab0551315977188933b/commands/import-mermaid.md
+- **Source**: https://github.com/cathrynlavery/diagram-design/tree/550fd66edff058bc73056c3416b76d69cfe865ba/commands/import-mermaid.md
 - **Catalog entry**: `diagram-design`
 - **Transformation**: Converted command to a deterministic namespaced Agent Skill.
