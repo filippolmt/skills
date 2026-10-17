@@ -59,7 +59,8 @@ const excluded = (dir, patterns) => patterns.some((p) =>
 
 const wholeSources = (sources) => [...sources].filter(([, { kind }]) => kind === 'whole').map(([repo]) => repo);
 const entryPath = (e) => e.source.path || '.';
-const within = (dir, root) => root === '.' || dir === root || dir.startsWith(`${root}/`);
+const entriesOf = (catalog, repo) => catalog.filter((e) => repoOf(e) === repo);
+const within = (dir, pluginRoot) => pluginRoot === '.' || dir === pluginRoot || dir.startsWith(`${pluginRoot}/`);
 
 // Pure: for each whole source, the upstream skill folders with neither an entry nor
 // an exclusion, and `path: null` for a whole source with no entry at all. A source
@@ -70,7 +71,7 @@ const within = (dir, root) => root === '.' || dir === root || dir.startsWith(`${
 function uncatalogued({ sources, exclusions, catalog, upstream }) {
   const missing = [];
   for (const repo of wholeSources(sources)) {
-    const entries = catalog.filter((e) => repoOf(e) === repo);
+    const entries = entriesOf(catalog, repo);
     if (entries.length === 0) {
       missing.push({ repo, path: null });
       continue;
@@ -80,7 +81,7 @@ function uncatalogued({ sources, exclusions, catalog, upstream }) {
     if (pluginRoots.length === entries.length) continue;
     const have = new Set(entries.map(entryPath));
     for (const dir of skills) {
-      if (have.has(dir) || pluginRoots.some((root) => within(dir, root))) continue;
+      if (have.has(dir) || pluginRoots.some((pluginRoot) => within(dir, pluginRoot))) continue;
       if (!isSkillOfRepo(dir, skills) || excluded(dir, exclusions.get(repo) || [])) continue;
       missing.push({ repo, path: dir });
     }
@@ -108,7 +109,9 @@ async function main() {
   for (const repo of wholeSources(sources)) {
     // Entries of one repo normally share a sha; if a bump left them apart, read each
     // and take the union, so nothing pinned by any entry goes unseen.
-    const shas = new Set(catalog.filter((e) => repoOf(e) === repo).map((e) => e.source.sha));
+    // shortcut: a skill deleted between the two shas is still reported until every
+    // entry reaches the newer one; per-entry trees if that ever proves noisy.
+    const shas = new Set(entriesOf(catalog, repo).map((e) => e.source.sha));
     const merged = { skills: [], plugins: new Set() };
     for (const sha of shas) {
       const { skills, plugins } = await upstreamTree(repo, sha);

@@ -52,8 +52,9 @@ Not every `SKILL.md` upstream is a skill of the repo. Copies of an already-found
 skill mirrored for another harness (`.openclaw/`, `.cursor/`, `.claude/skills` next
 to a canonical `skills/`, `cli/assets/`, `plugins/<name>/skills/` next to a
 canonical `skills/`) and fixtures (`testdata/`, `tests/`, `benchmarks/`) are
-ignored without being listed. For a whole-plugin entry the unit is the plugin, not
-the skills inside it.
+ignored without being listed. `scripts/check-whole-sources.js` keeps a copy of
+these rules as regexes; change both together. For a whole-plugin entry the unit
+is the plugin, not the skills inside it.
 
 The two tables below are maintained, not frozen: `/add-external-skill` classifies
 a new source repo here when it adds one, and a skill declined later is appended to

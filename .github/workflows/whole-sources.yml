@@ -37,8 +37,8 @@ jobs:
           node-version: 24
       - name: Report uncatalogued skills of whole sources
         env:
+          # Read by the script for the API and by gh for the issue.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           title='Whole sources ship uncatalogued skills'
@@ -48,8 +48,13 @@ jobs:
           report="$(node scripts/check-whole-sources.js)" || status=$?
           echo "$report"
           # 2 is a failure to look (API error, truncated tree): fail loudly, touch no issue.
+          # Node also exits 1 when the script cannot even load, so a 1 counts as a
+          # finding only when it printed one.
+          if [ "$status" -eq 1 ] && [[ "$report" != 'Whole sources ship skills'* ]]; then status=2; fi
           if [ "$status" -ne 0 ] && [ "$status" -ne 1 ]; then exit "$status"; fi
-          # Oldest first: that one is kept, any duplicate is closed in its favour.
+          # Oldest first: that one is kept, any duplicate is closed in its favour. Search
+          # can lag a just-created issue, so two close runs may open two; the next run
+          # closes the extra.
           open_issues="$(gh issue list --state open --search "in:title \"$title\"" --json number,title \
             --jq "[.[] | select(.title == \"$title\")] | sort_by(.number) | .[].number")"
           issues=()

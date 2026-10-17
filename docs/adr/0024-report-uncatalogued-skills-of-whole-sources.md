@@ -4,9 +4,9 @@ status: accepted
 
 # Report uncatalogued skills of whole sources in an issue
 
-ADR-0014 says a whole source has every upstream skill catalogued, unless it is a
+[ADR-0014](0014-each-source-repo-is-whole-or-curated.md) says a whole source has every upstream skill catalogued, unless it is a
 listed exclusion. Nothing enforced it. Renovate moves each entry's `sha`, and
-regeneration prunes a folder upstream deleted (ADR-0015), but a folder upstream
+regeneration prunes a folder upstream deleted ([ADR-0015](0015-an-upstream-removal-is-pruned-at-regeneration.md)), but a folder upstream
 added stays out until someone runs `/add-external-skill update`. On 2026-10-17 an
 audit found six: `basin`, `cf-cli`, `gateway-workers`, `k2` and
 `workers-profiling` in `cloudflare/skills`, and `taste-skill-v2-experimental` in
@@ -43,7 +43,7 @@ moved the series past it, which is when an entry could pin it.
   maintainer-only helper, a variant bound to a third-party library). Neither is
   a generator's call, and a self-merging PR would make it anyway.
 - **Fail `validate`.** Every Renovate PR that moves a whole source past a new
-  skill would turn red for a reason the PR did not cause — the coupling ADR-0010
+  skill would turn red for a reason the PR did not cause — the coupling [ADR-0010](0010-vendor-a-shared-skills-tree-on-main.md)
   rejects.
 - **Cover curated sources too.** By ADR-0014 a curated source reports new skills
   without adding them, but without a record of what was already declined the
