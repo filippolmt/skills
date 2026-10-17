@@ -50,6 +50,7 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `stitch-skill` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `taste-skill-v1` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `taste-skill` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `taste-skill-v2-experimental` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `printing-press` | `skill:SKILL.md` | `printing-press-polish`, `printing-press-output-review` | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `printing-press-polish` | `skill:SKILL.md` | `printing-press-output-review` | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `printing-press-score` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
@@ -93,6 +94,11 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `workers-best-practices` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `wrangler` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `nextjs-on-cloudflare` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `basin` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `cf-cli` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `gateway-workers` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `k2` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `workers-profiling` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `impeccable` | `agent:agents/impeccable-asset-producer.md` | — | Adapted — Uses Impeccable's upstream Codex-native TOML subagent. | Adapted — Converted to a deterministic namespaced skill. |
 | `impeccable` | `agent:agents/impeccable-documenter.md` | — | Adapted — Uses Impeccable's upstream Codex-native TOML subagent. | Adapted — Converted to a deterministic namespaced skill. |
 | `impeccable` | `agent:agents/impeccable-finish-reviewer.md` | — | Adapted — Uses Impeccable's upstream Codex-native TOML subagent. | Adapted — Converted to a deterministic namespaced skill. |

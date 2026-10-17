@@ -1,0 +1,11 @@
+{
+  "name": "basin",
+  "version": "0.0.0+catalog.86505e44f87d.a688db14b42f",
+  "description": "Build and troubleshoot Cloudflare Basin analytics workflows with Basin Pipelines, Basin Catalog, and Basin SQL.",
+  "author": {
+    "name": "Cloudflare",
+    "url": "https://github.com/cloudflare"
+  },
+  "repository": "https://github.com/cloudflare/skills",
+  "skills": "./skills/"
+}
