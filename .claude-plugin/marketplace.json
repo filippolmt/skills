@@ -620,6 +620,21 @@
       }
     },
     {
+      "name": "taste-skill-v2-experimental",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/Leonxlnx/taste-skill",
+        "path": "skills/taste-skill-v2-experimental",
+        "ref": "main",
+        "sha": "f624f37a8c650b9cc550253104925efe4c8de246"
+      },
+      "description": "Old v2 (experimental) of taste-skill, the single-file dial-driven version, preserved for projects depending on its exact behavior.",
+      "author": {
+        "name": "Leon Lin",
+        "url": "https://github.com/Leonxlnx"
+      }
+    },
+    {
       "name": "printing-press",
       "source": {
         "source": "git-subdir",
@@ -719,6 +734,51 @@
         "sha": "044b4b21f083948e69ec878a7b07c8d0951a6ffa"
       },
       "description": "Production-grade Bash scripting: bash-pro and posix-shell-pro agents plus the bash-defensive-patterns, bats-testing-patterns, and shellcheck-configuration skills.",
+      "author": {
+        "name": "Seth Hobson",
+        "url": "https://github.com/wshobson"
+      }
+    },
+    {
+      "name": "kubernetes-operations",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/wshobson/agents",
+        "path": "plugins/kubernetes-operations",
+        "ref": "main",
+        "sha": "044b4b21f083948e69ec878a7b07c8d0951a6ffa"
+      },
+      "description": "Kubernetes operations: kubernetes-architect agent plus the helm-chart-scaffolding, k8s-manifest-generator, k8s-security-policies, and gitops-workflow skills.",
+      "author": {
+        "name": "Seth Hobson",
+        "url": "https://github.com/wshobson"
+      }
+    },
+    {
+      "name": "developer-essentials",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/wshobson/agents",
+        "path": "plugins/developer-essentials",
+        "ref": "main",
+        "sha": "044b4b21f083948e69ec878a7b07c8d0951a6ffa"
+      },
+      "description": "Everyday engineering practice: monorepo-architect agent plus the auth-implementation-patterns, bazel-build-optimization, code-review-excellence, debugging-strategies, e2e-testing-patterns, error-handling-patterns, git-advanced-workflows, monorepo-management, nx-workspace-patterns, sql-optimization-patterns, and turborepo-caching skills.",
+      "author": {
+        "name": "Seth Hobson",
+        "url": "https://github.com/wshobson"
+      }
+    },
+    {
+      "name": "cicd-automation",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/wshobson/agents",
+        "path": "plugins/cicd-automation",
+        "ref": "main",
+        "sha": "044b4b21f083948e69ec878a7b07c8d0951a6ffa"
+      },
+      "description": "CI/CD pipelines: cloud-architect, deployment-engineer, devops-troubleshooter, kubernetes-architect, and terraform-specialist agents, the workflow-automate command, plus the deployment-pipeline-design, github-actions-templates, gitlab-ci-patterns, and secrets-management skills.",
       "author": {
         "name": "Seth Hobson",
         "url": "https://github.com/wshobson"
@@ -1139,6 +1199,81 @@
         "sha": "86505e44f87d801aa1864a3c4109e9a8ae5c409f"
       },
       "description": "Build, migrate, and deploy Next.js apps on Cloudflare Workers with vinext.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
+    },
+    {
+      "name": "basin",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/basin",
+        "ref": "main",
+        "sha": "86505e44f87d801aa1864a3c4109e9a8ae5c409f"
+      },
+      "description": "Build and troubleshoot Cloudflare Basin analytics workflows with Basin Pipelines, Basin Catalog, and Basin SQL.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
+    },
+    {
+      "name": "cf-cli",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/cf-cli",
+        "ref": "main",
+        "sha": "86505e44f87d801aa1864a3c4109e9a8ae5c409f"
+      },
+      "description": "Cloudflare's official cf CLI (beta) for the public Cloudflare API and Workers projects.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
+    },
+    {
+      "name": "gateway-workers",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/gateway-workers",
+        "ref": "main",
+        "sha": "86505e44f87d801aa1864a3c4109e9a8ae5c409f"
+      },
+      "description": "Build, debug, or review Cloudflare Workers invoked by the Forward action in Gateway HTTP policies, including the GatewayMiddleware entrypoint, Gateway types, context, and continuation.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
+    },
+    {
+      "name": "k2",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/k2",
+        "ref": "main",
+        "sha": "86505e44f87d801aa1864a3c4109e9a8ae5c409f"
+      },
+      "description": "Build and troubleshoot Cloudflare K2 or K2 Streams durable logs.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
+    },
+    {
+      "name": "workers-profiling",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/workers-profiling",
+        "ref": "main",
+        "sha": "86505e44f87d801aa1864a3c4109e9a8ae5c409f"
+      },
+      "description": "Profile or debug CPU usage and memory allocation in deployed Cloudflare Workers and Durable Objects.",
       "author": {
         "name": "Cloudflare",
         "url": "https://github.com/cloudflare"

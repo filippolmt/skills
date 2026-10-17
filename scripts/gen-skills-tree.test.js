@@ -272,6 +272,83 @@ test('shared inventory projects upstream, local, and converted skills together',
   }
 });
 
+test('converted skills repoint relative links at the sibling skill or upstream', () => {
+  const repo = fakeRepo({
+    LICENSE: 'MIT',
+    'external/skills/core/SKILL.md': skill('core-name'),
+    'external/skills/core/references/doc.md': '# Doc\n',
+    'external/skills/core/references/my doc.md': '# Spaced\n',
+    'external/skills/core/references/a#b.md': '# Hash\n',
+    'external/skills/stray/SKILL.md': skill('stray'),
+    'external/notes.md': '# Notes\n',
+    'external/commands/doctor.md': [
+      '---', 'description: Doctor.', '---',
+      'See [doc](../skills/core/references/doc.md#run), [notes](../notes.md), [gone](../missing.md),',
+      '[site](https://example.com), [titled](../notes.md "Notes"), [angled](<../skills/core/references/my doc.md>),',
+      '[encoded](../skills/core/references/my%20doc.md), [bad](50%) and [stray](../skills/stray/SKILL.md).',
+      '',
+      "[single](../notes.md 'Notes'), [paren](../notes.md (Notes)), [dir](../skills/core), [hash](../skills/core/references/a%23b.md),",
+      'and `[inline](../notes.md)`.',
+      '',
+      '[ref]: ../skills/core/references/doc.md',
+      '[angled-ref]: <../notes.md>',
+      '',
+      '```',
+      '[fenced](../notes.md)',
+      '```',
+      '',
+      '~~~md',
+      '[tilde](../notes.md)',
+      '```',
+      '[still-tilde](../notes.md)',
+      '~~~',
+      '',
+      '- item',
+      '  ```',
+      '  [indented](../notes.md)',
+      '  ```',
+      '',
+    ].join('\n'),
+  });
+  const dest = fs.mkdtempSync(path.join(os.tmpdir(), 'converted-links-'));
+  // `stray` has a SKILL.md upstream but is no artifact of the entry: no sibling ships it.
+  const inventory = [{
+    name: 'external', sourceRoot: path.join(repo, 'external'), repoRoot: repo, runtimeDependencies: [],
+    artifacts: [{ kind: 'skill', path: 'skills/core/SKILL.md' }, { kind: 'command', path: 'commands/doctor.md' }],
+  }];
+  const upstream = 'https://github.com/acme/skills/blob/abc123def456/external';
+  try {
+    buildFromInventory(dest, [entry('external', 'external')], inventory);
+    const text = fs.readFileSync(path.join(dest, 'external-doctor', 'SKILL.md'), 'utf8');
+    for (const expected of [
+      '[doc](../core-name/references/doc.md#run)',
+      `[notes](${upstream}/notes.md)`,
+      '[gone](../missing.md)',
+      '[site](https://example.com)',
+      `[titled](${upstream}/notes.md "Notes")`,
+      '[angled](<../core-name/references/my%20doc.md>)',
+      '[encoded](../core-name/references/my%20doc.md)',
+      '[bad](50%)',
+      `[stray](${upstream}/skills/stray/SKILL.md)`,
+      '[ref]: ../core-name/references/doc.md',
+      `[single](${upstream}/notes.md 'Notes')`,
+      `[paren](${upstream}/notes.md (Notes))`,
+      '[dir](../core-name/)',
+      '[hash](../core-name/references/a%23b.md)',
+      '`[inline](../notes.md)`',
+      `[angled-ref]: <${upstream}/notes.md>`,
+      '[fenced](../notes.md)',
+      '[tilde](../notes.md)',
+      '[still-tilde](../notes.md)',
+      '  [indented](../notes.md)',
+    ]) assert.ok(text.includes(expected), `missing ${expected} in:\n${text}`);
+    assert.match(fs.readFileSync(path.join(dest, 'external-doctor', 'SOURCE.md'), 'utf8'), /relative links repointed/);
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+    fs.rmSync(dest, { recursive: true, force: true });
+  }
+});
+
 test('build with a null dest resolves every path and copies nothing', () => {
   withBuild(
     { LICENSE: 'MIT', 'skills/tdd/SKILL.md': skill('tdd') },

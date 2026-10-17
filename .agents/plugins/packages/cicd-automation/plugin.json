@@ -1,0 +1,11 @@
+{
+  "name": "cicd-automation",
+  "version": "0.0.0+catalog.044b4b21f083.e4e8ad554c51",
+  "description": "CI/CD pipelines: cloud-architect, deployment-engineer, devops-troubleshooter, kubernetes-architect, and terraform-specialist agents, the workflow-automate command, plus the deployment-pipeline-design, github-actions-templates, gitlab-ci-patterns, and secrets-management skills.",
+  "author": {
+    "name": "Seth Hobson",
+    "url": "https://github.com/wshobson"
+  },
+  "repository": "https://github.com/wshobson/agents",
+  "skills": "./skills/"
+}
