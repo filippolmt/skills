@@ -1,6 +1,6 @@
 {
   "name": "playwright-expert",
-  "version": "0.4.19+catalog.6b0f7ffb816e.fc8b6566f2f7",
+  "version": "0.4.20+catalog.36f3fe8052da.9f2ad3442b19",
   "description": "Use when writing E2E tests with Playwright, setting up test infrastructure, or debugging flaky browser tests.",
   "author": {
     "name": "jeffallan",

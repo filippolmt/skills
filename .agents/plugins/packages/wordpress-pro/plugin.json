@@ -1,6 +1,6 @@
 {
   "name": "wordpress-pro",
-  "version": "0.4.19+catalog.6b0f7ffb816e.a50b38216fed",
+  "version": "0.4.20+catalog.36f3fe8052da.21a581be01a5",
   "description": "Develops custom WordPress themes and plugins, creates and registers Gutenberg blocks and block patterns, configures WooCommerce stores, implements WordPress REST API endpoints, applies security hardening, and optimizes performance through caching and query tuning.",
   "author": {
     "name": "jeffallan",

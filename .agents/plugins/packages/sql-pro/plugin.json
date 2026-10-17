@@ -1,6 +1,6 @@
 {
   "name": "sql-pro",
-  "version": "0.4.19+catalog.6b0f7ffb816e.d83e2990ed32",
+  "version": "0.4.20+catalog.36f3fe8052da.f402fc9bcb76",
   "description": "Optimizes SQL queries, designs database schemas, and troubleshoots performance issues.",
   "author": {
     "name": "jeffallan",

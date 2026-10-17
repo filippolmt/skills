@@ -1,6 +1,6 @@
 {
   "name": "fastapi-expert",
-  "version": "0.4.19+catalog.6b0f7ffb816e.393da2c47d15",
+  "version": "0.4.20+catalog.36f3fe8052da.675c009e89ce",
   "description": "Use when building high-performance async Python APIs with FastAPI and Pydantic V2.",
   "author": {
     "name": "jeffallan",
