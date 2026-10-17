@@ -52,7 +52,7 @@ const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 const { readCatalog, isLocal, isGitSubdir, isBundle, repoOf, root, MARKETPLACE } = require('./catalog.js');
 const { discoverArtifacts } = require('./distribution.js');
-const { addProvenance, convertedSkillName, copySelfContained, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
+const { addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
 
 const TREE = path.join(root, 'skills');
 const OVERLAYS = path.join(root, 'overlays');
@@ -63,20 +63,6 @@ const LICENCE_RE = /^(LICEN[SC]E|COPYING)(\..*)?$/i;
 
 // --- pure ------------------------------------------------------------------
 
-// The `name` and `description` of a SKILL.md, from its YAML frontmatter. Both
-// agents require both fields, so a skill missing either is not a skill we can
-// vendor. Deliberately not a YAML parser: the two lines we need are flat.
-function parseFrontmatter(text) {
-  const m = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
-  if (!m) return {};
-  const field = (k) => {
-    const f = new RegExp(`^${k}:[ \\t]*(.*)$`, 'm').exec(m[1]);
-    if (!f) return undefined;
-    const v = f[1].trim().replace(/^['"]|['"]$/g, '');
-    return v === '>' || v === '|' ? undefined : v;
-  };
-  return { name: field('name'), description: field('description') };
-}
 
 // Which entries need an upstream checkout: every git-subdir entry, always. Local
 // plugin artifacts are projected in a second pass; bundles remain filter snippets,
