@@ -383,12 +383,15 @@ Snapshot of the catalog — the source of truth is
 | `printing-press-output-review` | Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use. |
 | `printing-press-reprint` | Regenerate an existing printed CLI from scratch under the current Printing Press, carrying prior research, novel features, and patches into the new run. |
 
-### [wshobson/agents](https://github.com/wshobson/agents) — backend scaffolding
+### [wshobson/agents](https://github.com/wshobson/agents) — backend & platform engineering
 
 | Plugin | What it bundles |
 |---|---|
 | `api-scaffolding` | REST and GraphQL API scaffolding: backend-architect, fastapi-pro, django-pro, and graphql-architect agents plus the fastapi-templates skill. |
 | `shell-scripting` | Production-grade Bash scripting: bash-pro and posix-shell-pro agents plus the bash-defensive-patterns, bats-testing-patterns, and shellcheck-configuration skills. |
+| `kubernetes-operations` | Kubernetes operations: kubernetes-architect agent plus the helm-chart-scaffolding, k8s-manifest-generator, k8s-security-policies, and gitops-workflow skills. |
+| `developer-essentials` | Everyday engineering practice: monorepo-architect agent plus the auth-implementation-patterns, bazel-build-optimization, code-review-excellence, debugging-strategies, e2e-testing-patterns, error-handling-patterns, git-advanced-workflows, monorepo-management, nx-workspace-patterns, sql-optimization-patterns, and turborepo-caching skills. |
+| `cicd-automation` | CI/CD pipelines: cloud-architect, deployment-engineer, devops-troubleshooter, kubernetes-architect, and terraform-specialist agents, the workflow-automate command, plus the deployment-pipeline-design, github-actions-templates, gitlab-ci-patterns, and secrets-management skills. |
 
 ### [antfu/skills](https://github.com/antfu/skills) — Vue/Nuxt ecosystem
 
@@ -402,7 +405,7 @@ Snapshot of the catalog — the source of truth is
 |---|---|
 | `fastify-best-practices` | Guides development of Fastify Node.js backend servers and REST APIs using TypeScript or JavaScript. |
 
-### [Jeffallan/claude-skills](https://github.com/Jeffallan/claude-skills) — React
+### [Jeffallan/claude-skills](https://github.com/Jeffallan/claude-skills) — language & framework specialists
 
 | Skill | What it does |
 |---|---|
