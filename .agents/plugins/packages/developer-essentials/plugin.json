@@ -1,0 +1,11 @@
+{
+  "name": "developer-essentials",
+  "version": "0.0.0+catalog.044b4b21f083.d0a954d49f19",
+  "description": "Everyday engineering practice: monorepo-architect agent plus the auth-implementation-patterns, bazel-build-optimization, code-review-excellence, debugging-strategies, e2e-testing-patterns, error-handling-patterns, git-advanced-workflows, monorepo-management, nx-workspace-patterns, sql-optimization-patterns, and turborepo-caching skills.",
+  "author": {
+    "name": "Seth Hobson",
+    "url": "https://github.com/wshobson"
+  },
+  "repository": "https://github.com/wshobson/agents",
+  "skills": "./skills/"
+}
