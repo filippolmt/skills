@@ -124,9 +124,11 @@ partial Codex packages stay out of the marketplace.
      }
    }
    ```
-   The `description` says what the skill does: upstream's one-liner, or a
-   one-line summary written from the `SKILL.md` body when upstream's is empty or
-   unusable. For a **whole-plugin** entry, list its bundled artifacts (agents +
+   The `description` says what the skill does in one line: a summary of
+   upstream's description (its first sentence when that already reads well),
+   or of the `SKILL.md` body when upstream's is empty or unusable. Drop the
+   "Use when…" trigger clauses: they steer the harness, not the catalog reader.
+   For a **whole-plugin** entry, list its bundled artifacts (agents +
    skills), e.g. `"…: bash-pro and posix-shell-pro agents plus the
    bash-defensive-patterns, bats-testing-patterns, and shellcheck-configuration
    skills."`.
@@ -158,8 +160,10 @@ For each `git-subdir` source repo in `marketplace.json` (or the one named):
      tag-pinned entry moves `ref` and `sha` together to the latest tag, keeping
      its tag series; a branch-pinned entry takes that branch's HEAD. (Renovate
      also does this; harmless to set now.)
-   - Refresh each entry's `description` and `author` from upstream.
-     `marketplace.json` is the source of truth, so this is what consumers see.
+   - Refresh each entry's `author` from upstream, and its `description` only
+     when upstream's meaning changed — a reworded upstream sentence is no reason
+     to rewrite a summary. `marketplace.json` is the source of truth, so this is
+     what consumers see.
 3. **Regenerate the README**, then validate.
 
 Done when every `git-subdir` repo in scope is accounted for — reconciled, or
