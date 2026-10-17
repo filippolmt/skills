@@ -605,6 +605,42 @@
       "category": "Developer Tools"
     },
     {
+      "name": "kubernetes-operations",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/kubernetes-operations"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "developer-essentials",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/developer-essentials"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "cicd-automation",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/cicd-automation"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
       "name": "nuxt",
       "source": {
         "source": "local",

@@ -66,6 +66,33 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `shell-scripting` | `skill:skills/bash-defensive-patterns/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `shell-scripting` | `skill:skills/bats-testing-patterns/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `shell-scripting` | `skill:skills/shellcheck-configuration/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `kubernetes-operations` | `agent:agents/kubernetes-architect.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `kubernetes-operations` | `skill:skills/gitops-workflow/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `kubernetes-operations` | `skill:skills/helm-chart-scaffolding/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `kubernetes-operations` | `skill:skills/k8s-manifest-generator/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `kubernetes-operations` | `skill:skills/k8s-security-policies/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `developer-essentials` | `agent:agents/monorepo-architect.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `developer-essentials` | `skill:skills/auth-implementation-patterns/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `developer-essentials` | `skill:skills/bazel-build-optimization/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `developer-essentials` | `skill:skills/code-review-excellence/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `developer-essentials` | `skill:skills/debugging-strategies/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `developer-essentials` | `skill:skills/e2e-testing-patterns/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `developer-essentials` | `skill:skills/error-handling-patterns/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `developer-essentials` | `skill:skills/git-advanced-workflows/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `developer-essentials` | `skill:skills/monorepo-management/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `developer-essentials` | `skill:skills/nx-workspace-patterns/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `developer-essentials` | `skill:skills/sql-optimization-patterns/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `developer-essentials` | `skill:skills/turborepo-caching/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `cicd-automation` | `agent:agents/cloud-architect.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `cicd-automation` | `agent:agents/deployment-engineer.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `cicd-automation` | `agent:agents/devops-troubleshooter.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `cicd-automation` | `agent:agents/kubernetes-architect.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `cicd-automation` | `agent:agents/terraform-specialist.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `cicd-automation` | `command:commands/workflow-automate.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `cicd-automation` | `skill:skills/deployment-pipeline-design/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `cicd-automation` | `skill:skills/github-actions-templates/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `cicd-automation` | `skill:skills/gitlab-ci-patterns/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `cicd-automation` | `skill:skills/secrets-management/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `nuxt` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `fastify-best-practices` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `react-expert` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
