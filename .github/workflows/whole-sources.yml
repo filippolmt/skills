@@ -16,6 +16,7 @@ on:
       - .claude-plugin/marketplace.json
       - docs/adr/0014-each-source-repo-is-whole-or-curated.md
       - scripts/check-whole-sources.js
+      - scripts/catalog.js
   workflow_dispatch:
 
 permissions:
@@ -39,15 +40,24 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -uo pipefail
+          set -euo pipefail
           title='Whole sources ship uncatalogued skills'
-          report="$(node scripts/check-whole-sources.js)"
-          status=$?
+          # Actions runs bash with -e, so a bare `report="$(...)"` would end the step
+          # on exit 1 — the one status this job exists to act on.
+          status=0
+          report="$(node scripts/check-whole-sources.js)" || status=$?
           echo "$report"
           # 2 is a failure to look (API error, truncated tree): fail loudly, touch no issue.
           if [ "$status" -ne 0 ] && [ "$status" -ne 1 ]; then exit "$status"; fi
-          issue="$(gh issue list --state open --search "in:title \"$title\"" --json number,title \
-            --jq "[.[] | select(.title == \"$title\")][0].number // empty")"
+          # Oldest first: that one is kept, any duplicate is closed in its favour.
+          open_issues="$(gh issue list --state open --search "in:title \"$title\"" --json number,title \
+            --jq "[.[] | select(.title == \"$title\")] | sort_by(.number) | .[].number")"
+          issues=()
+          if [ -n "$open_issues" ]; then mapfile -t issues <<<"$open_issues"; fi
+          for dup in "${issues[@]:1}"; do
+            gh issue close "$dup" --reason 'not planned' --comment "Duplicate of #${issues[0]}." >/dev/null
+          done
+          issue="${issues[0]:-}"
           if [ "$status" -eq 1 ]; then
             body="$report"$'\n\n'"Found by \`.github/workflows/whole-sources.yml\` at the pinned \`sha\` of each entry (ADR-0024)."
             if [ -n "$issue" ]; then

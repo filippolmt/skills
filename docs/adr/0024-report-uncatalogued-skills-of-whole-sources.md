@@ -20,12 +20,17 @@ the real ADR, so a misplaced row fails it.
 
 ## Decision
 
-`scripts/check-whole-sources.js` lists, for every whole source that is not a
-whole-plugin entry, the upstream skill folders at the pinned `sha` with neither
-an entry nor an exclusion. Mirrors and fixtures are skipped by the rules ADR-0014
-gives. The `whole-sources` workflow runs it weekly and on every catalog or
-ADR-0014 change on `main`, and keeps **one** issue open with the list, closing it
-once the list is empty.
+`scripts/check-whole-sources.js` lists, for every whole source, the upstream
+skill folders at the pinned `sha` with neither an entry nor an exclusion, and
+names a whole source with no entry at all. Mirrors and fixtures are skipped by
+the rules ADR-0014 gives. A source whose entries are all whole-plugin entries is
+skipped, since there the unit is the plugin; whether an entry is one is read off
+upstream (a `.claude-plugin/plugin.json` at its `path`), not off the ADR's
+*Notes* column, which is prose and free to be reworded.
+
+The `whole-sources` workflow runs it weekly and on every catalog or ADR-0014
+change on `main`, and keeps **one** issue open with the list, closing it once the
+list is empty. It reports; it does not add (see below).
 
 It reads the pinned `sha`, not upstream HEAD: a skill shows up once Renovate has
 moved the series past it, which is when an entry could pin it.

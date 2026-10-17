@@ -30,7 +30,10 @@ function parseAdr(text) {
     const cells = line.startsWith('| `') ? line.split('|').slice(1, -1).map((c) => c.trim()) : null;
     if (!cells) continue;
     const repo = cells[0].replace(/`/g, '');
-    if (section === 'Source repos') sources.set(repo, { kind: cells[1], notes: cells[2] || '' });
+    if (section === 'Source repos') {
+      if (sources.has(repo)) throw new Error(`ADR-0014 lists ${repo} twice under Source repos`);
+      sources.set(repo, { kind: cells[1] });
+    }
     if (section === 'Catalog exclusions') {
       const list = exclusions.get(repo) || [];
       list.push(...[...cells[1].matchAll(/`([^`]+)`/g)].map((m) => m[1]));
@@ -41,7 +44,7 @@ function parseAdr(text) {
 }
 
 // Mirrors and fixtures are ADR-0014's "not every SKILL.md is a skill of the repo".
-const FIXTURE = /(^|\/)(testdata|tests?|benchmarks|fixtures)\//;
+const FIXTURE = /(^|\/)(testdata|tests|benchmarks)\//;
 const MIRROR = /(^|\/)(\.openclaw|\.cursor|cli\/assets)\//;
 function isSkillOfRepo(dir, all) {
   if (FIXTURE.test(dir + '/') || MIRROR.test(dir + '/')) return false;
@@ -54,43 +57,65 @@ const globToRegExp = (glob) => new RegExp(`^${glob.split('*').map((s) => s.repla
 const excluded = (dir, patterns) => patterns.some((p) =>
   p.includes('/') ? globToRegExp(p).test(dir) : path.posix.basename(dir) === p);
 
+const wholeSources = (sources) => [...sources].filter(([, { kind }]) => kind === 'whole').map(([repo]) => repo);
+const entryPath = (e) => e.source.path || '.';
+const within = (dir, root) => root === '.' || dir === root || dir.startsWith(`${root}/`);
+
 // Pure: for each whole source, the upstream skill folders with neither an entry nor
-// an exclusion. Whole-plugin sources are skipped — there the unit is the plugin.
+// an exclusion, and `path: null` for a whole source with no entry at all. A source
+// whose entries are all whole-plugin entries is skipped — there the unit is the
+// plugin — and a skill inside a whole-plugin entry's root counts as catalogued.
+// Whole-plugin is read off upstream (a `.claude-plugin/plugin.json` at the entry's
+// path), not off the ADR's prose.
 function uncatalogued({ sources, exclusions, catalog, upstream }) {
   const missing = [];
-  for (const [repo, { kind, notes }] of sources) {
-    if (kind !== 'whole' || /whole-plugin/.test(notes) || !upstream.has(repo)) continue;
-    const have = new Set(catalog.filter((e) => repoOf(e) === repo).map((e) => e.source.path || '.'));
-    const all = upstream.get(repo);
-    for (const dir of all) {
-      if (have.has(dir) || !isSkillOfRepo(dir, all) || excluded(dir, exclusions.get(repo) || [])) continue;
+  for (const repo of wholeSources(sources)) {
+    const entries = catalog.filter((e) => repoOf(e) === repo);
+    if (entries.length === 0) {
+      missing.push({ repo, path: null });
+      continue;
+    }
+    const { skills, plugins } = upstream.get(repo);
+    const pluginRoots = entries.map(entryPath).filter((p) => plugins.has(p));
+    if (pluginRoots.length === entries.length) continue;
+    const have = new Set(entries.map(entryPath));
+    for (const dir of skills) {
+      if (have.has(dir) || pluginRoots.some((root) => within(dir, root))) continue;
+      if (!isSkillOfRepo(dir, skills) || excluded(dir, exclusions.get(repo) || [])) continue;
       missing.push({ repo, path: dir });
     }
   }
   return missing;
 }
 
-async function skillDirs(repo, sha) {
+async function upstreamTree(repo, sha) {
   const headers = { Accept: 'application/vnd.github+json' };
   if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   const res = await fetch(`https://api.github.com/repos/${repo}/git/trees/${sha}?recursive=1`, { headers });
   if (!res.ok) throw new Error(`${repo}@${sha}: GitHub API ${res.status}`);
   const body = await res.json();
   if (body.truncated) throw new Error(`${repo}@${sha}: tree listing truncated, cannot tell what is missing`);
-  return body.tree
-    .filter((t) => t.type === 'blob' && /(^|\/)SKILL\.md$/.test(t.path))
-    .map((t) => path.posix.dirname(t.path));
+  const dirsOf = (file) => body.tree
+    .filter((t) => t.type === 'blob' && (t.path === file || t.path.endsWith(`/${file}`)))
+    .map((t) => t.path.slice(0, -file.length).replace(/\/$/, '') || '.');
+  return { skills: dirsOf('SKILL.md'), plugins: new Set(dirsOf('.claude-plugin/plugin.json')) };
 }
 
 async function main() {
   const { sources, exclusions } = parseAdr(fs.readFileSync(ADR, 'utf8'));
   const catalog = readCatalog().plugins.filter(isGitSubdir);
   const upstream = new Map();
-  for (const [repo, { kind, notes }] of sources) {
-    if (kind !== 'whole' || /whole-plugin/.test(notes)) continue;
-    const entry = catalog.find((e) => repoOf(e) === repo);
-    if (!entry) throw new Error(`ADR-0014 lists ${repo} as a whole source, but the catalog has no entry from it`);
-    upstream.set(repo, await skillDirs(repo, entry.source.sha));
+  for (const repo of wholeSources(sources)) {
+    // Entries of one repo normally share a sha; if a bump left them apart, read each
+    // and take the union, so nothing pinned by any entry goes unseen.
+    const shas = new Set(catalog.filter((e) => repoOf(e) === repo).map((e) => e.source.sha));
+    const merged = { skills: [], plugins: new Set() };
+    for (const sha of shas) {
+      const { skills, plugins } = await upstreamTree(repo, sha);
+      merged.skills = [...new Set([...merged.skills, ...skills])];
+      for (const p of plugins) merged.plugins.add(p);
+    }
+    upstream.set(repo, merged);
   }
   const missing = uncatalogued({ sources, exclusions, catalog, upstream });
   if (missing.length === 0) {
@@ -98,7 +123,11 @@ async function main() {
     return;
   }
   console.log('Whole sources ship skills with no catalog entry and no ADR-0014 exclusion:');
-  for (const m of missing) console.log(`- \`${m.repo}\`: \`${m.path}\``);
+  for (const m of missing) {
+    console.log(m.path === null
+      ? `- \`${m.repo}\`: no catalog entry at all — add one, or reclassify the repo in ADR-0014`
+      : `- \`${m.repo}\`: \`${m.path}\``);
+  }
   console.log('\nAdd them with `/add-external-skill update <owner/repo>`, or list them as exclusions in ADR-0014.');
   process.exitCode = 1;
 }
