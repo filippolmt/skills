@@ -77,8 +77,6 @@ the exclusions.
 | `mcollina/skills` | curated | |
 | `wshobson/agents` | curated | whole-plugin entries, picked per plugin |
 | `nextlevelbuilder/ui-ux-pro-max-skill` | curated | |
-| `mvanhorn/cli-printing-press` | `printing-press-publish`, `printing-press-amend`, `printing-press-import` | Bound to the third-party public library `mvanhorn/printing-press-library` |
-| `mvanhorn/cli-printing-press` | `printing-press-retro` | Files findings for the Press's maintainers |
 | `filippolmt/proximo` | curated | |
 | `tt-a1i/archify` | curated | |
 | `hashicorp/agent-skills` | curated | Only Terraform provider development; Terraform-usage and Packer skills not picked |
@@ -93,6 +91,8 @@ the exclusions.
 | `mattpocock/skills` | `resolving-merge-conflicts` | Upstream has scheduled its removal |
 | `mattpocock/skills` | `scaffold-exercises` | Tied to the author's course format |
 | `mattpocock/skills` | `wait-what` | Thin rephrasing prompt rather than a reusable workflow |
+| `mvanhorn/cli-printing-press` | `printing-press-publish`, `printing-press-amend`, `printing-press-import` | Bound to the third-party public library `mvanhorn/printing-press-library` |
+| `mvanhorn/cli-printing-press` | `printing-press-retro` | Files findings for the Press's maintainers |
 | `filippolmt/proximo` | `.claude/skills/*` | Skills for developing proximo, not for using it |
 | `tt-a1i/archify` | `archify-review` | For archify's maintainers: triages its issues and links its `REVIEWING.md` by relative path |
 | `hashicorp/agent-skills` | `azure-verified-modules`, `refactor-module`, `terraform-policy`, `terraform-search-import`, `terraform-stacks`, `terraform-style-guide`, `terraform-test` | For writing Terraform configuration, not providers; `terraform-skill` already covers that ground |

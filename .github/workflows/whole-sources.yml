@@ -1,0 +1,61 @@
+name: whole-sources
+
+# A whole source (ADR-0014) has every upstream skill catalogued, but nothing else
+# in the pipeline adds one: Renovate moves the `sha`, regeneration prunes what
+# upstream deleted, and a skill upstream ADDED waits for a human. This job finds
+# those skills and keeps ONE issue open listing them, closing it once they are
+# catalogued or excluded (ADR-0024). It opens an issue, not a PR: an entry needs a
+# description and sometimes an exclusion decision, which are not a generator's.
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  push:
+    branches: [main]
+    paths:
+      - .claude-plugin/marketplace.json
+      - docs/adr/0014-each-source-repo-is-whole-or-curated.md
+      - scripts/check-whole-sources.js
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: whole-sources
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Report uncatalogued skills of whole sources
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          title='Whole sources ship uncatalogued skills'
+          report="$(node scripts/check-whole-sources.js)"
+          status=$?
+          echo "$report"
+          # 2 is a failure to look (API error, truncated tree): fail loudly, touch no issue.
+          if [ "$status" -ne 0 ] && [ "$status" -ne 1 ]; then exit "$status"; fi
+          issue="$(gh issue list --state open --search "in:title \"$title\"" --json number,title \
+            --jq "[.[] | select(.title == \"$title\")][0].number // empty")"
+          if [ "$status" -eq 1 ]; then
+            body="$report"$'\n\n'"Found by \`.github/workflows/whole-sources.yml\` at the pinned \`sha\` of each entry (ADR-0024)."
+            if [ -n "$issue" ]; then
+              gh issue edit "$issue" --body "$body" >/dev/null
+            else
+              gh issue create --title "$title" --body "$body" >/dev/null
+            fi
+          elif [ -n "$issue" ]; then
+            gh issue close "$issue" --comment 'Every skill of the whole sources is now catalogued or excluded.' >/dev/null
+          fi
+        shell: bash
