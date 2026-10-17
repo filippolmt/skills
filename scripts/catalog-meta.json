@@ -4,7 +4,7 @@
     { "repo": "mattpocock/skills", "tagline": "engineering & productivity", "kind": "skill" },
     { "repo": "Leonxlnx/taste-skill", "tagline": "frontend design & image-gen", "kind": "skill" },
     { "repo": "mvanhorn/cli-printing-press", "tagline": "CLI generation", "kind": "skill" },
-    { "repo": "wshobson/agents", "tagline": "backend, shell, Kubernetes & CI/CD plugins", "kind": "plugin" },
+    { "repo": "wshobson/agents", "tagline": "backend & platform engineering", "kind": "plugin" },
     { "repo": "antfu/skills", "tagline": "Vue/Nuxt ecosystem", "kind": "skill" },
     { "repo": "mcollina/skills", "tagline": "Node.js backend", "kind": "skill" },
     { "repo": "Jeffallan/claude-skills", "tagline": "language & framework specialists", "kind": "skill" },

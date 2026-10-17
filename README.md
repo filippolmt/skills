@@ -382,7 +382,7 @@ Snapshot of the catalog — the source of truth is
 | `printing-press-output-review` | Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use. |
 | `printing-press-reprint` | Regenerate an existing printed CLI from scratch under the current Printing Press, carrying prior research, novel features, and patches into the new run. |
 
-### [wshobson/agents](https://github.com/wshobson/agents) — backend, shell, Kubernetes & CI/CD plugins
+### [wshobson/agents](https://github.com/wshobson/agents) — backend & platform engineering
 
 | Plugin | What it bundles |
 |---|---|
