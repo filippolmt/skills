@@ -4,7 +4,7 @@ description: "Redraw an Excalidraw board as an editorial diagram at a chosen for
 ---
 
 
-Redraw the Excalidraw scene at `$1` in this skill's design system, following [`skills/diagram-design/references/import-excalidraw.md`](../skills/diagram-design/references/import-excalidraw.md) and [`skills/diagram-design/references/output-spec.md`](../skills/diagram-design/references/output-spec.md). Treat those references as the source of truth — don't reimplement the logic here.
+Redraw the Excalidraw scene at `$1` in this skill's design system, following [`skills/diagram-design/references/import-excalidraw.md`](../diagram-design/references/import-excalidraw.md) and [`skills/diagram-design/references/output-spec.md`](../diagram-design/references/output-spec.md). Treat those references as the source of truth — don't reimplement the logic here.
 
 Full argument string: `$ARGUMENTS`
 
@@ -18,7 +18,7 @@ Accepts `.excalidraw` and `.excalidraw.json` scenes. PNG/SVG exports are rejecte
 - `--variant=light` — the minimal light template.
 - An Excalidraw file holds a single scene, so there is no page or diagram selector.
 - Type is chosen from the extracted structure; `--type` forces one of the visual
-  types in [`SKILL.md` §3](../skills/diagram-design/SKILL.md).
+  types in [`SKILL.md` §3](../diagram-design/SKILL.md).
 
 ## Flags
 

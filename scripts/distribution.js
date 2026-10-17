@@ -121,12 +121,12 @@ const derived = {
     pi: { disposition: 'native', detail: 'Published in the root skills tree.' },
   },
   command: {
-    codex: { disposition: 'adapted', detail: 'Converted to a deterministic namespaced skill.' },
-    pi: { disposition: 'adapted', detail: 'Converted to a deterministic namespaced skill.' },
+    codex: { disposition: 'adapted', detail: 'Converted to a deterministic namespaced skill, relative links repointed.' },
+    pi: { disposition: 'adapted', detail: 'Converted to a deterministic namespaced skill, relative links repointed.' },
   },
   agent: {
-    codex: { disposition: 'adapted', detail: 'Converted to a deterministic namespaced skill.' },
-    pi: { disposition: 'adapted', detail: 'Converted to a deterministic namespaced skill.' },
+    codex: { disposition: 'adapted', detail: 'Converted to a deterministic namespaced skill, relative links repointed.' },
+    pi: { disposition: 'adapted', detail: 'Converted to a deterministic namespaced skill, relative links repointed.' },
   },
   mcp: {
     codex: { disposition: 'native', detail: 'Preserved as package MCP configuration.' },
@@ -273,4 +273,4 @@ function renderParity(inventory) {
   ].join('\n');
 }
 
-module.exports = { discoverArtifacts, declaredDependencies, classify, validateDistribution, renderParity };
+module.exports = { discoverArtifacts, declaredDependencies, classify, validateDistribution, renderParity, posix };

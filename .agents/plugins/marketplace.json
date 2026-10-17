@@ -509,6 +509,18 @@
       "category": "Developer Tools"
     },
     {
+      "name": "taste-skill-v2-experimental",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/taste-skill-v2-experimental"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
       "name": "printing-press",
       "source": {
         "source": "local",
@@ -921,6 +933,66 @@
       "source": {
         "source": "local",
         "path": "./.agents/plugins/packages/nextjs-on-cloudflare"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "basin",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/basin"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "cf-cli",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/cf-cli"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "gateway-workers",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/gateway-workers"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "k2",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/k2"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "workers-profiling",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/workers-profiling"
       },
       "policy": {
         "installation": "AVAILABLE",

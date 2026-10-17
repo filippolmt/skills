@@ -371,6 +371,7 @@ Snapshot of the catalog — the source of truth is
 | `stitch-skill` | Semantic Design System Skill for Google Stitch. |
 | `taste-skill-v1` | The original v1 taste-skill, preserved for projects depending on its exact behavior. |
 | `taste-skill` | Anti-slop frontend skill for landing pages, portfolios, and redesigns. |
+| `taste-skill-v2-experimental` | Old v2 (experimental) of taste-skill, the single-file dial-driven version, preserved for projects depending on its exact behavior. |
 
 ### [mvanhorn/cli-printing-press](https://github.com/mvanhorn/cli-printing-press) — CLI generation
 
@@ -382,12 +383,15 @@ Snapshot of the catalog — the source of truth is
 | `printing-press-output-review` | Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use. |
 | `printing-press-reprint` | Regenerate an existing printed CLI from scratch under the current Printing Press, carrying prior research, novel features, and patches into the new run. |
 
-### [wshobson/agents](https://github.com/wshobson/agents) — backend scaffolding
+### [wshobson/agents](https://github.com/wshobson/agents) — backend & platform engineering
 
 | Plugin | What it bundles |
 |---|---|
 | `api-scaffolding` | REST and GraphQL API scaffolding: backend-architect, fastapi-pro, django-pro, and graphql-architect agents plus the fastapi-templates skill. |
 | `shell-scripting` | Production-grade Bash scripting: bash-pro and posix-shell-pro agents plus the bash-defensive-patterns, bats-testing-patterns, and shellcheck-configuration skills. |
+| `kubernetes-operations` | Kubernetes operations: kubernetes-architect agent plus the helm-chart-scaffolding, k8s-manifest-generator, k8s-security-policies, and gitops-workflow skills. |
+| `developer-essentials` | Everyday engineering practice: monorepo-architect agent plus the auth-implementation-patterns, bazel-build-optimization, code-review-excellence, debugging-strategies, e2e-testing-patterns, error-handling-patterns, git-advanced-workflows, monorepo-management, nx-workspace-patterns, sql-optimization-patterns, and turborepo-caching skills. |
+| `cicd-automation` | CI/CD pipelines: cloud-architect, deployment-engineer, devops-troubleshooter, kubernetes-architect, and terraform-specialist agents, the workflow-automate command, plus the deployment-pipeline-design, github-actions-templates, gitlab-ci-patterns, and secrets-management skills. |
 
 ### [antfu/skills](https://github.com/antfu/skills) — Vue/Nuxt ecosystem
 
@@ -401,7 +405,7 @@ Snapshot of the catalog — the source of truth is
 |---|---|
 | `fastify-best-practices` | Guides development of Fastify Node.js backend servers and REST APIs using TypeScript or JavaScript. |
 
-### [Jeffallan/claude-skills](https://github.com/Jeffallan/claude-skills) — React
+### [Jeffallan/claude-skills](https://github.com/Jeffallan/claude-skills) — language & framework specialists
 
 | Skill | What it does |
 |---|---|
@@ -460,6 +464,11 @@ Snapshot of the catalog — the source of truth is
 | `workers-best-practices` | Review and author Cloudflare Workers code against production best practices and common anti-patterns. |
 | `wrangler` | Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets. |
 | `nextjs-on-cloudflare` | Build, migrate, and deploy Next.js apps on Cloudflare Workers with vinext. |
+| `basin` | Build and troubleshoot Cloudflare Basin analytics workflows with Basin Pipelines, Basin Catalog, and Basin SQL. |
+| `cf-cli` | Cloudflare's official cf CLI (beta) for the public Cloudflare API and Workers projects. |
+| `gateway-workers` | Build, debug, or review Cloudflare Workers invoked by the Forward action in Gateway HTTP policies, including the GatewayMiddleware entrypoint, Gateway types, context, and continuation. |
+| `k2` | Build and troubleshoot Cloudflare K2 or K2 Streams durable logs. |
+| `workers-profiling` | Profile or debug CPU usage and memory allocation in deployed Cloudflare Workers and Durable Objects. |
 
 ### [pbakaus/impeccable](https://github.com/pbakaus/impeccable) — frontend design fluency
 

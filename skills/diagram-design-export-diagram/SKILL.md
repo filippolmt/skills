@@ -4,7 +4,7 @@ description: "Export a diagram-design HTML file to .svg and .png next to the sou
 ---
 
 
-Export the diagram HTML at `$1` to `.svg` and/or `.png`, following the procedure documented in [`skills/diagram-design/references/export.md`](../skills/diagram-design/references/export.md). Treat that reference as the source of truth — don't reimplement the logic here. Run the packaged `skills/diagram-design/scripts/export_svg.py` and `skills/diagram-design/scripts/export_png.py` helpers for the requested formats. If `--registry` is present, also follow [`skills/diagram-design/references/export-registry.md`](../skills/diagram-design/references/export-registry.md) to emit the metadata sidecar — a separate procedure from the SVG/PNG rasterization above.
+Export the diagram HTML at `$1` to `.svg` and/or `.png`, following the procedure documented in [`skills/diagram-design/references/export.md`](../diagram-design/references/export.md). Treat that reference as the source of truth — don't reimplement the logic here. Run the packaged `skills/diagram-design/scripts/export_svg.py` and `skills/diagram-design/scripts/export_png.py` helpers for the requested formats. If `--registry` is present, also follow [`skills/diagram-design/references/export-registry.md`](../diagram-design/references/export-registry.md) to emit the metadata sidecar — a separate procedure from the SVG/PNG rasterization above.
 
 Full argument string: `$ARGUMENTS`
 
@@ -20,7 +20,7 @@ Full argument string: `$ARGUMENTS`
 - `--png-only` — emit only the PNG.
 - `--scale=N` — override the PNG device scale factor with a finite number from `1` to `4`, including fractional values such as `1.25`. Default `2`.
 - `--output=<path>` — override the output base path; the format extension is appended. Applies to both formats when both are produced.
-- `--registry` — emit `<basename>.registry.json`, a metadata sidecar of every block's `data-block-*` attributes. Follows [`skills/diagram-design/references/export-registry.md`](../skills/diagram-design/references/export-registry.md), a procedure independent of the SVG/PNG rasterization above — it never needs Playwright. Used alone (see Defaults), it is the *only* output produced. Combine with `--svg-only` and/or `--png-only` to also produce an image in the same call.
+- `--registry` — emit `<basename>.registry.json`, a metadata sidecar of every block's `data-block-*` attributes. Follows [`skills/diagram-design/references/export-registry.md`](../diagram-design/references/export-registry.md), a procedure independent of the SVG/PNG rasterization above — it never needs Playwright. Used alone (see Defaults), it is the *only* output produced. Combine with `--svg-only` and/or `--png-only` to also produce an image in the same call.
 
 ## Required behaviour
 

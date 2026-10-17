@@ -4,7 +4,7 @@ description: "Save, load, inspect, update, reset, or delete diagram-design clien
 ---
 
 
-Manage Diagram Design client profiles by following [`skills/diagram-design/references/profiles.md`](../skills/diagram-design/references/profiles.md). Treat that reference as the source of truth for storage, strict slug validation, metadata, marker-first resolution, schema checks, and failure handling. Do not reimplement or relax its rules here.
+Manage Diagram Design client profiles by following [`skills/diagram-design/references/profiles.md`](../diagram-design/references/profiles.md). Treat that reference as the source of truth for storage, strict slug validation, metadata, marker-first resolution, schema checks, and failure handling. Do not reimplement or relax its rules here.
 
 Full argument string: `$ARGUMENTS`
 
