@@ -725,6 +725,51 @@
       }
     },
     {
+      "name": "kubernetes-operations",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/wshobson/agents",
+        "path": "plugins/kubernetes-operations",
+        "ref": "main",
+        "sha": "044b4b21f083948e69ec878a7b07c8d0951a6ffa"
+      },
+      "description": "Kubernetes operations: kubernetes-architect agent plus the helm-chart-scaffolding, k8s-manifest-generator, k8s-security-policies, and gitops-workflow skills.",
+      "author": {
+        "name": "Seth Hobson",
+        "url": "https://github.com/wshobson"
+      }
+    },
+    {
+      "name": "developer-essentials",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/wshobson/agents",
+        "path": "plugins/developer-essentials",
+        "ref": "main",
+        "sha": "044b4b21f083948e69ec878a7b07c8d0951a6ffa"
+      },
+      "description": "Everyday engineering practice: monorepo-architect agent plus the auth-implementation-patterns, bazel-build-optimization, code-review-excellence, debugging-strategies, e2e-testing-patterns, error-handling-patterns, git-advanced-workflows, monorepo-management, nx-workspace-patterns, sql-optimization-patterns, and turborepo-caching skills.",
+      "author": {
+        "name": "Seth Hobson",
+        "url": "https://github.com/wshobson"
+      }
+    },
+    {
+      "name": "cicd-automation",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/wshobson/agents",
+        "path": "plugins/cicd-automation",
+        "ref": "main",
+        "sha": "044b4b21f083948e69ec878a7b07c8d0951a6ffa"
+      },
+      "description": "CI/CD pipelines: cloud-architect, deployment-engineer, devops-troubleshooter, kubernetes-architect, and terraform-specialist agents, the workflow-automate command, plus the deployment-pipeline-design, github-actions-templates, gitlab-ci-patterns, and secrets-management skills.",
+      "author": {
+        "name": "Seth Hobson",
+        "url": "https://github.com/wshobson"
+      }
+    },
+    {
       "name": "nuxt",
       "source": {
         "source": "git-subdir",
