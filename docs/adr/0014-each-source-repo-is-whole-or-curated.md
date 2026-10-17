@@ -52,8 +52,9 @@ Not every `SKILL.md` upstream is a skill of the repo. Copies of an already-found
 skill mirrored for another harness (`.openclaw/`, `.cursor/`, `.claude/skills` next
 to a canonical `skills/`, `cli/assets/`, `plugins/<name>/skills/` next to a
 canonical `skills/`) and fixtures (`testdata/`, `tests/`, `benchmarks/`) are
-ignored without being listed. For a whole-plugin entry the unit is the plugin, not
-the skills inside it.
+ignored without being listed. `scripts/check-whole-sources.js` keeps a copy of
+these rules as regexes; change both together. For a whole-plugin entry the unit
+is the plugin, not the skills inside it.
 
 The two tables below are maintained, not frozen: `/add-external-skill` classifies
 a new source repo here when it adds one, and a skill declined later is appended to
@@ -77,8 +78,6 @@ the exclusions.
 | `mcollina/skills` | curated | |
 | `wshobson/agents` | curated | whole-plugin entries, picked per plugin |
 | `nextlevelbuilder/ui-ux-pro-max-skill` | curated | |
-| `mvanhorn/cli-printing-press` | `printing-press-publish`, `printing-press-amend`, `printing-press-import` | Bound to the third-party public library `mvanhorn/printing-press-library` |
-| `mvanhorn/cli-printing-press` | `printing-press-retro` | Files findings for the Press's maintainers |
 | `filippolmt/proximo` | curated | |
 | `tt-a1i/archify` | curated | |
 | `hashicorp/agent-skills` | curated | Only Terraform provider development; Terraform-usage and Packer skills not picked |
@@ -93,6 +92,8 @@ the exclusions.
 | `mattpocock/skills` | `resolving-merge-conflicts` | Upstream has scheduled its removal |
 | `mattpocock/skills` | `scaffold-exercises` | Tied to the author's course format |
 | `mattpocock/skills` | `wait-what` | Thin rephrasing prompt rather than a reusable workflow |
+| `mvanhorn/cli-printing-press` | `printing-press-publish`, `printing-press-amend`, `printing-press-import` | Bound to the third-party public library `mvanhorn/printing-press-library` |
+| `mvanhorn/cli-printing-press` | `printing-press-retro` | Files findings for the Press's maintainers |
 | `filippolmt/proximo` | `.claude/skills/*` | Skills for developing proximo, not for using it |
 | `tt-a1i/archify` | `archify-review` | For archify's maintainers: triages its issues and links its `REVIEWING.md` by relative path |
 | `hashicorp/agent-skills` | `azure-verified-modules`, `refactor-module`, `terraform-policy`, `terraform-search-import`, `terraform-stacks`, `terraform-style-guide`, `terraform-test` | For writing Terraform configuration, not providers; `terraform-skill` already covers that ground |
