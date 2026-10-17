@@ -277,23 +277,47 @@ test('converted skills repoint relative links at the sibling skill or upstream',
     LICENSE: 'MIT',
     'external/skills/core/SKILL.md': skill('core-name'),
     'external/skills/core/references/doc.md': '# Doc\n',
+    'external/skills/core/references/my doc.md': '# Spaced\n',
+    'external/skills/stray/SKILL.md': skill('stray'),
     'external/notes.md': '# Notes\n',
-    'external/commands/doctor.md': '---\ndescription: Doctor.\n---\nSee [doc](../skills/core/references/doc.md#run), ' +
-      '[notes](../notes.md), [gone](../missing.md) and [site](https://example.com).\n',
+    'external/commands/doctor.md': [
+      '---', 'description: Doctor.', '---',
+      'See [doc](../skills/core/references/doc.md#run), [notes](../notes.md), [gone](../missing.md),',
+      '[site](https://example.com), [titled](../notes.md "Notes"), [angled](<../skills/core/references/my doc.md>),',
+      '[encoded](../skills/core/references/my%20doc.md), [bad](50%) and [stray](../skills/stray/SKILL.md).',
+      '',
+      '[ref]: ../skills/core/references/doc.md',
+      '',
+      '```',
+      '[fenced](../notes.md)',
+      '```',
+      '',
+    ].join('\n'),
   });
   const dest = fs.mkdtempSync(path.join(os.tmpdir(), 'converted-links-'));
+  // `stray` has a SKILL.md upstream but is no artifact of the entry: no sibling ships it.
   const inventory = [{
     name: 'external', sourceRoot: path.join(repo, 'external'), repoRoot: repo, runtimeDependencies: [],
     artifacts: [{ kind: 'skill', path: 'skills/core/SKILL.md' }, { kind: 'command', path: 'commands/doctor.md' }],
   }];
+  const upstream = 'https://github.com/acme/skills/blob/abc123def456/external';
   try {
     buildFromInventory(dest, [entry('external', 'external')], inventory);
     const text = fs.readFileSync(path.join(dest, 'external-doctor', 'SKILL.md'), 'utf8');
-    assert.match(text, /\[doc\]\(\.\.\/core-name\/references\/doc\.md#run\)/);
-    assert.match(text, /\[notes\]\(https:\/\/github\.com\/acme\/skills\/blob\/abc123def456\/external\/notes\.md\)/);
-    assert.match(text, /\[gone\]\(\.\.\/missing\.md\)/);
-    assert.match(text, /\[site\]\(https:\/\/example\.com\)/);
-    assert.ok(fs.existsSync(path.join(dest, 'core-name', 'references', 'doc.md')));
+    for (const expected of [
+      '[doc](../core-name/references/doc.md#run)',
+      `[notes](${upstream}/notes.md)`,
+      '[gone](../missing.md)',
+      '[site](https://example.com)',
+      `[titled](${upstream}/notes.md "Notes")`,
+      '[angled](<../core-name/references/my%20doc.md>)',
+      '[encoded](../core-name/references/my%20doc.md)',
+      '[bad](50%)',
+      `[stray](${upstream}/skills/stray/SKILL.md)`,
+      '[ref]: ../core-name/references/doc.md',
+      '[fenced](../notes.md)',
+    ]) assert.ok(text.includes(expected), `missing ${expected} in:\n${text}`);
+    assert.match(fs.readFileSync(path.join(dest, 'external-doctor', 'SOURCE.md'), 'utf8'), /relative links repointed/);
   } finally {
     fs.rmSync(repo, { recursive: true, force: true });
     fs.rmSync(dest, { recursive: true, force: true });

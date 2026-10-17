@@ -324,7 +324,7 @@ function build(dest, plugins, deps = {}) {
     if (!licence) throw new Error(`entry ${entry.name}: ${repo} ships no licence — no licence, no right to redistribute`);
 
     const artifacts = discoverArtifacts(entry, abs);
-    const portableEntry = { name: entry.name, sourceRoot: abs, repoRoot: repoDir };
+    const portableEntry = { name: entry.name, sourceRoot: abs, repoRoot: repoDir, artifacts };
     const skills = artifacts.filter((item) => item.kind === 'skill');
     for (const skill of skills) {
       const skillDir = path.dirname(path.join(abs, skill.path));
@@ -366,8 +366,9 @@ function build(dest, plugins, deps = {}) {
 
   for (const entry of plugins.filter((item) => isLocal(item) && !isBundle(item))) {
     const sourceRoot = path.join(root, entry.source);
-    const portableEntry = { name: entry.name, sourceRoot, repoRoot: root };
-    for (const artifact of discoverArtifacts(entry, sourceRoot).filter((item) => ['skill', 'command', 'agent'].includes(item.kind))) {
+    const artifacts = discoverArtifacts(entry, sourceRoot);
+    const portableEntry = { name: entry.name, sourceRoot, repoRoot: root, artifacts };
+    for (const artifact of artifacts.filter((item) => ['skill', 'command', 'agent'].includes(item.kind))) {
       let name;
       if (artifact.kind === 'skill') {
         const source = path.dirname(path.join(sourceRoot, artifact.path));
