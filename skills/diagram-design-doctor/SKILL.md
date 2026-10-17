@@ -4,7 +4,7 @@ description: "Run one-shot environment diagnostics for Diagram Design readiness"
 ---
 
 
-Run environment diagnostics for Diagram Design by following [`skills/diagram-design/references/doctor.md`](../skills/diagram-design/references/doctor.md). Treat that reference as the source of truth and do not reimplement its logic here.
+Run environment diagnostics for Diagram Design by following [`skills/diagram-design/references/doctor.md`](../diagram-design/references/doctor.md). Treat that reference as the source of truth and do not reimplement its logic here.
 
 Full argument string: `$ARGUMENTS`
 

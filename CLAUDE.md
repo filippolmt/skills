@@ -89,6 +89,12 @@ bump), the README is regenerated, and the self-merging PR names it
 would change a non-bundle's behaviour or strip a bundle of the skill
 it is named after turns the run red instead.
 
+A skill upstream **added** is not catalogued by anything automatic. For a
+**whole** source (ADR-0014) the `whole-sources` workflow keeps one issue open
+listing it, until an entry or an exclusion closes it
+(`docs/adr/0024-report-uncatalogued-skills-of-whole-sources.md`). Run
+`node scripts/check-whole-sources.js` for the same list locally.
+
 ## Gotchas
 
 **The Renovate seam.** `renovate.json` matches the `git-subdir` entry shape with

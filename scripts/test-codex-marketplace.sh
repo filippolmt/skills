@@ -11,7 +11,7 @@ done
 repo="$(git rev-parse --show-toplevel)"
 local_home="$(mktemp -d "$repo/.codex-marketplace-test.XXXXXX")"
 git_home="$(mktemp -d "$repo/.codex-marketplace-git-test.XXXXXX")"
-cleanup() { rm -rf "$local_home" "$git_home"; }
+cleanup() { rm -rf "$local_home" "$git_home" "${upgrade_err:-}"; }
 trap cleanup EXIT
 
 export CODEX_HOME="$local_home"
@@ -45,8 +45,25 @@ codex plugin marketplace add filippolmt/skills --ref main --json |
   jq -e '.marketplaceName == "filippo-skills"' >/dev/null
 codex plugin add tdd@filippo-skills --json |
   jq -e '.pluginId == "tdd@filippo-skills"' >/dev/null
-codex plugin marketplace upgrade filippo-skills --json |
-  jq -e '.selectedMarketplaces == ["filippo-skills"] and (.upgradedRoots | length == 1) and (.errors | length == 0)' >/dev/null
+# Codex gives the upgrade's git clone a fixed 30s, which a slow link can miss (#438).
+# Only that timeout is retried, after a pause; any other failure fails at once.
+attempts=3
+upgrade_err="$(mktemp)"
+for attempt in $(seq "$attempts"); do
+  if upgrade="$(codex plugin marketplace upgrade filippo-skills --json 2>"$upgrade_err")" &&
+    jq -e '.selectedMarketplaces == ["filippo-skills"] and (.upgradedRoots | length == 1) and (.errors | length == 0)' >/dev/null <<<"$upgrade"; then
+    cat "$upgrade_err" >&2
+    break
+  fi
+  if [ "$attempt" -eq "$attempts" ] || ! grep -q 'timed out' - "$upgrade_err" <<<"$upgrade"; then
+    printf '%s\n' "$upgrade" >&2
+    cat "$upgrade_err" >&2
+    printf 'marketplace upgrade failed (attempt %s/%s)\n' "$attempt" "$attempts" >&2
+    exit 1
+  fi
+  printf 'marketplace upgrade timed out cloning, retrying (%s/%s)\n' "$attempt" "$attempts" >&2
+  sleep 5
+done
 codex plugin list --marketplace filippo-skills --json |
   jq -e '.installed[] | select(.pluginId == "tdd@filippo-skills" and .installed and .enabled)' >/dev/null
 codex plugin remove tdd@filippo-skills --json |
