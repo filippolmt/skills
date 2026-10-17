@@ -63,13 +63,32 @@ function addProvenance(entry, plugin, destination, sourcePath, transformation) {
 
 const convertedSkillName = (entry, artifact) => `${entry.name}-${path.basename(artifact.path, path.extname(artifact.path))}`;
 
+// A converted skill lands in skills/<name>/, not next to its source, so a relative link
+// upstream wrote from commands/ or agents/ no longer resolves. Point it at the sibling
+// skill that owns the target, or else at the file upstream.
+function rewriteRelativeLinks(body, sourceFile, entry, plugin) {
+  return body.replace(/(\]\()([^)\s#]+)(#[^)\s]*)?\)/g, (match, open, target, anchor = '') => {
+    if (/^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith('/')) return match;
+    const resolved = path.resolve(path.dirname(sourceFile), decodeURIComponent(target));
+    if (!fs.existsSync(resolved) || !resolved.startsWith(entry.sourceRoot + path.sep)) return match;
+    for (let dir = path.dirname(resolved); dir.startsWith(entry.sourceRoot + path.sep); dir = path.dirname(dir)) {
+      const skill = path.join(dir, 'SKILL.md');
+      if (!fs.existsSync(skill)) continue;
+      const name = /^name:[ \t]*([^\r\n]+)$/m.exec(fs.readFileSync(skill, 'utf8'))?.[1].trim().replace(/^['"]|['"]$/g, '');
+      if (name) return `${open}../${name}/${path.relative(dir, resolved).split(path.sep).join('/')}${anchor})`;
+    }
+    if (typeof plugin.source !== 'object') return match;
+    return `${open}${plugin.source.url}/blob/${plugin.source.sha}/${path.relative(entry.repoRoot, resolved).split(path.sep).join('/')}${anchor})`;
+  });
+}
+
 function writeConvertedSkill(entry, plugin, artifact, destination) {
   const source = path.join(entry.sourceRoot, artifact.path);
   const text = fs.readFileSync(source, 'utf8');
   const description = /^description:[ \t]*(.*)$/m.exec(text)?.[1].trim().replace(/^['"]|['"]$/g, '') ||
     `${artifact.kind === 'agent' ? 'Run' : 'Execute'} the ${path.basename(artifact.path, path.extname(artifact.path))} workflow from ${entry.name}.`;
   const name = convertedSkillName(entry, artifact);
-  const body = text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
+  const body = rewriteRelativeLinks(text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, ''), source, entry, plugin);
   fs.mkdirSync(destination, { recursive: true });
   fs.writeFileSync(path.join(destination, 'SKILL.md'), `---\nname: ${name}\ndescription: ${JSON.stringify(description)}\n---\n\n${body}`);
   addProvenance(entry, plugin, destination, artifact.path, `Converted ${artifact.kind} to a deterministic namespaced Agent Skill.`);

@@ -272,6 +272,34 @@ test('shared inventory projects upstream, local, and converted skills together',
   }
 });
 
+test('converted skills repoint relative links at the sibling skill or upstream', () => {
+  const repo = fakeRepo({
+    LICENSE: 'MIT',
+    'external/skills/core/SKILL.md': skill('core-name'),
+    'external/skills/core/references/doc.md': '# Doc\n',
+    'external/notes.md': '# Notes\n',
+    'external/commands/doctor.md': '---\ndescription: Doctor.\n---\nSee [doc](../skills/core/references/doc.md#run), ' +
+      '[notes](../notes.md), [gone](../missing.md) and [site](https://example.com).\n',
+  });
+  const dest = fs.mkdtempSync(path.join(os.tmpdir(), 'converted-links-'));
+  const inventory = [{
+    name: 'external', sourceRoot: path.join(repo, 'external'), repoRoot: repo, runtimeDependencies: [],
+    artifacts: [{ kind: 'skill', path: 'skills/core/SKILL.md' }, { kind: 'command', path: 'commands/doctor.md' }],
+  }];
+  try {
+    buildFromInventory(dest, [entry('external', 'external')], inventory);
+    const text = fs.readFileSync(path.join(dest, 'external-doctor', 'SKILL.md'), 'utf8');
+    assert.match(text, /\[doc\]\(\.\.\/core-name\/references\/doc\.md#run\)/);
+    assert.match(text, /\[notes\]\(https:\/\/github\.com\/acme\/skills\/blob\/abc123def456\/external\/notes\.md\)/);
+    assert.match(text, /\[gone\]\(\.\.\/missing\.md\)/);
+    assert.match(text, /\[site\]\(https:\/\/example\.com\)/);
+    assert.ok(fs.existsSync(path.join(dest, 'core-name', 'references', 'doc.md')));
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+    fs.rmSync(dest, { recursive: true, force: true });
+  }
+});
+
 test('build with a null dest resolves every path and copies nothing', () => {
   withBuild(
     { LICENSE: 'MIT', 'skills/tdd/SKILL.md': skill('tdd') },
