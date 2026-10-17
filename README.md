@@ -370,6 +370,7 @@ Snapshot of the catalog — the source of truth is
 | `soft-skill` | Teaches the AI to design like a high-end agency. |
 | `stitch-skill` | Semantic Design System Skill for Google Stitch. |
 | `taste-skill-v1` | The original v1 taste-skill, preserved for projects depending on its exact behavior. |
+| `taste-skill-v2-experimental` | The old experimental v2 of taste-skill (single-file, dial-driven), preserved for projects depending on its exact behavior. |
 | `taste-skill` | Anti-slop frontend skill for landing pages, portfolios, and redesigns. |
 
 ### [mvanhorn/cli-printing-press](https://github.com/mvanhorn/cli-printing-press) — CLI generation
@@ -460,6 +461,11 @@ Snapshot of the catalog — the source of truth is
 | `workers-best-practices` | Review and author Cloudflare Workers code against production best practices and common anti-patterns. |
 | `wrangler` | Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets. |
 | `nextjs-on-cloudflare` | Build, migrate, and deploy Next.js apps on Cloudflare Workers with vinext. |
+| `basin` | Build and troubleshoot Cloudflare Basin analytics workflows: Basin Pipelines, Basin Catalog, and Basin SQL over R2 Iceberg tables. |
+| `cf-cli` | Use the official Cloudflare cf CLI (beta) for the public Cloudflare API and Workers projects, and choose between cf and Wrangler. |
+| `gateway-workers` | Build, debug, or review Cloudflare Workers invoked by the Forward action in Gateway HTTP policies. |
+| `k2` | Build and troubleshoot Cloudflare K2 or K2 Streams durable logs. |
+| `workers-profiling` | Profile CPU usage and memory allocation in deployed Cloudflare Workers and Durable Objects, then optimize the code. |
 
 ### [pbakaus/impeccable](https://github.com/pbakaus/impeccable) — frontend design fluency
 
