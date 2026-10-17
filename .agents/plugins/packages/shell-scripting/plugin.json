@@ -1,6 +1,6 @@
 {
   "name": "shell-scripting",
-  "version": "0.0.0+catalog.044b4b21f083.0fa22632a4ac",
+  "version": "0.0.0+catalog.044b4b21f083.f420328ae1d4",
   "description": "Production-grade Bash scripting: bash-pro and posix-shell-pro agents plus the bash-defensive-patterns, bats-testing-patterns, and shellcheck-configuration skills.",
   "author": {
     "name": "Seth Hobson",
