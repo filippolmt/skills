@@ -65,7 +65,9 @@ their names. Reusable Claude commands and agent procedures become deterministic,
 namespaced skills such as `impeccable-polish` or
 `api-scaffolding-backend-architect`, with collisions rejected. Structural
 conversion is code; provider-specific content edits remain overlays that fail when
-they no longer apply. Converted portable skills enter both the root skills tree and
+they no longer apply. Moving a command or agent to `skills/<name>/` is structural, so
+its relative links move with it in code: to the sibling skill the entry ships, or
+else to the upstream file at the pinned `sha`. Converted portable skills enter both the root skills tree and
 the owning Codex package. Their licence and `SOURCE.md` identify the original
 artifact, path, transformation and catalog entry.
 
