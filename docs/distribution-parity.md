@@ -55,13 +55,13 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `printing-press-score` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `printing-press-output-review` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `printing-press-reprint` | `skill:SKILL.md` | `printing-press` | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
-| `api-scaffolding` | `agent:agents/backend-architect.md` | — | Adapted — Converted to a deterministic namespaced skill. | Adapted — Converted to a deterministic namespaced skill. |
-| `api-scaffolding` | `agent:agents/django-pro.md` | — | Adapted — Converted to a deterministic namespaced skill. | Adapted — Converted to a deterministic namespaced skill. |
-| `api-scaffolding` | `agent:agents/fastapi-pro.md` | — | Adapted — Converted to a deterministic namespaced skill. | Adapted — Converted to a deterministic namespaced skill. |
-| `api-scaffolding` | `agent:agents/graphql-architect.md` | — | Adapted — Converted to a deterministic namespaced skill. | Adapted — Converted to a deterministic namespaced skill. |
+| `api-scaffolding` | `agent:agents/backend-architect.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `api-scaffolding` | `agent:agents/django-pro.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `api-scaffolding` | `agent:agents/fastapi-pro.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `api-scaffolding` | `agent:agents/graphql-architect.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
 | `api-scaffolding` | `skill:skills/fastapi-templates/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
-| `shell-scripting` | `agent:agents/bash-pro.md` | — | Adapted — Converted to a deterministic namespaced skill. | Adapted — Converted to a deterministic namespaced skill. |
-| `shell-scripting` | `agent:agents/posix-shell-pro.md` | — | Adapted — Converted to a deterministic namespaced skill. | Adapted — Converted to a deterministic namespaced skill. |
+| `shell-scripting` | `agent:agents/bash-pro.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `shell-scripting` | `agent:agents/posix-shell-pro.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
 | `shell-scripting` | `skill:skills/bash-defensive-patterns/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `shell-scripting` | `skill:skills/bats-testing-patterns/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `shell-scripting` | `skill:skills/shellcheck-configuration/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
