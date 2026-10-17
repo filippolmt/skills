@@ -1,0 +1,11 @@
+{
+  "name": "k2",
+  "version": "0.0.0+catalog.86505e44f87d.ea24146035a6",
+  "description": "Build and troubleshoot Cloudflare K2 or K2 Streams durable logs.",
+  "author": {
+    "name": "Cloudflare",
+    "url": "https://github.com/cloudflare"
+  },
+  "repository": "https://github.com/cloudflare/skills",
+  "skills": "./skills/"
+}
