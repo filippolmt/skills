@@ -1,6 +1,6 @@
 {
   "name": "cli-developer",
-  "version": "0.4.19+catalog.6b0f7ffb816e.7c1723486a76",
+  "version": "0.4.20+catalog.36f3fe8052da.ec4df2fe6154",
   "description": "Use when building CLI tools, implementing argument parsing, or adding interactive prompts.",
   "author": {
     "name": "jeffallan",

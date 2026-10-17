@@ -1,6 +1,6 @@
 {
   "name": "code-documenter",
-  "version": "0.4.19+catalog.6b0f7ffb816e.243fbdc32122",
+  "version": "0.4.20+catalog.36f3fe8052da.ae8d20ce5adb",
   "description": "Generates, formats, and validates technical documentation — including docstrings, OpenAPI/Swagger specs, JSDoc annotations, doc portals, and user guides.",
   "author": {
     "name": "jeffallan",
