@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-// Differential check of every rewrite a deny message names. Run: node rewrites.test.js
-// Each case runs the denied bash form under bash and the named rewrite under
-// zsh, and wants the same output: the rewrite is the opt-out of the expansion
-// rules (ADR-0022), so a wrong one turns a loud failure into a silent wrong
-// result. Each case also asserts the hook still names that rewrite, so a changed
-// message fails here until its case changes with it. Double quotes and empty
+// Differential check of every rewrite a deny message names, and of every
+// rewrite the hook applies itself. Run: node rewrites.test.js
+// Each case runs the bash form under bash and the rewrite under zsh, and wants
+// the same output: the rewrite is the opt-out of the expansion rules
+// (ADR-0022), so a wrong one turns a loud failure into a silent wrong result.
+// A deny case also asserts the hook still names that rewrite, so a changed
+// message fails here until its case changes with it; an applied case runs the
+// hook's own output, so it cannot drift from it. Double quotes and empty
 // arrays get their own cases: they are where a rewrite that looks right goes
 // wrong (`"{1..$#h}"` stays literal).
 //
@@ -22,8 +24,9 @@ const { harness } = require('./testing');
 const hooks = { loop: harness('guard.js'), expansion: harness('expansion.js') };
 
 // `hook` and `named`: the script that denies `bash`, and a text its reason
-// carries. `sort`: compare lines sorted, where only the order is unspecified
-// (an associative array's keys). `invalid`: bash rejects the form too, so there
+// carries. `applied`: the hook rewrites `bash` itself, and that output is what
+// runs under zsh. `sort`: compare lines sorted, where only the order is
+// unspecified (an associative array's keys). `invalid`: bash rejects the form too, so there
 // is no output to match; the rewrite must still run under zsh.
 const CASES = [
   // --- for rule (guard.js) ---
@@ -33,11 +36,24 @@ const CASES = [
     bash: 'IFS=$\'\\n\'; for x in $v; do echo "<$x>"; done', zsh: 'for x in ${(f)v}; do echo "<$x>"; done' },
 
   // --- equals expansion ---
-  { hook: 'expansion', named: "'====='", bash: 'echo =====', zsh: "echo '====='" },
-  { hook: 'expansion', named: 'single `=`', bash: '[ a == a ] && echo same', zsh: '[ a = a ] && echo same' },
+  { hook: 'expansion', applied: true, bash: 'echo ===== =ls' },
+  { hook: 'expansion', applied: true, bash: '[ a == a ] && echo same; [ a == b ] || echo differ' },
+  { hook: 'expansion', applied: true, bash: 'echo "$(echo =ls)"' },
+  { hook: 'expansion', applied: true, setup: 'v="=ab"',
+    bash: 'case $v in =ab) echo match;; *) echo no;; esac; w==ab; echo "<$w>"' },
+  { hook: 'expansion', named: '\\=$x', setup: 'x=ls', bash: 'echo =$x', zsh: 'echo \\=$x' },
+  { hook: 'expansion', named: '\\=*', setup: 'v="=x"',
+    bash: 'case $v in =*) echo glob;; *) echo no;; esac', zsh: 'case $v in \\=*) echo glob;; *) echo no;; esac' },
+  { hook: 'expansion', named: "'=*'", bash: 'echo =*', zsh: "echo '=*'" },
 
   // --- glob in a flag value: `a.md` exists, so bash leaves no-match words alone ---
-  { hook: 'expansion', named: "--include='*.md'", bash: 'echo --include=*.md', zsh: "echo --include='*.md'" },
+  { hook: 'expansion', applied: true, bash: 'echo --include=*.md --format=[%h] --x=?' },
+  { hook: 'expansion', applied: true, bash: 'echo --x=*.md;echo ok' },
+  { hook: 'expansion', named: '--include=\\*.$e', setup: 'e=md',
+    bash: 'echo --include=*.$e', zsh: 'echo --include=\\*.$e' },
+  { hook: 'expansion', named: '--x=\\*.{md,txt}', bash: 'echo --x=*.{md,txt}', zsh: 'echo --x=\\*.{md,txt}' },
+  { hook: 'expansion', applied: true, bash: 'echo --x=~/*.md' },
+  { hook: 'expansion', named: '`pwd`\\*', bash: 'echo --x=`pwd`*', zsh: 'echo --x=`pwd`\\*' },
 
   // --- parentheses in a parameter pattern ---
   { hook: 'expansion', named: '`\\(`', setup: 'b="see (x, y)"',
@@ -101,14 +117,19 @@ const lines = (out, sort) => (sort ? out.split('\n').sort().join('\n') : out);
 try {
   const covered = new Set();
   for (const c of CASES) {
-    const reason = hooks[c.hook].denied(c.bash);
-    assert.ok(reason.includes(c.named), 'the deny for `' + c.bash + '` no longer names ' + c.named);
-    shapes(reason).forEach((shape) => covered.add(shape));
+    let zsh = c.zsh;
+    if (c.applied) {
+      zsh = hooks[c.hook].rewritten(c.bash);
+    } else {
+      const reason = hooks[c.hook].denied(c.bash);
+      assert.ok(reason.includes(c.named), 'the deny for `' + c.bash + '` no longer names ' + c.named);
+      shapes(reason).forEach((shape) => covered.add(shape));
+    }
     const setup = typeof c.setup === 'object' ? c.setup : { bash: c.setup, zsh: c.setup };
     const prefix = (s) => (s ? s + '\n' : '');
     const want = shell(['bash', '--norc', '--noprofile', '-c'], prefix(setup.bash) + c.bash, cwd);
-    const got = shell(['zsh', '-f', '-c'], prefix(setup.zsh) + c.zsh, cwd);
-    const label = '`' + c.bash + '` -> `' + c.zsh + '`';
+    const got = shell(['zsh', '-f', '-c'], prefix(setup.zsh) + zsh, cwd);
+    const label = '`' + c.bash + '` -> `' + zsh + '`';
     if (c.invalid) {
       assert.notStrictEqual(want.status, 0, 'bash accepts ' + label + ': drop `invalid`');
       assert.strictEqual(got.status, 0, 'zsh fails on ' + label + ': ' + got.stderr);
