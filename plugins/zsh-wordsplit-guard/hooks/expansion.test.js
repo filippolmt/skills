@@ -8,16 +8,22 @@ const { run, bash, denied, allowed, rewritten } = require('./testing').harness('
 const rewrites = (command, want) => assert.strictEqual(rewritten(command), want);
 
 // --- equals expansion ---------------------------------------------------------
-rewrites('echo =====', "echo '====='");
-rewrites('echo =ls', "echo '=ls'");          // silently prints /usr/bin/ls
-rewrites('echo foo =bar', "echo foo '=bar'");
-rewrites('[ "$a" == "$b" ] && echo same', `[ "$a" '==' "$b" ] && echo same`); // `==` is a word to `[`
-rewrites('test a == b', "test a '==' b");
-rewrites('echo ok; echo ==', "echo ok; echo '=='");
+rewrites('echo =====', 'echo \\=====');
+rewrites('echo =ls', 'echo \\=ls');           // silently prints /usr/bin/ls
+rewrites('echo foo =bar', 'echo foo \\=bar');
+rewrites('[ "$a" == "$b" ] && echo same', '[ "$a" \\== "$b" ] && echo same'); // `==` is a word to `[`
+rewrites('test a == b', 'test a \\== b');
+rewrites('echo ok; echo ==', 'echo ok; echo \\==');
+rewrites('case $v in =ab) echo y;; esac', 'case $v in \\=ab) echo y;; esac'); // patterns expand it too
+rewrites('v==ls; echo $v', 'v=\\=ls; echo $v'); // an assignment value expands
+rewrites('a=1 v==ls cmd', 'a=1 v=\\=ls cmd');
+rewrites('export v==ls', 'export v=\\=ls');
 let reason = denied('x=ls; echo =$x');      // an expansion: single quotes would kill it
-assert.ok(/Quote it: `"=\$x"`/.test(reason), 'names the double-quoted form');
+assert.ok(/Escape the `=`: `\\=\$x`/.test(reason), 'names the escaped form');
 assert.ok(/\$\{commands\[name\]\}/.test(reason), 'names the command-path form');
 assert.ok(!/run the command again/.test(reason), 'no closing line restating the rewrite');
+reason = denied('case $v in =*) echo y;; esac'); // a glob: `'=*'` would match only itself
+assert.ok(/`\\=\*`/.test(reason) && /`'=\*'`/.test(reason), 'names the pattern and the literal form');
 denied("echo =a'b'");                      // a quote glued on: not plain text
 
 allowed("echo '====='");
@@ -25,6 +31,7 @@ allowed('echo "====="');
 allowed('echo \\=====');
 allowed('X=1 cmd');
 allowed('echo a==b --x=y');
+allowed('echo v==ls');                     // an argument, not an assignment
 allowed('[[ $a == $b ]] && echo same');
 allowed('[[ $a == b && $c == d ]]');
 allowed('[ "$a" = "$b" ]');
@@ -41,12 +48,15 @@ rewrites('grep -r --exclude-dir=node_* x .', "grep -r --exclude-dir='node_*' x .
 rewrites('rg --glob=*.ts foo', "rg --glob='*.ts' foo");
 rewrites('git log --format=[%h] -1', "git log --format='[%h]' -1");
 rewrites('ls --x=?', "ls --x='?'");
+rewrites('echo --x=*.md;echo ok', "echo --x='*.md';echo ok"); // the value stops at an operator
 reason = denied('e=md; grep -rn --include=*.$e pattern .');
-assert.ok(/--include="\*\.\$e"/.test(reason), 'names the double-quoted flag');
+assert.ok(/--include=\\\*\.\$e`/.test(reason), 'names the escaped glob');
 assert.ok(/no matches found/.test(reason), 'names the failure');
-denied('echo --x=*.{md,txt}');             // bash brace-expands it into two words
-denied('echo --x=~/*.md');                 // bash expands `~` after `=`
+assert.ok(/`--x=\\\*\.\{md,txt\}`/.test(denied('echo --x=*.{md,txt}')), 'bash brace-expands it: escape, keep the braces');
+rewrites('echo --x=~/*.md', "echo --x='~/*.md'"); // neither shell expands `~` after `=` here
 denied('echo --x=*\\ y');                  // an escape glued on
+denied('echo --x=`pwd`*');                  // a backtick substitution in the value
+allowed('case $v in --x=* | y) echo;; esac'); // a `case` pattern generates no file names
 
 allowed("grep -rn --include='*.md' pattern .");
 allowed('grep -rn --include="*.md" pattern .');
@@ -67,7 +77,7 @@ denied('echo ${b#x(}');
 denied('echo ${x:/(a)/b}');               // whole-match form
 denied('echo ${x/${y}(a)/b}');            // a nested expansion before the group
 denied('cat <<EOF\n${b/(x)/y}\nEOF');      // an unquoted heredoc body expands
-rewrites('cat <<EOF\nnow $(echo =ls)\nEOF', "cat <<EOF\nnow $(echo '=ls')\nEOF"); // a substitution in the body is zsh
+rewrites('cat <<EOF\nnow $(echo =ls)\nEOF', 'cat <<EOF\nnow $(echo \\=ls)\nEOF'); // a substitution in the body is zsh
 rewrites('cat <<EOF\n`grep --include=*.md x .`\nEOF', "cat <<EOF\n`grep --include='*.md' x .`\nEOF");
 allowed("cat <<'EOF'\n$(echo =ls)\nEOF");   // a quoted delimiter: literal body
 allowed('cat <<EOF\n"=ls" --include=*.md\nEOF'); // body text is not a word
@@ -127,16 +137,16 @@ allowed("cat <<EOF\nit's fine\nEOF");     // a quote in an expanding body is lit
 
 // --- several rules, heredoc, unrelated calls -----------------------------------
 rewrites('echo ===== && grep --include=*.md x . && echo =ls',
-  "echo '=====' && grep --include='*.md' x . && echo '=ls'"); // every hit of every rule
+  "echo \\===== && grep --include='*.md' x . && echo \\=ls"); // every hit of every rule
 reason = denied('echo ===== && grep --include=*.$e x . && echo ${!t}');
 assert.ok(/Glob in a flag value/.test(reason) && /Indirect expansion/.test(reason), 'reports every rule hit');
 assert.ok(!/Equals expansion/.test(reason), 'a rewritable hit is not a deny reason');
 
 allowed('cat <<EOF\necho =====\ngrep --include=*.md x .\nEOF');
-rewrites('cat <<EOF\nx\nEOF\necho =ls', "cat <<EOF\nx\nEOF\necho '=ls'"); // zsh again after the terminator
-rewrites('echo "$(echo =ls)"', `echo "$(echo '=ls')"`); // a substitution inside quotes is zsh
-rewrites('echo =====\ncat <<EOF\ntext\nEOF', "echo '====='\ncat <<EOF\ntext\nEOF");
-rewrites('echo ===== <<<"seed"', `echo '=====' <<<"seed"`);
+rewrites('cat <<EOF\nx\nEOF\necho =ls', 'cat <<EOF\nx\nEOF\necho \\=ls'); // zsh again after the terminator
+rewrites('echo "$(echo =ls)"', 'echo "$(echo \\=ls)"'); // a substitution inside quotes is zsh
+rewrites('echo =====\ncat <<EOF\ntext\nEOF', 'echo \\=====\ncat <<EOF\ntext\nEOF');
+rewrites('echo ===== <<<"seed"', 'echo \\===== <<<"seed"');
 
 assert.strictEqual(run({ hook_event_name: 'PreToolUse', tool_name: 'Agent', tool_input: {} }), null,
   'another tool is not this hook business');

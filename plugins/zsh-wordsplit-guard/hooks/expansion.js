@@ -8,10 +8,13 @@
 //
 //   1. Equals expansion. An unquoted word starting with `=` expands to the path
 //      of the command it names: `echo =ls` prints `/usr/bin/ls`, `echo =====`
-//      fails with `==== not found`, and so does `[ a == b ]`.
+//      fails with `==== not found`, and so does `[ a == b ]`. The same holds in
+//      a `case` pattern and for an assignment value (`v==ls`), not for an
+//      argument with `=` inside (`echo v==ls`).
 //   2. A glob in a `--flag=value` word. The pattern is the whole word, so
 //      `--include=*.md` matches no file even when `a.md` exists, and `nomatch`
-//      aborts the command: `no matches found: --include=*.md`.
+//      aborts the command: `no matches found: --include=*.md`. A `case`
+//      pattern generates no file names, so `--x=*)` there is no trap.
 //   3. Parentheses in a `${v/pat/repl}` pattern. They are a glob group in zsh and
 //      literal in bash, so `${b/(x, y)/X}` on "see (x, y)" gives "see (X)": a
 //      wrong result, no error.
@@ -22,10 +25,10 @@
 //      `bad substitution` once the commands before them have run; `${!#}`
 //      gives `$!` instead of the last argument, no error.
 //
-// Rules 1 and 2 rewrite instead of denying when the word is plain literal text:
-// quoting it is then exactly bash's reading, so the call runs with no round
-// trip. A word holding an expansion, a quote or anything outside LITERAL is
-// still denied.
+// Rules 1 and 2 rewrite instead of denying when the word is plain literal text,
+// so the call runs with no round trip: the rewrite gives bash's reading of it
+// whenever bash's own glob matches no file. A word holding an expansion, a
+// quote or anything outside LITERAL is still denied.
 //
 // Scope and the missing opt-out: docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md,
 // docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md; the rewrite:
@@ -43,21 +46,46 @@ const { words: masked, patterns } = maskedViews(command);
 const words = masked
   .replace(/\[\[[\s\S]*?\]\]/g, blankRun)
   .replace(/\(\((?:[^()]|\([^()]*\))*\)\)/g, blankRun);
+// `case` patterns, blanked for rule 2: zsh generates no file names there.
+// shortcut: a pattern holding `(` or `;` stays visible, so a glob flag in it
+// is still denied; widen the regex if one shows up.
+const flagWords = words.replace(/(\bcase\s+\S+\s+in\b|;;|;&|;\|)(\s*\(?)([^()\n;]*)\)/g,
+  (m, lead, open, pattern) => lead + open + blankRun(pattern) + ')');
 // Rules match on a masked view; messages quote the command itself.
-const quote = (start, length) => command.slice(start, start + length);
+const original = (start, length) => command.slice(start, start + length);
 // Text bash takes literally whether quoted or not. Left out: `$` and backticks
-// (expansions), quotes and `\\`, `{` (bash brace-expands `*.{md,txt}` into two
-// words), `~` (bash expands it after `=`), and `!`, `^`, `#`.
-const LITERAL = /^[\w.*?[\]\/,:@%+=-]+$/;
-// A single-quoted copy of the text at `start`, or null unless it is LITERAL and
-// fully visible in the masked view (nothing quoted or escaped glued inside).
-function quoted(start, length) {
-  const text = quote(start, length);
+// (expansions), quotes and `\`, `{` (bash brace-expands `*.{md,txt}` into two
+// words), and `!`, `^`, `#`. `~` is in: after `=` in an argument neither
+// shell expands it.
+const LITERAL = /^[\w.*?[\]\/,:@%+=~-]+$/;
+// The edit putting `to` in place of the text at `start`, or null unless that
+// text is LITERAL and fully visible in the masked view (nothing quoted or
+// escaped glued inside).
+function literalEdit(start, length, to) {
+  const text = original(start, length);
   if (text !== words.slice(start, start + length) || !LITERAL.test(text)) return null;
-  return { start: start, length: length, from: text, to: "'" + text + "'" };
+  return { start: start, length: length, from: text, to: to(text) };
 }
-// The quoting a deny names: double quotes keep an expansion working.
-const quoteHint = (text) => (/\$/.test(text) ? '"' + text + '"' : "'" + text + "'");
+// `${…}`, `$name[…]`, `$(…)` and backticks hold subscripts, modifiers and
+// commands, not globs of the flag value.
+const NOT_VALUE = /\$\{[^}]*\}|\$[A-Za-z_]\w*\[[^\]]*\]|\$\([^()]*\)|`[^`]*`/g;
+// The value with each glob character zsh would match escaped: that keeps any
+// expansion, quote or brace around it working, as the deny's hint.
+function escapeGlobs(start, length) {
+  const view = flagWords.slice(start, start + length).replace(NOT_VALUE, blankRun);
+  let out = '';
+  for (let i = 0; i < length; i++) out += (/[*?[]/.test(view[i]) ? '\\' : '') + command[start + i];
+  return out;
+}
+// Whether the word at `at` is an assignment, where zsh expands a value starting
+// with `=`: it follows only other assignments in its command, or is an argument
+// of a declaration builtin.
+function isAssignment(at) {
+  const before = words.slice(0, at).split(/[;&|(`\n]/).pop().trim().split(/\s+/)
+    .filter((w) => w && !/^(?:\{|!|then|do|else|time)$/.test(w));
+  return before.every((w) => /^[A-Za-z_]\w*=/.test(w)) ||
+    /^(?:export|typeset|local|declare|readonly|integer|float)$/.test(before[0]);
+}
 
 // What a parameter pattern holds, from `from` up to the `/` that starts the
 // replacement (`stopAtSlash`) or the `}` that closes the expansion. Nested
@@ -79,35 +107,44 @@ function patternAt(text, from, stopAtSlash) {
 // Each rule scans one view and turns a match into a reason, or null to pass it.
 const RULES = [
   {
-    // `--name=value` in word position.
-    view: words,
-    regex: /(^|[\s;&|(`])(--[A-Za-z0-9][\w-]*=)(\S*)/g,
-    reason(m) {
-      // `${…}` and `$name[…]` hold subscripts and modifiers, not globs.
-      if (!/[*?[]/.test(m[3].replace(/\$\{[^}]*\}|\$[A-Za-z_]\w*\[[^\]]*\]/g, ''))) return null;
-      const value = quote(m.index + m[1].length + m[2].length, m[3].length);
+    // `--name=value` in word position, the value up to an operator or a
+    // parenthesis that is not part of a `$(…)` or backtick substitution in it.
+    view: flagWords,
+    regex: /(^|[\s;&|(`])(--[A-Za-z0-9][\w-]*=)((?:\$\([^()]*\)|`[^`]*`|[^\s;&|<>()`])*)/g,
+    span: (m) => [m.index + m[1].length + m[2].length, m[3].length],
+    reason(m, start, length) {
+      const value = original(start, length);
+      const escaped = escapeGlobs(start, length);
+      if (escaped === value) return null;
       return 'Glob in a flag value: `' + m[2] + value + '`. zsh matches the WHOLE ' +
         'word against file names, finds none, and aborts with `no matches ' +
-        'found`. Quote the value: `' + m[2] + quoteHint(value) + '`.';
+        'found`. Escape the glob: `' + m[2] + escaped + '`.';
     },
-    rewrite: (m) => quoted(m.index + m[1].length + m[2].length, m[3].length),
+    rewrite: (m, start, length) => literalEdit(start, length, (text) => "'" + text + "'"),
   },
   {
-    // A word starting with `=` and something after it, up to the `)` that may
-    // close a `$(…)` around it. `=(cmd)` is zsh process substitution, written on
-    // purpose: it matches as a lone `=`.
+    // A word starting with `=` and something after it, or an assignment value
+    // starting with `=` (`NAME=` in group 2). The word stops at a parenthesis:
+    // the `)` closing a `$(…)` around it is not part of it, and `=(cmd)`, zsh
+    // process substitution written on purpose, matches as a lone `=`.
     view: words,
-    regex: /(^|[\s;&|(`])(=[^\s;&|()<>`]*)/g,
-    reason(m) {
-      if (m[2] === '=') return null;
-      const word = quote(m.index + m[1].length, m[2].length);
+    regex: /(^|[\s;&|(`])([A-Za-z_]\w*=)?(=[^\s;&|()<>`]*)/g,
+    span: (m) => [m.index + m[1].length + (m[2] || '').length, m[3].length],
+    reason(m, start, length) {
+      if (m[3] === '=' || (m[2] && !isAssignment(m.index + m[1].length))) return null;
+      const word = original(start, length);
+      const fix = /[*?[]/.test(word)
+        ? 'Escape the `=` to keep the pattern, as a `case` branch wants: `\\' + word +
+          "`; quote the word for the literal text: `'" + word + "'`."
+        : 'Escape the `=`: `\\' + word + '`.';
       return 'Equals expansion: `' + word + '`. zsh replaces an unquoted word ' +
         'starting with `=` by the path of the command it names, or fails with ' +
-        '`not found`. Quote it: `' + quoteHint(word) + '`. For the path of a ' +
-        'command, write `${commands[name]}`.';
+        '`not found`. ' + fix + ' For the path of a command, write `${commands[name]}`.';
     },
-    // zsh's `[ ]` and `test` accept a quoted `==`, so it needs no `=` rewrite.
-    rewrite: (m) => quoted(m.index + m[1].length, m[2].length),
+    // Escaping the `=` alone is right in every position, a `case` pattern
+    // included, once no glob follows it: zsh's `[ ]` and `test` accept `\==`.
+    rewrite: (m, start, length) => (/[*?[]/.test(m[3]) ? null
+      : literalEdit(start, length, (text) => '\\' + text)),
   },
   {
     // A pattern-taking modifier on a named parameter: `${v/`, `${v//`, `${v:/`,
@@ -123,7 +160,7 @@ const RULES = [
       const bare = pattern.replace(/\[\^?\]?[^\]]*\]/g, '');
       // `(a|b)` alternation and `(#…)` flags are zsh pattern syntax on purpose.
       if (!/[()]/.test(bare) || /\||\(#/.test(bare)) return null;
-      return 'Parentheses in a parameter pattern: `' + quote(m.index, end - m.index) +
+      return 'Parentheses in a parameter pattern: `' + original(m.index, end - m.index) +
         '`. zsh reads `(…)` as a glob group, so the parentheses themselves are ' +
         'never matched: a wrong result, no error. Escape each one (`\\(`, ' +
         '`\\)`), or do the replacement in python or sed.';
@@ -182,9 +219,10 @@ const reasons = [];
 const edits = [];
 for (const rule of RULES) {
   for (const m of rule.view.matchAll(rule.regex)) {
-    const reason = rule.reason(m);
+    const span = rule.span ? rule.span(m) : [];
+    const reason = rule.reason(m, ...span);
     if (!reason) continue;
-    const edit = rule.rewrite && rule.rewrite(m);
+    const edit = rule.rewrite && rule.rewrite(m, ...span);
     if (edit) { edits.push(edit); continue; }
     reasons.push(reason);
     break;
@@ -200,7 +238,7 @@ if (reasons.length) {
   for (const e of edits.sort((a, b) => b.start - a.start)) {
     rewritten = rewritten.slice(0, e.start) + e.to + rewritten.slice(e.start + e.length);
   }
-  rewrite(input.toolInput, rewritten, 'zsh-wordsplit-guard quoted ' +
+  rewrite(input.toolInput, rewritten, 'zsh-wordsplit-guard rewrote ' +
     edits.reverse().map((e) => '`' + e.from + '` as `' + e.to + '`').join(', ') +
     ': the Bash tool runs zsh, which would otherwise expand them. The command ' +
     'ran with that quoting; write it yourself next time.');
