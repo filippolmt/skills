@@ -22,9 +22,15 @@
 //      `bad substitution` once the commands before them have run; `${!#}`
 //      gives `$!` instead of the last argument, no error.
 //
+// Rules 1 and 2 rewrite instead of denying when the word is plain literal text:
+// quoting it is then exactly bash's reading, so the call runs with no round
+// trip. A word holding an expansion, a quote or anything outside LITERAL is
+// still denied.
+//
 // Scope and the missing opt-out: docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md,
-// docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md.
-const { readBashInput, deny, maskedViews } = require('./scan');
+// docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md; the rewrite:
+// docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md.
+const { readBashInput, deny, rewrite, maskedViews } = require('./scan');
 
 const input = readBashInput();
 if (!input) process.exit(0);
@@ -39,6 +45,19 @@ const words = masked
   .replace(/\(\((?:[^()]|\([^()]*\))*\)\)/g, blankRun);
 // Rules match on a masked view; messages quote the command itself.
 const quote = (start, length) => command.slice(start, start + length);
+// Text bash takes literally whether quoted or not. Left out: `$` and backticks
+// (expansions), quotes and `\\`, `{` (bash brace-expands `*.{md,txt}` into two
+// words), `~` (bash expands it after `=`), and `!`, `^`, `#`.
+const LITERAL = /^[\w.*?[\]\/,:@%+=-]+$/;
+// A single-quoted copy of the text at `start`, or null unless it is LITERAL and
+// fully visible in the masked view (nothing quoted or escaped glued inside).
+function quoted(start, length) {
+  const text = quote(start, length);
+  if (text !== words.slice(start, start + length) || !LITERAL.test(text)) return null;
+  return { start: start, length: length, from: text, to: "'" + text + "'" };
+}
+// The quoting a deny names: double quotes keep an expansion working.
+const quoteHint = (text) => (/\$/.test(text) ? '"' + text + '"' : "'" + text + "'");
 
 // What a parameter pattern holds, from `from` up to the `/` that starts the
 // replacement (`stopAtSlash`) or the `}` that closes the expansion. Nested
@@ -69,26 +88,26 @@ const RULES = [
       const value = quote(m.index + m[1].length + m[2].length, m[3].length);
       return 'Glob in a flag value: `' + m[2] + value + '`. zsh matches the WHOLE ' +
         'word against file names, finds none, and aborts with `no matches ' +
-        "found`. Quote the value: `" + m[2] + "'" + value + "'`.";
+        'found`. Quote the value: `' + m[2] + quoteHint(value) + '`.';
     },
+    rewrite: (m) => quoted(m.index + m[1].length + m[2].length, m[3].length),
   },
   {
-    // A word starting with `=` and something after it. `=(cmd)` is zsh process
-    // substitution, written on purpose.
+    // A word starting with `=` and something after it, up to the `)` that may
+    // close a `$(…)` around it. `=(cmd)` is zsh process substitution, written on
+    // purpose: it matches as a lone `=`.
     view: words,
-    regex: /(^|[\s;&|(`])(=[^\s;&|()<>`]?[^\s;&|<>`]*)/g,
+    regex: /(^|[\s;&|(`])(=[^\s;&|()<>`]*)/g,
     reason(m) {
-      if (m[2] === '=' || m[2][1] === '(') return null;
+      if (m[2] === '=') return null;
       const word = quote(m.index + m[1].length, m[2].length);
-      const lead = word === '=='
-        ? 'Inside `[ ]` or `test`, compare with a single `=`, or use `[[ ]]`. ' +
-          "Elsewhere, quote it: `'=='`."
-        : "Quote it: `'" + word + "'`. For the path of a command, write " +
-          '`${commands[name]}`.';
       return 'Equals expansion: `' + word + '`. zsh replaces an unquoted word ' +
         'starting with `=` by the path of the command it names, or fails with ' +
-        '`not found`. ' + lead;
+        '`not found`. Quote it: `' + quoteHint(word) + '`. For the path of a ' +
+        'command, write `${commands[name]}`.';
     },
+    // zsh's `[ ]` and `test` accept a quoted `==`, so it needs no `=` rewrite.
+    rewrite: (m) => quoted(m.index + m[1].length, m[2].length),
   },
   {
     // A pattern-taking modifier on a named parameter: `${v/`, `${v//`, `${v:/`,
@@ -158,15 +177,31 @@ const RULES = [
   },
 ];
 
+// Every rewritable hit is collected; the first hit a rule cannot rewrite denies.
 const reasons = [];
+const edits = [];
 for (const rule of RULES) {
   for (const m of rule.view.matchAll(rule.regex)) {
     const reason = rule.reason(m);
-    if (reason) { reasons.push(reason); break; }
+    if (!reason) continue;
+    const edit = rule.rewrite && rule.rewrite(m);
+    if (edit) { edits.push(edit); continue; }
+    reasons.push(reason);
+    break;
   }
 }
 
-if (!reasons.length) process.exit(0);
-
-deny('zsh-wordsplit-guard: the Bash tool runs zsh, which expands this ' +
-  'differently from bash.\n' + reasons.map((r) => '- ' + r).join('\n'));
+if (reasons.length) {
+  // The edits are dropped: the retry gets them again.
+  deny('zsh-wordsplit-guard: the Bash tool runs zsh, which expands this ' +
+    'differently from bash.\n' + reasons.map((r) => '- ' + r).join('\n'));
+} else if (edits.length) {
+  let rewritten = command;
+  for (const e of edits.sort((a, b) => b.start - a.start)) {
+    rewritten = rewritten.slice(0, e.start) + e.to + rewritten.slice(e.start + e.length);
+  }
+  rewrite(input.toolInput, rewritten, 'zsh-wordsplit-guard quoted ' +
+    edits.reverse().map((e) => '`' + e.from + '` as `' + e.to + '`').join(', ') +
+    ': the Bash tool runs zsh, which would otherwise expand them. The command ' +
+    'ran with that quoting; write it yourself next time.');
+}

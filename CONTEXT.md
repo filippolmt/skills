@@ -180,6 +180,8 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   literally and zsh expands (a leading `=`, a glob in a `--flag=value` word,
   parentheses in a `${var/pattern/…}` pattern), or bash syntax zsh lacks
   (`${!…}`). The wordsplit guard's second rule set; each deny names the zsh
-  rewrite, so it carries no opt-out — see
-  `docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md` and
-  `docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md`.
+  rewrite, so it carries no opt-out, and a literal word the fix only quotes is
+  quoted by the guard itself — see
+  `docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md`,
+  `docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md` and
+  `docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md`.

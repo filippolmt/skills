@@ -3,13 +3,14 @@
 const fs = require('fs');
 
 // The Bash command of a PreToolUse payload, or null for anything else.
+// `toolInput` is the whole input, which a rewrite returns with only `command` changed.
 function readBashInput() {
   let input = {};
   try { input = JSON.parse(fs.readFileSync(0, 'utf8')) || {}; } catch (e) { /* no stdin */ }
   const toolInput = input.tool_input || {};
   const command = String(toolInput.command || '');
   if (input.tool_name !== 'Bash' || !command) return null;
-  return { command: command, description: String(toolInput.description || '') };
+  return { command: command, description: String(toolInput.description || ''), toolInput: toolInput };
 }
 
 function deny(reason) {
@@ -18,6 +19,20 @@ function deny(reason) {
       hookEventName: 'PreToolUse',
       permissionDecision: 'deny',
       permissionDecisionReason: reason,
+    },
+  }));
+}
+
+// `updatedInput` without a `permissionDecision`: the call keeps its normal
+// permission flow, and permission rules are evaluated against the rewritten
+// command. Measured on 2.1.302 — the docs only describe it beside `"allow"` or
+// `"ask"`. `additionalContext` tells the model what actually ran.
+function rewrite(toolInput, command, context) {
+  process.stdout.write(JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName: 'PreToolUse',
+      updatedInput: Object.assign({}, toolInput, { command: command }),
+      additionalContext: context,
     },
   }));
 }
@@ -120,4 +135,4 @@ function maskedViews(text, context) {
   return { words: words, patterns: patterns };
 }
 
-module.exports = { readBashInput, deny, maskedViews };
+module.exports = { readBashInput, deny, rewrite, maskedViews };

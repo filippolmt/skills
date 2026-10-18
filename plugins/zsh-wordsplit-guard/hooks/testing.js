@@ -38,7 +38,21 @@ function harness(scriptName) {
   const allowed = (command, extra) =>
     assert.strictEqual(run(bash(command, extra)), null, 'expected no deny for: ' + command);
 
-  return { run, bash, denied, allowed };
+  // The command a rewrite runs instead, checked to keep the rest of the input
+  // and to pass the hook itself.
+  const rewritten = (command) => {
+    const out = run(bash(command, { timeout: 5 }));
+    assert.ok(out, 'expected a rewrite for: ' + command);
+    const hso = out.hookSpecificOutput;
+    assert.strictEqual(hso.permissionDecision, undefined, 'a rewrite keeps the permission flow: ' + command);
+    assert.deepStrictEqual(Object.assign({}, hso.updatedInput, { command: command }),
+      bash(command, { timeout: 5 }).tool_input, 'only the command changes');
+    assert.ok(/^zsh-wordsplit-guard quoted /.test(hso.additionalContext), 'tells the model');
+    allowed(hso.updatedInput.command);
+    return hso.updatedInput.command;
+  };
+
+  return { run, bash, denied, allowed, rewritten };
 }
 
 module.exports = { harness };

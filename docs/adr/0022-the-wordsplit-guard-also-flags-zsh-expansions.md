@@ -4,6 +4,10 @@ status: accepted
 
 # The wordsplit guard also flags three zsh expansions, with no opt-out
 
+> **Amended by [ADR-0025](0025-the-wordsplit-guard-rewrites-literal-words.md).** A
+> flag-value glob or a leading `=` on a literal word is now quoted by the hook
+> instead of denied. The lines below still decide what is a hit.
+
 One session on 2026-10-08 lost three commands to zsh, each one a word that bash
 would have taken literally. Measured in zsh 5.9 with default options:
 
