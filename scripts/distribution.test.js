@@ -4,7 +4,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { discoverArtifacts, declaredDependencies, classify, validateDistribution, renderParity } = require('./distribution.js');
-const { validatePackageRoots } = require('./gen-distribution.js');
+const { validatePackageRoots, inventoryForMode } = require('./gen-distribution.js');
 
 function fixture(files) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'distribution-'));
@@ -167,6 +167,17 @@ test('generated packages must be backed by the catalog', () => {
   const dir = fixture({ 'one/plugin.json': '{}', 'orphan/plugin.json': '{}' });
   try {
     assert.throws(() => validatePackageRoots([{ name: 'one' }], dir), /no catalog entry: orphan/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('only check mode rejects a package whose entry left the catalog', () => {
+  const dir = fixture({ 'pruned/plugin.json': '{}' });
+  try {
+    for (const mode of ['write', 'verify']) assert.doesNotThrow(() => inventoryForMode(mode, [], {}, dir));
+    assert.throws(() => inventoryForMode('check', [], {}, dir), /no catalog entry: pruned/);
+    assert.throws(() => inventoryForMode('chek', [], {}, dir), /unknown mode: chek/);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
