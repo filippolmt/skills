@@ -156,10 +156,11 @@ For each `git-subdir` source repo in `marketplace.json` (or the one named):
      it, **ask to confirm**, then delete the entry (see **Removing an entry**).
      Left alone, regeneration prunes it anyway once Renovate moves its `sha`
      (ADR-0015); doing it here just gets there first.
-   - **Branch-pinned repo that now tags** → if a `main`/`master` entry's repo
-     publishes semver tags, switch every entry of that repo to the latest tag
-     (`ref` and `sha` together). When that tag is behind the pinned `sha`, ask
-     first: the switch is a downgrade.
+   - **Branch-pinned repo that now tags** → when a `main`/`master` entry's repo
+     publishes a tag of the shape *Pinning the `ref`* names (`vX.Y.Z`, optionally
+     prefixed), re-pin every entry of that repo as tag-pinned; the next bullet
+     moves it. When that tag does not descend from the pinned `sha`, ask first:
+     the switch would downgrade or leave the pinned history.
    - Bump each surviving entry to the SHA its `ref` now resolves to: a
      tag-pinned entry moves `ref` and `sha` together to the latest tag, keeping
      its tag series; a branch-pinned entry takes that branch's HEAD. (Renovate
