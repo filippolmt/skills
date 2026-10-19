@@ -54,7 +54,20 @@ function generate(plugins, metadata, deps = {}, options = {}) {
   };
 }
 
-module.exports = { buildInventory, validatePackageRoots, generate };
+// The orphan check runs in --check only. Write mode precedes gen-codex.js, which
+// rebuilds packages/, and --verify runs in validate on pull requests, where
+// committed projections are stale by design: in both, a package of an entry just
+// pruned (ADR-0015) or removed is still on disk. In regenerate, --check runs after
+// gen-codex.js, so there it is gen-codex.js --check that catches a stray package;
+// this guard serves a local --check run before regenerating.
+const MODES = ['write', 'verify', 'check'];
+function inventoryForMode(mode, plugins, metadata, packagesDir) {
+  if (!MODES.includes(mode)) throw new Error(`unknown mode: ${mode}`);
+  if (mode === 'check') validatePackageRoots(plugins, packagesDir);
+  return generate(plugins, metadata, {}, { allowMissing: mode === 'verify' });
+}
+
+module.exports = { buildInventory, validatePackageRoots, generate, inventoryForMode };
 
 if (require.main === module) {
   const verify = process.argv.includes('--verify');
@@ -62,8 +75,8 @@ if (require.main === module) {
   if (verify && check) throw new Error('choose --verify or --check');
   const metadata = JSON.parse(fs.readFileSync(META, 'utf8'));
   const { plugins } = readCatalog();
-  validatePackageRoots(plugins, path.join(root, '.agents', 'plugins', 'packages'));
-  const result = generate(plugins, metadata, {}, { allowMissing: verify });
+  const mode = verify ? 'verify' : check ? 'check' : 'write';
+  const result = inventoryForMode(mode, plugins, metadata, path.join(root, '.agents', 'plugins', 'packages'));
   if (result.missing.length) {
     console.log(`removed upstream, omitted until regeneration prunes them: ${result.missing.join(', ')}`);
   }
