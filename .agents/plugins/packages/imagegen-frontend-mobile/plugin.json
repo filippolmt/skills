@@ -1,11 +1,11 @@
 {
   "name": "imagegen-frontend-mobile",
-  "version": "0.0.0+catalog.f624f37a8c65.754f36c7a2b2",
+  "version": "0.0.0+catalog.beb16b0d0f4d.f4448177fc8a",
   "description": "Elite mobile app image-generation skill for creating premium, app-native screen concepts and flows.",
   "author": {
     "name": "Leon Lin",
     "url": "https://github.com/Leonxlnx"
   },
-  "repository": "https://github.com/Leonxlnx/taste-skill",
+  "repository": "https://github.com/Leonxlnx/imagegen-skills",
   "skills": "./skills/"
 }

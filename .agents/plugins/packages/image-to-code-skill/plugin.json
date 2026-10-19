@@ -1,11 +1,11 @@
 {
   "name": "image-to-code-skill",
-  "version": "0.0.0+catalog.f624f37a8c65.0b7922eff413",
+  "version": "0.0.0+catalog.beb16b0d0f4d.d3242b8eb93d",
   "description": "Elite website image-to-code skill for Codex.",
   "author": {
     "name": "Leon Lin",
     "url": "https://github.com/Leonxlnx"
   },
-  "repository": "https://github.com/Leonxlnx/taste-skill",
+  "repository": "https://github.com/Leonxlnx/imagegen-skills",
   "skills": "./skills/"
 }
