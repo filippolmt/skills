@@ -357,24 +357,20 @@ Snapshot of the catalog — the source of truth is
 | `to-questionnaire` | Turn a decision you can't fully answer into a questionnaire for someone else to fill in. |
 | `setup-pre-commit` | Set up Husky pre-commit hooks with lint-staged (Prettier), type checking, and tests in the current repo. |
 
-### [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) — frontend design & image-gen
+### [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) — frontend design
+
+| Skill | What it does |
+|---|---|
+| `taste-skill` | Anti-slop frontend skill for landing pages, portfolios, and redesigns. |
+
+### [Leonxlnx/imagegen-skills](https://github.com/Leonxlnx/imagegen-skills) — design image generation
 
 | Skill | What it does |
 |---|---|
 | `brandkit` | Premium brand-kit image generation skill for creating high-end brand-guidelines boards, logo systems, identity decks, and visual-world presentations. |
-| `brutalist-skill` | Raw mechanical interfaces fusing Swiss typographic print with military terminal aesthetics. |
-| `gpt-tasteskill` | Elite UX/UI & Advanced GSAP Motion Engineer. |
 | `image-to-code-skill` | Elite website image-to-code skill for Codex. |
 | `imagegen-frontend-mobile` | Elite mobile app image-generation skill for creating premium, app-native screen concepts and flows. |
 | `imagegen-frontend-web` | Elite frontend image-direction skill for generating premium, conversion-aware website design references. |
-| `minimalist-skill` | Clean editorial-style interfaces. |
-| `output-skill` | Overrides default LLM truncation behavior. |
-| `redesign-skill` | Upgrades existing websites and apps to premium quality. |
-| `soft-skill` | Teaches the AI to design like a high-end agency. |
-| `stitch-skill` | Semantic Design System Skill for Google Stitch. |
-| `taste-skill-v1` | The original v1 taste-skill, preserved for projects depending on its exact behavior. |
-| `taste-skill` | Anti-slop frontend skill for landing pages, portfolios, and redesigns. |
-| `taste-skill-v2-experimental` | Old v2 (experimental) of taste-skill, the single-file dial-driven version, preserved for projects depending on its exact behavior. |
 
 ### [mvanhorn/cli-printing-press](https://github.com/mvanhorn/cli-printing-press) — CLI generation
 
