@@ -357,7 +357,13 @@ Snapshot of the catalog — the source of truth is
 | `to-questionnaire` | Turn a decision you can't fully answer into a questionnaire for someone else to fill in. |
 | `setup-pre-commit` | Set up Husky pre-commit hooks with lint-staged (Prettier), type checking, and tests in the current repo. |
 
-### [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) — frontend design & image-gen
+### [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) — frontend design
+
+| Skill | What it does |
+|---|---|
+| `taste-skill` | Anti-slop frontend skill for landing pages, portfolios, and redesigns. |
+
+### [Leonxlnx/imagegen-skills](https://github.com/Leonxlnx/imagegen-skills) — design image generation
 
 | Skill | What it does |
 |---|---|
@@ -365,7 +371,6 @@ Snapshot of the catalog — the source of truth is
 | `image-to-code-skill` | Elite website image-to-code skill for Codex. |
 | `imagegen-frontend-mobile` | Elite mobile app image-generation skill for creating premium, app-native screen concepts and flows. |
 | `imagegen-frontend-web` | Elite frontend image-direction skill for generating premium, conversion-aware website design references. |
-| `taste-skill` | Anti-slop frontend skill for landing pages, portfolios, and redesigns. |
 
 ### [mvanhorn/cli-printing-press](https://github.com/mvanhorn/cli-printing-press) — CLI generation
 
