@@ -104,6 +104,9 @@ matches, no error, auto-updates simply stop. So the entry shape and both regexes
 move together, and `scripts/check-renovate.js` asserts they cover the catalog
 exactly. A `ref` of any other shape (`1.2.0`, a bare SHA) matches neither manager
 and is never updated again.
+A branch pin whose repo starts publishing tags is reported by the `whole-sources`
+workflow in its own issue (`docs/adr/0026-report-branch-pins-once-upstream-tags.md`,
+`node scripts/check-branch-pins.js`).
 
 **Double-registered hooks.** A local plugin's `hooks/hooks.json` loads
 automatically; `manifest.hooks` (in `.claude-plugin/plugin.json`) is for
