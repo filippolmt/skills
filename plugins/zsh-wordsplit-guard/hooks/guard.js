@@ -89,6 +89,8 @@ for (const header of scannable.matchAll(FOR_HEADER)) {
 // gets one. The list's quotes are blanked in the masked view, so they are read
 // from the raw command at the same offsets; the body is read in `words`, where
 // `"$c"` is already gone. Substitutions stay visible: a loop inside `$(…)` is zsh's.
+// `[[ … ]]`, an assignment value and a `case` word never split, in bash either,
+// so a use there is one word by intent.
 // shortcut: the body ends at the first `done`, so a use after a nested loop is
 // missed; track nesting if that shows up in use.
 let item = null;
@@ -97,11 +99,12 @@ if (!hit) {
     const end = header.index + header[0].length;
     const list = input.command.slice(end - header[2].length, end);
     const quoted = list.match(/"(?:[^"\\]|\\.)*"|'[^']*'/g) || [];
-    if (!quoted.some((word) => /\s/.test(word) && !/^"[^]*[$`\\]/.test(word))) continue;
+    if (!quoted.some((word) => /\s/.test(word) && !/^"[\s\S]*[$`\\]/.test(word))) continue;
     const name = header[1];
-    const done = words.slice(end).search(/(?:^|[;&|\s])done(?![\w])/);
-    const body = words.slice(end, done === -1 ? undefined : end + done);
-    const use = new RegExp('\\$(?:' + name + '(?![\\w[])|\\{' + name + '\\})').exec(body);
+    const doneAt = words.slice(end).search(/(?:^|[;&|\n])\s*done(?!\w)/);
+    const body = words.slice(end, doneAt === -1 ? undefined : end + doneAt)
+      .replace(/\[\[[\s\S]*?\]\]/g, ' ');
+    const use = new RegExp('(?<![=\\w])(?<!\\bcase\\s+)\\$(?:' + name + '(?![\\w[])|\\{' + name + '\\})').exec(body);
     if (use) { item = { expansion: use[0], name: name, header: header[0].trim() }; break; }
   }
 }
@@ -111,8 +114,7 @@ if (item) {
     'zsh-wordsplit-guard: silent non-split. `' + item.header + '` hands the body ' +
     'each quoted item as ONE word, and `' + item.expansion + '` unquoted keeps it ' +
     'one word: the Bash tool runs zsh, where parameter expansion is not ' +
-    'word-split. A command gets the whole item as a single argument. Rewrite as ' +
-    'one of:\n' +
+    'word-split. Rewrite as one of:\n' +
     '  - `${=' + item.name + '}` — split on IFS\n' +
     '  - one item per loop word, the shared arguments in the body: ' +
     '`for ' + item.name + ' in a b; do cmd "$' + item.name + '" arg; done`\n' +

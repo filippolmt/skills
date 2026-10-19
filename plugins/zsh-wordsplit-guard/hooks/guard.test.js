@@ -110,7 +110,13 @@ denied('out=$(for c in "a b"; do echo $c; done)');
 denied('echo "$(for c in "a b"; do echo $c; done)"');
 denied('cat <<EOF\n$(for c in "a b"; do echo $c; done)\nEOF');
 
+denied('for c in "a b"; do echo done $c; done');                 // `done` as an argument ends nothing
+
 allowed('for c in "a b" "c d"; do echo "$c"; done');             // quoted use: one word, as asked
+// Where zsh never splits anyway — and neither does bash — one word is right.
+allowed('for c in "a b"; do [[ -n $c ]] && echo ok; done');
+allowed('for c in "a b"; do x=$c; echo "$x"; done');
+allowed('for c in "a b"; do case $c in a*) echo a;; esac; done');
 allowed('for f in "a.txt" "b.txt"; do cat $f; done');            // single-word items
 allowed('for c in "a b"; do echo ${=c}; done');                  // explicit split
 allowed('for c in "a b"; do echo $cx; done');                    // another variable

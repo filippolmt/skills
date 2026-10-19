@@ -26,13 +26,13 @@ holding whitespace, and the body uses `$NAME` or `${NAME}` outside double quotes
 
 Allowed: a list of single-word items (`for f in "a.txt" "b.txt"`), a quoted use
 (`"$c"`), an explicit split (`${=c}`), a list word that is not literal text
-(`"$x y"`), and any use after `done`.
+(`"$x y"`), any use after `done`, and a use where neither shell splits:
+inside `[[ … ]]`, as an assignment value (`x=$c`), as the `case` word. The issue
+asked for every unquoted use; those three are one word by intent, so denying
+them would be the noise ADR-0005 measured against.
 
 ## Consequences
 
-- The list's quotes are blanked in the masked view, so the list is read from the
-  raw command at the same offsets; the body is read in the masked view, where a
-  quoted use is already gone.
 - The body ends at the first `done`, so a use after a nested loop is a false
   negative. A false negative found in use is a one-line change plus a test.
 - The opt-outs are the loop rule's: `[nosplit]` and `ALLOW_ZSH_NOSPLIT=1`.

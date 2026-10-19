@@ -173,9 +173,11 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   substitution. What a silent non-split is rewritten into.
 - **Bare expansion** — a word of a `for` list that is one non-splitting
   expansion, with nothing glued on that changes the outcome: `$var`, `${var}`,
-  `$var,`, `${var}x`. The only shape a guard can call a silent non-split, since
-  a glob or a path separator around the expansion decides the word count
-  instead — see `docs/adr/0005-what-the-wordsplit-guard-flags.md`.
+  `$var,`, `${var}x`. The only `for`-list shape a guard can call a silent
+  non-split, since a glob or a path separator around the expansion decides the
+  word count instead — see `docs/adr/0005-what-the-wordsplit-guard-flags.md`.
+  The one shape outside the list is a multi-word loop item used unquoted in the
+  body — see `docs/adr/0027-the-wordsplit-guard-flags-multi-word-loop-items.md`.
 - **Expansion trap** — a form zsh runs differently from bash: a word bash takes
   literally and zsh expands (a leading `=`, a glob in a `--flag=value` word,
   parentheses in a `${var/pattern/…}` pattern), or bash syntax zsh lacks
