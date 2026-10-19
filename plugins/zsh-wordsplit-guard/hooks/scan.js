@@ -79,7 +79,8 @@ function maskedViews(text, context) {
     } else if (top.kind === 'comment') {
       if (ch === '\n') { stack.pop(); i--; } else blank(ch);
     } else if (ch === '\\' && i + 1 < text.length) {
-      if (text[i + 1] === '\n') keep('  '); else blank('__');
+      // One placeholder per source character: offsets in the views are offsets in text.
+      if (text[i + 1] === '\n') keep('  '); else { blank(ch); blank(text[i + 1]); }
       i++;
     } else if (top.kind === 'double' || top.kind === 'body') {
       if (ch === '"' && top.kind === 'double') { stack.pop(); words += '_'; patterns += ch; }

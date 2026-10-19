@@ -48,6 +48,11 @@ rewrites('grep -r --exclude-dir=node_* x .', "grep -r --exclude-dir='node_*' x .
 rewrites('rg --glob=*.ts foo', "rg --glob='*.ts' foo");
 rewrites('git log --format=[%h] -1', "git log --format='[%h]' -1");
 rewrites('ls --x=?', "ls --x='?'");
+// A backslash escape before the word must not shift where the word is found.
+rewrites('grep "a\\|b\\|c" --include=*.md .', "grep \"a\\|b\\|c\" --include='*.md' .");
+rewrites('x a\\ b --include=*.md', "x a\\ b --include='*.md'");
+rewrites('echo $(echo a\\ b) --x=*.md', "echo $(echo a\\ b) --x='*.md'");
+rewrites('cat <<EOF\na\\b\nEOF\ngrep --include=*.md x .', "cat <<EOF\na\\b\nEOF\ngrep --include='*.md' x .");
 rewrites('echo --x=*.md;echo ok', "echo --x='*.md';echo ok"); // the value stops at an operator
 reason = denied('e=md; grep -rn --include=*.$e pattern .');
 assert.ok(/--include=\\\*\.\$e`/.test(reason), 'names the escaped glob');

@@ -49,6 +49,8 @@ const CASES = [
   // --- glob in a flag value: `a.md` exists, so bash leaves no-match words alone ---
   { hook: 'expansion', applied: true, bash: 'echo --include=*.md --format=[%h] --x=?' },
   { hook: 'expansion', applied: true, bash: 'echo --x=*.md;echo ok' },
+  // A backslash escape before the word must not shift where it is found.
+  { hook: 'expansion', applied: true, bash: 'echo "a\\|b" a\\ b --include=*.md' },
   { hook: 'expansion', named: '--include=\\*.$e', setup: 'e=md',
     bash: 'echo --include=*.$e', zsh: 'echo --include=\\*.$e' },
   { hook: 'expansion', named: '--x=\\*.{md,txt}', bash: 'echo --x=*.{md,txt}', zsh: 'echo --x=\\*.{md,txt}' },
