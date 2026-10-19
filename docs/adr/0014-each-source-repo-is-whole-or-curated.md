@@ -65,7 +65,7 @@ the exclusions.
 | Repo | Kind | Notes |
 | --- | --- | --- |
 | `mattpocock/skills` | curated | Workflow routers and thin prompt macros are reviewed before admission; `skills/in-progress/` is unreleased work ([ADR-0017](0017-curate-the-matt-pocock-source.md)) |
-| `Leonxlnx/taste-skill` | whole | |
+| `Leonxlnx/taste-skill` | curated | Only the production skill and the image-generation skills; pinned to release tags |
 | `cloudflare/skills` | whole | |
 | `mvanhorn/cli-printing-press` | whole | |
 | `antonbabenko/terraform-skill` | whole | single skill |
@@ -98,6 +98,9 @@ the exclusions.
 | `tt-a1i/archify` | `archify-review` | For archify's maintainers: triages its issues and links its `REVIEWING.md` by relative path |
 | `hashicorp/agent-skills` | `azure-verified-modules`, `refactor-module`, `terraform-policy`, `terraform-search-import`, `terraform-stacks`, `terraform-style-guide`, `terraform-test` | For writing Terraform configuration, not providers; `terraform-skill` already covers that ground |
 | `hashicorp/agent-skills` | `plugins/packer/skills/*` | Packer image building, outside the provider-development pick |
+| `Leonxlnx/taste-skill` | `soft-skill`, `minimalist-skill`, `brutalist-skill`, `gpt-tasteskill`, `stitch-skill` | "Classic" skills upstream keeps only for projects that depend on them; superseded by `taste-skill` v2 |
+| `Leonxlnx/taste-skill` | `taste-skill-v1`, `taste-skill-v2-experimental` | Earlier and experimental versions of `taste-skill` |
+| `Leonxlnx/taste-skill` | `redesign-skill` | Retired upstream: redesigns and reviews are part of `taste-skill` |
 
 ## Considered options
 

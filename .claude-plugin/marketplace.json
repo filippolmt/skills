@@ -430,40 +430,10 @@
         "source": "git-subdir",
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/brandkit",
-        "ref": "main",
-        "sha": "f624f37a8c650b9cc550253104925efe4c8de246"
+        "ref": "v2.1.2",
+        "sha": "b9ca2fd8047f4c72d7da90ebc1c1203e57c72cd2"
       },
       "description": "Premium brand-kit image generation skill for creating high-end brand-guidelines boards, logo systems, identity decks, and visual-world presentations.",
-      "author": {
-        "name": "Leon Lin",
-        "url": "https://github.com/Leonxlnx"
-      }
-    },
-    {
-      "name": "brutalist-skill",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/Leonxlnx/taste-skill",
-        "path": "skills/brutalist-skill",
-        "ref": "main",
-        "sha": "f624f37a8c650b9cc550253104925efe4c8de246"
-      },
-      "description": "Raw mechanical interfaces fusing Swiss typographic print with military terminal aesthetics.",
-      "author": {
-        "name": "Leon Lin",
-        "url": "https://github.com/Leonxlnx"
-      }
-    },
-    {
-      "name": "gpt-tasteskill",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/Leonxlnx/taste-skill",
-        "path": "skills/gpt-tasteskill",
-        "ref": "main",
-        "sha": "f624f37a8c650b9cc550253104925efe4c8de246"
-      },
-      "description": "Elite UX/UI & Advanced GSAP Motion Engineer.",
       "author": {
         "name": "Leon Lin",
         "url": "https://github.com/Leonxlnx"
@@ -475,8 +445,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/image-to-code-skill",
-        "ref": "main",
-        "sha": "f624f37a8c650b9cc550253104925efe4c8de246"
+        "ref": "v2.1.2",
+        "sha": "b9ca2fd8047f4c72d7da90ebc1c1203e57c72cd2"
       },
       "description": "Elite website image-to-code skill for Codex.",
       "author": {
@@ -490,8 +460,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/imagegen-frontend-mobile",
-        "ref": "main",
-        "sha": "f624f37a8c650b9cc550253104925efe4c8de246"
+        "ref": "v2.1.2",
+        "sha": "b9ca2fd8047f4c72d7da90ebc1c1203e57c72cd2"
       },
       "description": "Elite mobile app image-generation skill for creating premium, app-native screen concepts and flows.",
       "author": {
@@ -505,100 +475,10 @@
         "source": "git-subdir",
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/imagegen-frontend-web",
-        "ref": "main",
-        "sha": "f624f37a8c650b9cc550253104925efe4c8de246"
+        "ref": "v2.1.2",
+        "sha": "b9ca2fd8047f4c72d7da90ebc1c1203e57c72cd2"
       },
       "description": "Elite frontend image-direction skill for generating premium, conversion-aware website design references.",
-      "author": {
-        "name": "Leon Lin",
-        "url": "https://github.com/Leonxlnx"
-      }
-    },
-    {
-      "name": "minimalist-skill",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/Leonxlnx/taste-skill",
-        "path": "skills/minimalist-skill",
-        "ref": "main",
-        "sha": "f624f37a8c650b9cc550253104925efe4c8de246"
-      },
-      "description": "Clean editorial-style interfaces.",
-      "author": {
-        "name": "Leon Lin",
-        "url": "https://github.com/Leonxlnx"
-      }
-    },
-    {
-      "name": "output-skill",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/Leonxlnx/taste-skill",
-        "path": "skills/output-skill",
-        "ref": "main",
-        "sha": "f624f37a8c650b9cc550253104925efe4c8de246"
-      },
-      "description": "Overrides default LLM truncation behavior.",
-      "author": {
-        "name": "Leon Lin",
-        "url": "https://github.com/Leonxlnx"
-      }
-    },
-    {
-      "name": "redesign-skill",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/Leonxlnx/taste-skill",
-        "path": "skills/redesign-skill",
-        "ref": "main",
-        "sha": "f624f37a8c650b9cc550253104925efe4c8de246"
-      },
-      "description": "Upgrades existing websites and apps to premium quality.",
-      "author": {
-        "name": "Leon Lin",
-        "url": "https://github.com/Leonxlnx"
-      }
-    },
-    {
-      "name": "soft-skill",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/Leonxlnx/taste-skill",
-        "path": "skills/soft-skill",
-        "ref": "main",
-        "sha": "f624f37a8c650b9cc550253104925efe4c8de246"
-      },
-      "description": "Teaches the AI to design like a high-end agency.",
-      "author": {
-        "name": "Leon Lin",
-        "url": "https://github.com/Leonxlnx"
-      }
-    },
-    {
-      "name": "stitch-skill",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/Leonxlnx/taste-skill",
-        "path": "skills/stitch-skill",
-        "ref": "main",
-        "sha": "f624f37a8c650b9cc550253104925efe4c8de246"
-      },
-      "description": "Semantic Design System Skill for Google Stitch.",
-      "author": {
-        "name": "Leon Lin",
-        "url": "https://github.com/Leonxlnx"
-      }
-    },
-    {
-      "name": "taste-skill-v1",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/Leonxlnx/taste-skill",
-        "path": "skills/taste-skill-v1",
-        "ref": "main",
-        "sha": "f624f37a8c650b9cc550253104925efe4c8de246"
-      },
-      "description": "The original v1 taste-skill, preserved for projects depending on its exact behavior.",
       "author": {
         "name": "Leon Lin",
         "url": "https://github.com/Leonxlnx"
@@ -610,25 +490,10 @@
         "source": "git-subdir",
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/taste-skill",
-        "ref": "main",
-        "sha": "f624f37a8c650b9cc550253104925efe4c8de246"
+        "ref": "v2.1.2",
+        "sha": "b9ca2fd8047f4c72d7da90ebc1c1203e57c72cd2"
       },
       "description": "Anti-slop frontend skill for landing pages, portfolios, and redesigns.",
-      "author": {
-        "name": "Leon Lin",
-        "url": "https://github.com/Leonxlnx"
-      }
-    },
-    {
-      "name": "taste-skill-v2-experimental",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/Leonxlnx/taste-skill",
-        "path": "skills/taste-skill-v2-experimental",
-        "ref": "main",
-        "sha": "f624f37a8c650b9cc550253104925efe4c8de246"
-      },
-      "description": "Old v2 (experimental) of taste-skill, the single-file dial-driven version, preserved for projects depending on its exact behavior.",
       "author": {
         "name": "Leon Lin",
         "url": "https://github.com/Leonxlnx"
