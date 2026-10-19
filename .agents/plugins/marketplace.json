@@ -365,30 +365,6 @@
       "category": "Developer Tools"
     },
     {
-      "name": "brutalist-skill",
-      "source": {
-        "source": "local",
-        "path": "./.agents/plugins/packages/brutalist-skill"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
-      "name": "gpt-tasteskill",
-      "source": {
-        "source": "local",
-        "path": "./.agents/plugins/packages/gpt-tasteskill"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
       "name": "image-to-code-skill",
       "source": {
         "source": "local",
@@ -425,94 +401,10 @@
       "category": "Developer Tools"
     },
     {
-      "name": "minimalist-skill",
-      "source": {
-        "source": "local",
-        "path": "./.agents/plugins/packages/minimalist-skill"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
-      "name": "output-skill",
-      "source": {
-        "source": "local",
-        "path": "./.agents/plugins/packages/output-skill"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
-      "name": "redesign-skill",
-      "source": {
-        "source": "local",
-        "path": "./.agents/plugins/packages/redesign-skill"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
-      "name": "soft-skill",
-      "source": {
-        "source": "local",
-        "path": "./.agents/plugins/packages/soft-skill"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
-      "name": "stitch-skill",
-      "source": {
-        "source": "local",
-        "path": "./.agents/plugins/packages/stitch-skill"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
-      "name": "taste-skill-v1",
-      "source": {
-        "source": "local",
-        "path": "./.agents/plugins/packages/taste-skill-v1"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
       "name": "taste-skill",
       "source": {
         "source": "local",
         "path": "./.agents/plugins/packages/taste-skill"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
-      "name": "taste-skill-v2-experimental",
-      "source": {
-        "source": "local",
-        "path": "./.agents/plugins/packages/taste-skill-v2-experimental"
       },
       "policy": {
         "installation": "AVAILABLE",

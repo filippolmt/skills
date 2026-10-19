@@ -1,11 +1,11 @@
 {
   "name": "imagegen-frontend-web",
-  "version": "0.0.0+catalog.f624f37a8c65.ec488f654eee",
+  "version": "0.0.0+catalog.beb16b0d0f4d.3c835ec61c08",
   "description": "Elite frontend image-direction skill for generating premium, conversion-aware website design references.",
   "author": {
     "name": "Leon Lin",
     "url": "https://github.com/Leonxlnx"
   },
-  "repository": "https://github.com/Leonxlnx/taste-skill",
+  "repository": "https://github.com/Leonxlnx/imagegen-skills",
   "skills": "./skills/"
 }
