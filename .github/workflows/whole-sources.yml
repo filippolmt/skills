@@ -6,6 +6,9 @@ name: whole-sources
 # those skills and keeps ONE issue open listing them, closing it once they are
 # catalogued or excluded (ADR-0024). It opens an issue, not a PR: an entry needs a
 # description and sometimes an exclusion decision, which are not a generator's.
+#
+# The same issue-keeping runs for branch pins whose repo now publishes release
+# tags (ADR-0026): one matrix leg per report, each with its own issue.
 
 on:
   schedule:
@@ -16,6 +19,9 @@ on:
       - .claude-plugin/marketplace.json
       - docs/adr/0014-each-source-repo-is-whole-or-curated.md
       - scripts/check-whole-sources.js
+      - scripts/check-branch-pins.js
+      - scripts/github.js
+      - renovate.json
       - scripts/catalog.js
   workflow_dispatch:
 
@@ -30,33 +36,52 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - script: scripts/check-whole-sources.js
+            title: Whole sources ship uncatalogued skills
+            prefix: Whole sources ship skills
+            source: at the pinned `sha` of each entry (ADR-0024)
+            resolved: Every skill of the whole sources is now catalogued or excluded.
+          - script: scripts/check-branch-pins.js
+            title: Branch-pinned repos publish release tags
+            prefix: Branch-pinned repos publish release tags
+            source: from each repo's tags (ADR-0026)
+            resolved: Every branch-pinned repo is now on a tag, or has none at or past its pin.
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-      - name: Report uncatalogued skills of whole sources
+      - name: Report ${{ matrix.title }}
         env:
           # Read by the script for the API and by gh for the issue.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SCRIPT: ${{ matrix.script }}
+          TITLE: ${{ matrix.title }}
+          # A finding's report starts with this line; see the exit-1 guard below.
+          PREFIX: ${{ matrix.prefix }}
+          SOURCE: ${{ matrix.source }}
+          RESOLVED: ${{ matrix.resolved }}
         run: |
           set -euo pipefail
-          title='Whole sources ship uncatalogued skills'
           # Actions runs bash with -e, so a bare `report="$(...)"` would end the step
           # on exit 1 — the one status this job exists to act on.
           status=0
-          report="$(node scripts/check-whole-sources.js)" || status=$?
+          report="$(node "$SCRIPT")" || status=$?
           echo "$report"
           # 2 is a failure to look (API error, truncated tree): fail loudly, touch no issue.
           # Node also exits 1 when the script cannot even load, so a 1 counts as a
           # finding only when it printed one.
-          if [ "$status" -eq 1 ] && [[ "$report" != 'Whole sources ship skills'* ]]; then status=2; fi
+          if [ "$status" -eq 1 ] && [[ "$report" != "$PREFIX"* ]]; then status=2; fi
           if [ "$status" -ne 0 ] && [ "$status" -ne 1 ]; then exit "$status"; fi
           # Oldest first: that one is kept, any duplicate is closed in its favour. Search
           # can lag a just-created issue, so two close runs may open two; the next run
           # closes the extra.
-          open_issues="$(gh issue list --state open --search "in:title \"$title\"" --json number,title \
-            --jq "[.[] | select(.title == \"$title\")] | sort_by(.number) | .[].number")"
+          open_issues="$(gh issue list --state open --search "in:title \"$TITLE\"" --json number,title \
+            --jq "[.[] | select(.title == \"$TITLE\")] | sort_by(.number) | .[].number")"
           issues=()
           if [ -n "$open_issues" ]; then mapfile -t issues <<<"$open_issues"; fi
           for dup in "${issues[@]:1}"; do
@@ -64,13 +89,13 @@ jobs:
           done
           issue="${issues[0]:-}"
           if [ "$status" -eq 1 ]; then
-            body="$report"$'\n\n'"Found by \`.github/workflows/whole-sources.yml\` at the pinned \`sha\` of each entry (ADR-0024)."
+            body="$report"$'\n\n'"Found by \`.github/workflows/whole-sources.yml\` $SOURCE."
             if [ -n "$issue" ]; then
               gh issue edit "$issue" --body "$body" >/dev/null
             else
-              gh issue create --title "$title" --body "$body" >/dev/null
+              gh issue create --title "$TITLE" --body "$body" >/dev/null
             fi
           elif [ -n "$issue" ]; then
-            gh issue close "$issue" --comment 'Every skill of the whole sources is now catalogued or excluded.' >/dev/null
+            gh issue close "$issue" --comment "$RESOLVED" >/dev/null
           fi
         shell: bash

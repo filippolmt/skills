@@ -17,6 +17,7 @@
 const fs = require('fs');
 const path = require('path');
 const { readCatalog, isGitSubdir, repoOf, root } = require('./catalog.js');
+const { githubApi } = require('./github.js');
 
 const ADR = path.join(root, 'docs', 'adr', '0014-each-source-repo-is-whole-or-curated.md');
 
@@ -90,11 +91,7 @@ function uncatalogued({ sources, exclusions, catalog, upstream }) {
 }
 
 async function upstreamTree(repo, sha) {
-  const headers = { Accept: 'application/vnd.github+json' };
-  if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
-  const res = await fetch(`https://api.github.com/repos/${repo}/git/trees/${sha}?recursive=1`, { headers });
-  if (!res.ok) throw new Error(`${repo}@${sha}: GitHub API ${res.status}`);
-  const body = await res.json();
+  const body = await githubApi(`repos/${repo}/git/trees/${sha}?recursive=1`);
   if (body.truncated) throw new Error(`${repo}@${sha}: tree listing truncated, cannot tell what is missing`);
   const dirsOf = (file) => body.tree
     .filter((t) => t.type === 'blob' && (t.path === file || t.path.endsWith(`/${file}`)))
