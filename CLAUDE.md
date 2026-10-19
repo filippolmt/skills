@@ -137,7 +137,7 @@ deliberately does **not** compare generated package contents: a `sha` bump makes
 the committed projections stale by design, so comparing them on a pull request
 would redden every Renovate PR. Those comparisons live in the `regenerate`
 workflow, where stale projections are the signal to act rather than a failure. A `PostToolUse` hook
-(`.claude/settings.json`) runs the last two on every edit to `marketplace.json`,
+(`.claude/settings.json`) runs the last two on every Edit or Write to `marketplace.json`,
 `plugin.json`, a `SKILL.md` or a `commands/*.md`, and blocks the edit (exit 2) if
 either fails — the rest are yours to run.
 
