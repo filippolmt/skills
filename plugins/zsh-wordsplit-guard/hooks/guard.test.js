@@ -95,6 +95,52 @@ denied('for x in $v; do echo $x; done <<<"seed"');
 // The array escape hatch is ordered: only an assignment BEFORE the loop counts.
 denied('for i in $a; do echo $i; done; a=(uno due)');
 
+// --- a loop variable built to hold several words -----------------------------
+// A list of quoted literals holding whitespace exists only to be split again in
+// the body; an unquoted `$c` there stays one word (docs/adr/0027).
+const itemReason = denied('for c in "tests/a.py /nope" "tests/b.py /nope /nope"; do python3 $c; done');
+assert.ok(/\$\{=c\}/.test(itemReason), 'names the IFS-split fix for the loop variable');
+assert.ok(/for c in a b; do cmd "\$c" arg; done/.test(itemReason), 'names one item per loop word');
+assert.ok(/\[nosplit\]/.test(itemReason), 'points at the per-call opt-out');
+denied('for c in "a b" "c d"; do printf "[%s]\\n" ${c}; done');  // braced
+denied("for c in 'a b' 'c d'; do echo $c; done");                // single quotes
+denied('for c in x "a b"; do\n  echo $c\ndone');                // one such word is enough
+// Every context the masked view exposes: `$(…)`, inside double quotes, heredoc body.
+denied('out=$(for c in "a b"; do echo $c; done)');
+denied('echo "$(for c in "a b"; do echo $c; done)"');
+denied('cat <<EOF\n$(for c in "a b"; do echo $c; done)\nEOF');
+
+denied('for c in "a b"; do echo done $c; done');                 // `done` as an argument ends nothing
+denied('for c in "a b"; do for d in x y; do :; done; python3 $c; done'); // after a nested loop
+denied('for c in "a b"; do\n  while false; do :; done\n  python3 $c\ndone');
+denied('for c in "a b"; do echo ${c:-x}; done');                 // a modifier does not split either
+denied('for c in "a.py -v"; do python3 ${c%.py}; done');
+denied('for c ("a b" "c d"); do python3 $c; done');              // zsh's short form
+assert.ok(/for c arg in a x b y; do cmd "\$c" "\$arg"; done/.test(itemReason), 'names several loop variables');
+allowed('for c ("a b" "c d"); do python3 "$c"; done');
+allowed('for c in "a b"; do for d in x y; do :; done; done; echo $c'); // after the outer loop
+allowed('for c in "a b"; do echo ${#c}; done');                  // a length is one word
+
+allowed('for c in "a b" "c d"; do echo "$c"; done');             // quoted use: one word, as asked
+// Where zsh never splits anyway — and neither does bash — one word is right.
+allowed('for c in "a b"; do [[ -n $c ]] && echo ok; done');
+allowed('for c in "a b"; do x=$c; echo "$x"; done');
+allowed('for c in "a b"; do case $c in a*) echo a;; esac; done');
+allowed('for f in "a.txt" "b.txt"; do cat $f; done');            // single-word items
+allowed('for c in "a b"; do echo ${=c}; done');                  // explicit split
+allowed('for c in "a b"; do echo $cx; done');                    // another variable
+allowed('for c in "a b"; do :; done; echo $c');                  // after the loop
+allowed('for c in "$x y"; do echo $c; done');                    // not literal text
+// A quoted literal inside a substitution is that command's argument, not an item.
+allowed("for d in $(find . -newermt '-15 minutes'); do ls $d; done");
+allowed("for d in `find . -newermt '-15 minutes'`; do ls $d; done");
+allowed('for p in ${(f)"$(kubectl get pods | awk \'{print $1}\')"}; do echo $p; done');
+allowed("for f in $( (git status | awk '{print $2}'; git diff --name-only) ); do lint $f; done");
+// `eval` parses its arguments again, which splits them.
+allowed('for a in "x y" "z w"; do eval cmd $a; done');
+allowed('for c in "a b"; do echo $c; done', { description: 'deliberate [nosplit]' });
+allowed("cat <<'EOF'\nfor c in \"a b\"; do echo $c; done\nEOF");  // literal heredoc body
+
 // --- opt-outs and unrelated calls --------------------------------------------
 allowed('for x in $v; do echo $x; done', { description: 'deliberate [nosplit]' });
 allowed('for x in $v; do echo $x; done', { description: 'deliberate [NOSPLIT]' });

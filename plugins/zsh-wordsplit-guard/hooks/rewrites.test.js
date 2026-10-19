@@ -34,6 +34,15 @@ const CASES = [
     bash: 'for x in $v; do echo "<$x>"; done', zsh: 'for x in ${=v}; do echo "<$x>"; done' },
   { hook: 'loop', named: '${(f)v}', setup: 'v=$(printf "a b\\nc")',
     bash: 'IFS=$\'\\n\'; for x in $v; do echo "<$x>"; done', zsh: 'for x in ${(f)v}; do echo "<$x>"; done' },
+  { hook: 'loop', named: '${=c}',
+    bash: 'for c in "a x" "b x y"; do printf "<%s>" $c; echo; done',
+    zsh: 'for c in "a x" "b x y"; do printf "<%s>" ${=c}; echo; done' },
+  { hook: 'loop', named: 'for c in a b; do cmd "$c" arg; done',
+    bash: 'for c in "a x" "b x"; do printf "<%s>" $c; echo; done',
+    zsh: 'for c in a b; do printf "<%s>" "$c" x; echo; done' },
+  { hook: 'loop', named: 'for c arg in a x b y; do cmd "$c" "$arg"; done',
+    bash: 'for c in "a x" "b y"; do printf "<%s>" $c; echo; done',
+    zsh: 'for c arg in a x b y; do printf "<%s>" "$c" "$arg"; echo; done' },
 
   // --- equals expansion ---
   { hook: 'expansion', applied: true, bash: 'echo ===== =ls' },
