@@ -16,6 +16,9 @@
 // so non-split is always a bug. Unquoted `$var` in argument position (`grep
 // $flags f`) is left alone: it is usually a single word and correct, and denying
 // it would only teach ALLOW_ZSH_NOSPLIT=1, which kills the `for` check too.
+// The one argument-position case in scope is the loop variable of a list of
+// quoted multi-word literals, where the source itself proves several words were
+// meant (docs/adr/0027-the-wordsplit-guard-flags-multi-word-loop-items.md).
 //
 // Deny rather than warn: an advisory arrives after the wrong output is already
 // in context, and the construct is narrow enough that a hit is almost always a
@@ -28,7 +31,7 @@ const NOSPLIT_OPT_OUT = /\[nosplit\]/i;
 const ON = new Set(['1', 'true', 'yes']);
 
 // A `for NAME in <list>`, list ending at `;` or newline (zsh needs one before `do`).
-const FOR_HEADER = /\bfor\s+[A-Za-z_]\w*\s+in\s+([^\n;]*)/g;
+const FOR_HEADER = /\bfor\s+([A-Za-z_]\w*)\s+in\s+([^\n;]*)/g;
 // One word of a `for` list. `${...}` is atomic, so a modifier holding spaces
 // (`${v:-a b c}`) stays one word.
 const WORD = /(?:\$\{[^}]*\}|[^\s])+/g;
@@ -60,13 +63,14 @@ if (!input || optedOut) process.exit(0);
 // is invisible too, so `bash -c '... for x in $v ...'` — which does run under a
 // shell that splits — needs no special case, and `zsh -c '…'` slips through
 // with it. False negative over a wrong deny on the critical path.
-const scannable = maskedViews(input.command).words
+const words = maskedViews(input.command).words;
+const scannable = words
   .replace(/\$\((?:[^()]|\([^()]*\))*\)/g, ' ')
   .replace(/`[^`]*`/g, ' ');
 
 let hit = null;
 for (const header of scannable.matchAll(FOR_HEADER)) {
-  const found = (header[1].match(WORD) || [])
+  const found = (header[2].match(WORD) || [])
     .filter((word) => !HARMLESS_AROUND.test(word.replace(/\$\{[^}]*\}/g, '')))
     .map((word) => NONSPLIT_EXPANSION.exec(word))
     .find(Boolean);
@@ -77,6 +81,44 @@ for (const header of scannable.matchAll(FOR_HEADER)) {
   if (new RegExp('(?:^|[;&|(\\s])' + name + '=\\(').test(scannable.slice(0, header.index))) continue;
   hit = { expansion: found[0], name: name, header: header[0].trim() };
   break;
+}
+
+// Second shape (docs/adr/0027): `for c in "a.py /x" "b.py /y"; do python3 $c`.
+// A quoted literal holding whitespace in the list exists only to be split again
+// in the body, so an unquoted `$c` / `${c}` there is meant as several words and
+// gets one. The list's quotes are blanked in the masked view, so they are read
+// from the raw command at the same offsets; the body is read in `words`, where
+// `"$c"` is already gone. Substitutions stay visible: a loop inside `$(…)` is zsh's.
+// shortcut: the body ends at the first `done`, so a use after a nested loop is
+// missed; track nesting if that shows up in use.
+let item = null;
+if (!hit) {
+  for (const header of words.matchAll(FOR_HEADER)) {
+    const end = header.index + header[0].length;
+    const list = input.command.slice(end - header[2].length, end);
+    const quoted = list.match(/"(?:[^"\\]|\\.)*"|'[^']*'/g) || [];
+    if (!quoted.some((word) => /\s/.test(word) && !/^"[^]*[$`\\]/.test(word))) continue;
+    const name = header[1];
+    const done = words.slice(end).search(/(?:^|[;&|\s])done(?![\w])/);
+    const body = words.slice(end, done === -1 ? undefined : end + done);
+    const use = new RegExp('\\$(?:' + name + '(?![\\w[])|\\{' + name + '\\})').exec(body);
+    if (use) { item = { expansion: use[0], name: name, header: header[0].trim() }; break; }
+  }
+}
+
+if (item) {
+  deny(
+    'zsh-wordsplit-guard: silent non-split. `' + item.header + '` hands the body ' +
+    'each quoted item as ONE word, and `' + item.expansion + '` unquoted keeps it ' +
+    'one word: the Bash tool runs zsh, where parameter expansion is not ' +
+    'word-split. A command gets the whole item as a single argument. Rewrite as ' +
+    'one of:\n' +
+    '  - `${=' + item.name + '}` — split on IFS\n' +
+    '  - one item per loop word, the shared arguments in the body: ' +
+    '`for ' + item.name + ' in a b; do cmd "$' + item.name + '" arg; done`\n' +
+    'Deliberate non-split: [nosplit] in the description, or ALLOW_ZSH_NOSPLIT=1 ' +
+    'for the session.');
+  process.exit(0);
 }
 
 if (!hit) process.exit(0);

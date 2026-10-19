@@ -95,6 +95,30 @@ denied('for x in $v; do echo $x; done <<<"seed"');
 // The array escape hatch is ordered: only an assignment BEFORE the loop counts.
 denied('for i in $a; do echo $i; done; a=(uno due)');
 
+// --- a loop variable built to hold several words -----------------------------
+// A list of quoted literals holding whitespace exists only to be split again in
+// the body; an unquoted `$c` there stays one word (docs/adr/0027).
+const itemReason = denied('for c in "tests/a.py /nope" "tests/b.py /nope /nope"; do python3 $c; done');
+assert.ok(/\$\{=c\}/.test(itemReason), 'names the IFS-split fix for the loop variable');
+assert.ok(/for c in a b; do cmd "\$c" arg; done/.test(itemReason), 'names one item per loop word');
+assert.ok(/\[nosplit\]/.test(itemReason), 'points at the per-call opt-out');
+denied('for c in "a b" "c d"; do printf "[%s]\\n" ${c}; done');  // braced
+denied("for c in 'a b' 'c d'; do echo $c; done");                // single quotes
+denied('for c in x "a b"; do\n  echo $c\ndone');                // one such word is enough
+// Every context the masked view exposes: `$(…)`, inside double quotes, heredoc body.
+denied('out=$(for c in "a b"; do echo $c; done)');
+denied('echo "$(for c in "a b"; do echo $c; done)"');
+denied('cat <<EOF\n$(for c in "a b"; do echo $c; done)\nEOF');
+
+allowed('for c in "a b" "c d"; do echo "$c"; done');             // quoted use: one word, as asked
+allowed('for f in "a.txt" "b.txt"; do cat $f; done');            // single-word items
+allowed('for c in "a b"; do echo ${=c}; done');                  // explicit split
+allowed('for c in "a b"; do echo $cx; done');                    // another variable
+allowed('for c in "a b"; do :; done; echo $c');                  // after the loop
+allowed('for c in "$x y"; do echo $c; done');                    // not literal text
+allowed('for c in "a b"; do echo $c; done', { description: 'deliberate [nosplit]' });
+allowed("cat <<'EOF'\nfor c in \"a b\"; do echo $c; done\nEOF");  // literal heredoc body
+
 // --- opt-outs and unrelated calls --------------------------------------------
 allowed('for x in $v; do echo $x; done', { description: 'deliberate [nosplit]' });
 allowed('for x in $v; do echo $x; done', { description: 'deliberate [NOSPLIT]' });

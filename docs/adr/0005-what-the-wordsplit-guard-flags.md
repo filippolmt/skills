@@ -80,3 +80,6 @@ intent does.
 - Widening the exemption again needs the same evidence: a replay showing the
   denials it removes were wrong. Narrowing it back is cheap, so a false negative
   found in use is a one-line change plus a test.
+- Argument position stays out of scope, with one exception whose source proves
+  several words were meant: the loop variable of a list of quoted multi-word
+  literals (`docs/adr/0027-the-wordsplit-guard-flags-multi-word-loop-items.md`).
