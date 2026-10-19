@@ -40,6 +40,9 @@ const CASES = [
   { hook: 'loop', named: 'for c in a b; do cmd "$c" arg; done',
     bash: 'for c in "a x" "b x"; do printf "<%s>" $c; echo; done',
     zsh: 'for c in a b; do printf "<%s>" "$c" x; echo; done' },
+  { hook: 'loop', named: 'for c arg in a x b y; do cmd "$c" "$arg"; done',
+    bash: 'for c in "a x" "b y"; do printf "<%s>" $c; echo; done',
+    zsh: 'for c arg in a x b y; do printf "<%s>" "$c" "$arg"; echo; done' },
 
   // --- equals expansion ---
   { hook: 'expansion', applied: true, bash: 'echo ===== =ls' },

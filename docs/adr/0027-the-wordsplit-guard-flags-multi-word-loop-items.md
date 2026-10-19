@@ -20,9 +20,12 @@ by definition — so the guard denies it like the loop rule.
 
 ## The line
 
-Denied: in `for NAME in <list>; do <body>; done`, at least one list word is a
-quoted literal (single quotes, or double quotes with no `$`, backtick or escape)
-holding whitespace, and the body uses `$NAME` or `${NAME}` outside double quotes.
+Denied: in `for NAME in <list>; do <body>; done`, or zsh's `for NAME (<list>)`,
+at least one list word is a quoted literal (single quotes, or double quotes with
+no `$`, backtick or escape) holding whitespace, and the body uses `$NAME`,
+`${NAME}` or a braced modifier (`${NAME:-x}`, `${NAME%.py}`) outside double
+quotes. The body ends at the `done` closing the loop's own `do`, past any loop
+nested in it.
 
 Allowed: a list of single-word items (`for f in "a.txt" "b.txt"`), a quoted use
 (`"$c"`), an explicit split (`${=c}`), a list word that is not literal text
@@ -37,7 +40,8 @@ that command's argument, not an item.
 ## Measured
 
 `scripts/replay-wordsplit-guard.js` replayed the 9086 unique `Bash` commands
-holding a `for` from this machine's transcripts. The rule added 54 denials to
+holding a `for` from this machine's transcripts. The nested-loop, modifier and
+short-form reading added afterwards changed none of its verdicts. The rule added 54 denials to
 the loop rule's 33. Three were wrong — the `eval` and substitution shapes above,
 now allowed — and the other 51 are the trap itself: 29 of them `set -- $p` over
 items like `"gitlab-runner 0.92.1 0.93.0"`, which in zsh sets only `$1`, and the
@@ -47,6 +51,10 @@ local, like ADR-0005's; its count is a snapshot of this machine's history.
 
 ## Consequences
 
-- The body ends at the first `done`, so a use after a nested loop is a false
-  negative. A false negative found in use is a one-line change plus a test.
+- The deny names three rewrites: `${=NAME}`, one item per loop word, and
+  several loop variables (`for c arg in a x b y`), zsh's own form for the
+  `set -- $p` shape the replay found most.
+- A short-form loop whose body is a `{ … }` group or a single command, with no
+  `do`, is read to the end of the command: a later use of the same name could
+  be a false positive. The replay found no such loop.
 - The opt-outs are the loop rule's: `[nosplit]` and `ALLOW_ZSH_NOSPLIT=1`.

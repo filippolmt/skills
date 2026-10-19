@@ -111,6 +111,15 @@ denied('echo "$(for c in "a b"; do echo $c; done)"');
 denied('cat <<EOF\n$(for c in "a b"; do echo $c; done)\nEOF');
 
 denied('for c in "a b"; do echo done $c; done');                 // `done` as an argument ends nothing
+denied('for c in "a b"; do for d in x y; do :; done; python3 $c; done'); // after a nested loop
+denied('for c in "a b"; do\n  while false; do :; done\n  python3 $c\ndone');
+denied('for c in "a b"; do echo ${c:-x}; done');                 // a modifier does not split either
+denied('for c in "a.py -v"; do python3 ${c%.py}; done');
+denied('for c ("a b" "c d"); do python3 $c; done');              // zsh's short form
+assert.ok(/for c arg in a x b y; do cmd "\$c" "\$arg"; done/.test(itemReason), 'names several loop variables');
+allowed('for c ("a b" "c d"); do python3 "$c"; done');
+allowed('for c in "a b"; do for d in x y; do :; done; done; echo $c'); // after the outer loop
+allowed('for c in "a b"; do echo ${#c}; done');                  // a length is one word
 
 allowed('for c in "a b" "c d"; do echo "$c"; done');             // quoted use: one word, as asked
 // Where zsh never splits anyway — and neither does bash — one word is right.

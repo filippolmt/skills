@@ -91,42 +91,63 @@ for (const header of scannable.matchAll(FOR_HEADER)) {
 // `"$c"` is already gone. Substitutions stay visible: a loop inside `$(…)` is zsh's.
 // `[[ … ]]`, an assignment value and a `case` word never split, in bash either,
 // so a use there is one word by intent; `eval` parses its arguments again, which
-// splits them.
-// shortcut: the body ends at the first `done`, so a use after a nested loop is
-// missed; track nesting if that shows up in use.
-let item = null;
+// splits them. zsh's short form `for c (…)` is read too.
+const ITEM_HEADER = /\bfor\s+([A-Za-z_]\w*)\s*(?:\s+in\s+([^\n;]*)|\(([^)\n]*)\))/g;
+// `do` and `done` in command position: the body is the text up to the `done`
+// that closes this loop's `do`, past any loop nested in it.
+// shortcut: a short-form loop with no `do` (`for c (…) { … }`) is read to the end
+// of the command; bound it by the `}` or the command if a false positive shows up.
+const DO_DONE = /(?:^|[;&|\n)])\s*(do|done)(?!\w)/g;
+
+function bodyOf(text) {
+  let depth = 0;
+  for (const keyword of text.matchAll(DO_DONE)) {
+    depth += keyword[1] === 'do' ? 1 : -1;
+    if (depth === 0) return text.slice(0, keyword.index);
+  }
+  return text;
+}
+
+let itemHit = null;
 if (!hit) {
-  for (const header of words.matchAll(FOR_HEADER)) {
+  for (const header of words.matchAll(ITEM_HEADER)) {
     const end = header.index + header[0].length;
+    const listText = header[2] !== undefined ? header[2] : header[3];
+    const listEnd = header[2] !== undefined ? end : end - 1;
     // A substitution's quoted words are its command's arguments, not list items:
     // each span the masked view finds, where its own quotes are gone, becomes a
     // `$`, so a quoted word around it reads as not literal. A span the list cut
     // at a `;` runs to the list's end.
-    const list = [...header[2].matchAll(/\$\((?:[^()]|\([^()]*(?:\)|$))*(?:\)|$)|`[^`]*(?:`|$)/g)].reduceRight(
+    const list = [...listText.matchAll(/\$\((?:[^()]|\([^()]*(?:\)|$))*(?:\)|$)|`[^`]*(?:`|$)/g)].reduceRight(
       (text, s) => text.slice(0, s.index) + '$' + text.slice(s.index + s[0].length),
-      input.command.slice(end - header[2].length, end));
+      input.command.slice(listEnd - listText.length, listEnd));
     const quoted = list.match(/"(?:[^"\\]|\\.)*"|'[^']*'/g) || [];
     if (!quoted.some((word) => /\s/.test(word) && !/^"[\s\S]*[$`\\]/.test(word))) continue;
     const name = header[1];
-    const doneAt = words.slice(end).search(/(?:^|[;&|\n])\s*done(?!\w)/);
-    const body = words.slice(end, doneAt === -1 ? undefined : end + doneAt)
-      .replace(/\[\[[\s\S]*?\]\]/g, ' ');
-    const use = new RegExp('(?<![=\\w])(?<!\\bcase\\s+)(?<!\\beval\\s[^;&|\\n]*)\\$(?:' + name + '(?![\\w[])|\\{' + name + '\\})').exec(body);
-    if (use) { item = { expansion: use[0], name: name, header: header[0].trim() }; break; }
+    const body = bodyOf(words.slice(end)).replace(/\[\[[\s\S]*?\]\]/g, ' ');
+    // `$c`, `${c}` or a braced modifier (`${c:-x}`, `${c%.py}`), as NONSPLIT_EXPANSION.
+    const use = new RegExp('(?<![=\\w])(?<!\\bcase\\s+)(?<!\\beval\\s[^;&|\\n]*)\\$(?:' + name +
+      '(?![\\w[])|\\{' + name + '(?:[:#%/][^}]*)?\\})').exec(body);
+    if (use) { itemHit = { expansion: use[0], name: name, header: header[0].trim() }; break; }
   }
 }
 
-if (item) {
+const OPT_OUT = 'Deliberate non-split: [nosplit] in the description, or ' +
+  'ALLOW_ZSH_NOSPLIT=1 for the session.';
+
+if (itemHit) {
+  const { name } = itemHit;
   deny(
-    'zsh-wordsplit-guard: silent non-split. `' + item.header + '` hands the body ' +
-    'each quoted item as ONE word, and `' + item.expansion + '` unquoted keeps it ' +
+    'zsh-wordsplit-guard: silent non-split. `' + itemHit.header + '` hands the body ' +
+    'each quoted item as ONE word, and `' + itemHit.expansion + '` unquoted keeps it ' +
     'one word: the Bash tool runs zsh, where parameter expansion is not ' +
     'word-split. Rewrite as one of:\n' +
-    '  - `${=' + item.name + '}` — split on IFS\n' +
+    '  - `${=' + name + '}` — split on IFS\n' +
     '  - one item per loop word, the shared arguments in the body: ' +
-    '`for ' + item.name + ' in a b; do cmd "$' + item.name + '" arg; done`\n' +
-    'Deliberate non-split: [nosplit] in the description, or ALLOW_ZSH_NOSPLIT=1 ' +
-    'for the session.');
+    '`for ' + name + ' in a b; do cmd "$' + name + '" arg; done`\n' +
+    '  - several loop variables, one per word of an item (zsh only): ' +
+    '`for ' + name + ' arg in a x b y; do cmd "$' + name + '" "$arg"; done`\n' +
+    OPT_OUT);
   process.exit(0);
 }
 
@@ -142,5 +163,4 @@ deny(
   '  - `arr=(...)` then `for x in "${arr[@]}"` — for values you build yourself\n' +
   '  - a literal list, or `$(cmd)` directly, which does split in zsh\n' +
   'Keep the split at the call site: `setopt shwordsplit` would change every ' +
-  'later expansion in that shell. Deliberate non-split: [nosplit] in the ' +
-  'description, or ALLOW_ZSH_NOSPLIT=1 for the session.');
+  'later expansion in that shell. ' + OPT_OUT);
