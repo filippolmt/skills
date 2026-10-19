@@ -29,7 +29,21 @@ Allowed: a list of single-word items (`for f in "a.txt" "b.txt"`), a quoted use
 (`"$x y"`), any use after `done`, and a use where neither shell splits:
 inside `[[ … ]]`, as an assignment value (`x=$c`), as the `case` word. The issue
 asked for every unquoted use; those three are one word by intent, so denying
-them would be the noise ADR-0005 measured against.
+them would be the noise ADR-0005 measured against. Also allowed: an argument of
+`eval`, which parses it again and so splits it, and a quoted literal inside a
+command substitution in the list (`$(find -newermt '-15 minutes')`), which is
+that command's argument, not an item.
+
+## Measured
+
+`scripts/replay-wordsplit-guard.js` replayed the 9086 unique `Bash` commands
+holding a `for` from this machine's transcripts. The rule added 54 denials to
+the loop rule's 33. Three were wrong — the `eval` and substitution shapes above,
+now allowed — and the other 51 are the trap itself: 29 of them `set -- $p` over
+items like `"gitlab-runner 0.92.1 0.93.0"`, which in zsh sets only `$1`, and the
+rest a CLI run as `$B $c` or `cmd $c` over multi-word items. Under the Bash
+tool's zsh each of those runs with the whole item as one word. The replay is
+local, like ADR-0005's; its count is a snapshot of this machine's history.
 
 ## Consequences
 

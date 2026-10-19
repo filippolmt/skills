@@ -122,6 +122,13 @@ allowed('for c in "a b"; do echo ${=c}; done');                  // explicit spl
 allowed('for c in "a b"; do echo $cx; done');                    // another variable
 allowed('for c in "a b"; do :; done; echo $c');                  // after the loop
 allowed('for c in "$x y"; do echo $c; done');                    // not literal text
+// A quoted literal inside a substitution is that command's argument, not an item.
+allowed("for d in $(find . -newermt '-15 minutes'); do ls $d; done");
+allowed("for d in `find . -newermt '-15 minutes'`; do ls $d; done");
+allowed('for p in ${(f)"$(kubectl get pods | awk \'{print $1}\')"}; do echo $p; done');
+allowed("for f in $( (git status | awk '{print $2}'; git diff --name-only) ); do lint $f; done");
+// `eval` parses its arguments again, which splits them.
+allowed('for a in "x y" "z w"; do eval cmd $a; done');
 allowed('for c in "a b"; do echo $c; done', { description: 'deliberate [nosplit]' });
 allowed("cat <<'EOF'\nfor c in \"a b\"; do echo $c; done\nEOF");  // literal heredoc body
 
