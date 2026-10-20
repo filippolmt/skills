@@ -168,6 +168,9 @@ For each `git-subdir` source repo in `marketplace.json` (or the one named):
      when upstream's meaning changed — a reworded upstream sentence is no reason
      to rewrite a summary. `marketplace.json` is the source of truth, so this is
      what consumers see.
+     When a description is reviewed and kept, record the entry's pinned `sha`
+     under its name in `descriptionReviewed` in `scripts/catalog-meta.json`; a
+     rewrite needs no record.
 3. **Regenerate the README**, then validate.
 
 Done when every `git-subdir` repo in scope is accounted for — reconciled, or
