@@ -2,7 +2,7 @@
 name: printing-press
 description: Set up a new integration, connector, or CLI binding for any API. Wrap or generate a ship-ready Go CLI from an OpenAPI, HAR, or Postman spec via the lean research -> generate -> build -> shipcheck loop. Use when the user says build a CLI, wrap this API, set up a new integration, add a connector, integrate with a service, or names an API by domain.
 version: 3.0.0
-min-binary-version: "4.33.5"
+min-binary-version: "4.33.7"
 allowed-tools:
   - Bash
   - Read
@@ -66,6 +66,7 @@ then read [references/run-resolution.md](references/run-resolution.md): it resol
 API target, the briefing context, and the source priority for combo runs.
 
 **Never execute a phase from memory. When you enter a phase, Read its file from phases/ first.**
+Code orchestration in [phases/10-generate.md](phases/10-generate.md) serves reads on `<api>_read` and previews state-changing `<api>_execute` calls until `confirm` is boolean `true`.
 
 | Step | File |
 |---:|---|
