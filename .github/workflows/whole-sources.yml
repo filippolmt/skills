@@ -8,7 +8,9 @@ name: whole-sources
 # description and sometimes an exclusion decision, which are not a generator's.
 #
 # The same issue-keeping runs for branch pins whose repo now publishes release
-# tags (ADR-0026): one matrix leg per report, each with its own issue.
+# tags (ADR-0026), and for entries whose upstream description changed since the
+# catalog's text was reviewed (ADR-0029): one matrix leg per report, each with its
+# own issue.
 
 on:
   schedule:
@@ -20,6 +22,8 @@ on:
       - docs/adr/0014-each-source-repo-is-whole-or-curated.md
       - scripts/check-whole-sources.js
       - scripts/check-branch-pins.js
+      - scripts/check-upstream-descriptions.js
+      - scripts/catalog-meta.json
       - scripts/github.js
       - renovate.json
       - scripts/catalog.js
@@ -50,8 +54,16 @@ jobs:
             prefix: Branch-pinned repos publish release tags
             source: from each repo's tags (ADR-0026)
             resolved: Every branch-pinned repo is now on a tag, or has none at or past its pin.
+          - script: scripts/check-upstream-descriptions.js
+            title: Upstream descriptions changed since review
+            prefix: Upstream descriptions changed since review
+            source: between each entry's reviewed and pinned `sha` (ADR-0029)
+            resolved: Every catalog description is reviewed against its pinned upstream.
     steps:
       - uses: actions/checkout@v7
+        with:
+          # check-upstream-descriptions.js reads the catalog's history.
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 24
