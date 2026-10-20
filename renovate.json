@@ -8,7 +8,8 @@
     "custom.regex",
     "github-actions"
   ],
-  "platformAutomerge": false,
+  "platformAutomerge": true,
+  "prHourlyLimit": 0,
   "customManagers": [
     {
       "customType": "regex",
