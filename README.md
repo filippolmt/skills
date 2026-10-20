@@ -473,7 +473,7 @@ Snapshot of the catalog — the source of truth is
 
 | Plugin | What it bundles |
 |---|---|
-| `impeccable` | Design fluency for frontend development. 1 skill with 23 commands (/impeccable polish, /impeccable audit, /impeccable critique, etc.) and curated anti-pattern detection. |
+| `impeccable` | Design fluency for frontend development. 1 skill with 24 commands (/impeccable polish, /impeccable audit, /impeccable critique, etc.) and curated anti-pattern detection. |
 
 ### [mvanhorn/last30days-skill](https://github.com/mvanhorn/last30days-skill) — multi-source trend research
 
