@@ -50,26 +50,50 @@ function reviewedShas(history, acknowledged) {
   return reviewed;
 }
 
-// The report lines. `upstream(entry, sha)` resolves to the description or null
-// when unreadable (a folder upstream deleted is regeneration's to prune).
+// Pure: one labelled text in a fence longer than any backtick run in it — upstream
+// text is untrusted and must not close its fence — indented under its bullet.
+function fenced(label, body) {
+  const fence = '`'.repeat(Math.max(3, ...(body.match(/`+/g) || []).map((run) => run.length + 1)));
+  return `${label}:\n\n${fence}text\n${body}\n${fence}\n`.replace(/^(?=.)/gm, '  ');
+}
+
+// The findings, one Markdown list item each. `upstream(entry, sha)` resolves to the
+// description or null when unreadable (a folder upstream deleted is regeneration's
+// to prune). The texts travel with the finding, so a review needs no second fetch.
 async function findings(catalog, reviewed, upstream) {
-  const lines = [];
+  const entries = [];
   for (const e of catalog.filter(isGitSubdir)) {
     const base = reviewed.get(e.name);
     if (!base || base === e.source.sha) continue;
     const [before, after] = [await upstream(e, base), await upstream(e, e.source.sha)];
     if (before === null || after === null || before === after) continue;
-    // The texts travel with the finding, so a review needs no second fetch.
-    const text = (label, body) => `${label}:\n\n\`\`\`text\n${body}\n\`\`\`\n`;
-    lines.push(`- \`${e.name}\` (\`${repoOf(e)}\`): upstream description changed between ` +
-      `\`${base.slice(0, 7)}\` (reviewed) and \`${e.source.sha.slice(0, 7)}\` (pinned)\n\n` +
-      `<details><summary>Texts</summary>\n\n` +
-      text('Catalog', e.description) +
-      text(`Upstream at \`${base.slice(0, 7)}\``, before) +
-      text(`Upstream at \`${e.source.sha.slice(0, 7)}\``, after) +
-      `\n</details>\n`);
+    const [was, now] = [base.slice(0, 7), e.source.sha.slice(0, 7)];
+    entries.push(`- \`${e.name}\` (\`${repoOf(e)}\`): upstream description changed between ` +
+      `\`${was}\` (reviewed) and \`${now}\` (pinned)\n\n` +
+      '  <details><summary>Texts</summary>\n\n' +
+      fenced('Catalog', e.description) + '\n' +
+      fenced(`Upstream at \`${was}\``, before) + '\n' +
+      fenced(`Upstream at \`${now}\``, after) +
+      '\n  </details>\n');
   }
-  return lines;
+  return entries;
+}
+
+// GitHub caps an issue body at 65536 characters, and the workflow appends a footer.
+const ISSUE_BUDGET = 60000;
+
+// Pure: the report the workflow posts. Past the budget it drops every finding's
+// texts and keeps every finding: a failed issue edit would leave the issue stale.
+function report(entries) {
+  const head = 'Upstream descriptions changed since review:\n';
+  const tail = '\nReview each with `/add-external-skill update <owner/repo>`: rewrite the catalog ' +
+    'description if the meaning changed, else record the pinned sha under the entry name in ' +
+    '`descriptionReviewed` in scripts/catalog-meta.json.';
+  const full = head + entries.join('\n') + tail;
+  if (full.length <= ISSUE_BUDGET) return full;
+  return head + entries.map((entry) => entry.split('\n')[0]).join('\n') +
+    `\n\nAll texts omitted: with them the report exceeds ${ISSUE_BUDGET} characters; ` +
+    'run `node scripts/check-upstream-descriptions.js` locally for them.\n' + tail;
 }
 
 // raw.githubusercontent.com spends no API quota. Anything but 200 or 404 throws,
@@ -99,14 +123,10 @@ function history() {
 
 async function main() {
   const meta = JSON.parse(fs.readFileSync(path.join(root, 'scripts', 'catalog-meta.json'), 'utf8'));
-  const lines = await findings(readCatalog().plugins, reviewedShas(history(), meta.descriptionReviewed || {}),
+  const entries = await findings(readCatalog().plugins, reviewedShas(history(), meta.descriptionReviewed || {}),
     upstreamDescription);
-  if (!lines.length) return console.log('Every catalog description matches the upstream it was reviewed against.');
-  console.log('Upstream descriptions changed since review:');
-  for (const line of lines) console.log(line);
-  console.log('\nReview each with `/add-external-skill update <owner/repo>`: rewrite the catalog ' +
-    'description if the meaning changed, else record the pinned sha under the entry name in ' +
-    '`descriptionReviewed` in scripts/catalog-meta.json.');
+  if (!entries.length) return console.log('Every catalog description matches the upstream it was reviewed against.');
+  console.log(report(entries));
   process.exitCode = 1;
 }
 
@@ -117,4 +137,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { descriptionOf, reviewedShas, findings };
+module.exports = { descriptionOf, reviewedShas, findings, report, ISSUE_BUDGET };

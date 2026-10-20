@@ -31,8 +31,15 @@ The upstream description is a plugin manifest's `description`, else the
 included, so a folded description that changes below its first line still
 differs. Files come from `raw.githubusercontent.com`, which spends no API quota.
 
+Each finding carries the catalog text and both upstream texts, so the issue is
+reviewable without a second fetch. Upstream text is untrusted: each sits in a fence
+longer than any backtick run in it. Past 60000 characters (GitHub caps an issue
+body at 65536) the report drops every text and keeps every finding, since a failed
+issue edit would leave the issue stale.
+
 It reports and never edits: whether a reworded upstream sentence warrants a new
-summary is a judgement.
+summary is a judgement. A rewrite is then reviewed against the upstream artifact,
+not only its description (`CODING_STANDARDS.md` § External entry descriptions).
 
 ## Consequences
 
