@@ -169,7 +169,7 @@ def _compute_relevance(
 # GitHub search qualifiers the planner sometimes writes straight into the topic
 # string (e.g. "open source AI stars:>1000 created:>2025-03-20"). They must not
 # reach the query builder in `search_github`: it appends its own
-# `created:>{from_date}`, and when two `created:` qualifiers collide GitHub
+# `created:{from_date}..{to_date}`, and when two `created:` qualifiers collide GitHub
 # honours the FIRST and silently ignores ours. The API then returns
 # out-of-window items that `parse_github_response`'s date filter drops
 # wholesale — a source that fetches results and reports zero (issue #949).
@@ -179,7 +179,7 @@ def _compute_relevance(
 # the qualifier so no stray `()`/`""` residue reaches the query (issue #952).
 # The plain regex's boundary also accepts wrapper openers so a qualifier with
 # a missing closer ("(created:>2025-03-20") is still stripped rather than
-# leaking into the query; only the stray opener survives, harmlessly.
+# leaking into the query; qualifier-only wrapper residue is discarded below.
 QUALIFIER_KEYS = frozenset({
     "archived", "assignee", "author", "base", "closed", "comments", "commenter",
     "created", "fork", "forks", "head", "in", "interactions", "involves", "is",
@@ -220,6 +220,11 @@ def strip_search_qualifiers(text: str) -> str:
     """
     stripped = _WRAPPED_QUALIFIER_RE.sub(" ", text)
     stripped = _QUALIFIER_RE.sub(" ", stripped)
+    # Malformed/nested wrappers can leave only punctuation after a qualifier
+    # is removed (#969). There is no subject to search in that case. Keep
+    # wrappers around actual topic text, including unbalanced ones like "ai (foo".
+    if stripped != text and re.fullmatch(r"[\s()\[\]\"']*", stripped):
+        return ""
     while True:
         cleaned = _EMPTY_WRAPPER_RE.sub("", stripped)
         if cleaned == stripped:
@@ -296,7 +301,7 @@ def search_github(
     _log(f"Searching for '{core}' (raw: '{topic}', since {from_date}, count={count})")
 
     # Build search query with date filter
-    base_q = f"{core} created:>{from_date}"
+    base_q = f"{core} created:{from_date}..{to_date}"
 
     def _search(qualifier: Optional[str]) -> Optional[Dict[str, Any]]:
         q = f"{base_q} {qualifier}" if qualifier else base_q
@@ -750,8 +755,8 @@ def search_github_person(
     _log(f"Person-mode search for @{username} (since {from_date})")
 
     # Phase 1: PR velocity via search API
-    total_q = urllib.parse.quote(f"author:{username} type:pr created:>{from_date}")
-    merged_q = urllib.parse.quote(f"author:{username} type:pr is:merged created:>{from_date}")
+    total_q = urllib.parse.quote(f"author:{username} type:pr created:{from_date}..{to_date}")
+    merged_q = urllib.parse.quote(f"author:{username} type:pr is:merged created:{from_date}..{to_date}")
 
     total_url = f"{SEARCH_URL}?q={total_q}&per_page=1"
     merged_url = f"{SEARCH_URL}?q={merged_q}&sort=reactions&order=desc&per_page=100"
@@ -823,7 +828,7 @@ def search_github_person(
     num_repos = len(repo_pr_counts)
     velocity_text = (
         f"GitHub Person Profile: @{username}\n\n"
-        f"CONTRIBUTION VELOCITY (last {(to_date > from_date) and 30 or 30} days)\n"
+        f"CONTRIBUTION VELOCITY (last {dates.days_ago(from_date, to_date)} days)\n"
         f"- {merged_count} PRs merged across {num_repos} repos ({merge_rate}% merge rate)\n"
         f"- {total_prs} total PRs submitted, {open_prs} still open\n"
     )
