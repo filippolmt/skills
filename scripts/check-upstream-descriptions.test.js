@@ -53,5 +53,11 @@ test('findings: a changed upstream description is reported; unchanged, unreviewe
     ['d@s1', null], ['d@s2', 'new'],
   ]);
   const lines = await findings(catalog, reviewed, async (e, sha) => upstream.get(`${e.name}@${sha}`));
-  assert.deepStrictEqual(lines, ['- `a` (`acme/a`): upstream description changed between `s1` (reviewed) and `s2` (pinned)']);
+  assert.strictEqual(lines.length, 1);
+  assert.strictEqual(lines[0].split('\n')[0], '- `a` (`acme/a`): upstream description changed between `s1` (reviewed) and `s2` (pinned)');
+  // The texts a review decides on travel with the finding, fenced so a `<name>` survives Markdown.
+  for (const text of ['Catalog', '```text\nA\n```', 'Upstream at `s1`', '```text\nold\n```', 'Upstream at `s2`', '```text\nnew\n```']) {
+    assert.ok(lines[0].includes(text), `the finding carries ${text}:\n${lines[0]}`);
+  }
+  assert.match(lines[0], /<details>[\s\S]*<\/details>\s*$/);
 });

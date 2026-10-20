@@ -59,8 +59,15 @@ async function findings(catalog, reviewed, upstream) {
     if (!base || base === e.source.sha) continue;
     const [before, after] = [await upstream(e, base), await upstream(e, e.source.sha)];
     if (before === null || after === null || before === after) continue;
+    // The texts travel with the finding, so a review needs no second fetch.
+    const text = (label, body) => `${label}:\n\n\`\`\`text\n${body}\n\`\`\`\n`;
     lines.push(`- \`${e.name}\` (\`${repoOf(e)}\`): upstream description changed between ` +
-      `\`${base.slice(0, 7)}\` (reviewed) and \`${e.source.sha.slice(0, 7)}\` (pinned)`);
+      `\`${base.slice(0, 7)}\` (reviewed) and \`${e.source.sha.slice(0, 7)}\` (pinned)\n\n` +
+      `<details><summary>Texts</summary>\n\n` +
+      text('Catalog', e.description) +
+      text(`Upstream at \`${base.slice(0, 7)}\``, before) +
+      text(`Upstream at \`${e.source.sha.slice(0, 7)}\``, after) +
+      `\n</details>\n`);
   }
   return lines;
 }
