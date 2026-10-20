@@ -1,7 +1,6 @@
 ---
 name: add-external-skill
 description: "Add or update external skills, their Codex/pi outcomes, and the generated catalog. Usage: /add-external-skill <owner/repo> [path] [name] | /add-external-skill update"
-disable-model-invocation: true
 ---
 
 Keep the marketplace catalog, cross-harness distribution metadata, and generated

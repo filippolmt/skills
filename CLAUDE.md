@@ -46,8 +46,8 @@ folder in somebody else's repo and pins a `sha`, and that is what Claude install
 The generated tree at `skills/` is the exception the reference does not cover —
 adding an entry therefore also **vendors a copy** of that upstream on the next
 regeneration, which is where redistribution is decided. Both branches run through
-the user-invoked **`/add-external-skill`**
-skill: `<owner/repo> [path] [name]` appends entries, `update` reconciles existing
+the **`/add-external-skill`** skill, which the agent also follows when asked in
+plain words: `<owner/repo> [path] [name]` appends entries, `update` reconciles existing
 ones against upstream (skills added and removed, tag/`sha` bumps, refreshed
 descriptions). It also picks the `ref`, regenerates the README and validates.
 Copy the entry shape from any existing `git-subdir` entry. Every external entry
@@ -94,6 +94,9 @@ A skill upstream **added** is not catalogued by anything automatic. For a
 listing it, until an entry or an exclusion closes it
 (`docs/adr/0024-report-uncatalogued-skills-of-whole-sources.md`). Run
 `node scripts/check-whole-sources.js` for the same list locally.
+An upstream description that changed since the catalog's text was reviewed is
+reported the same way (`docs/adr/0029-report-upstream-descriptions-changed-since-review.md`,
+`node scripts/check-upstream-descriptions.js`).
 
 ## Gotchas
 
