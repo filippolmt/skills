@@ -1,7 +1,7 @@
 {
   "name": "proximo",
-  "version": "0.16.0+catalog.4a11e23a5eb3.f268fe23c95e",
-  "description": "Makes local Docker containers reachable at https://<name>.test with trusted HTTPS and local DNS. Use when exposing a container through proximo.* labels, or when diagnosing a broken one: a .test host that does not answer, a 502/503, an untrusted local certificate, or a page that loads and then breaks.",
+  "version": "0.16.0+catalog.4a11e23a5eb3.c94ebaac3968",
+  "description": "Makes local Docker containers reachable at https://<name>.test with trusted HTTPS and local DNS, and shares a route with colleagues over the team's mesh. Use when exposing a container through proximo.* labels, or when diagnosing a broken one: a .test host that does not answer, a 502/503, an untrusted local certificate, a page that loads and then breaks, a request whose container output you need, a queue or worker that is not progressing, or a shared link that fails.",
   "author": {
     "name": "Filippo Merante Caparrotta",
     "url": "https://github.com/filippolmt"

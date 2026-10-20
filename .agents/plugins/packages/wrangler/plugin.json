@@ -1,7 +1,7 @@
 {
   "name": "wrangler",
-  "version": "0.0.0+catalog.86505e44f87d.2feaded79ebd",
-  "description": "Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets.",
+  "version": "0.0.0+catalog.86505e44f87d.9037c8904338",
+  "description": "Run or troubleshoot Wrangler CLI commands in projects with a Wrangler configuration file — local development, Previews, deployment, and resource management; new projects use the cf CLI instead.",
   "author": {
     "name": "Cloudflare",
     "url": "https://github.com/cloudflare"
