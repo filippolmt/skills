@@ -1,7 +1,6 @@
 ---
 name: add-external-skill
 description: "Add or update external skills, their Codex/pi outcomes, and the generated catalog. Usage: /add-external-skill <owner/repo> [path] [name] | /add-external-skill update"
-disable-model-invocation: true
 ---
 
 Keep the marketplace catalog, cross-harness distribution metadata, and generated
@@ -169,6 +168,9 @@ For each `git-subdir` source repo in `marketplace.json` (or the one named):
      when upstream's meaning changed — a reworded upstream sentence is no reason
      to rewrite a summary. `marketplace.json` is the source of truth, so this is
      what consumers see.
+     When a description is reviewed and kept, record the entry's pinned `sha`
+     under its name in `descriptionReviewed` in `scripts/catalog-meta.json`; a
+     rewrite needs no record.
 3. **Regenerate the README**, then validate.
 
 Done when every `git-subdir` repo in scope is accounted for — reconciled, or
