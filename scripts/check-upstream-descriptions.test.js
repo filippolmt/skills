@@ -6,7 +6,7 @@
 // here against fake histories and fake upstream text.
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { descriptionOf, reviewedShas, findings } = require('./check-upstream-descriptions.js');
+const { descriptionOf, reviewedShas, findings, report, ISSUE_BUDGET } = require('./check-upstream-descriptions.js');
 
 const entry = (name, sha, description) => ({
   name, description,
@@ -52,6 +52,31 @@ test('findings: a changed upstream description is reported; unchanged, unreviewe
     ['b@s1', 'same'], ['b@s2', 'same'],
     ['d@s1', null], ['d@s2', 'new'],
   ]);
-  const lines = await findings(catalog, reviewed, async (e, sha) => upstream.get(`${e.name}@${sha}`));
-  assert.deepStrictEqual(lines, ['- `a` (`acme/a`): upstream description changed between `s1` (reviewed) and `s2` (pinned)']);
+  const entries = await findings(catalog, reviewed, async (e, sha) => upstream.get(`${e.name}@${sha}`));
+  assert.strictEqual(entries.length, 1);
+  assert.strictEqual(entries[0].split('\n')[0], '- `a` (`acme/a`): upstream description changed between `s1` (reviewed) and `s2` (pinned)');
+  // The texts a review decides on travel with the finding, fenced so a `<name>` survives
+  // Markdown, and indented under the bullet they belong to.
+  for (const text of ['  Catalog', '  ```text\n  A\n  ```', '  Upstream at `s1`', '  ```text\n  old\n  ```', '  Upstream at `s2`', '  ```text\n  new\n  ```']) {
+    assert.ok(entries[0].includes(text), `the finding carries ${text}:\n${entries[0]}`);
+  }
+  assert.match(entries[0], /  <details>[\s\S]*  <\/details>\s*$/);
+});
+
+test('upstream text cannot close its fence: the fence outgrows any backtick run in it', async () => {
+  const hostile = 'description: >\n  ```\n  # heading\n  ````x';
+  const [found] = await findings([entry('a', 's2', 'A')], new Map([['a', 's1']]),
+    async (e, sha) => (sha === 's1' ? 'old' : hostile));
+  assert.ok(found.includes('  `````text\n  description: >\n    ```\n    # heading\n    ````x\n  `````'), found);
+});
+
+test('report stays under the issue body limit by dropping texts, never findings', () => {
+  const big = (name) => `- \`${name}\` (\`acme/${name}\`): upstream description changed\n\n  <details>${'x'.repeat(5000)}</details>\n`;
+  const small = report([big('a')]);
+  assert.ok(small.startsWith('Upstream descriptions changed since review:\n'), 'the PREFIX the workflow checks');
+  assert.ok(small.includes('x'.repeat(5000)), 'texts kept when they fit');
+  const many = report(Array.from({ length: 30 }, (_, i) => big(`e${i}`)));
+  assert.ok(many.length <= ISSUE_BUDGET, `${many.length} chars`);
+  for (let i = 0; i < 30; i++) assert.ok(many.includes(`\`e${i}\``), `finding e${i} kept`);
+  assert.ok(!many.includes('<details>') && /texts omitted/.test(many), 'says why the texts are gone');
 });

@@ -168,6 +168,9 @@ For each `git-subdir` source repo in `marketplace.json` (or the one named):
      when upstream's meaning changed — a reworded upstream sentence is no reason
      to rewrite a summary. `marketplace.json` is the source of truth, so this is
      what consumers see.
+     A rewrite is checked against the upstream artifact at the pinned `sha` —
+     the `SKILL.md` body, or a whole plugin's manifest and artifact list —
+     before it lands, not only against upstream's description.
      When a description is reviewed and kept, record the entry's pinned `sha`
      under its name in `descriptionReviewed` in `scripts/catalog-meta.json`; a
      rewrite needs no record.

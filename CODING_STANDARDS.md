@@ -15,3 +15,7 @@ A rule added to `zsh-wordsplit-guard` is reviewed against every context its mask
 ## Local plugin descriptions
 
 A local plugin's description is one text kept in three places — its `plugin.json`, its `marketplace.json` entry and the README catalog — and `gen-readme.js --check` fails when they drift. Review checks that the three agree.
+
+## External entry descriptions
+
+A description rewritten for an external entry is checked against the upstream artifact at the pinned `sha` — the `SKILL.md` body, or a whole plugin's manifest and artifact list — not only against upstream's own description. Review reports a claim the artifact does not support.
