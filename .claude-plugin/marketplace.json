@@ -118,7 +118,7 @@
         "ref": "v1.3.1",
         "sha": "24fe0ef7737efae15c87225755e9f6f5965e4888"
       },
-      "description": "Plan a huge chunk of work — more than one agent session can hold — as a shared map of investigation tickets on your issue tracker, and resolve them one at a time until the way to the destination is clear.",
+      "description": "Plan a huge chunk of work — more than one agent session can hold — as a shared map of decision tickets on your issue tracker, and resolve them one at a time until the way to the destination is clear.",
       "author": {
         "name": "Matt Pocock",
         "url": "https://github.com/mattpocock"
@@ -178,7 +178,7 @@
         "ref": "v1.3.1",
         "sha": "24fe0ef7737efae15c87225755e9f6f5965e4888"
       },
-      "description": "Break a plan, spec, or the current conversation into a set of tracer-bullet tickets, each declaring its blocking edges, published to the configured tracker — edges as text in a local file, or native blocking links on a real tracker.",
+      "description": "Break a plan, spec, or the current conversation into a set of tracer-bullet tickets, each declaring its blocking edges, published to the configured tracker — edges as text in one file per ticket locally, or native blocking links on a real tracker.",
       "author": {
         "name": "Matt Pocock",
         "url": "https://github.com/mattpocock"
@@ -283,7 +283,7 @@
         "ref": "v1.3.1",
         "sha": "24fe0ef7737efae15c87225755e9f6f5965e4888"
       },
-      "description": "Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes — Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/PRD asked for?).",
+      "description": "Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes — Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/spec asked for?).",
       "author": {
         "name": "Matt Pocock",
         "url": "https://github.com/mattpocock"
@@ -343,7 +343,7 @@
         "ref": "v1.3.1",
         "sha": "24fe0ef7737efae15c87225755e9f6f5965e4888"
       },
-      "description": "Grill the user relentlessly about a plan or design.",
+      "description": "Grill the user relentlessly about a plan, decision, or idea.",
       "author": {
         "name": "Matt Pocock",
         "url": "https://github.com/mattpocock"
@@ -838,7 +838,7 @@
         "ref": "v2.15.0",
         "sha": "a38d04c3d5c298c851dbe5e6ee1965ee3de42cb5"
       },
-      "description": "UI/UX design intelligence for web and mobile.",
+      "description": "UI/UX design intelligence for web, mobile, and desktop.",
       "author": {
         "name": "Next Level Builder",
         "url": "https://github.com/nextlevelbuilder"
@@ -868,7 +868,7 @@
         "ref": "main",
         "sha": "86505e44f87d801aa1864a3c4109e9a8ae5c409f"
       },
-      "description": "Build AI agents on Cloudflare Workers using the Agents SDK — stateful agents, durable workflows, WebSocket apps, scheduled tasks, MCP servers.",
+      "description": "Build, debug, or review AI agents on Cloudflare Workers with the Agents SDK (the agents package).",
       "author": {
         "name": "Cloudflare",
         "url": "https://github.com/cloudflare"
@@ -898,7 +898,7 @@
         "ref": "main",
         "sha": "86505e44f87d801aa1864a3c4109e9a8ae5c409f"
       },
-      "description": "Plan migrations from Zscaler ZIA/ZPA, Palo Alto, legacy VPN, SWG, or SASE stacks to Cloudflare One.",
+      "description": "Assess and plan migrations from existing VPN, SWG, or SASE platforms to Cloudflare One — policy mapping, parity gaps, and rollout.",
       "author": {
         "name": "Cloudflare",
         "url": "https://github.com/cloudflare"
@@ -928,7 +928,7 @@
         "ref": "main",
         "sha": "86505e44f87d801aa1864a3c4109e9a8ae5c409f"
       },
-      "description": "Comprehensive Cloudflare platform skill: Workers, Pages, storage (KV, D1, R2), AI, networking, security, and infrastructure-as-code.",
+      "description": "Discover and choose Cloudflare products for apps, APIs, AI agents, storage, networking, and security, then find the relevant skill or documentation.",
       "author": {
         "name": "Cloudflare",
         "url": "https://github.com/cloudflare"
@@ -943,7 +943,7 @@
         "ref": "main",
         "sha": "86505e44f87d801aa1864a3c4109e9a8ae5c409f"
       },
-      "description": "Create and review Cloudflare Durable Objects — stateful coordination, RPC methods, SQLite storage, alarms, and WebSockets.",
+      "description": "Build, debug, or review Cloudflare Durable Objects code for persistent state and coordination.",
       "author": {
         "name": "Cloudflare",
         "url": "https://github.com/cloudflare"
@@ -1003,7 +1003,7 @@
         "ref": "main",
         "sha": "86505e44f87d801aa1864a3c4109e9a8ae5c409f"
       },
-      "description": "Set up Cloudflare Turnstile end-to-end — scan the codebase, create the widget, deploy the siteverify Worker, and write frontend snippets.",
+      "description": "Set up, repair, or migrate to Cloudflare Turnstile bot verification in an existing frontend and backend, including server-side Siteverify.",
       "author": {
         "name": "Cloudflare",
         "url": "https://github.com/cloudflare"
@@ -1018,7 +1018,7 @@
         "ref": "main",
         "sha": "86505e44f87d801aa1864a3c4109e9a8ae5c409f"
       },
-      "description": "Analyze web performance via Chrome DevTools MCP — Core Web Vitals, render-blocking resources, layout shifts, and caching.",
+      "description": "Audit, diagnose, or optimize page load and interaction performance via Chrome DevTools MCP — Core Web Vitals and Lighthouse performance scores.",
       "author": {
         "name": "Cloudflare",
         "url": "https://github.com/cloudflare"
@@ -1048,7 +1048,7 @@
         "ref": "main",
         "sha": "86505e44f87d801aa1864a3c4109e9a8ae5c409f"
       },
-      "description": "Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets.",
+      "description": "Run or troubleshoot Wrangler CLI commands in projects with a Wrangler configuration file — local development, Previews, deployment, and resource management; new projects use the cf CLI instead.",
       "author": {
         "name": "Cloudflare",
         "url": "https://github.com/cloudflare"
@@ -1183,7 +1183,7 @@
         "ref": "v0.16.0",
         "sha": "4a11e23a5eb3bace85030b3b9006e0950f0e3a89"
       },
-      "description": "Makes local Docker containers reachable at https://<name>.test with trusted HTTPS and local DNS. Use when exposing a container through proximo.* labels, or when diagnosing a broken one: a .test host that does not answer, a 502/503, an untrusted local certificate, or a page that loads and then breaks.",
+      "description": "Makes local Docker containers reachable at https://<name>.test with trusted HTTPS and local DNS, and shares a route with colleagues over the team's mesh. Use when exposing a container through proximo.* labels, or when diagnosing a broken one: a .test host that does not answer, a 502/503, an untrusted local certificate, a page that loads and then breaks, a request whose container output you need, a queue or worker that is not progressing, or a shared link that fails.",
       "author": {
         "name": "Filippo Merante Caparrotta",
         "url": "https://github.com/filippolmt"
@@ -1198,7 +1198,7 @@
         "ref": "v3.2.0",
         "sha": "208acba8d412335185b2056fedf54b3405df43fb"
       },
-      "description": "Create polished, validated architecture, workflow, sequence, data-flow, and lifecycle/state diagrams as explorable standalone HTML with inline SVG, dark/light themes, optional trace motion, and PNG/JPEG/WebP/SVG/WebM export. Accept plain-language requirements or pasted Mermaid flowchart, sequenceDiagram, and stateDiagram input; inspect repository evidence when the diagram must reflect real code.",
+      "description": "Create validated architecture, workflow, sequence, data-flow, lifecycle/state, ERD, class, tree, timeline, and waterfall diagrams as explorable standalone HTML with dark/light themes, motion, and image/SVG/WebM export, or a one-page explainer that answers a question with diagrams and charts. Accept plain-language requirements or pasted Mermaid input; inspect repository evidence when the diagram must reflect real code.",
       "author": {
         "name": "tt-a1i",
         "url": "https://github.com/tt-a1i"
@@ -1213,7 +1213,7 @@
         "ref": "main",
         "sha": "b5e570984f770780cdbd9d295091ee6d04f37f9d"
       },
-      "description": "An opinionated editorial diagram system, drawn to one house style and branded from your own tokens: architecture, flowchart, sequence, state, ER, timeline, swimlane, quadrant, radar, Gantt, Sankey, fishbone, Wardley map, kanban and journey diagrams as self-contained HTML/SVG/PNG. Bundles the diagram-design skill plus the doctor, export-diagram, import-drawio, import-mermaid and profile commands — redraw .drawio or Mermaid sources at a chosen size and detail, onboard brand tokens from a website, add semantic patterns, callouts, accessible motion or sketchy styling.",
+      "description": "An opinionated editorial diagram system, drawn to one house style and branded from your own tokens: architecture, flowchart, sequence, state, ER, timeline, swimlane, quadrant, radar, Gantt, heatmap, waterfall, Sankey, fishbone, Wardley map, kanban, journey and blueprint diagrams as self-contained HTML/SVG/PNG. Bundles the diagram-design skill plus the doctor, export-diagram, import-drawio, import-excalidraw, import-mermaid and profile commands — redraw .drawio, Excalidraw or Mermaid sources at a chosen size and detail, onboard brand tokens from a website, add semantic patterns, callouts, accessible motion or sketchy styling.",
       "author": {
         "name": "Cathryn Lavery",
         "url": "https://github.com/cathrynlavery"

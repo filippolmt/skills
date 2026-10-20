@@ -335,22 +335,22 @@ Snapshot of the catalog — the source of truth is
 | `diagnosing-bugs` | Diagnosis loop for hard bugs and performance regressions. |
 | `grill-with-docs` | A relentless interview to sharpen a plan or design, which also creates docs (ADR's and glossary) as we go. |
 | `triage` | Move issues and external PRs through a state machine of triage roles — categorise, verify, grill if needed, and write agent-ready briefs. |
-| `wayfinder` | Plan a huge chunk of work — more than one agent session can hold — as a shared map of investigation tickets on your issue tracker, and resolve them one at a time until the way to the destination is clear. |
+| `wayfinder` | Plan a huge chunk of work — more than one agent session can hold — as a shared map of decision tickets on your issue tracker, and resolve them one at a time until the way to the destination is clear. |
 | `improve-codebase-architecture` | Scan a codebase for deepening opportunities, present them as a visual HTML report, then grill through whichever one you pick. |
 | `setup-matt-pocock-skills` | Configure this repo for the engineering skills — set up its issue tracker, triage label vocabulary, and domain doc layout. |
 | `tdd` | Test-driven development. |
-| `to-tickets` | Break a plan, spec, or the current conversation into a set of tracer-bullet tickets, each declaring its blocking edges, published to the configured tracker — edges as text in a local file, or native blocking links on a real tracker. |
+| `to-tickets` | Break a plan, spec, or the current conversation into a set of tracer-bullet tickets, each declaring its blocking edges, published to the configured tracker — edges as text in one file per ticket locally, or native blocking links on a real tracker. |
 | `to-spec` | Turn the current conversation into a spec and publish it to the project issue tracker — no interview, just synthesis of what you've already discussed. |
 | `implement` | Implement a piece of work based on a spec or set of tickets. |
 | `prototype` | Build a throwaway prototype to answer a design question. |
 | `research` | Investigate a question against high-trust primary sources and capture the findings as a Markdown file in the repo. |
 | `domain-modeling` | Build and sharpen a project's domain model. |
 | `codebase-design` | Shared vocabulary for designing deep modules. |
-| `code-review` | Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes — Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/PRD asked for?). |
+| `code-review` | Review the changes since a fixed point (commit, branch, tag, or merge-base) along two axes — Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/spec asked for?). |
 | `retro` | Conduct a retrospective on a coding session. |
 | `wizard` | Generate an interactive bash wizard that walks a human through steps only they can perform. Use when provisioning infrastructure, setting up credentials or CI secrets, walking an unfamiliar third-party dashboard, or running a one-off migration or cutover. |
 | `grill-me` | A relentless interview to sharpen a plan or design. |
-| `grilling` | Grill the user relentlessly about a plan or design. |
+| `grilling` | Grill the user relentlessly about a plan, decision, or idea. |
 | `handoff` | Compact the current conversation into a handoff document for another agent to pick up. |
 | `teach` | Teach the user a new skill or concept, within this workspace. |
 | `writing-for-agents` | Writing documents for agents. Use when creating or editing skills, or modifying AGENTS.md or CLAUDE.md. |
@@ -423,7 +423,7 @@ Snapshot of the catalog — the source of truth is
 
 | Skill | What it does |
 |---|---|
-| `ui-ux-pro-max` | UI/UX design intelligence for web and mobile. |
+| `ui-ux-pro-max` | UI/UX design intelligence for web, mobile, and desktop. |
 
 ### [antonbabenko/terraform-skill](https://github.com/antonbabenko/terraform-skill) — Terraform/OpenTofu IaC
 
@@ -449,19 +449,19 @@ Snapshot of the catalog — the source of truth is
 
 | Skill | What it does |
 |---|---|
-| `agents-sdk` | Build AI agents on Cloudflare Workers using the Agents SDK — stateful agents, durable workflows, WebSocket apps, scheduled tasks, MCP servers. |
+| `agents-sdk` | Build, debug, or review AI agents on Cloudflare Workers with the Agents SDK (the agents package). |
 | `cloudflare-email-service` | Send and receive transactional emails with Cloudflare Email Service (Email Sending + Email Routing). |
-| `cloudflare-one-migrations` | Plan migrations from Zscaler ZIA/ZPA, Palo Alto, legacy VPN, SWG, or SASE stacks to Cloudflare One. |
+| `cloudflare-one-migrations` | Assess and plan migrations from existing VPN, SWG, or SASE platforms to Cloudflare One — policy mapping, parity gaps, and rollout. |
 | `cloudflare-one` | Guides Cloudflare One Zero Trust and SASE work across Access, Gateway, WARP, Tunnel, WAN, DLP, CASB, device posture, and identity. |
-| `cloudflare` | Comprehensive Cloudflare platform skill: Workers, Pages, storage (KV, D1, R2), AI, networking, security, and infrastructure-as-code. |
-| `durable-objects` | Create and review Cloudflare Durable Objects — stateful coordination, RPC methods, SQLite storage, alarms, and WebSockets. |
+| `cloudflare` | Discover and choose Cloudflare products for apps, APIs, AI agents, storage, networking, and security, then find the relevant skill or documentation. |
+| `durable-objects` | Build, debug, or review Cloudflare Durable Objects code for persistent state and coordination. |
 | `sandbox-migrate-to-next` | Migrate Cloudflare Sandbox apps from stable @cloudflare/sandbox to @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-next for apps already on the preview. |
 | `sandbox-next` | Build or maintain Cloudflare Sandbox apps on @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-migrate-to-next when porting a stable app. |
 | `sandbox-stable` | Build or maintain Cloudflare Sandbox apps on the stable @cloudflare/sandbox package. Use sandbox-next for preview apps and sandbox-migrate-to-next for stable-to-preview migrations. |
-| `turnstile-spin` | Set up Cloudflare Turnstile end-to-end — scan the codebase, create the widget, deploy the siteverify Worker, and write frontend snippets. |
-| `web-perf` | Analyze web performance via Chrome DevTools MCP — Core Web Vitals, render-blocking resources, layout shifts, and caching. |
+| `turnstile-spin` | Set up, repair, or migrate to Cloudflare Turnstile bot verification in an existing frontend and backend, including server-side Siteverify. |
+| `web-perf` | Audit, diagnose, or optimize page load and interaction performance via Chrome DevTools MCP — Core Web Vitals and Lighthouse performance scores. |
 | `workers-best-practices` | Review and author Cloudflare Workers code against production best practices and common anti-patterns. |
-| `wrangler` | Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Queues, Workflows, and Secrets. |
+| `wrangler` | Run or troubleshoot Wrangler CLI commands in projects with a Wrangler configuration file — local development, Previews, deployment, and resource management; new projects use the cf CLI instead. |
 | `nextjs-on-cloudflare` | Build, migrate, and deploy Next.js apps on Cloudflare Workers with vinext. |
 | `basin` | Build and troubleshoot Cloudflare Basin analytics workflows with Basin Pipelines, Basin Catalog, and Basin SQL. |
 | `cf-cli` | Cloudflare's official cf CLI (beta) for the public Cloudflare API and Workers projects. |
@@ -485,19 +485,19 @@ Snapshot of the catalog — the source of truth is
 
 | Skill | What it does |
 |---|---|
-| `proximo` | Makes local Docker containers reachable at https://<name>.test with trusted HTTPS and local DNS. Use when exposing a container through proximo.* labels, or when diagnosing a broken one: a .test host that does not answer, a 502/503, an untrusted local certificate, or a page that loads and then breaks. |
+| `proximo` | Makes local Docker containers reachable at https://<name>.test with trusted HTTPS and local DNS, and shares a route with colleagues over the team's mesh. Use when exposing a container through proximo.* labels, or when diagnosing a broken one: a .test host that does not answer, a 502/503, an untrusted local certificate, a page that loads and then breaks, a request whose container output you need, a queue or worker that is not progressing, or a shared link that fails. |
 
 ### [tt-a1i/archify](https://github.com/tt-a1i/archify) — architecture & workflow diagrams
 
 | Skill | What it does |
 |---|---|
-| `archify` | Create polished, validated architecture, workflow, sequence, data-flow, and lifecycle/state diagrams as explorable standalone HTML with inline SVG, dark/light themes, optional trace motion, and PNG/JPEG/WebP/SVG/WebM export. Accept plain-language requirements or pasted Mermaid flowchart, sequenceDiagram, and stateDiagram input; inspect repository evidence when the diagram must reflect real code. |
+| `archify` | Create validated architecture, workflow, sequence, data-flow, lifecycle/state, ERD, class, tree, timeline, and waterfall diagrams as explorable standalone HTML with dark/light themes, motion, and image/SVG/WebM export, or a one-page explainer that answers a question with diagrams and charts. Accept plain-language requirements or pasted Mermaid input; inspect repository evidence when the diagram must reflect real code. |
 
 ### [cathrynlavery/diagram-design](https://github.com/cathrynlavery/diagram-design) — editorial diagram system
 
 | Plugin | What it bundles |
 |---|---|
-| `diagram-design` | An opinionated editorial diagram system, drawn to one house style and branded from your own tokens: architecture, flowchart, sequence, state, ER, timeline, swimlane, quadrant, radar, Gantt, Sankey, fishbone, Wardley map, kanban and journey diagrams as self-contained HTML/SVG/PNG. Bundles the diagram-design skill plus the doctor, export-diagram, import-drawio, import-mermaid and profile commands — redraw .drawio or Mermaid sources at a chosen size and detail, onboard brand tokens from a website, add semantic patterns, callouts, accessible motion or sketchy styling. |
+| `diagram-design` | An opinionated editorial diagram system, drawn to one house style and branded from your own tokens: architecture, flowchart, sequence, state, ER, timeline, swimlane, quadrant, radar, Gantt, heatmap, waterfall, Sankey, fishbone, Wardley map, kanban, journey and blueprint diagrams as self-contained HTML/SVG/PNG. Bundles the diagram-design skill plus the doctor, export-diagram, import-drawio, import-excalidraw, import-mermaid and profile commands — redraw .drawio, Excalidraw or Mermaid sources at a chosen size and detail, onboard brand tokens from a website, add semantic patterns, callouts, accessible motion or sketchy styling. |
 
 ### [cloudflare/security-audit-skill](https://github.com/cloudflare/security-audit-skill) — security audit & vulnerability review
 

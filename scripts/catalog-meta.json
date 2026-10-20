@@ -21,5 +21,14 @@
     { "repo": "cloudflare/security-audit-skill", "tagline": "security audit & vulnerability review", "kind": "skill" }
   ],
   "omit": [],
-  "descriptionReviewed": {}
+  "descriptionReviewed": {
+    "cloudflare-email-service": "86505e44f87d801aa1864a3c4109e9a8ae5c409f",
+    "cloudflare-one": "86505e44f87d801aa1864a3c4109e9a8ae5c409f",
+    "domain-modeling": "24fe0ef7737efae15c87225755e9f6f5965e4888",
+    "printing-press-output-review": "2880dd730d7f1dba0cfa6cc003287acb78ae79e1",
+    "setup-matt-pocock-skills": "24fe0ef7737efae15c87225755e9f6f5965e4888",
+    "to-spec": "24fe0ef7737efae15c87225755e9f6f5965e4888",
+    "triage": "24fe0ef7737efae15c87225755e9f6f5965e4888",
+    "workers-best-practices": "86505e44f87d801aa1864a3c4109e9a8ae5c409f"
+  }
 }
