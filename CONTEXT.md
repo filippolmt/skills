@@ -181,9 +181,10 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Expansion trap** — a form zsh runs differently from bash: a word bash takes
   literally and zsh expands (a leading `=`, a glob in a `--flag=value` word,
   parentheses in a `${var/pattern/…}` pattern), or bash syntax zsh lacks
-  (`${!…}`). The wordsplit guard's second rule set; each deny names the zsh
-  rewrite, so it carries no opt-out, and a literal word whose fix is only an
-  escape or quotes is rewritten by the guard itself — see
+  (`${!…}`, `${v@Q}`). The wordsplit guard's second rule set; each deny names
+  the zsh rewrite, so it carries no opt-out, and a literal word whose fix is
+  only an escape or quotes is rewritten by the guard itself — see
   `docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md`,
-  `docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md` and
-  `docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md`.
+  `docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md`,
+  `docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md` and
+  `docs/adr/0030-the-wordsplit-guard-flags-parameter-transformations.md`.

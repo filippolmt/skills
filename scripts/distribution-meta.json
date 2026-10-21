@@ -165,7 +165,7 @@
       "pi": {
         "disposition": "unsupported",
         "limitation": "pi packages cannot install declarative lifecycle hooks.",
-        "fallback": "Under zsh, use splitting expansions such as ${=var}, ${(f)var}, or an array, and quote words starting with =, glob flag values and parenthesised parameter patterns."
+        "fallback": "Under zsh, use splitting expansions such as ${=var}, ${(f)var}, or an array, quote words starting with =, glob flag values and parenthesised parameter patterns, and write zsh's ${(P)name} and ${(qq)v}-style flags in place of bash's ${!name} and ${v@Q}."
       }
     },
     "impeccable/hook:hooks/hooks.json#PostToolUse[0]": {

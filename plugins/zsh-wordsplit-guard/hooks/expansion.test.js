@@ -140,6 +140,35 @@ allowed('cat <<\\EOF\n${!t}\nEOF');
 allowed('cat <<EOF\n\\${!t}\nEOF');       // escaped in the body
 allowed("cat <<EOF\nit's fine\nEOF");     // a quote in an expanding body is literal
 
+// --- parameter transformation -------------------------------------------------
+reason = denied('cat > out.txt <<EOF\nx\nEOF\necho ${v@Q}');
+assert.ok(/^- Parameter transformation: `\$\{v@Q\}`\./m.test(reason), 'quotes the form');
+assert.ok(/bad substitution/.test(reason), 'names the failure');
+assert.ok(/Write `\$\{\(qq\)v\}`\.$/.test(reason), 'names the exact rewrite');
+assert.ok(/`\$\{\(@qq\)a\}`/.test(denied('printf "%s\\n" "${a[@]@Q}"')), '`[@]` keeps words: `@` flag');
+assert.ok(/`\$\{\(j: :\)\$\{\(@qq\)a\}\}`/.test(denied('echo "${a[*]@Q}"')), '`[*]`: quote each, then join');
+assert.ok(/`\$\{\(@qq\)argv\}`/.test(denied('echo "${@@Q}"')), 'the arguments');
+assert.ok(/`\$\{\(qq\)1\}`/.test(denied('echo ${1@Q}')), 'a positional parameter');
+assert.ok(/`\$\{\(g::\)v\}`/.test(denied('echo "${v@E}"')), 'escapes');
+assert.ok(/`\$\{\(U\)v\}`/.test(denied('echo ${v@U}')), 'upper case');
+assert.ok(/`\$\{\(L\)v\}`/.test(denied('echo ${v@L}')), 'lower case');
+assert.ok(/`\$\{\(U\)v\[1\]\}\$\{v\[2,-1\]\}`/.test(denied('echo ${v@u}')), 'first letter only, not `(C)`');
+reason = denied('echo "${PS@P}"');
+assert.ok(/`\$\{\(%\)PS\}`/.test(reason) && /`%n`/.test(reason), 'prompt: names the escapes that differ');
+for (const op of ['A', 'a', 'K', 'k']) {
+  assert.ok(/python or sed/.test(denied('echo ${v@' + op + '}')), op + ': no zsh flag');
+}
+assert.ok(/python or sed/.test(denied('echo ${a[@]@u}')), 'u on an array: no single flag');
+reason = denied('echo ${v@x} ${v@}');
+assert.ok(/^- Not a transformation: `\$\{v@x\}`\./m.test(reason), 'an unknown letter fails in bash too');
+assert.ok(/Not a transformation/.test(denied('echo ${#v@Q}')), 'a length is no transformation');
+denied('cat <<EOF\n${v@Q}\nEOF');          // an unquoted heredoc body expands
+
+allowed("echo '${v@Q}'");
+allowed('echo \\${v@Q}');
+allowed("cat <<'EOF'\n${v@Q}\nEOF");
+allowed('echo ${(qq)v} "${a[@]}" "${@}" ${#@} $v@Q user@host ${v}@x');
+
 // --- several rules, heredoc, unrelated calls -----------------------------------
 rewrites('echo ===== && grep --include=*.md x . && echo =ls',
   "echo \\===== && grep --include='*.md' x . && echo \\=ls"); // every hit of every rule

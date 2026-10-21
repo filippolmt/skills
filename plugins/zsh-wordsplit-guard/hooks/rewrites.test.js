@@ -27,7 +27,8 @@ const hooks = { loop: harness('guard.js'), expansion: harness('expansion.js') };
 // carries. `applied`: the hook rewrites `bash` itself, and that output is what
 // runs under zsh. `sort`: compare lines sorted, where only the order is
 // unspecified (an associative array's keys). `invalid`: bash rejects the form too, so there
-// is no output to match; the rewrite must still run under zsh.
+// is no output to match; the rewrite must still run under zsh. `none`: the
+// message names no zsh form, so only `named` is checked.
 const CASES = [
   // --- for rule (guard.js) ---
   { hook: 'loop', named: '${=v}', setup: 'v="a b c"',
@@ -108,6 +109,36 @@ const CASES = [
     bash: 'for x in "${!@}"; do echo "<$x>"; done', zsh: 'for x in "$@"; do echo "<$x>"; done' },
   { hook: 'expansion', named: '`$$`', invalid: true,
     bash: 'echo ${!$}', zsh: 'echo $$' },
+
+  // --- bash's ${v@…} ---
+  { hook: 'expansion', named: '${(qq)v}', setup: 'v="it\'s a  b"',
+    bash: 'echo "${v@Q}"', zsh: 'echo "${(qq)v}"' },
+  { hook: 'expansion', named: '${(qq)v}', setup: 'v=""',
+    bash: 'echo "<${v@Q}>"', zsh: 'echo "<${(qq)v}>"' },
+  { hook: 'expansion', named: '${(@qq)a}', setup: 'a=("a b" c)',
+    bash: 'printf "<%s>" "${a[@]@Q}"; echo', zsh: 'printf "<%s>" "${(@qq)a}"; echo' },
+  { hook: 'expansion', named: '${(@qq)a}', setup: 'a=()',
+    bash: 'printf "<%s>" "${a[@]@Q}"; echo', zsh: 'printf "<%s>" "${(@qq)a}"; echo' },
+  { hook: 'expansion', named: '${(j: :)${(@qq)a}}', setup: 'a=("a b" c)',
+    bash: 'printf "<%s>" "${a[*]@Q}"; echo', zsh: 'printf "<%s>" "${(j: :)${(@qq)a}}"; echo' },
+  { hook: 'expansion', named: '${(@qq)argv}', setup: 'set -- "a b" c',
+    bash: 'printf "<%s>" "${@@Q}"; echo', zsh: 'printf "<%s>" "${(@qq)argv}"; echo' },
+  { hook: 'expansion', named: '${(qq)1}', setup: 'set -- "a b"',
+    bash: 'echo ${1@Q}', zsh: 'echo ${(qq)1}' },
+  { hook: 'expansion', named: '${(g::)v}', setup: "v='a\\tb\\\\n'",
+    bash: 'echo "${v@E}"', zsh: 'echo -E "${(g::)v}"' },
+  { hook: 'expansion', named: '${(U)v}', setup: 'v="ab cd"',
+    bash: 'echo "${v@U}"', zsh: 'echo "${(U)v}"' },
+  { hook: 'expansion', named: '${(@L)a}', setup: 'a=("A B" C)',
+    bash: 'printf "<%s>" "${a[@]@L}"; echo', zsh: 'printf "<%s>" "${(@L)a}"; echo' },
+  { hook: 'expansion', named: '${(U)v[1]}${v[2,-1]}', setup: 'v="ab cd"',
+    bash: 'echo "${v@u}"', zsh: 'echo "${(U)v[1]}${v[2,-1]}"' },
+  // Prompt escapes differ by design, so the case compares plain text.
+  { hook: 'expansion', named: '${(%)v}', setup: 'v="plain text"',
+    bash: 'echo "${v@P}"', zsh: 'echo "${(%)v}"' },
+  // No zsh form to run: the message names python or sed, or that bash fails too.
+  { hook: 'expansion', named: 'python or sed', none: true, bash: 'echo ${v@a}' },
+  { hook: 'expansion', named: 'both abort', none: true, bash: 'echo ${v@x}' },
 ];
 
 // A reason's shape: per rule line (`- …`) in a multi-rule reason, else whole,
@@ -136,6 +167,7 @@ try {
       assert.ok(reason.includes(c.named), 'the deny for `' + c.bash + '` no longer names ' + c.named);
       shapes(reason).forEach((shape) => covered.add(shape));
     }
+    if (c.none) continue;
     const setup = typeof c.setup === 'object' ? c.setup : { bash: c.setup, zsh: c.setup };
     const prefix = (s) => (s ? s + '\n' : '');
     const want = shell(['bash', '--norc', '--noprofile', '-c'], prefix(setup.bash) + c.bash, cwd);

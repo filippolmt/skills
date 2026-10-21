@@ -24,6 +24,8 @@
 //   4. `${!…}`. `${!t}`, `${!T*}`, `${!arr[@]}`, `${!1}` and `${!@}` abort with
 //      `bad substitution` once the commands before them have run; `${!#}`
 //      gives `$!` instead of the last argument, no error.
+//   5. `${v@Q}` and the rest of bash's parameter transformations. zsh has no
+//      `@` operator, so every `${…@…}` aborts with `bad substitution`.
 //
 // Rules 1 and 2 rewrite instead of denying when the word is plain literal text,
 // so the call runs with no round trip: the rewrite gives bash's reading of it
@@ -31,7 +33,8 @@
 // quote or anything outside LITERAL is still denied.
 //
 // Scope and the missing opt-out: docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md,
-// docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md; the rewrite:
+// docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md,
+// docs/adr/0030-the-wordsplit-guard-flags-parameter-transformations.md; the rewrite:
 // docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md.
 const { readBashInput, deny, rewrite, maskedViews } = require('./scan');
 
@@ -210,6 +213,45 @@ const RULES = [
       }
       // `(P)` takes the place of `!` and keeps any modifier: `${(P)t:-d}`.
       return trap('Indirect expansion') + 'Write `${(P)' + inner + '}`.';
+    },
+  },
+  {
+    // bash's `${v@Q}` family on a name, a positional or `@`/`*`, with an
+    // optional subscript. zsh has no `@` operator: every form aborts.
+    view: patterns,
+    regex: /\$\{(#?)([A-Za-z_]\w*|\d+|[@*?$-])(\[[^\]]*\])?@([^}\s]?)/g,
+    reason(m) {
+      const [, length, name, subscript, op] = m;
+      const form = /^\$\{[^}\s]*\}?/.exec(command.slice(m.index))[0];
+      const trap = (what) => what + ': `' + form + '`. It is bash syntax: zsh ' +
+        'aborts with `bad substitution`. ';
+      if (length || !/^[QEPAKaUuLk]$/.test(op)) {
+        return 'Not a transformation: `' + form + '`. zsh and bash both abort ' +
+          'with `bad substitution`.';
+      }
+      // `[@]` and `$@` keep one word per element inside double quotes, as zsh's
+      // `(@)` flag does; `[*]` and `$*` join them.
+      const each = subscript === '[@]' || name === '@';
+      const list = each || subscript === '[*]' || name === '*';
+      const target = (/^[@*]$/.test(name) ? 'argv' : name) + (list ? '' : subscript || '');
+      const flag = (f) => '${(' + (each ? '@' : '') + f + ')' + target + '}';
+      // `"${(qq)a}"` joins before quoting, `'a b c'`; bash quotes each word
+      // first, `'a b' 'c'`.
+      const quoted = list && !each ? '${(j: :)${(@qq)' + target + '}}' : flag('qq');
+      const none = trap('Parameter transformation') + 'zsh has no flag for it: ' +
+        'do it in python or sed.';
+      switch (op) {
+        case 'Q': return trap('Parameter transformation') + 'Write `' + quoted + '`.';
+        case 'E': return trap('Parameter transformation') + 'Write `' + flag('g::') + '`.';
+        case 'U': return trap('Parameter transformation') + 'Write `' + flag('U') + '`.';
+        case 'L': return trap('Parameter transformation') + 'Write `' + flag('L') + '`.';
+        case 'P': return trap('Parameter transformation') + 'Write `' + flag('%') + '`, ' +
+          "with zsh's prompt escapes (`%n`, `%~`) in place of bash's (`\\u`, `\\w`).";
+        // `(C)` capitalises every word; bash's `@u` only the first character.
+        case 'u': return list ? none : trap('Parameter transformation') +
+          'Write `${(U)' + target + '[1]}${' + target + '[2,-1]}`.';
+        default: return none;
+      }
     },
   },
 ];
