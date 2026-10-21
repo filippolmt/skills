@@ -32,8 +32,9 @@ Each deny names the zsh form where one exists:
 |---|---|
 | `${v@Q}`, `"${a[@]@Q}"`, `"${@@Q}"` | `${(qq)v}`, `"${(@qq)a}"`, `"${(@qq)argv}"` |
 | `"${a[*]@Q}"` | `"${(j: :)${(@qq)a}}"`: `"${(qq)a}"` joins before quoting, `'a b c'` |
-| `${v@E}` | `${(g::)v}` |
+| `${v@E}` | `${(g:o:)v}`: without `o`, `\101` stays text |
 | `${v@U}`, `${v@L}` | `${(U)v}`, `${(L)v}` |
+| `${a[1]@Q}` | `${(qq)a[2]}`: a literal index moves up by one, zsh counting from 1 |
 | `${v@u}` | `${(U)v[1]}${v[2,-1]}`: `(C)` capitalises every word |
 | `${v@P}` | `${(%)v}`, with zsh's prompt escapes (`%n`) in place of bash's (`\u`) |
 | `${v@A}`, `${v@a}`, `${h[@]@K}`, `${h[@]@k}`, `${a[@]@u}` | none: python or sed |
@@ -43,6 +44,24 @@ Each deny names the zsh form where one exists:
 bash, quoted and on an empty array included. `@P` is compared on plain text
 only, since the escapes differ by design. The rows with no zsh form are checked
 for their message alone.
+
+Where the named form still differs from bash:
+
+- `@Q` on an unset variable gives `''` in zsh, nothing in bash; a value holding
+  a newline is quoted `'a<newline>b'` in zsh, `$'a\nb'` in bash. Both are valid
+  shell quoting of the same value.
+- `@E` leaves `\cX` as text in zsh; bash makes it a control character.
+- A subscript that is not a literal index (`${a[$i]@Q}`) is copied as written,
+  so a bash index computed from 0 lands one element early in zsh.
+
+## Measured
+
+`scripts/replay-wordsplit-guard.js --hook expansion.js` over this machine's
+transcripts, filtered to commands holding `${…@`: 20 unique commands, 1 hit.
+The hit is the incident of issue #388 itself, a `${CSP@Q}` in an unquoted
+heredoc body. The other 19 hold the form single-quoted or escaped (`zsh -fc '…'`
+probes written while measuring this rule) and pass. Like ADR-0027's, the count
+is a snapshot of local history.
 
 ## Why a deny and not a rewrite
 

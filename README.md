@@ -163,12 +163,14 @@ local `zsh-wordsplit-guard` plugin denies the bare expansion and names the fixes
 /plugin install zsh-wordsplit-guard
 ```
 
-The same plugin catches four more zsh traps: a word starting with `=`
+The same plugin catches five more zsh traps: a word starting with `=`
 (`echo =====`, `[ a == b ]`), a glob in a flag value (`--include=*.md`),
 parentheses in a `${var/pattern/…}` pattern
-([ADR-0022](docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md)), and
+([ADR-0022](docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md)),
 bash's `${!name}`
-([ADR-0023](docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md)). The
+([ADR-0023](docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md)), and
+bash's `${v@Q}` transformations
+([ADR-0030](docs/adr/0030-the-wordsplit-guard-flags-parameter-transformations.md)). The
 first two are rewritten in place when the word is literal text, and the call runs
 ([ADR-0025](docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md)); the
 rest are denied with their zsh rewrite.

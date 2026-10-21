@@ -149,7 +149,10 @@ assert.ok(/`\$\{\(@qq\)a\}`/.test(denied('printf "%s\\n" "${a[@]@Q}"')), '`[@]` 
 assert.ok(/`\$\{\(j: :\)\$\{\(@qq\)a\}\}`/.test(denied('echo "${a[*]@Q}"')), '`[*]`: quote each, then join');
 assert.ok(/`\$\{\(@qq\)argv\}`/.test(denied('echo "${@@Q}"')), 'the arguments');
 assert.ok(/`\$\{\(qq\)1\}`/.test(denied('echo ${1@Q}')), 'a positional parameter');
-assert.ok(/`\$\{\(g::\)v\}`/.test(denied('echo "${v@E}"')), 'escapes');
+assert.ok(/`\$\{\(g:o:\)v\}`/.test(denied('echo "${v@E}"')), 'escapes, octal included');
+assert.ok(/`\$\{\(qq\)a\[3\]\}`/.test(denied('echo ${a[2]@Q}')), 'a literal index moves up by one');
+assert.ok(/`\$\{\(qq\)a\[\$i\]\}`/.test(denied('echo ${a[$i]@Q}')), 'any other subscript is kept');
+assert.ok(/`\$\{h\[a b\]@Q\}`/.test(denied('echo "${h[a b]@Q}"')), 'quotes the whole form');
 assert.ok(/`\$\{\(U\)v\}`/.test(denied('echo ${v@U}')), 'upper case');
 assert.ok(/`\$\{\(L\)v\}`/.test(denied('echo ${v@L}')), 'lower case');
 assert.ok(/`\$\{\(U\)v\[1\]\}\$\{v\[2,-1\]\}`/.test(denied('echo ${v@u}')), 'first letter only, not `(C)`');
@@ -163,6 +166,9 @@ reason = denied('echo ${v@x} ${v@}');
 assert.ok(/^- Not a transformation: `\$\{v@x\}`\./m.test(reason), 'an unknown letter fails in bash too');
 assert.ok(/Not a transformation/.test(denied('echo ${#v@Q}')), 'a length is no transformation');
 denied('cat <<EOF\n${v@Q}\nEOF');          // an unquoted heredoc body expands
+denied('x=$(echo ${v@Q})');
+denied('echo "$(echo ${v@Q})"');
+denied('[[ -n ${v@Q} ]]');
 
 allowed("echo '${v@Q}'");
 allowed('echo \\${v@Q}');
