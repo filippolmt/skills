@@ -21,7 +21,7 @@ const os = require('os');
 const path = require('path');
 const { harness } = require('./testing');
 
-const hooks = { loop: harness('guard.js'), expansion: harness('expansion.js') };
+const hooks = { guard: harness('guard.js'), expansion: harness('expansion.js') };
 
 // `hook` and `named`: the script that denies `bash`, and a text its reason
 // carries. `applied`: the hook rewrites `bash` itself, and that output is what
@@ -31,17 +31,17 @@ const hooks = { loop: harness('guard.js'), expansion: harness('expansion.js') };
 // message names no zsh form, so only `named` is checked.
 const CASES = [
   // --- for rule (guard.js) ---
-  { hook: 'loop', named: '${=v}', setup: 'v="a b c"',
+  { hook: 'guard', named: '${=v}', setup: 'v="a b c"',
     bash: 'for x in $v; do echo "<$x>"; done', zsh: 'for x in ${=v}; do echo "<$x>"; done' },
-  { hook: 'loop', named: '${(f)v}', setup: 'v=$(printf "a b\\nc")',
+  { hook: 'guard', named: '${(f)v}', setup: 'v=$(printf "a b\\nc")',
     bash: 'IFS=$\'\\n\'; for x in $v; do echo "<$x>"; done', zsh: 'for x in ${(f)v}; do echo "<$x>"; done' },
-  { hook: 'loop', named: '${=c}',
+  { hook: 'guard', named: '${=c}',
     bash: 'for c in "a x" "b x y"; do printf "<%s>" $c; echo; done',
     zsh: 'for c in "a x" "b x y"; do printf "<%s>" ${=c}; echo; done' },
-  { hook: 'loop', named: 'for c in a b; do cmd "$c" arg; done',
+  { hook: 'guard', named: 'for c in a b; do cmd "$c" arg; done',
     bash: 'for c in "a x" "b x"; do printf "<%s>" $c; echo; done',
     zsh: 'for c in a b; do printf "<%s>" "$c" x; echo; done' },
-  { hook: 'loop', named: 'for c arg in a x b y; do cmd "$c" "$arg"; done',
+  { hook: 'guard', named: 'for c arg in a x b y; do cmd "$c" "$arg"; done',
     bash: 'for c in "a x" "b y"; do printf "<%s>" $c; echo; done',
     zsh: 'for c arg in a x b y; do printf "<%s>" "$c" "$arg"; echo; done' },
 
@@ -111,10 +111,12 @@ const CASES = [
     bash: 'echo ${!$}', zsh: 'echo $$' },
 
   // --- bash's ${v@…} ---
-  { hook: 'expansion', named: '${(qq)v}', setup: 'v="it\'s a  b"',
-    bash: 'echo "${v@Q}"', zsh: 'echo "${(qq)v}"' },
-  { hook: 'expansion', named: '${(qq)v}', setup: 'v=""',
-    bash: 'echo "<${v@Q}>"', zsh: 'echo "<${(qq)v}>"' },
+  { hook: 'expansion', named: '${v+${(qq)v}}', setup: 'v="it\'s a  b"',
+    bash: 'echo "${v@Q}"', zsh: 'echo "${v+${(qq)v}}"' },
+  { hook: 'expansion', named: '${v+${(qq)v}}', setup: 'v=""',
+    bash: 'echo "<${v@Q}>"', zsh: 'echo "<${v+${(qq)v}}>"' },
+  { hook: 'expansion', named: '${v+${(qq)v}}', setup: 'unset v',
+    bash: 'echo "<${v@Q}>"', zsh: 'echo "<${v+${(qq)v}}>"' },
   { hook: 'expansion', named: '${(@qq)a}', setup: 'a=("a b" c)',
     bash: 'printf "<%s>" "${a[@]@Q}"; echo', zsh: 'printf "<%s>" "${(@qq)a}"; echo' },
   { hook: 'expansion', named: '${(@qq)a}', setup: 'a=()',
@@ -123,12 +125,12 @@ const CASES = [
     bash: 'printf "<%s>" "${a[*]@Q}"; echo', zsh: 'printf "<%s>" "${(j: :)${(@qq)a}}"; echo' },
   { hook: 'expansion', named: '${(@qq)argv}', setup: 'set -- "a b" c',
     bash: 'printf "<%s>" "${@@Q}"; echo', zsh: 'printf "<%s>" "${(@qq)argv}"; echo' },
-  { hook: 'expansion', named: '${(qq)1}', setup: 'set -- "a b"',
-    bash: 'echo ${1@Q}', zsh: 'echo ${(qq)1}' },
+  { hook: 'expansion', named: '${1+${(qq)1}}', setup: 'set -- "a b"',
+    bash: 'echo ${1@Q}', zsh: 'echo ${1+${(qq)1}}' },
   { hook: 'expansion', named: '${(g:o:)v}', setup: "v='a\\tb\\\\n \\101 \\x41 \\e'",
     bash: 'printf %s "${v@E}" | od -c', zsh: 'printf %s "${(g:o:)v}" | od -c' },
-  { hook: 'expansion', named: '${(qq)a[2]}', setup: 'a=(x "y z" w)',
-    bash: 'echo ${a[1]@Q}', zsh: 'echo ${(qq)a[2]}' },
+  { hook: 'expansion', named: '${a[2]+${(qq)a[2]}}', setup: 'a=(x "y z" w)',
+    bash: 'echo ${a[1]@Q}', zsh: 'echo ${a[2]+${(qq)a[2]}}' },
   { hook: 'expansion', named: '${(U)v}', setup: 'v="ab cd"',
     bash: 'echo "${v@U}"', zsh: 'echo "${(U)v}"' },
   { hook: 'expansion', named: '${(@L)a}', setup: 'a=("A B" C)',

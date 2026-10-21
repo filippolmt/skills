@@ -30,11 +30,11 @@ Each deny names the zsh form where one exists:
 
 | bash | zsh |
 |---|---|
-| `${v@Q}`, `"${a[@]@Q}"`, `"${@@Q}"` | `${(qq)v}`, `"${(@qq)a}"`, `"${(@qq)argv}"` |
+| `${v@Q}`, `"${a[@]@Q}"`, `"${@@Q}"` | `${v+${(qq)v}}`, `"${(@qq)a}"`, `"${(@qq)argv}"`: `${v+…}` keeps an unset `v` empty, where `(qq)` alone gives `''` |
 | `"${a[*]@Q}"` | `"${(j: :)${(@qq)a}}"`: `"${(qq)a}"` joins before quoting, `'a b c'` |
 | `${v@E}` | `${(g:o:)v}`: without `o`, `\101` stays text |
 | `${v@U}`, `${v@L}` | `${(U)v}`, `${(L)v}` |
-| `${a[1]@Q}` | `${(qq)a[2]}`: a literal index moves up by one, zsh counting from 1 |
+| `${a[1]@Q}` | `${a[2]+${(qq)a[2]}}`: a literal index moves up by one, zsh counting from 1; the deny says it reads `a` as an indexed array |
 | `${v@u}` | `${(U)v[1]}${v[2,-1]}`: `(C)` capitalises every word |
 | `${v@P}` | `${(%)v}`, with zsh's prompt escapes (`%n`) in place of bash's (`\u`) |
 | `${v@A}`, `${v@a}`, `${h[@]@K}`, `${h[@]@k}`, `${a[@]@u}` | none: python or sed |
@@ -47,12 +47,14 @@ for their message alone.
 
 Where the named form still differs from bash:
 
-- `@Q` on an unset variable gives `''` in zsh, nothing in bash; a value holding
-  a newline is quoted `'a<newline>b'` in zsh, `$'a\nb'` in bash. Both are valid
-  shell quoting of the same value.
+- `@Q` on a value holding a newline quotes it `'a<newline>b'` in zsh,
+  `$'a\nb'` in bash. Both are valid shell quoting of the same value.
 - `@E` leaves `\cX` as text in zsh; bash makes it a control character.
 - A subscript that is not a literal index (`${a[$i]@Q}`) is copied as written,
-  so a bash index computed from 0 lands one element early in zsh.
+  so a bash index computed from 0 lands one element early in zsh. A literal
+  index is shifted for an indexed array, the usual case; on an associative
+  array's numeric key or a scalar's `[0]` the shift is wrong, and the deny says
+  which reading it took.
 
 ## Measured
 

@@ -107,9 +107,16 @@ function patternAt(text, from, stopAtSlash) {
   return { pattern: pattern, end: i };
 }
 
-// The opening of a deny for bash syntax zsh lacks.
-const bashOnly = (what, form) => what + ': `' + form + '`. It is bash syntax: zsh ' +
+// The opening of a deny reason for bash syntax zsh lacks.
+const bashSyntaxReason = (what, form) => what + ': `' + form + '`. It is bash syntax: zsh ' +
   'aborts with `bad substitution`. ';
+// The `${…}` starting at `at`, closed: an unterminated one stops at the first
+// blank, and is quoted with a `}`.
+function braceForm(at) {
+  const { end } = patternAt(patterns, at + 2, false);
+  return patterns[end] === '}' ? command.slice(at, end + 1)
+    : /^\$\{[^}\s]*/.exec(command.slice(at))[0] + '}';
+}
 
 // Each rule scans one view and turns a match into a reason, or null to pass it.
 const RULES = [
@@ -179,14 +186,9 @@ const RULES = [
     view: patterns,
     regex: /\$\{!(?:[\w@*$]|#\})/g,
     reason(m) {
-      const { end } = patternAt(patterns, m.index + 2, false);
-      // Unlike rule 3's pattern, the quoted form includes the closing `}`; an
-      // unterminated one stops at the first blank and is quoted closed.
-      const closed = patterns[end] === '}';
-      const inner = closed
-        ? command.slice(m.index + 3, end)
-        : /^[^\s}]*/.exec(command.slice(m.index + 3))[0];
-      const form = '${!' + inner + '}';
+      // Unlike rule 3's pattern, the quoted form includes the closing `}`.
+      const form = braceForm(m.index);
+      const inner = form.slice(3, -1);
       if (inner === '#') {
         return 'Last argument: `${!#}`. zsh expands it to `$!`, the PID of the ' +
           'last background job: a wrong result, no error. Write `${argv[-1]}`.';
@@ -202,7 +204,7 @@ const RULES = [
       if (keys) {
         const [, name, each] = keys;
         const flags = each === '@' ? '@k' : 'k';
-        return bashOnly('Key list', form) + 'Write `${(' + flags + ')' + name + '}` for the ' +
+        return bashSyntaxReason('Key list', form) + 'Write `${(' + flags + ')' + name + '}` for the ' +
           'keys of an associative array; for the indices of an array, loop with ' +
           '`for ((i = 1; i <= $#' + name + '; i++))`, zsh indices starting at 1.';
       }
@@ -211,10 +213,10 @@ const RULES = [
         const [, start, each] = prefix;
         // `(o)` sorts the names, as bash does.
         const flags = each === '@' ? '@ok' : 'ok';
-        return bashOnly('Name list', form) + 'Write `${(' + flags + ')parameters[(I)' + start + '*]}`.';
+        return bashSyntaxReason('Name list', form) + 'Write `${(' + flags + ')parameters[(I)' + start + '*]}`.';
       }
       // `(P)` takes the place of `!` and keeps any modifier: `${(P)t:-d}`.
-      return bashOnly('Indirect expansion', form) + 'Write `${(P)' + inner + '}`.';
+      return bashSyntaxReason('Indirect expansion', form) + 'Write `${(P)' + inner + '}`.';
     },
   },
   {
@@ -224,10 +226,7 @@ const RULES = [
     regex: /\$\{(#?)([A-Za-z_]\w*|\d+|[@*?$-])(\[[^\]]*\])?@([^}\s]?)/g,
     reason(m) {
       const [, hash, name, subscript, op] = m;
-      const { end } = patternAt(patterns, m.index + 2, false);
-      const form = patterns[end] === '}'
-        ? command.slice(m.index, end + 1)
-        : /^\$\{[^}\s]*/.exec(command.slice(m.index))[0] + '}';
+      const form = braceForm(m.index);
       if (hash || !/^[QEPAKaUuLk]$/.test(op)) {
         return 'Not a transformation: `' + form + '`. zsh and bash both abort ' +
           'with `bad substitution`.';
@@ -243,7 +242,9 @@ const RULES = [
       const rewrites = {
         // `"${(qq)a}"` joins before quoting, `'a b c'`; bash quotes each word
         // first, `'a b' 'c'`.
-        Q: list && !each ? '${(j: :)${(@qq)' + target + '}}' : flag('qq'),
+        // `${v+…}`: bash quotes an unset scalar as nothing, zsh's `(qq)` as `''`.
+        Q: list ? (each ? flag('qq') : '${(j: :)${(@qq)' + target + '}}')
+          : '${' + target + '+' + flag('qq') + '}',
         // `o` reads `\101` as octal, as bash's `@E` does.
         E: flag('g:o:'),
         U: flag('U'),
@@ -251,12 +252,15 @@ const RULES = [
         // `(C)` capitalises every word; bash's `@u` only the first character.
         u: list ? null : '${(U)' + target + '[1]}${' + target + '[2,-1]}',
       };
-      const trap = bashOnly('Parameter transformation', form);
+      const trap = bashSyntaxReason('Parameter transformation', form);
       if (op === 'P') {
         return trap + 'Write `' + flag('%') + '`, with zsh\'s prompt escapes ' +
           "(`%n`, `%~`) in place of bash's (`\\u`, `\\w`).";
       }
-      return rewrites[op] ? trap + 'Write `' + rewrites[op] + '`.'
+      // The shifted index assumes an indexed array, the usual case.
+      const shifted = index !== (subscript || '') ? ' That reads `' + name + '` as an ' +
+        "indexed array; an associative array's key stays as written." : '';
+      return rewrites[op] ? trap + 'Write `' + rewrites[op] + '`.' + shifted
         : trap + 'zsh has no flag for it: do it in python or sed.';
     },
   },

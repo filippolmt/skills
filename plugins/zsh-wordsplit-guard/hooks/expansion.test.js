@@ -144,14 +144,16 @@ allowed("cat <<EOF\nit's fine\nEOF");     // a quote in an expanding body is lit
 reason = denied('cat > out.txt <<EOF\nx\nEOF\necho ${v@Q}');
 assert.ok(/^- Parameter transformation: `\$\{v@Q\}`\./m.test(reason), 'quotes the form');
 assert.ok(/bad substitution/.test(reason), 'names the failure');
-assert.ok(/Write `\$\{\(qq\)v\}`\.$/.test(reason), 'names the exact rewrite');
+assert.ok(/Write `\$\{v\+\$\{\(qq\)v\}\}`\.$/.test(reason), 'names the exact rewrite, unset included');
 assert.ok(/`\$\{\(@qq\)a\}`/.test(denied('printf "%s\\n" "${a[@]@Q}"')), '`[@]` keeps words: `@` flag');
 assert.ok(/`\$\{\(j: :\)\$\{\(@qq\)a\}\}`/.test(denied('echo "${a[*]@Q}"')), '`[*]`: quote each, then join');
 assert.ok(/`\$\{\(@qq\)argv\}`/.test(denied('echo "${@@Q}"')), 'the arguments');
-assert.ok(/`\$\{\(qq\)1\}`/.test(denied('echo ${1@Q}')), 'a positional parameter');
+assert.ok(/`\$\{1\+\$\{\(qq\)1\}\}`/.test(denied('echo ${1@Q}')), 'a positional parameter');
 assert.ok(/`\$\{\(g:o:\)v\}`/.test(denied('echo "${v@E}"')), 'escapes, octal included');
-assert.ok(/`\$\{\(qq\)a\[3\]\}`/.test(denied('echo ${a[2]@Q}')), 'a literal index moves up by one');
-assert.ok(/`\$\{\(qq\)a\[\$i\]\}`/.test(denied('echo ${a[$i]@Q}')), 'any other subscript is kept');
+reason = denied('echo ${a[2]@Q}');
+assert.ok(/`\$\{a\[3\]\+\$\{\(qq\)a\[3\]\}\}`/.test(reason), 'a literal index moves up by one');
+assert.ok(/associative array's key stays as written/.test(reason), 'says what the shift assumes');
+assert.ok(/`\$\{a\[\$i\]\+\$\{\(qq\)a\[\$i\]\}\}`/.test(denied('echo ${a[$i]@Q}')), 'any other subscript is kept');
 assert.ok(/`\$\{h\[a b\]@Q\}`/.test(denied('echo "${h[a b]@Q}"')), 'quotes the whole form');
 assert.ok(/`\$\{\(U\)v\}`/.test(denied('echo ${v@U}')), 'upper case');
 assert.ok(/`\$\{\(L\)v\}`/.test(denied('echo ${v@L}')), 'lower case');
@@ -169,6 +171,8 @@ denied('cat <<EOF\n${v@Q}\nEOF');          // an unquoted heredoc body expands
 denied('x=$(echo ${v@Q})');
 denied('echo "$(echo ${v@Q})"');
 denied('[[ -n ${v@Q} ]]');
+denied('x=${v@Q}');                         // an assignment value aborts too
+denied('case ${v@Q} in x) ;; esac');       // and a case word
 
 allowed("echo '${v@Q}'");
 allowed('echo \\${v@Q}');
