@@ -19,16 +19,12 @@
 // The one argument-position case in scope is the loop variable of a list of
 // quoted multi-word literals, where the source itself proves several words were
 // meant (docs/adr/0027-the-wordsplit-guard-flags-multi-word-loop-items.md).
+// Outside loops, command.js reads the same proof in command position.
 //
 // Deny rather than warn: an advisory arrives after the wrong output is already
 // in context, and the construct is narrow enough that a hit is almost always a
 // real bug. Flipping to `"ask"` is a one-line change if false positives show up.
-const { readBashInput, deny, maskedViews } = require('./scan');
-
-const NOSPLIT_OPT_OUT = /\[nosplit\]/i;
-// Explicit values only: `ALLOW_ZSH_NOSPLIT=0` must mean off, not "non-empty
-// string, therefore on".
-const ON = new Set(['1', 'true', 'yes']);
+const { readBashInput, deny, maskedViews, noSplitOptedOut, NOSPLIT_OPT_OUT_HINT } = require('./scan');
 
 // A `for NAME in <list>`, list ending at `;` or newline (zsh needs one before `do`).
 const FOR_HEADER = /\bfor\s+([A-Za-z_]\w*)\s+in\s+([^\n;]*)/g;
@@ -49,11 +45,7 @@ const NONSPLIT_EXPANSION = /\$(?:\{([A-Za-z_]\w*)(?:[:#%/][^}]*)?\}|([A-Za-z_]\w
 // still a hit.
 const HARMLESS_AROUND = /[*?[/]/;
 const input = readBashInput();
-const optedOut =
-  ON.has(String(process.env.ALLOW_ZSH_NOSPLIT || '').toLowerCase()) ||
-  NOSPLIT_OPT_OUT.test((input || {}).description || '');
-
-if (!input || optedOut) process.exit(0);
+if (!input || noSplitOptedOut(input)) process.exit(0);
 
 // The masked view (scan.js) already drops what zsh does not run here: quoted
 // text, so a header that is only text (`echo "for x in $v"`) and the correct
@@ -132,9 +124,6 @@ if (!hit) {
   }
 }
 
-const OPT_OUT = 'Deliberate non-split: [nosplit] in the description, or ' +
-  'ALLOW_ZSH_NOSPLIT=1 for the session.';
-
 if (itemHit) {
   const { name } = itemHit;
   deny(
@@ -147,7 +136,7 @@ if (itemHit) {
     '`for ' + name + ' in a b; do cmd "$' + name + '" arg; done`\n' +
     '  - several loop variables, one per word of an item (zsh only): ' +
     '`for ' + name + ' arg in a x b y; do cmd "$' + name + '" "$arg"; done`\n' +
-    OPT_OUT);
+    NOSPLIT_OPT_OUT_HINT);
   process.exit(0);
 }
 
@@ -163,4 +152,4 @@ deny(
   '  - `arr=(...)` then `for x in "${arr[@]}"` — for values you build yourself\n' +
   '  - a literal list, or `$(cmd)` directly, which does split in zsh\n' +
   'Keep the split at the call site: `setopt shwordsplit` would change every ' +
-  'later expansion in that shell. ' + OPT_OUT);
+  'later expansion in that shell. ' + NOSPLIT_OPT_OUT_HINT);

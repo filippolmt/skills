@@ -83,3 +83,5 @@ intent does.
 - Argument position stays out of scope, with one exception whose source proves
   several words were meant: the loop variable of a list of quoted multi-word
   literals (`docs/adr/0027-the-wordsplit-guard-flags-multi-word-loop-items.md`).
+  Command position has one of its own: a quoted multi-word value run as a
+  command (`docs/adr/0031-the-wordsplit-guard-flags-a-stored-command.md`).

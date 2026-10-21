@@ -21,7 +21,7 @@ const os = require('os');
 const path = require('path');
 const { harness } = require('./testing');
 
-const hooks = { guard: harness('guard.js'), expansion: harness('expansion.js') };
+const hooks = { guard: harness('guard.js'), expansion: harness('expansion.js'), command: harness('command.js') };
 
 // `hook` and `named`: the script that denies `bash`, and a text its reason
 // carries. `applied`: the hook rewrites `bash` itself, and that output is what
@@ -44,6 +44,16 @@ const CASES = [
   { hook: 'guard', named: 'for c arg in a x b y; do cmd "$c" "$arg"; done',
     bash: 'for c in "a x" "b y"; do printf "<%s>" $c; echo; done',
     zsh: 'for c arg in a x b y; do printf "<%s>" "$c" "$arg"; echo; done' },
+
+  // --- stored command (command.js) ---
+  { hook: 'command', named: 'run_dc() { echo -n hi "$@"; }',
+    bash: 'DC="echo -n hi"; $DC "a  b" c; echo', zsh: 'run_dc() { echo -n hi "$@"; }; run_dc "a  b" c; echo' },
+  { hook: 'command', named: 'DC=(echo -n hi)',
+    bash: 'DC="echo -n hi"; $DC "a  b" c; echo', zsh: 'DC=(echo -n hi); "${DC[@]}" "a  b" c; echo' },
+  { hook: 'command', named: 'run_ls() { ls -d "$@"; }',
+    bash: 'LS="ls -d"; $LS /', zsh: 'run_ls() { ls -d "$@"; }; run_ls /' },
+  { hook: 'command', named: '${=DC}',
+    bash: 'DC="printf <%s>"; $DC "a b" c; echo', zsh: 'DC="printf <%s>"; ${=DC} "a b" c; echo' },
 
   // --- equals expansion ---
   { hook: 'expansion', applied: true, bash: 'echo ===== =ls' },
@@ -188,7 +198,7 @@ try {
   }
 
   const log = path.join(cwd, 'reasons.jsonl');
-  for (const suite of ['guard.test.js', 'expansion.test.js']) {
+  for (const suite of ['guard.test.js', 'expansion.test.js', 'command.test.js']) {
     const r = spawnSync(process.execPath, [path.join(__dirname, suite)],
       { encoding: 'utf8', env: Object.assign({}, process.env, { ZSH_GUARD_REASONS: log }) });
     assert.strictEqual(r.status, 0, suite + ' failed: ' + r.stderr);
