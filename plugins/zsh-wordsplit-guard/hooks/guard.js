@@ -19,19 +19,12 @@
 // The one argument-position case in scope is the loop variable of a list of
 // quoted multi-word literals, where the source itself proves several words were
 // meant (docs/adr/0027-the-wordsplit-guard-flags-multi-word-loop-items.md).
-// Outside loops, one more shape proves it from source: a quoted multi-word
-// value run as a command, `DC="docker compose"; $DC ps`
-// (docs/adr/0031-the-wordsplit-guard-flags-a-stored-command.md).
+// Outside loops, command.js reads the same proof in command position.
 //
 // Deny rather than warn: an advisory arrives after the wrong output is already
 // in context, and the construct is narrow enough that a hit is almost always a
 // real bug. Flipping to `"ask"` is a one-line change if false positives show up.
-const { readBashInput, deny, maskedViews } = require('./scan');
-
-const NOSPLIT_OPT_OUT = /\[nosplit\]/i;
-// Explicit values only: `ALLOW_ZSH_NOSPLIT=0` must mean off, not "non-empty
-// string, therefore on".
-const ON = new Set(['1', 'true', 'yes']);
+const { readBashInput, deny, maskedViews, noSplitOptedOut, NOSPLIT_OPT_OUT_HINT } = require('./scan');
 
 // A `for NAME in <list>`, list ending at `;` or newline (zsh needs one before `do`).
 const FOR_HEADER = /\bfor\s+([A-Za-z_]\w*)\s+in\s+([^\n;]*)/g;
@@ -52,11 +45,7 @@ const NONSPLIT_EXPANSION = /\$(?:\{([A-Za-z_]\w*)(?:[:#%/][^}]*)?\}|([A-Za-z_]\w
 // still a hit.
 const HARMLESS_AROUND = /[*?[/]/;
 const input = readBashInput();
-const optedOut =
-  ON.has(String(process.env.ALLOW_ZSH_NOSPLIT || '').toLowerCase()) ||
-  NOSPLIT_OPT_OUT.test((input || {}).description || '');
-
-if (!input || optedOut) process.exit(0);
+if (!input || noSplitOptedOut(input)) process.exit(0);
 
 // The masked view (scan.js) already drops what zsh does not run here: quoted
 // text, so a header that is only text (`echo "for x in $v"`) and the correct
@@ -135,39 +124,6 @@ if (!hit) {
   }
 }
 
-// Third shape (docs/adr/0031): a stored command, `DC="docker compose -f a.yml";
-// $DC build`. zsh runs the whole value as one command name. The assignment's
-// value is quoted, so it is read from the raw command; whitespace counts only
-// outside an expansion, where the source shows it. The use is read in `words`:
-// an unquoted `$DC` / `${DC}` as the first word of a command, past any
-// assignment prefix, reserved word or precommand modifier.
-// An assignment as a command or its prefix, a declaration builtin's included:
-// `echo DC="a b"` is an argument. Quoted values are blank in `words`.
-const ASSIGNMENT_AT = '(?<=(?:^|[;&|({\\n])\\s*(?:(?:export|local|typeset|declare|readonly)' +
-  '\\s+(?:-\\w+\\s+)*)?(?:[A-Za-z_]\\w*=[^\\s;&|]*\\s+)*)';
-const COMMAND_START = '(?:^|[;&|({\\n])\\s*(?:(?:then|do|else|elif|if|while|until|!|' +
-  'time|exec|nohup|command|noglob|sudo|env)\\s+|[A-Za-z_]\\w*=[^\\s;&|]*\\s+)*';
-let storedHit = null;
-if (!hit && !itemHit) {
-  // `(( $n ))` is arithmetic, not a command.
-  const commands = words.replace(/\(\((?:[^()]|\([^()]*\))*\)\)/g, (m) => m.replace(/[^\n]/g, ' '));
-  for (const a of commands.matchAll(new RegExp(ASSIGNMENT_AT + '([A-Za-z_]\\w*)=', 'g'))) {
-    const at = a.index + a[0].length;
-    const value = /^'[^']*'|^"(?:[^"\\]|\\.)*"/.exec(input.command.slice(at));
-    if (!value || !/\s/.test(value[0].replace(/\$\{[^}]*\}|\$\([^)]*\)|`[^`]*`|\$\w+/g, ''))) continue;
-    const name = a[1];
-    const rest = commands.slice(at + value[0].length);
-    const use = new RegExp(COMMAND_START + '(\\$(?:' + name + '(?![\\w[])|\\{' + name + '\\}))').exec(rest);
-    // A later assignment, `DC=ls` or `DC=(docker compose)`, is what the use reads.
-    if (!use || new RegExp(ASSIGNMENT_AT + name + '=').test(rest.slice(0, use.index))) continue;
-    storedHit = { name: name, value: value[0], expansion: use[1] };
-    break;
-  }
-}
-
-const OPT_OUT = 'Deliberate non-split: [nosplit] in the description, or ' +
-  'ALLOW_ZSH_NOSPLIT=1 for the session.';
-
 if (itemHit) {
   const { name } = itemHit;
   deny(
@@ -180,29 +136,7 @@ if (itemHit) {
     '`for ' + name + ' in a b; do cmd "$' + name + '" arg; done`\n' +
     '  - several loop variables, one per word of an item (zsh only): ' +
     '`for ' + name + ' arg in a x b y; do cmd "$' + name + '" "$arg"; done`\n' +
-    OPT_OUT);
-  process.exit(0);
-}
-
-if (storedHit) {
-  const { name } = storedHit;
-  // bash splits the value into literal words; copied unquoted into a function
-  // or an array, a `<`, `|` or glob would become syntax, so only plain text is.
-  // A word starting with `=` or `~` would expand there too.
-  const value = storedHit.value.slice(1, -1);
-  const literalWords = /^[\w\s.\/=:,@%+~$-]*$/.test(value) && !/(?:^|\s)[=~]/.test(value) ? value : '…';
-  const fn = name.toLowerCase();
-  // `git() { git … }` would call itself: `command` reaches the real one.
-  const body = literalWords.split(/\s/)[0] === fn ? 'command ' + literalWords : literalWords;
-  deny(
-    'zsh-wordsplit-guard: stored command. `' + name + '=' + storedHit.value + '` then `' +
-    storedHit.expansion + ' …` runs the whole value as ONE command name: the Bash ' +
-    'tool runs zsh, where parameter expansion is not word-split, so it fails with ' +
-    '`command not found`. Rewrite as one of:\n' +
-    '  - a function: `' + fn + '() { ' + body + ' "$@"; }`, then `' + fn + ' …`\n' +
-    '  - an array: `' + name + '=(' + literalWords + ')`, then `"${' + name + '[@]}" …`\n' +
-    '  - `${=' + name + '} …` — split on IFS\n' +
-    OPT_OUT);
+    NOSPLIT_OPT_OUT_HINT);
   process.exit(0);
 }
 
@@ -218,4 +152,4 @@ deny(
   '  - `arr=(...)` then `for x in "${arr[@]}"` — for values you build yourself\n' +
   '  - a literal list, or `$(cmd)` directly, which does split in zsh\n' +
   'Keep the split at the call site: `setopt shwordsplit` would change every ' +
-  'later expansion in that shell. ' + OPT_OUT);
+  'later expansion in that shell. ' + NOSPLIT_OPT_OUT_HINT);

@@ -136,4 +136,16 @@ function maskedViews(text, context) {
   return { words: words, patterns: patterns };
 }
 
-module.exports = { readBashInput, deny, rewrite, maskedViews };
+// The opt-out of the word-splitting rules, guard.js and command.js: `[nosplit]`
+// in the call's description, or ALLOW_ZSH_NOSPLIT for the session. Explicit
+// values only: `ALLOW_ZSH_NOSPLIT=0` must mean off, not "non-empty string,
+// therefore on".
+const ON = new Set(['1', 'true', 'yes']);
+function noSplitOptedOut(input) {
+  return ON.has(String(process.env.ALLOW_ZSH_NOSPLIT || '').toLowerCase()) ||
+    /\[nosplit\]/i.test(input.description);
+}
+const NOSPLIT_OPT_OUT_HINT = 'Deliberate non-split: [nosplit] in the description, or ' +
+  'ALLOW_ZSH_NOSPLIT=1 for the session.';
+
+module.exports = { readBashInput, deny, rewrite, maskedViews, noSplitOptedOut, NOSPLIT_OPT_OUT_HINT };
