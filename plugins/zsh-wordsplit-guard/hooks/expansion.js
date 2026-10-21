@@ -24,6 +24,8 @@
 //   4. `${!…}`. `${!t}`, `${!T*}`, `${!arr[@]}`, `${!1}` and `${!@}` abort with
 //      `bad substitution` once the commands before them have run; `${!#}`
 //      gives `$!` instead of the last argument, no error.
+//   5. `${v@Q}` and the rest of bash's parameter transformations. zsh has no
+//      `@` operator, so every `${…@…}` aborts with `bad substitution`.
 //
 // Rules 1 and 2 rewrite instead of denying when the word is plain literal text,
 // so the call runs with no round trip: the rewrite gives bash's reading of it
@@ -31,7 +33,8 @@
 // quote or anything outside LITERAL is still denied.
 //
 // Scope and the missing opt-out: docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md,
-// docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md; the rewrite:
+// docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md,
+// docs/adr/0030-the-wordsplit-guard-flags-parameter-transformations.md; the rewrite:
 // docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md.
 const { readBashInput, deny, rewrite, maskedViews } = require('./scan');
 
@@ -104,6 +107,17 @@ function patternAt(text, from, stopAtSlash) {
   return { pattern: pattern, end: i };
 }
 
+// The opening of a deny reason for bash syntax zsh lacks.
+const bashSyntaxReason = (what, form) => what + ': `' + form + '`. It is bash syntax: zsh ' +
+  'aborts with `bad substitution`. ';
+// The `${…}` starting at `at`, closed: an unterminated one stops at the first
+// blank, and is quoted with a `}`.
+function braceForm(at) {
+  const { end } = patternAt(patterns, at + 2, false);
+  return patterns[end] === '}' ? command.slice(at, end + 1)
+    : /^\$\{[^}\s]*/.exec(command.slice(at))[0] + '}';
+}
+
 // Each rule scans one view and turns a match into a reason, or null to pass it.
 const RULES = [
   {
@@ -172,16 +186,9 @@ const RULES = [
     view: patterns,
     regex: /\$\{!(?:[\w@*$]|#\})/g,
     reason(m) {
-      const { end } = patternAt(patterns, m.index + 2, false);
-      // Unlike rule 3's pattern, the quoted form includes the closing `}`; an
-      // unterminated one stops at the first blank and is quoted closed.
-      const closed = patterns[end] === '}';
-      const inner = closed
-        ? command.slice(m.index + 3, end)
-        : /^[^\s}]*/.exec(command.slice(m.index + 3))[0];
-      const form = '${!' + inner + '}';
-      const trap = (what) => what + ': `' + form + '`. It is bash syntax: zsh ' +
-        'aborts with `bad substitution`. ';
+      // Unlike rule 3's pattern, the quoted form includes the closing `}`.
+      const form = braceForm(m.index);
+      const inner = form.slice(3, -1);
       if (inner === '#') {
         return 'Last argument: `${!#}`. zsh expands it to `$!`, the PID of the ' +
           'last background job: a wrong result, no error. Write `${argv[-1]}`.';
@@ -197,7 +204,7 @@ const RULES = [
       if (keys) {
         const [, name, each] = keys;
         const flags = each === '@' ? '@k' : 'k';
-        return trap('Key list') + 'Write `${(' + flags + ')' + name + '}` for the ' +
+        return bashSyntaxReason('Key list', form) + 'Write `${(' + flags + ')' + name + '}` for the ' +
           'keys of an associative array; for the indices of an array, loop with ' +
           '`for ((i = 1; i <= $#' + name + '; i++))`, zsh indices starting at 1.';
       }
@@ -206,10 +213,55 @@ const RULES = [
         const [, start, each] = prefix;
         // `(o)` sorts the names, as bash does.
         const flags = each === '@' ? '@ok' : 'ok';
-        return trap('Name list') + 'Write `${(' + flags + ')parameters[(I)' + start + '*]}`.';
+        return bashSyntaxReason('Name list', form) + 'Write `${(' + flags + ')parameters[(I)' + start + '*]}`.';
       }
       // `(P)` takes the place of `!` and keeps any modifier: `${(P)t:-d}`.
-      return trap('Indirect expansion') + 'Write `${(P)' + inner + '}`.';
+      return bashSyntaxReason('Indirect expansion', form) + 'Write `${(P)' + inner + '}`.';
+    },
+  },
+  {
+    // bash's `${v@Q}` family on a name, a positional or `@`/`*`, with an
+    // optional subscript. zsh has no `@` operator: every form aborts.
+    view: patterns,
+    regex: /\$\{(#?)([A-Za-z_]\w*|\d+|[@*?$-])(\[[^\]]*\])?@([^}\s]?)/g,
+    reason(m) {
+      const [, hash, name, subscript, op] = m;
+      const form = braceForm(m.index);
+      if (hash || !/^[QEPAKaUuLk]$/.test(op)) {
+        return 'Not a transformation: `' + form + '`. zsh and bash both abort ' +
+          'with `bad substitution`.';
+      }
+      // `[@]` and `$@` keep one word per element inside double quotes, as zsh's
+      // `(@)` flag does; `[*]` and `$*` join them.
+      const each = subscript === '[@]' || name === '@';
+      const list = each || subscript === '[*]' || name === '*';
+      // A literal index moves up by one: bash counts from 0, zsh from 1.
+      const index = (subscript || '').replace(/^\[(\d+)\]$/, (s, i) => '[' + (+i + 1) + ']');
+      const target = (/^[@*]$/.test(name) ? 'argv' : name) + (list ? '' : index);
+      const flag = (f) => '${(' + (each ? '@' : '') + f + ')' + target + '}';
+      const rewrites = {
+        // `"${(qq)a}"` joins before quoting, `'a b c'`; bash quotes each word
+        // first, `'a b' 'c'`.
+        // `${v+…}`: bash quotes an unset scalar as nothing, zsh's `(qq)` as `''`.
+        Q: list ? (each ? flag('qq') : '${(j: :)${(@qq)' + target + '}}')
+          : '${' + target + '+' + flag('qq') + '}',
+        // `o` reads `\101` as octal, as bash's `@E` does.
+        E: flag('g:o:'),
+        U: flag('U'),
+        L: flag('L'),
+        // `(C)` capitalises every word; bash's `@u` only the first character.
+        u: list ? null : '${(U)' + target + '[1]}${' + target + '[2,-1]}',
+      };
+      const trap = bashSyntaxReason('Parameter transformation', form);
+      if (op === 'P') {
+        return trap + 'Write `' + flag('%') + '`, with zsh\'s prompt escapes ' +
+          "(`%n`, `%~`) in place of bash's (`\\u`, `\\w`).";
+      }
+      // The shifted index assumes an indexed array, the usual case.
+      const shifted = index !== (subscript || '') ? ' That reads `' + name + '` as an ' +
+        "indexed array; an associative array's key stays as written." : '';
+      return rewrites[op] ? trap + 'Write `' + rewrites[op] + '`.' + shifted
+        : trap + 'zsh has no flag for it: do it in python or sed.';
     },
   },
 ];

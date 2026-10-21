@@ -140,6 +140,45 @@ allowed('cat <<\\EOF\n${!t}\nEOF');
 allowed('cat <<EOF\n\\${!t}\nEOF');       // escaped in the body
 allowed("cat <<EOF\nit's fine\nEOF");     // a quote in an expanding body is literal
 
+// --- parameter transformation -------------------------------------------------
+reason = denied('cat > out.txt <<EOF\nx\nEOF\necho ${v@Q}');
+assert.ok(/^- Parameter transformation: `\$\{v@Q\}`\./m.test(reason), 'quotes the form');
+assert.ok(/bad substitution/.test(reason), 'names the failure');
+assert.ok(/Write `\$\{v\+\$\{\(qq\)v\}\}`\.$/.test(reason), 'names the exact rewrite, unset included');
+assert.ok(/`\$\{\(@qq\)a\}`/.test(denied('printf "%s\\n" "${a[@]@Q}"')), '`[@]` keeps words: `@` flag');
+assert.ok(/`\$\{\(j: :\)\$\{\(@qq\)a\}\}`/.test(denied('echo "${a[*]@Q}"')), '`[*]`: quote each, then join');
+assert.ok(/`\$\{\(@qq\)argv\}`/.test(denied('echo "${@@Q}"')), 'the arguments');
+assert.ok(/`\$\{1\+\$\{\(qq\)1\}\}`/.test(denied('echo ${1@Q}')), 'a positional parameter');
+assert.ok(/`\$\{\(g:o:\)v\}`/.test(denied('echo "${v@E}"')), 'escapes, octal included');
+reason = denied('echo ${a[2]@Q}');
+assert.ok(/`\$\{a\[3\]\+\$\{\(qq\)a\[3\]\}\}`/.test(reason), 'a literal index moves up by one');
+assert.ok(/associative array's key stays as written/.test(reason), 'says what the shift assumes');
+assert.ok(/`\$\{a\[\$i\]\+\$\{\(qq\)a\[\$i\]\}\}`/.test(denied('echo ${a[$i]@Q}')), 'any other subscript is kept');
+assert.ok(/`\$\{h\[a b\]@Q\}`/.test(denied('echo "${h[a b]@Q}"')), 'quotes the whole form');
+assert.ok(/`\$\{\(U\)v\}`/.test(denied('echo ${v@U}')), 'upper case');
+assert.ok(/`\$\{\(L\)v\}`/.test(denied('echo ${v@L}')), 'lower case');
+assert.ok(/`\$\{\(U\)v\[1\]\}\$\{v\[2,-1\]\}`/.test(denied('echo ${v@u}')), 'first letter only, not `(C)`');
+reason = denied('echo "${PS@P}"');
+assert.ok(/`\$\{\(%\)PS\}`/.test(reason) && /`%n`/.test(reason), 'prompt: names the escapes that differ');
+for (const op of ['A', 'a', 'K', 'k']) {
+  assert.ok(/python or sed/.test(denied('echo ${v@' + op + '}')), op + ': no zsh flag');
+}
+assert.ok(/python or sed/.test(denied('echo ${a[@]@u}')), 'u on an array: no single flag');
+reason = denied('echo ${v@x} ${v@}');
+assert.ok(/^- Not a transformation: `\$\{v@x\}`\./m.test(reason), 'an unknown letter fails in bash too');
+assert.ok(/Not a transformation/.test(denied('echo ${#v@Q}')), 'a length is no transformation');
+denied('cat <<EOF\n${v@Q}\nEOF');          // an unquoted heredoc body expands
+denied('x=$(echo ${v@Q})');
+denied('echo "$(echo ${v@Q})"');
+denied('[[ -n ${v@Q} ]]');
+denied('x=${v@Q}');                         // an assignment value aborts too
+denied('case ${v@Q} in x) ;; esac');       // and a case word
+
+allowed("echo '${v@Q}'");
+allowed('echo \\${v@Q}');
+allowed("cat <<'EOF'\n${v@Q}\nEOF");
+allowed('echo ${(qq)v} "${a[@]}" "${@}" ${#@} $v@Q user@host ${v}@x');
+
 // --- several rules, heredoc, unrelated calls -----------------------------------
 rewrites('echo ===== && grep --include=*.md x . && echo =ls',
   "echo \\===== && grep --include='*.md' x . && echo \\=ls"); // every hit of every rule

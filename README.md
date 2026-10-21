@@ -157,18 +157,24 @@ wrong result from the second element on, which any check with a one-element
 sample still passes. Command substitution does split, so `for f in $(cmd)` is
 fine, and so is a glob or a path around the expansion (`for f in $D/*.log`). The
 local `zsh-wordsplit-guard` plugin denies the bare expansion and names the fixes
-(`${=var}`, `${(f)var}`, an array plus `"${a[@]}"`, a literal list):
+(`${=var}`, `${(f)var}`, an array plus `"${a[@]}"`, a literal list). The same
+non-split breaks a command kept in a variable: `DC="docker compose -f a.yml";
+$DC build` fails with `command not found`, and is denied with a function, an
+array or `${=DC}` as the fix
+([ADR-0031](docs/adr/0031-the-wordsplit-guard-flags-a-stored-command.md)):
 
 ```
 /plugin install zsh-wordsplit-guard
 ```
 
-The same plugin catches four more zsh traps: a word starting with `=`
+The same plugin catches five more zsh traps: a word starting with `=`
 (`echo =====`, `[ a == b ]`), a glob in a flag value (`--include=*.md`),
 parentheses in a `${var/pattern/…}` pattern
-([ADR-0022](docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md)), and
+([ADR-0022](docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md)),
 bash's `${!name}`
-([ADR-0023](docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md)). The
+([ADR-0023](docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md)), and
+bash's `${v@Q}` transformations
+([ADR-0030](docs/adr/0030-the-wordsplit-guard-flags-parameter-transformations.md)). The
 first two are rewritten in place when the word is literal text, and the call runs
 ([ADR-0025](docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md)); the
 rest are denied with their zsh rewrite.
@@ -323,7 +329,7 @@ Snapshot of the catalog — the source of truth is
 <!-- catalog:start -->
 **Local:**
 - `agent-report-guard` — Drops `name` from Agent tool calls so the subagent reports back on its own: a named agent becomes a mailbox teammate that notifies idle without a report body, leaving fan-out skills (code-review, research, printing-press) chasing the report with SendMessage. Opt out per call with `[mailbox]` in the description, or session-wide with ALLOW_NAMED_AGENTS=1.
-- `zsh-wordsplit-guard` — Catches Bash commands that zsh, the Bash tool's shell, runs differently from bash. A loop over a bare expansion (`for x in $var`) runs once over the whole string, since zsh does not word-split it; a glob or a path around the expansion (`for f in $D/*.log`) is left alone. Likewise a loop variable over quoted multi-word items (`for c in "a.py -v" "b.py"`) used unquoted in the body (`python3 $c`) stays one word. Also caught: an unquoted word or assignment value starting with `=` (`echo =====`, `[ a == b ]`, `v==x`), which zsh expands to a command path, and a glob in a `--flag=value` word (`--include=*.md`), which aborts on `no matches found` — both rewritten in place when the word is literal text, denied otherwise; and denied: parentheses in a `${var/pattern/…}` pattern, which zsh reads as a glob group; and bash's `${!name}` forms, which zsh aborts on or reads as `$!`. Each deny message names the form to use instead. The loop rule opts out per call with `[nosplit]` in the description, or session-wide with ALLOW_ZSH_NOSPLIT=1; the other rules opt out by the rewrite they apply or name.
+- `zsh-wordsplit-guard` — Catches Bash commands that zsh, the Bash tool's shell, runs differently from bash. A loop over a bare expansion (`for x in $var`) runs once over the whole string, since zsh does not word-split it; a glob or a path around the expansion (`for f in $D/*.log`) is left alone. Likewise a loop variable over quoted multi-word items (`for c in "a.py -v" "b.py"`) used unquoted in the body (`python3 $c`) stays one word. So does a command stored in a variable (`DC="docker compose -f a.yml"`) and run as `$DC build`, which zsh looks up as one command name. Also caught: an unquoted word or assignment value starting with `=` (`echo =====`, `[ a == b ]`, `v==x`), which zsh expands to a command path, and a glob in a `--flag=value` word (`--include=*.md`), which aborts on `no matches found` — both rewritten in place when the word is literal text, denied otherwise; and denied: parentheses in a `${var/pattern/…}` pattern, which zsh reads as a glob group; bash's `${!name}` forms, which zsh aborts on or reads as `$!`; and bash's `${v@Q}` transformations, which zsh aborts on. Each deny message names the form to use instead. The loop and stored-command rules opt out per call with `[nosplit]` in the description, or session-wide with ALLOW_ZSH_NOSPLIT=1; the other rules opt out by the rewrite they apply or name.
 - `subito-listing` — Prepares a Subito.it sale listing, or diagnoses and improves one already live: a price grounded in comparables researched on the web (sold vs asking, read with playwright-cli), a numbered photo shot list, and a title and description ready to paste within the platform limits.
 - `subito-research` — Searches Subito.it for buyers: filters listings by criteria, judges each price against the market, checks scam signals, and prepares seller questions and an offer. Reads subito.it with playwright-cli.
 - `settings-validator` — Validates and improves Claude Code managed, user, shared-project, or project-local settings: confirms the intended configuration, checks every key against the official docs and published JSON schema, applies best practice, and returns complete corrected JSON.

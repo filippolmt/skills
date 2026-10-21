@@ -5,7 +5,7 @@
 // here, and a hit that is correct zsh is a false positive to fix before merging.
 //
 // Local only, never in CI: the corpus is personal history. Usage:
-//   node scripts/replay-wordsplit-guard.js [--hook guard.js|expansion.js|<path>]
+//   node scripts/replay-wordsplit-guard.js [--hook guard.js|expansion.js|command.js|<path>]
 //     [--filter <regex>] [<transcripts dir>]
 // The default dir is ~/.claude/projects; --filter narrows the commands replayed
 // (e.g. '\bfor\s' for the loop rules) and keeps a run to seconds.
@@ -24,7 +24,7 @@ function parseArgs(argv) {
     else if (argv[i] === '--filter') opts.filter = new RegExp(argv[++i]);
     else opts.dir = argv[i];
   }
-  if (!opts.hooks.length) opts.hooks = ['guard.js', 'expansion.js'].map((h) => path.join(HOOKS, h));
+  if (!opts.hooks.length) opts.hooks = ['guard.js', 'expansion.js', 'command.js'].map((h) => path.join(HOOKS, h));
   return opts;
 }
 
