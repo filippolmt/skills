@@ -149,7 +149,11 @@ assert.ok(/`DCF=\(docker compose -f a\.yml -f b\.yml\)`, then `"\$\{DCF\[@\]\}" 
 assert.ok(/`\$\{=DCF\} …`/.test(stored) && /\[nosplit\]/.test(stored), 'names the split and the opt-out');
 stored = denied('P="printf <%s>"; $P a');                     // a redirection if unquoted
 assert.ok(/`p\(\) \{ … "\$@"; \}`/.test(stored) && /`P=\(…\)`/.test(stored), 'no syntax copied');
-denied('DC="echo hi"\n${DC} there');                          // braced, after a newline
+denied('DC="echo hi"\n${DC} there');
+stored = denied('GIT="git -C /tmp"; $GIT log');
+assert.ok(/`git\(\) \{ command git -C \/tmp "\$@"; \}`/.test(stored), 'a same-named function calls the real command');
+assert.ok(/`d\(\) \{ … "\$@"; \}`/.test(denied('D="foo =bar ~/x"; $D')), 'no `=` or `~` word copied');
+denied('cat <<EOF\n$(DC="docker compose"; $DC ps)\nEOF');   // a substitution in a heredoc body                          // braced, after a newline
 denied("DC='echo hi'; true && $DC there");                   // single quotes, after &&
 denied('DC="echo hi"; ls | $DC; false || $DC');
 denied('export DC="docker compose"; if true; then $DC ps; fi');
@@ -168,7 +172,11 @@ allowed('DC="docker compose"; "$DC" ps');                     // quoted: one wor
 allowed('DC="docker compose"; ${=DC} ps');                    // explicit split
 allowed('DC=(docker compose); "${DC[@]}" ps');                // an array
 allowed('dc() { docker compose "$@"; }; dc ps');
-allowed('$DC ps; DC="docker compose"');                       // used before it is assigned
+allowed('$DC ps; DC="docker compose"');
+allowed('DC="docker compose"; DC=ls; $DC');                   // reassigned before the use
+allowed('DC="docker compose"; DC=(docker compose); $DC ps');  // an array: several words
+allowed('N="1 + 1"; (( $N ))');                              // arithmetic, not a command
+allowed('echo DC="a b"; $DC');                               // an argument, not an assignment                       // used before it is assigned
 allowed('DC="docker compose"; echo do $DC');                  // a keyword as an argument
 allowed('DC="docker compose"; [[ -n $DC ]] && echo set');
 allowed('DC="docker compose"; x=$DC; case $DC in d*) echo d;; esac');

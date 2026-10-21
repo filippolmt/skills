@@ -26,7 +26,8 @@ any expansion. The first word is read after the start, a newline, `;`, `&`,
 `|`, `(` or `{`, past any assignment prefix (`X=1 $DC`), reserved word (`then`,
 `do`, `else`, `elif`, `if`, `while`, `until`, `!`) and precommand modifier
 (`time`, `exec`, `nohup`, `command`, `noglob`, `sudo`, `env`). The assignment
-form does not matter: `export`, `local` and `typeset` assign the same way.
+is a command or its prefix, a declaration builtin's included (`export`,
+`local`, `typeset`, `declare`, `readonly`); `echo DC="a b"` is an argument.
 
 Allowed:
 
@@ -35,14 +36,18 @@ Allowed:
 - an array (`DC=(docker compose)`), or a value from `$(…)` or unquoted, whose
   word count the source does not show;
 - a value whose only whitespace is inside an expansion (`"$HOME/bin"`);
-- a use before the assignment, which reads a value from another call;
+- a use before the assignment, which reads a value from another call, and a
+  use after a later reassignment (`DC=ls`, `DC=(docker compose)`);
+- arithmetic, `(( $N ))`;
 - text zsh does not run here: single quotes (`sh -c '…'`), heredoc bodies.
 
 Not read: a command taking a command as an argument after options of its own
-(`xargs -0 $DC`, `timeout 5 $DC`, `watch -n1 $DC`), where the position depends
-on the command's syntax. Nor a variable set outside the command, such as an
-`EDITOR="codium --wait"` exported into the session: a `PreToolUse` hook sees one
-command (ADR-0005).
+(`xargs -0 $DC`, `timeout 5 $DC`, `watch -n1 $DC`, `sudo -u x $DC`), where the
+position depends on the command's syntax; and a use right after a `case`
+branch's `)` or a backtick, since the `)` closing a `$(…)` and a closing
+backtick look the same and are followed by arguments. Nor a variable set
+outside the command, such as an `EDITOR="codium --wait"` exported into the
+session: a `PreToolUse` hook sees one command (ADR-0005).
 
 No exemption for a value that looks like a path with spaces
 (`"/Applications/Visual Studio Code.app/…/code"`): `"/usr/bin/env python3"`
@@ -51,7 +56,7 @@ looks the same and is two words. The opt-outs cover the deliberate case.
 ## Measured
 
 `scripts/replay-wordsplit-guard.js --hook guard.js` over the commands of this
-machine's transcripts holding a quoted assignment with whitespace: 3106 unique
+machine's transcripts holding a quoted assignment with whitespace: 3121 unique
 commands, 21 stored-command hits, all the trap itself — `K="kubectl --context
 …"; $K exec …`, `R="scripts/odoo-on prod ./odoo-pp-cli …"; $R …`,
 `C="git -C ../cli show origin/main"; $C:docs/…`, `AB="timeout 90
@@ -63,9 +68,11 @@ ADR-0027's, the count is a snapshot of local history.
 
 - The deny names three rewrites: a function, an array and `${=NAME}`. The
   function and the array copy the value unquoted, so they are shown only when
-  the value is plain text; a value holding `<`, `|`, a glob or a quote gets `…`
-  in its place, since copying it would turn bash's literal words into syntax.
-  `${=NAME}` is always right, `$C:path` included.
+  the value is plain text; a value holding `<`, `|`, a glob, a quote or a word
+  starting with `=` or `~` gets `…` in its place, since copying it would turn
+  bash's literal words into syntax. A function named after the command it runs
+  (`GIT="git -C x"` → `git() { … }`) calls it through `command`, or it would
+  call itself. `${=NAME}` is always right, `$C:path` included.
 - The opt-outs are the loop rule's: `[nosplit]` and `ALLOW_ZSH_NOSPLIT=1`. A
   value meant as one word in command position, a path with spaces, is the
   deliberate use they exist for.

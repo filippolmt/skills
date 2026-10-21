@@ -50,6 +50,8 @@ const CASES = [
     bash: 'DC="echo -n hi"; $DC "a  b" c; echo', zsh: 'dc() { echo -n hi "$@"; }; dc "a  b" c; echo' },
   { hook: 'loop', named: 'DC=(echo -n hi)',
     bash: 'DC="echo -n hi"; $DC "a  b" c; echo', zsh: 'DC=(echo -n hi); "${DC[@]}" "a  b" c; echo' },
+  { hook: 'loop', named: 'ls() { command ls -d "$@"; }',
+    bash: 'LS="ls -d"; $LS /', zsh: 'ls() { command ls -d "$@"; }; ls /' },
   { hook: 'loop', named: '${=DC}',
     bash: 'DC="printf <%s>"; $DC "a b" c; echo', zsh: 'DC="printf <%s>"; ${=DC} "a b" c; echo' },
 

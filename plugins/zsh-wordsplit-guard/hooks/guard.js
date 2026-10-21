@@ -141,19 +141,27 @@ if (!hit) {
 // outside an expansion, where the source shows it. The use is read in `words`:
 // an unquoted `$DC` / `${DC}` as the first word of a command, past any
 // assignment prefix, reserved word or precommand modifier.
-const ASSIGNMENT = /(?:^|[\s;&|(`])([A-Za-z_]\w*)=/g;
+// An assignment as a command or its prefix, a declaration builtin's included:
+// `echo DC="a b"` is an argument. Quoted values are blank in `words`.
+const ASSIGNMENT_AT = '(?<=(?:^|[;&|({\\n])\\s*(?:(?:export|local|typeset|declare|readonly)' +
+  '\\s+(?:-\\w+\\s+)*)?(?:[A-Za-z_]\\w*=[^\\s;&|]*\\s+)*)';
 const COMMAND_START = '(?:^|[;&|({\\n])\\s*(?:(?:then|do|else|elif|if|while|until|!|' +
-  'time|exec|nohup|command|noglob|sudo|env)\\s+|[A-Za-z_]\\w*=\\S*\\s+)*';
+  'time|exec|nohup|command|noglob|sudo|env)\\s+|[A-Za-z_]\\w*=[^\\s;&|]*\\s+)*';
 let storedHit = null;
 if (!hit && !itemHit) {
-  for (const a of words.matchAll(ASSIGNMENT)) {
+  // `(( $n ))` is arithmetic, not a command.
+  const commands = words.replace(/\(\((?:[^()]|\([^()]*\))*\)\)/g, (m) => m.replace(/[^\n]/g, ' '));
+  for (const a of commands.matchAll(new RegExp(ASSIGNMENT_AT + '([A-Za-z_]\\w*)=', 'g'))) {
     const at = a.index + a[0].length;
     const value = /^'[^']*'|^"(?:[^"\\]|\\.)*"/.exec(input.command.slice(at));
     if (!value || !/\s/.test(value[0].replace(/\$\{[^}]*\}|\$\([^)]*\)|`[^`]*`|\$\w+/g, ''))) continue;
     const name = a[1];
-    const use = new RegExp(COMMAND_START + '(\\$(?:' + name + '(?![\\w[])|\\{' + name + '\\}))')
-      .exec(words.slice(at + value[0].length));
-    if (use) { storedHit = { name: name, value: value[0], expansion: use[1] }; break; }
+    const rest = commands.slice(at + value[0].length);
+    const use = new RegExp(COMMAND_START + '(\\$(?:' + name + '(?![\\w[])|\\{' + name + '\\}))').exec(rest);
+    // A later assignment, `DC=ls` or `DC=(docker compose)`, is what the use reads.
+    if (!use || new RegExp(ASSIGNMENT_AT + name + '=').test(rest.slice(0, use.index))) continue;
+    storedHit = { name: name, value: value[0], expansion: use[1] };
+    break;
   }
 }
 
@@ -177,19 +185,22 @@ if (itemHit) {
 }
 
 if (storedHit) {
-  const { name, value } = storedHit;
+  const { name } = storedHit;
   // bash splits the value into literal words; copied unquoted into a function
   // or an array, a `<`, `|` or glob would become syntax, so only plain text is.
-  const inner = value.slice(1, -1);
-  const line = /^[\w\s.\/=:,@%+~$-]*$/.test(inner) ? inner : '…';
+  // A word starting with `=` or `~` would expand there too.
+  const value = storedHit.value.slice(1, -1);
+  const literalWords = /^[\w\s.\/=:,@%+~$-]*$/.test(value) && !/(?:^|\s)[=~]/.test(value) ? value : '…';
+  const fn = name.toLowerCase();
+  // `git() { git … }` would call itself: `command` reaches the real one.
+  const body = literalWords.split(/\s/)[0] === fn ? 'command ' + literalWords : literalWords;
   deny(
-    'zsh-wordsplit-guard: stored command. `' + name + '=' + value + '` then `' +
+    'zsh-wordsplit-guard: stored command. `' + name + '=' + storedHit.value + '` then `' +
     storedHit.expansion + ' …` runs the whole value as ONE command name: the Bash ' +
     'tool runs zsh, where parameter expansion is not word-split, so it fails with ' +
     '`command not found`. Rewrite as one of:\n' +
-    '  - a function: `' + name.toLowerCase() + '() { ' + line + ' "$@"; }`, then `' +
-    name.toLowerCase() + ' …`\n' +
-    '  - an array: `' + name + '=(' + line + ')`, then `"${' + name + '[@]}" …`\n' +
+    '  - a function: `' + fn + '() { ' + body + ' "$@"; }`, then `' + fn + ' …`\n' +
+    '  - an array: `' + name + '=(' + literalWords + ')`, then `"${' + name + '[@]}" …`\n' +
     '  - `${=' + name + '} …` — split on IFS\n' +
     OPT_OUT);
   process.exit(0);
