@@ -178,6 +178,12 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   word count instead — see `docs/adr/0005-what-the-wordsplit-guard-flags.md`.
   The one shape outside the list is a multi-word loop item used unquoted in the
   body — see `docs/adr/0027-the-wordsplit-guard-flags-multi-word-loop-items.md`.
+- **Stored command** — a command line kept in a scalar variable and run as
+  `$NAME args`: `DC="docker compose -f a.yml"; $DC build`. bash splits the
+  value into a command and its arguments; zsh runs the whole value as one
+  command name, `command not found: docker compose -f a.yml`. Rewritten into a
+  function, an array (`"${DC[@]}"`) or `${=DC}` — see
+  `docs/adr/0031-the-wordsplit-guard-flags-a-stored-command.md`.
 - **Expansion trap** — a form zsh runs differently from bash: a word bash takes
   literally and zsh expands (a leading `=`, a glob in a `--flag=value` word,
   parentheses in a `${var/pattern/…}` pattern), or bash syntax zsh lacks

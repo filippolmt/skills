@@ -141,6 +141,44 @@ allowed('for a in "x y" "z w"; do eval cmd $a; done');
 allowed('for c in "a b"; do echo $c; done', { description: 'deliberate [nosplit]' });
 allowed("cat <<'EOF'\nfor c in \"a b\"; do echo $c; done\nEOF");  // literal heredoc body
 
+// --- stored command -------------------------------------------------------------
+let stored = denied('DCF="docker compose -f a.yml -f b.yml"; $DCF build nginx');
+assert.ok(/^zsh-wordsplit-guard: stored command\. /.test(stored), 'names the trap');
+assert.ok(/`dcf\(\) \{ docker compose -f a\.yml -f b\.yml "\$@"; \}`/.test(stored), 'names the function');
+assert.ok(/`DCF=\(docker compose -f a\.yml -f b\.yml\)`, then `"\$\{DCF\[@\]\}" …`/.test(stored), 'names the array');
+assert.ok(/`\$\{=DCF\} …`/.test(stored) && /\[nosplit\]/.test(stored), 'names the split and the opt-out');
+stored = denied('P="printf <%s>"; $P a');                     // a redirection if unquoted
+assert.ok(/`p\(\) \{ … "\$@"; \}`/.test(stored) && /`P=\(…\)`/.test(stored), 'no syntax copied');
+denied('DC="echo hi"\n${DC} there');                          // braced, after a newline
+denied("DC='echo hi'; true && $DC there");                   // single quotes, after &&
+denied('DC="echo hi"; ls | $DC; false || $DC');
+denied('export DC="docker compose"; if true; then $DC ps; fi');
+denied('local DC="docker compose"; for s in a b; do $DC up $s; done'); // the loop rule passes; this one does not
+denied('DC="docker compose"; { $DC ps; }');
+denied('DC="docker compose"; ( $DC ps )');
+denied('DC="docker compose"; X=1 $DC ps');                   // after an assignment prefix
+denied('DC="docker compose"; sudo $DC ps; time $DC ps');      // after a precommand modifier
+denied('F=a.yml; DC="docker compose -f $F"; $DC ps');          // a space outside the expansion
+denied('x=$(DC="docker compose"; $DC ps)');                   // inside a substitution
+denied('echo "$(DC="docker compose"; $DC ps)"');
+
+allowed('CMD=ls; $CMD -la');                                  // one word: correct
+allowed('DC="docker compose"; echo $DC');                     // an argument, not a command
+allowed('DC="docker compose"; "$DC" ps');                     // quoted: one word in bash too
+allowed('DC="docker compose"; ${=DC} ps');                    // explicit split
+allowed('DC=(docker compose); "${DC[@]}" ps');                // an array
+allowed('dc() { docker compose "$@"; }; dc ps');
+allowed('$DC ps; DC="docker compose"');                       // used before it is assigned
+allowed('DC="docker compose"; echo do $DC');                  // a keyword as an argument
+allowed('DC="docker compose"; [[ -n $DC ]] && echo set');
+allowed('DC="docker compose"; x=$DC; case $DC in d*) echo d;; esac');
+allowed('DC="$HOME/bin"; $DC/tool');                          // no space outside the expansion
+allowed('DC=$(which docker) ; $DC ps');                       // unquoted: word count unknown
+allowed("sh -c 'DC=\"docker compose\"; $DC ps'");            // single-quoted: another shell
+allowed('cat <<EOF\nDC="docker compose"\n$DC ps\nEOF');      // heredoc text
+allowed('DC="docker compose"; $DC ps', { description: 'deliberate [nosplit]' });
+assert.strictEqual(run(bash('DC="a b"; $DC'), { ALLOW_ZSH_NOSPLIT: '1' }), null, 'session opt-out');
+
 // --- opt-outs and unrelated calls --------------------------------------------
 allowed('for x in $v; do echo $x; done', { description: 'deliberate [nosplit]' });
 allowed('for x in $v; do echo $x; done', { description: 'deliberate [NOSPLIT]' });

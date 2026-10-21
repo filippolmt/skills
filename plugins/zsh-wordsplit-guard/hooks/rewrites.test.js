@@ -45,6 +45,14 @@ const CASES = [
     bash: 'for c in "a x" "b y"; do printf "<%s>" $c; echo; done',
     zsh: 'for c arg in a x b y; do printf "<%s>" "$c" "$arg"; echo; done' },
 
+  // --- stored command (guard.js) ---
+  { hook: 'loop', named: 'dc() { echo -n hi "$@"; }',
+    bash: 'DC="echo -n hi"; $DC "a  b" c; echo', zsh: 'dc() { echo -n hi "$@"; }; dc "a  b" c; echo' },
+  { hook: 'loop', named: 'DC=(echo -n hi)',
+    bash: 'DC="echo -n hi"; $DC "a  b" c; echo', zsh: 'DC=(echo -n hi); "${DC[@]}" "a  b" c; echo' },
+  { hook: 'loop', named: '${=DC}',
+    bash: 'DC="printf <%s>"; $DC "a b" c; echo', zsh: 'DC="printf <%s>"; ${=DC} "a b" c; echo' },
+
   // --- equals expansion ---
   { hook: 'expansion', applied: true, bash: 'echo ===== =ls' },
   { hook: 'expansion', applied: true, bash: '[ a == a ] && echo same; [ a == b ] || echo differ' },
