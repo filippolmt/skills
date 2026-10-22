@@ -800,6 +800,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--x-handle", help="X handle for targeted supplemental search")
     parser.add_argument("--x-related", help="Comma-separated related X handles (searched with lower weight)")
     parser.add_argument(
+        "--official-site",
+        metavar="DOMAIN",
+        help=(
+            "The topic's own website (e.g., typesafe.ai). The engine reads the X and "
+            "GitHub accounts the homepage links and uses them when --x-handle / "
+            "--github-user are not set. Keyless."
+        ),
+    )
+    parser.add_argument(
+        "--no-x-handle",
+        metavar="REASON",
+        help=(
+            "Record that the topic has no resolvable X account, and why (e.g., "
+            "\"official site links no X account; x.com-filtered search found none\"). "
+            "Satisfies the agent-hosted X handle decision check without --x-handle."
+        ),
+    )
+    parser.add_argument(
         "--x-posts",
         dest="x_posts",
         metavar="PATH",
@@ -1254,7 +1272,14 @@ def _show_runtime_ui(
     display_sources = list(
         dict.fromkeys(
             [
-                *report.query_plan.source_weights.keys(),
+                # Subquery sources, not source_weights: the sanitizer weights
+                # every eligible source, so weights alone would print
+                # "Digg: 0 clusters" for a source that was never searched.
+                *(
+                    source
+                    for subquery in report.query_plan.subqueries
+                    for source in subquery.sources
+                ),
                 *report.items_by_source.keys(),
                 *report.errors_by_source.keys(),
             ]
@@ -2751,6 +2776,50 @@ def _comparison_requested(args: argparse.Namespace, topic: str) -> bool:
 
 
 LAW7_HOST_PLAN_EXIT = 2
+X_HANDLE_DECISION_EXIT = 2
+
+
+def _x_handle_decision_signal(
+    args: argparse.Namespace, topic: str, external_plan: object,
+    available_sources: list[str],
+) -> str:
+    """Agent-host marker when a hosted entity run plans X with no handle decision.
+
+    An entity topic's own posts are the primary X evidence, and only a
+    resolved handle lets X search them. On hosted runs the host model resolves
+    handles (the engine's auto-resolve stands down for --plan), so a skipped
+    lookup used to cost nothing and went unnoticed. Returns "" when the run
+    is exempt or already decided (--x-handle or --no-x-handle), or when X
+    will not run (unavailable, --search without x, or EXCLUDE_SOURCES=x).
+    """
+    if external_plan is None or args.mock or args.quick:
+        return ""
+    if args.x_handle or args.no_x_handle:
+        return ""
+    if "@" in topic or _comparison_requested(args, topic):
+        return ""
+    if not _looks_like_entity_topic(topic):
+        return ""
+    if "x" not in available_sources:
+        return ""
+    if not pipeline._external_plan_names_source(external_plan, "x"):
+        return ""
+    return env.agent_host_signal()
+
+
+def _x_handle_decision_message(signal: str) -> str:
+    return (
+        "[Resolve] X handle decision missing: this run is agent-hosted "
+        f"({signal} is set), the topic names a person, company, or product, and "
+        "the plan searches X, but the command has no --x-handle. Without one X "
+        "cannot search the subject's own posts. Resolve it first "
+        "(references/research-runbook.md Step 0.5, Section A): pass "
+        "--official-site=<domain> so the engine reads the handle from the "
+        "homepage links, or find it with a search restricted to x.com through "
+        "your search tool's domain filter, then re-run with --x-handle=<handle>. "
+        "If both came up empty, or the topic is a theme rather than an entity, "
+        "re-run with --no-x-handle=\"<reason>\".\n"
+    )
 
 
 def _law7_host_plan_message(signal: str) -> str:
@@ -3238,6 +3307,7 @@ def _quality_research_results(report, diag, yt_fetch_stats):
             if (it.metadata.get("transcript_highlights") or it.metadata.get("transcript_snippet"))
         ),
         "youtube_error": report.errors_by_source.get("youtube"),
+        "instagram_error": report.errors_by_source.get("instagram"),
         "x_error": report.errors_by_source.get("x"),
         "x_degraded_error": x_degraded_error,
         "youtube_captions_disabled_count": sum(
@@ -3918,6 +3988,9 @@ def _main(
         # without WebSearch (OpenClaw, Codex, raw CLI).
         repos_from_auto_resolve = False
         trustpilot_domain_is_hint = False
+        x_handle_from_auto = False
+        github_user_from_auto = False
+        auto_official_site = ""
         # Resolve automatically for entity-shaped topics even without the flag.
         # A person or company topic whose handle the user did not supply is the
         # case where first-party evidence is hardest to protect: the handle is
@@ -3954,11 +4027,13 @@ def _main(
                 sys.stderr.write(f"[AutoResolve] Subreddits: {', '.join(subreddits)}\n")
             if resolution.get("x_handle") and not args.x_handle:
                 args.x_handle = resolution["x_handle"]
+                x_handle_from_auto = True
                 sys.stderr.write(f"[AutoResolve] X handle: @{args.x_handle}\n")
             # Empty x_handle is intentional: do not invent a lexical stand-in.
             # pipeline.run treats an unidentified subject as "skip the X floor".
             if resolution.get("github_user") and not args.github_user:
                 args.github_user = resolution["github_user"]
+                github_user_from_auto = True
                 sys.stderr.write(f"[AutoResolve] GitHub user: @{args.github_user}\n")
             if resolution.get("github_repos") and not args.github_repo:
                 args.github_repo = ",".join(resolution["github_repos"])
@@ -3972,6 +4047,9 @@ def _main(
                 args.trustpilot_domain = resolution["trustpilot_domain"]
                 trustpilot_domain_is_hint = True
                 sys.stderr.write(f"[AutoResolve] Trustpilot domain: {args.trustpilot_domain} (hint)\n")
+            if resolution.get("trustpilot_domain"):
+                # The brand's review-page domain is its own site.
+                auto_official_site = resolution["trustpilot_domain"]
             if resolution.get("context"):
                 # Inject context into external_plan metadata for the planner to use
                 if not external_plan:
@@ -3979,6 +4057,29 @@ def _main(
                 # Store context for the planner prompt injection
                 config["_auto_resolve_context"] = resolution["context"]
                 sys.stderr.write(f"[AutoResolve] Context: {resolution['context'][:80]}...\n")
+
+        # The brand's homepage links its own X and GitHub accounts: the most
+        # reliable first-party source, and keyless. A user flag wins over the
+        # homepage; the homepage wins over a handle auto-resolve picked by
+        # counting mentions in search results.
+        official_site = (args.official_site or "").strip() or auto_official_site
+        if official_site and not args.mock:
+            from lib import resolve as resolve_lib
+            socials = resolve_lib.official_site_socials(official_site)
+            if socials["x_handle"] and (not args.x_handle or x_handle_from_auto):
+                args.x_handle = socials["x_handle"]
+                sys.stderr.write(f"[Resolve] X handle from {official_site}: @{args.x_handle}\n")
+            if socials["github_user"] and (not args.github_user or github_user_from_auto):
+                args.github_user = socials["github_user"]
+                sys.stderr.write(f"[Resolve] GitHub user from {official_site}: @{args.github_user}\n")
+        if args.no_x_handle and not args.x_handle:
+            sys.stderr.write(f"[Resolve] No X handle: {args.no_x_handle.strip()}\n")
+        x_decision_signal = _x_handle_decision_signal(
+            args, topic, external_plan, diag.get("available_sources") or [],
+        )
+        if x_decision_signal:
+            sys.stderr.write(_x_handle_decision_message(x_decision_signal))
+            raise SystemExit(X_HANDLE_DECISION_EXIT)
 
         github_user = args.github_user.lstrip("@").lower() if args.github_user else None
         github_repos = [r.strip() for r in args.github_repo.split(",") if r.strip() and "/" in r.strip()] if args.github_repo else None
