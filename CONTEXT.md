@@ -176,8 +176,9 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   `$var,`, `${var}x`. The only `for`-list shape a guard can call a silent
   non-split, since a glob or a path separator around the expansion decides the
   word count instead — see `docs/adr/0005-what-the-wordsplit-guard-flags.md`.
-  The one shape outside the list is a multi-word loop item used unquoted in the
-  body — see `docs/adr/0027-the-wordsplit-guard-flags-multi-word-loop-items.md`.
+  Outside the list, the guard also checks multi-word loop items used unquoted
+  in the body (`docs/adr/0027-the-wordsplit-guard-flags-multi-word-loop-items.md`)
+  and stored arguments (`docs/adr/0032-the-wordsplit-guard-flags-stored-arguments-and-history-modifiers.md`).
 - **Stored command** — a command line kept in a scalar variable and run as
   `$NAME args`: `DC="docker compose -f a.yml"; $DC build`. bash splits the
   value into a command and its arguments; zsh runs the whole value as one
@@ -187,10 +188,11 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Expansion trap** — a form zsh runs differently from bash: a word bash takes
   literally and zsh expands (a leading `=`, a glob in a `--flag=value` word,
   parentheses in a `${var/pattern/…}` pattern), or bash syntax zsh lacks
-  (`${!…}`, `${v@Q}`). The wordsplit guard's second rule set; each deny names
+  (`${!…}`, `${v@Q}`), or an unbraced history modifier (`$N:refs/x`). The wordsplit guard's second rule set; each deny names
   the zsh rewrite, so it carries no opt-out, and a literal word whose fix is
   only an escape or quotes is rewritten by the guard itself — see
   `docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md`,
   `docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md`,
   `docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md` and
-  `docs/adr/0030-the-wordsplit-guard-flags-parameter-transformations.md`.
+  `docs/adr/0030-the-wordsplit-guard-flags-parameter-transformations.md` and
+  `docs/adr/0032-the-wordsplit-guard-flags-stored-arguments-and-history-modifiers.md`.

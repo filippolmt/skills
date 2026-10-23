@@ -136,6 +136,13 @@ function maskedViews(text, context) {
   return { words: words, patterns: patterns };
 }
 
+// Conditions and arithmetic use operators, not splitting command words.
+function maskNonSplitting(text) {
+  return text
+    .replace(/\[\[[\s\S]*?\]\]/g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/\(\((?:[^()]|\([^()]*\))*\)\)/g, (m) => m.replace(/[^\n]/g, ' '));
+}
+
 // The opt-out of the word-splitting rules, guard.js and command.js: `[nosplit]`
 // in the call's description, or ALLOW_ZSH_NOSPLIT for the session. Explicit
 // values only: `ALLOW_ZSH_NOSPLIT=0` must mean off, not "non-empty string,
@@ -148,4 +155,4 @@ function noSplitOptedOut(input) {
 const NOSPLIT_OPT_OUT_HINT = 'Deliberate non-split: [nosplit] in the description, or ' +
   'ALLOW_ZSH_NOSPLIT=1 for the session.';
 
-module.exports = { readBashInput, deny, rewrite, maskedViews, noSplitOptedOut, NOSPLIT_OPT_OUT_HINT };
+module.exports = { readBashInput, deny, rewrite, maskedViews, maskNonSplitting, noSplitOptedOut, NOSPLIT_OPT_OUT_HINT };

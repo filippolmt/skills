@@ -36,7 +36,7 @@
 // docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md,
 // docs/adr/0030-the-wordsplit-guard-flags-parameter-transformations.md; the rewrite:
 // docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md.
-const { readBashInput, deny, rewrite, maskedViews } = require('./scan');
+const { readBashInput, deny, rewrite, maskedViews, maskNonSplitting } = require('./scan');
 
 const input = readBashInput();
 if (!input) process.exit(0);
@@ -46,9 +46,7 @@ const blankRun = (m) => m.replace(/[^\n]/g, ' ');
 const { words: masked, patterns } = maskedViews(command);
 // `[[ a == b ]]` and arithmetic (`(( a == b ))`, `$(( … ))`) read `==` as an
 // operator, not a word.
-const words = masked
-  .replace(/\[\[[\s\S]*?\]\]/g, blankRun)
-  .replace(/\(\((?:[^()]|\([^()]*\))*\)\)/g, blankRun);
+const words = maskNonSplitting(masked);
 // `case` patterns, blanked for rule 2: zsh generates no file names there.
 // shortcut: a pattern holding `(` or `;` stays visible, so a glob flag in it
 // is still denied; widen the regex if one shows up.
@@ -120,6 +118,17 @@ function braceForm(at) {
 
 // Each rule scans one view and turns a match into a reason, or null to pass it.
 const RULES = [
+  {
+    // Unbraced parameters accept history modifiers even inside double quotes.
+    view: patterns,
+    regex: /(?<!\$)\$([A-Za-z_]\w*):[fgw]*[aAcehlpqQrstux&]/g,
+    reason(m) {
+      return 'History modifier after an unbraced parameter: `' + m[0] + '`. ' +
+        'zsh consumes the colon and modifier instead of keeping the suffix literal, ' +
+        'even inside double quotes. Brace the name: `${' + m[1] + '}:…`. ' +
+        'For an intentional modifier, make it explicit inside braces (`${' + m[1] + ':…}`).';
+    },
+  },
   {
     // `--name=value` in word position, the value up to an operator or a
     // parenthesis that is not part of a `$(…)` or backtick substitution in it.

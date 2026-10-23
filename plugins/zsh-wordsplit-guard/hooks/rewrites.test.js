@@ -55,6 +55,20 @@ const CASES = [
   { hook: 'command', named: '${=DC}',
     bash: 'DC="printf <%s>"; $DC "a b" c; echo', zsh: 'DC="printf <%s>"; ${=DC} "a b" c; echo' },
 
+  // --- stored arguments and unbraced history modifiers ---
+  { hook: 'command', named: '${=files}',
+    bash: 'files="a b"; printf "<%s>" $files', zsh: 'files="a b"; printf "<%s>" ${=files}' },
+  { hook: 'command', named: '${(f)files}',
+    bash: 'files=$(printf "a b\\nc"); IFS=$\'\\n\'; printf "<%s>" $files',
+    zsh: 'files=$(printf "a b\\nc"); printf "<%s>" ${(f)files}' },
+  { hook: 'command', named: '"${files[@]}"',
+    bash: 'files="a b"; printf "<%s>" $files', zsh: 'files=(a b); printf "<%s>" "${files[@]}"' },
+  { hook: 'expansion', named: '${N}:',
+    bash: 'N=abc.def; printf "%s" "$N:refs/x"', zsh: 'N=abc.def; printf "%s" "${N}:refs/x"' },
+
+  { hook: 'expansion', named: '${N}:',
+    bash: 'N=aba; printf "%s" "$N:gs/a/b/"', zsh: 'N=aba; printf "%s" "${N}:gs/a/b/"' },
+
   // --- equals expansion ---
   { hook: 'expansion', applied: true, bash: 'echo ===== =ls' },
   { hook: 'expansion', applied: true, bash: '[ a == a ] && echo same; [ a == b ] || echo differ' },

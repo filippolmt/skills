@@ -16,10 +16,10 @@
 // so non-split is always a bug. Unquoted `$var` in argument position (`grep
 // $flags f`) is left alone: it is usually a single word and correct, and denying
 // it would only teach ALLOW_ZSH_NOSPLIT=1, which kills the `for` check too.
-// The one argument-position case in scope is the loop variable of a list of
+// One argument-position case in scope is the loop variable of a list of
 // quoted multi-word literals, where the source itself proves several words were
 // meant (docs/adr/0027-the-wordsplit-guard-flags-multi-word-loop-items.md).
-// Outside loops, command.js reads the same proof in command position.
+// Outside loops, command.js reads stored commands and arguments (ADR-0032).
 //
 // Deny rather than warn: an advisory arrives after the wrong output is already
 // in context, and the construct is narrow enough that a hit is almost always a
