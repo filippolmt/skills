@@ -197,4 +197,26 @@ assert.strictEqual(run({ hook_event_name: 'PreToolUse', tool_name: 'Agent', tool
 assert.strictEqual(run(bash('')), null, 'no command, nothing to check');
 assert.strictEqual(run({}), null, 'empty payload is silent');
 
+reason = denied('N=abc.def; print -r -- "$N:refs/x"');
+assert.ok(reason.includes('${N}:') && /modifier/i.test(reason), 'braces prevent history modifiers');
+for (const modifier of 'aAcehlpqQrstux&') denied('cmd "$name:' + modifier + 'suffix"');
+denied('cmd $HOST:path');
+denied('N=aba; printf "%s" "$N:gs/a/b/"');
+denied('cmd "$N:fr"');
+denied('cmd "$N:wr"');
+allowed('cmd "$N:foo"');
+allowed('cmd "$N:world"');
+denied('cat <<EOF\n$N:refs/x\nEOF');
+denied('echo "$(print -r -- $N:refs/x)"');
+allowed('cmd "${N}:refs/x"');
+allowed('cmd "$N:123"');
+allowed('cmd "$$N:refs/x"');
+allowed('cmd "${N:r}"');
+assert.ok(run(bash('cmd "$N:refs/x"'), { ALLOW_ZSH_NOSPLIT: '1' }), 'session opt-out does not hide modifiers');
+allowed("cmd '$N:refs/x'");
+allowed('cmd "\\$N:refs/x"');
+allowed('cmd ok # $N:refs/x');
+allowed("cat <<'EOF'\n$N:refs/x\nEOF");
+denied('cmd "$N:refs/x"', { description: '[nosplit]' });
+
 console.log('zsh-wordsplit-guard expansion rules: all checks passed');

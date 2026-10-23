@@ -80,7 +80,9 @@ intent does.
 - Widening the exemption again needs the same evidence: a replay showing the
   denials it removes were wrong. Narrowing it back is cheap, so a false negative
   found in use is a one-line change plus a test.
-- Argument position stays out of scope, with one exception whose source proves
+- [ADR-0032](0032-the-wordsplit-guard-flags-stored-arguments-and-history-modifiers.md)
+  extends argument-position checks to variables assigned quoted multi-word values
+  or command substitutions in the same call. The earlier exception whose source proves
   several words were meant: the loop variable of a list of quoted multi-word
   literals (`docs/adr/0027-the-wordsplit-guard-flags-multi-word-loop-items.md`).
   Command position has one of its own: a quoted multi-word value run as a

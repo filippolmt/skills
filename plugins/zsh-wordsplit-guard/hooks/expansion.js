@@ -121,6 +121,17 @@ function braceForm(at) {
 // Each rule scans one view and turns a match into a reason, or null to pass it.
 const RULES = [
   {
+    // Unbraced parameters accept history modifiers even inside double quotes.
+    view: patterns,
+    regex: /(?<!\$)\$([A-Za-z_]\w*):[fgw]*[aAcehlpqQrstux&]/g,
+    reason(m) {
+      return 'History modifier after an unbraced parameter: `' + m[0] + '`. ' +
+        'zsh consumes the colon and modifier instead of keeping the suffix literal, ' +
+        'even inside double quotes. Brace the name: `${' + m[1] + '}:…`. ' +
+        'For an intentional modifier, make it explicit inside braces (`${' + m[1] + ':…}`).';
+    },
+  },
+  {
     // `--name=value` in word position, the value up to an operator or a
     // parenthesis that is not part of a `$(…)` or backtick substitution in it.
     view: flagWords,

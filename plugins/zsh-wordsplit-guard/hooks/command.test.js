@@ -30,7 +30,7 @@ denied('x=$(DC="docker compose"; $DC ps)');                   // inside a substi
 denied('echo "$(DC="docker compose"; $DC ps)"');
 
 allowed('CMD=ls; $CMD -la');                                  // one word: correct
-allowed('DC="docker compose"; echo $DC');                     // an argument, not a command
+denied('DC="docker compose"; echo $DC');                      // multi-word argument
 allowed('DC="docker compose"; "$DC" ps');                     // quoted: one word in bash too
 allowed('DC="docker compose"; ${=DC} ps');                    // explicit split
 allowed('DC=(docker compose); "${DC[@]}" ps');                // an array
@@ -40,7 +40,7 @@ allowed('DC="docker compose"; DC=ls; $DC');                   // reassigned befo
 allowed('DC="docker compose"; DC=(docker compose); $DC ps');  // an array: several words
 allowed('N="1 + 1"; (( $N ))');                              // arithmetic, not a command
 allowed('echo DC="a b"; $DC');                               // an argument, not an assignment
-allowed('DC="docker compose"; echo do $DC');                  // a keyword as an argument
+denied('DC="docker compose"; echo do $DC');                   // a keyword as an argument
 allowed('DC="docker compose"; [[ -n $DC ]] && echo set');
 allowed('DC="docker compose"; x=$DC; case $DC in d*) echo d;; esac');
 allowed('DC="$HOME/bin"; $DC/tool');                          // no space outside the expansion
@@ -56,11 +56,48 @@ denied('DC="docker compose"; sudo -u root -E $DC ps');
 denied('DC="docker compose"; env -i -u HOME $DC ps; exec -a x $DC ps; time -p $DC ps');
 allowed('DC="docker compose" $DC ps');                       // a prefix: $DC reads the old value
 allowed('DC="docker compose" make; $DC ps');                 // set for `make` only
-allowed('DC="docker compose"; sudo -E ls $DC');              // an argument of the command sudo runs
+denied('DC="docker compose"; sudo -E ls $DC');               // an argument of the command sudo runs
 allowed("DC='docker compose'; $DC ps", { description: 'deliberate [NOSPLIT]' });
 
 assert.strictEqual(run({ hook_event_name: 'PreToolUse', tool_name: 'Agent', tool_input: {} }), null,
   'another tool is not this hook business');
 assert.strictEqual(run({}), null, 'empty payload is silent');
 
-console.log('zsh-wordsplit-guard stored-command rule: all checks passed');
+reason = denied("files=$(git status --porcelain | awk '{print $2}') && git add -A -- $files && git commit -F - -- $files");
+assert.ok(/silent non-split/.test(reason), 'names the argument trap');
+assert.ok(reason.includes('${(f)files}') && reason.includes('${=files}') &&
+  reason.includes('"${files[@]}"') && reason.includes('[nosplit]'), 'names line, IFS, array and opt-out');
+denied('files="$(printf \'a\\nb\')"; cmd ${files}');
+denied('files="$(printf "%s\\n" a b)"; cmd $files');
+denied('files="$(printf "%s\\n" "$(echo a)" b)"; cmd $files');
+denied('files=$(printf "%s\\n" "$(echo a)" b); cmd $files');
+denied('files=`printf "a\\nb"`; cmd $files');
+denied("files='a b'; cmd ${files}");
+denied('export files=$(printf "a\\nb"); cmd $files');
+denied('files="a\nb"; cmd $files');
+allowed('files=$(echo a); cmd "$files"');
+allowed('files=$(echo a); cmd ${=files}');
+allowed('files=$(echo a); cmd ${(f)files}');
+allowed('files=(a b); cmd "${files[@]}"');
+allowed('files=$(echo a); files=one; cmd $files');
+denied('files="a b"; files=one true; cmd $files');
+denied('files="a b"; files="one" true; cmd $files');
+denied('files="a b"; cmd $files>&1');
+denied('files="a b"; cmd $files</dev/null');
+allowed('files=$(echo a) cmd; other $files');
+allowed('echo files="a b"; cmd $files');
+allowed('files=$(echo a); x=$files; [[ -n $files ]]; case $files in a) :;; esac');
+allowed('files=$(echo a); export x=$files; eval "echo" $files');
+allowed('files="a b"; if eval $files; then :; fi');
+allowed('files="a b"; command eval $files');
+allowed('files=$(echo a); cmd $files', { description: '[nosplit]' });
+assert.strictEqual(run(bash('files=$(echo a); cmd $files'), { ALLOW_ZSH_NOSPLIT: '1' }), null);
+allowed("files='$(echo a)'; cmd $files");
+allowed('files="one"; cmd $files');
+allowed('files="a b"; cmd $files_extra');
+allowed('files="a b"; cmd ${files[1]}');
+allowed('files="a b"; cmd $files[1]');
+allowed('files=$(echo a); cat <<EOF\n$files\nEOF');
+allowed("sh -c 'files=$(echo a); cmd $files'");
+
+console.log('zsh-wordsplit-guard stored-value rules: all checks passed');

@@ -4,6 +4,10 @@ status: accepted
 
 # The wordsplit guard flags a stored command
 
+> [ADR-0032](0032-the-wordsplit-guard-flags-stored-arguments-and-history-modifiers.md)
+> extends the assignment reader to stored arguments, including substitutions.
+> The argument-position exclusions below describe the original rule.
+
 ADR-0005 keeps an unquoted `$var` outside a `for` list out of scope: it is
 usually one word and correct. Issue #388 found a second place where the source
 proves several words were meant, in **command position**:
