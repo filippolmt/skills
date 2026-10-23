@@ -9,34 +9,34 @@
 // for guard.js's loop items. Scope, what is not read and the measurement:
 // docs/adr/0031-the-wordsplit-guard-flags-a-stored-command.md. Stored arguments
 // also cover values from substitutions: docs/adr/0032-the-wordsplit-guard-flags-stored-arguments-and-history-modifiers.md.
-const { readBashInput, deny, maskedViews, noSplitOptedOut, NOSPLIT_OPT_OUT_HINT } = require('./scan');
+const { readBashInput, deny, maskedViews, maskNonSplitting, noSplitOptedOut, NOSPLIT_OPT_OUT_HINT } = require('./scan');
 
 const input = readBashInput();
 if (!input || noSplitOptedOut(input)) process.exit(0);
 
 // Quoted text is blank in `words`, so assignment values are read from the raw
 // command at the same offsets. `(( $n ))` is arithmetic, not a command.
-const words = maskedViews(input.command).words
-  .replace(/\(\((?:[^()]|\([^()]*\))*\)\)/g, (m) => m.replace(/[^\n]/g, ' '))
-  .replace(/\[\[[\s\S]*?\]\]/g, (m) => m.replace(/[^\n]/g, ' '));
+const words = maskNonSplitting(maskedViews(input.command).words);
 
 // Where a command starts, and an assignment word, whose value stops at an operator.
 const START = '(?:^|[;&|({\\n])\\s*';
 const ASSIGN = '[A-Za-z_]\\w*=[^\\s;&|]*\\s+';
+const RESERVED = '(?:then|do|else|elif|if|while|until|!)\\s+';
 // An assignment that is a command of its own, a declaration builtin's
 // included: one in front of a command (`DC="a b" cmd`) sets it for that
 // command only, and `echo DC="a b"` is an argument.
-const ASSIGNMENT_AT = '(?<=' + START + '(?:(?:export|local|typeset|declare|readonly)' +
+const ASSIGNMENT_AT = '(?<=' + START + '(?:' + RESERVED + ')*' +
+  '(?:(?:export|local|typeset|declare|readonly)' +
   '\\s+(?:-\\w+\\s+)*)?(?:' + ASSIGN + ')*)';
 const ONLY_ASSIGNMENTS = /^(?:\s+[A-Za-z_]\w*=[^\s;&|]*)*\s*(?:[;&|\n)}]|$)/;
 // The first word of a command, past reserved words, assignment prefixes and
 // precommand modifiers with their options: the ones taking an argument are
 // named (`sudo -u root`, `env -u NAME`, `exec -a name`).
-const MODIFIER = '(?:then|do|else|elif|if|while|until|!|nohup|noglob|' +
+const MODIFIER = '(?:nohup|noglob|' +
   'time(?:\\s+-\\w+)*|command(?:\\s+-\\w+)*|' +
   'exec(?:\\s+-a\\s+\\S+|\\s+-\\w+)*|env(?:\\s+-u\\s+\\S+|\\s+-\\w+)*|' +
   'sudo(?:\\s+-[ugUCDhprtT]\\s+\\S+|\\s+-\\w+)*)\\s+';
-const COMMAND_START = START + '(?:' + MODIFIER + '|' + ASSIGN + ')*';
+const COMMAND_START = START + '(?:' + RESERVED + '|' + MODIFIER + '|' + ASSIGN + ')*';
 
 // Quoted scalar, or an unquoted substitution. Count parentheses in the masked
 // view so quoted `)` and nested substitutions keep the assignment's boundary.
@@ -92,7 +92,9 @@ for (const a of words.matchAll(new RegExp(ASSIGNMENT_AT + '([A-Za-z_]\\w*)=', 'g
   argument.lastIndex = end;
   for (const found of words.matchAll(argument)) {
     if (reassignedBefore(name, end, found.index)) break;
-    const before = words.slice(0, found.index).split(/[;&|(){}\n`]/).pop().trim();
+    // A parameter's braces and operators are part of an argument, not command boundaries.
+    const before = words.slice(0, found.index).replace(/\$\{[^}]*\}/g, '_')
+      .split(/[;&|(){}\n`]/).pop().trim();
     const command = (before + ' ').replace(new RegExp('^' + COMMAND_START), '').trim();
     // These contexts do not split in bash either, or parse the value again.
     if (!command || /^(?:case|for|select|eval)\b/.test(command)) continue;

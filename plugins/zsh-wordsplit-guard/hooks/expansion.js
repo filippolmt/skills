@@ -36,7 +36,7 @@
 // docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md,
 // docs/adr/0030-the-wordsplit-guard-flags-parameter-transformations.md; the rewrite:
 // docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md.
-const { readBashInput, deny, rewrite, maskedViews } = require('./scan');
+const { readBashInput, deny, rewrite, maskedViews, maskNonSplitting } = require('./scan');
 
 const input = readBashInput();
 if (!input) process.exit(0);
@@ -46,9 +46,7 @@ const blankRun = (m) => m.replace(/[^\n]/g, ' ');
 const { words: masked, patterns } = maskedViews(command);
 // `[[ a == b ]]` and arithmetic (`(( a == b ))`, `$(( … ))`) read `==` as an
 // operator, not a word.
-const words = masked
-  .replace(/\[\[[\s\S]*?\]\]/g, blankRun)
-  .replace(/\(\((?:[^()]|\([^()]*\))*\)\)/g, blankRun);
+const words = maskNonSplitting(masked);
 // `case` patterns, blanked for rule 2: zsh generates no file names there.
 // shortcut: a pattern holding `(` or `;` stays visible, so a glob flag in it
 // is still denied; widen the regex if one shows up.

@@ -100,4 +100,25 @@ allowed('files="a b"; cmd $files[1]');
 allowed('files=$(echo a); cat <<EOF\n$files\nEOF');
 allowed("sh -c 'files=$(echo a); cmd $files'");
 
+denied("if true; then files=$(printf 'a\\nb'); printf '<%s>' $files; fi");
+denied('files="a b"; printf "<%s>" ${unused} $files');
+denied('files="a b"; echo done $files');
+denied('for x in a; do files="a b"; cmd $files; done');
+denied('if false; then :; else files="a b"; cmd $files; fi');
+denied('files="a b"; if true; then files=one true; cmd $files; fi');
+allowed('files="a b"; if true; then files=one; cmd $files; fi');
+allowed('echo then files="a b"; cmd $files');
+allowed('files="a b"; eval ${unused} $files');
+allowed('files="a b"; eval ${unused:-x|y} $files');
+
+for (const wrap of [
+  (body) => 'echo $(' + body + ')',
+  (body) => 'echo "$(' + body + ')"',
+  (body) => 'cat <<EOF\n$(' + body + ')\nEOF',
+]) {
+  denied(wrap('files="a b"; cmd $files'));
+  denied(wrap('files=$(printf "a\\nb"); cmd $files'));
+  allowed(wrap('files="a b"; cmd "$files"'));
+}
+
 console.log('zsh-wordsplit-guard stored-value rules: all checks passed');

@@ -16,8 +16,10 @@ reader. `command.js` denies a standalone unquoted `$name` or `${name}` argument
 when an earlier standalone assignment in the same tool call gives it a quoted
 value with whitespace outside expansions, or a command substitution (quoted or
 unquoted, including backticks). Declaration builtins count as assignments;
-command-local assignment prefixes do not. A later reassignment ends that
-assignment's reach. Quoted uses, arrays, explicit splits, arithmetic, `[[ … ]]`,
+command-local assignment prefixes do not. Assignments after reserved words
+(`then`, `do`, `else`, etc.) count too; a preceding parameter expansion in the
+argument list keeps the surrounding command context. A later persistent
+reassignment ends that assignment's reach. Quoted uses, arrays, explicit splits, arithmetic, `[[ … ]]`,
 assignment values, `case` words and `eval` arguments remain allowed.
 
 A substitution's output may be one word: the hook cannot know. We accept that
@@ -37,5 +39,28 @@ and expanding heredocs, but masks literal text and escapes. The deny names
 `${name}:…` for a literal suffix and `${name:…}` for an intentional modifier.
 Like the other expansion rules, it has no non-split opt-out.
 
-The hook suites pin both boundaries; `rewrites.test.js` compares the named line,
-IFS, array and brace fixes under zsh against their bash readings.
+The hook suites pin both boundaries, including stored arguments inside plain
+and double-quoted substitutions and substitutions in expanding heredocs.
+`rewrites.test.js` compares the named line, IFS, array and brace fixes under zsh
+against their bash readings.
+
+## Replay
+
+Replayed this machine's Claude transcript corpus against `main` and the changed
+hooks, using `scripts/replay-wordsplit-guard.js`:
+
+- `--hook command.js --filter '='`: 24,273 unique commands; 779 current hits
+  versus 24 on `main`, with no removed hits. The 755 additions comprise 722
+  substitution values and 33 quoted multi-word values.
+- `--hook expansion.js --filter '\$[A-Za-z_]\w*:'`: 778 unique commands;
+  69 current hits versus 20 on `main`, with no removed hits. All 49 additions
+  contain the newly checked unbraced modifier form.
+
+Substitution hits include likely single-word IDs, paths and logging arguments.
+These are conservative checks explicitly included by #494, not evidence that
+all 755 commands would misbehave: quote the argument to state the single-word
+intent. Quoted multi-word hits require the same choice between quoting and
+explicit splitting. History-modifier hits use the brace rewrite to make literal
+suffixes or intentional modifiers explicit. The replay runs hooks only, never
+the recorded commands; counts are a local snapshot and raw transcripts stay
+private.
