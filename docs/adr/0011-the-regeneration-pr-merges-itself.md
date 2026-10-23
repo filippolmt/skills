@@ -37,7 +37,12 @@ Because the run is a genuine `pull_request` run it checks out `refs/pull/N/merge
 — the merge commit — where the abandoned shapes could only validate the branch
 head. With `strict: false` on the protection that merge ref is still computed at
 check time rather than pinned, so a base moving underneath is reduced, not retired;
-the residue is bounded by regeneration retriggering on any catalog-touching push.
+regeneration retriggers on every push to `main` to recover, without making
+cancellation an atomic guarantee. Before publication, the generated commit is
+rebased onto freshly fetched `main`; only workflow and non-projection Markdown
+documentation changes may intervene. Other changes or conflicts fail loudly for
+a rerun, rather than carrying potentially stale outputs across changed inputs
+(#463).
 
 **The cost is a credential**, and it is the one this decision accepts knowingly: a
 secret to store, scope and rotate, whose expiry stops the flow. It stops it
@@ -153,13 +158,13 @@ Hence a real identity on the push, which is where this started.
   catalog stops advancing until someone deals with it, which is the intended
   behaviour for a tree that must not land — and the red run is what says so.
 - **The merge is performed with `REGEN_TOKEN`, a real identity, so it *does*
-  trigger workflows.** The push to `main` matches `regenerate`'s own `skills/**`
-  path filter, so one extra run follows every regeneration and stops at "tree
-  already current"; `validate` also re-runs on `main`. A wasted minute per bump,
+  trigger workflows.** Every push to `main` starts `regenerate`, so one extra run
+  follows every regeneration and stops at "tree already current"; `validate` also
+  re-runs on `main`. A wasted minute per bump,
   and the price of not pushing as the bot.
 - **An open regeneration PR does not heal itself.** A PR left open by an earlier
   failure waits for the next `regenerate` run — triggered by the next
-  catalog-touching push to `main`, or by `gh workflow run regenerate.yml`.
+  push to `main`, or by `gh workflow run regenerate.yml`.
 - **`delete_branch_on_merge` removes the branch**, and the next regeneration
   recreates it. The long-lived-branch reasoning in the job is unaffected: it is
   about not stacking PRs within one open cycle.

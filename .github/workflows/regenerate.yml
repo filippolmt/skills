@@ -24,26 +24,18 @@ name: regenerate
 # catalog and from every bundle's `dependencies`, regenerates the README, and this
 # PR carries all of it — and names it in its body, since the merge is unattended
 # like any other.
+#
+# Every main push starts a replacement run: generator inputs extend beyond the
+# catalog (including shared helpers, licenses and prune-time README inputs), so a
+# path filter silently misses some. Before publishing, replay only the generated
+# commit onto freshly fetched main. Only workflow/non-projection Markdown doc
+# changes are allowed underneath it; other changes fail loudly for a rerun.
+# Concurrency reduces wasted work, but is not a safety proof: cancellation is not
+# atomic with push/merge. As in ADR-0011, main can still advance after our fetch.
 
 on:
   push:
     branches: [main]
-    paths:
-      - .claude-plugin/marketplace.json
-      - scripts/gen-skills-tree.js
-      - scripts/gen-distribution.js
-      - scripts/gen-codex.js
-      - scripts/gen-pi.js
-      - scripts/portable-artifacts.js
-      - scripts/distribution.js
-      - scripts/distribution-meta.json
-      - plugins/**
-      - overlays/**
-      # A hand-edit of a projection belongs here too: regeneration undoes it.
-      - skills/**
-      - .agents/plugins/**
-      - docs/distribution-parity.md
-      - docs/pi-package-filters.md
   workflow_dispatch:
 
 # `GITHUB_TOKEN` does none of the work below — `REGEN_TOKEN` does, so that the push
@@ -127,8 +119,45 @@ jobs:
           node scripts/gen-pi.js --check
           node scripts/gen-codex.js --check
         shell: bash
-      - name: Open or update the regeneration PR
+      - name: Prepare regeneration for publication
         if: steps.diff.outputs.changed == 'true'
+        id: publication
+        run: |
+          set -euo pipefail
+          base="$(git rev-parse HEAD)"
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -b chore/regenerate-skills-tree
+          git add -A
+          git commit -m 'chore: regenerate skills tree'
+          git fetch --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+          latest="$(git rev-parse origin/main)"
+          # Replay just our generated commit: checkout's shallow history cannot
+          # reliably discover the merge-base for an ordinary rebase.
+          if ! git rebase --onto "$latest" "$base"; then
+            git rebase --abort
+            echo '::error::main changed with a rebase conflict; rerun regenerate on current main' >&2
+            exit 1
+          fi
+          if [ "$(git rev-parse HEAD)" = "$latest" ]; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+            echo 'generated changes already present on main'
+            exit 0
+          fi
+          # Fail closed: only workflows and non-projection Markdown docs are
+          # known not to feed generation. New inputs need no deny-list update.
+          while IFS= read -r -d '' file; do
+            case "$file" in
+              docs/distribution-parity.md|docs/pi-package-filters.md) ;;
+              .github/workflows/*|docs/*.md) continue ;;
+            esac
+            echo "::error::generation inputs changed ($file); rerun regenerate on current main" >&2
+            exit 1
+          done < <(git diff --name-only --no-renames -z "$base" "$latest")
+          echo 'changed=true' >> "$GITHUB_OUTPUT"
+        shell: bash
+      - name: Open or update the regeneration PR
+        if: steps.publication.outputs.changed == 'true'
         env:
           # The same token as the checkout, so the PR is opened by the identity that
           # pushed the branch and its `validate` run is nobody's to approve.
@@ -140,11 +169,6 @@ jobs:
           # one habit: try, pause, try again, and end in a labelled error rather than
           # take the first no as final. Never a bare sleep after the last attempt.
           attempts=6
-          git config user.name  'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git checkout -b "$branch"
-          git add -A
-          git commit -m 'chore: regenerate skills tree'
           git push --force origin "$branch"
           sha="$(git rev-parse HEAD)"
           # A single long-lived branch: a second regeneration force-pushes onto the
