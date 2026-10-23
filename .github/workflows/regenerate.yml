@@ -130,6 +130,7 @@ jobs:
           git checkout -b chore/regenerate-skills-tree
           git add -A
           git commit -m 'chore: regenerate skills tree'
+          generated="$(git rev-parse HEAD)"
           git fetch --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main
           latest="$(git rev-parse origin/main)"
           # Replay just our generated commit: checkout's shallow history cannot
@@ -139,10 +140,12 @@ jobs:
             echo '::error::main changed with a rebase conflict; rerun regenerate on current main' >&2
             exit 1
           fi
+          comparison="$base"
+          changed=true
           if [ "$(git rev-parse HEAD)" = "$latest" ]; then
-            echo 'changed=false' >> "$GITHUB_OUTPUT"
-            echo 'generated changes already present on main'
-            exit 0
+            # Discount our already-applied patch, not any additional input changes.
+            comparison="$generated"
+            changed=false
           fi
           # Fail closed: only workflows and non-projection Markdown docs are
           # known not to feed generation. New inputs need no deny-list update.
@@ -153,8 +156,8 @@ jobs:
             esac
             echo "::error::generation inputs changed ($file); rerun regenerate on current main" >&2
             exit 1
-          done < <(git diff --name-only --no-renames -z "$base" "$latest")
-          echo 'changed=true' >> "$GITHUB_OUTPUT"
+          done < <(git diff --name-only --no-renames -z "$comparison" "$latest")
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
         shell: bash
       - name: Open or update the regeneration PR
         if: steps.publication.outputs.changed == 'true'

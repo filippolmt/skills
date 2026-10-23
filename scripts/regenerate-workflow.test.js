@@ -105,6 +105,18 @@ test('an already-applied generation skips publication instead of describing the 
   assert.match(fs.readFileSync(f.output, 'utf8'), /changed=false/);
 });
 
+test('an already-applied generation still rejects a subsequent catalog change', (t) => {
+  const f = fixture(t);
+  f.commit(f.main, 'skills/example/SKILL.md', 'new projection\n');
+  f.commit(f.main, '.claude-plugin/marketplace.json', 'changed catalog\n');
+  f.git(f.main, 'push', 'origin', 'main');
+  const result = f.run();
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /generation inputs changed/);
+  assert.match(result.stderr, /\.claude-plugin\/marketplace\.json/);
+  assert.ok(!fs.existsSync(f.output), 'must not report a successful no-op');
+});
+
 for (const file of [
   '.claude-plugin/marketplace.json', 'scripts/catalog.js', 'scripts/gen-readme.js',
   'scripts/catalog-meta.json', 'README.md', 'LICENSE', 'plugins/example/plugin.json',
