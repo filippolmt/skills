@@ -38,6 +38,20 @@ function harness(scriptName) {
   const allowed = (command, extra) =>
     assert.strictEqual(run(bash(command, extra)), null, 'expected no deny for: ' + command);
 
+  // Every stored-argument case keeps its verdict across the scanner's contexts.
+  const argumentContexts = (check, setup, argument) => {
+    const body = setup + '; cmd ' + argument;
+    for (const command of [
+      body,
+      'if true; then ' + body + '; fi',
+      'for item in one; do ' + body + '; done',
+      setup + '; cmd ${unused} ' + argument,
+      'echo $(' + body + ')',
+      'echo "$(' + body + ')"',
+      'cat <<EOF\n$(' + body + ')\nEOF',
+    ]) check(command);
+  };
+
   // The command a rewrite runs instead, checked to keep the rest of the input
   // (OTHER_FIELD among it) and to pass the hook itself.
   const OTHER_FIELD = { timeout: 5 };
@@ -53,7 +67,7 @@ function harness(scriptName) {
     return hso.updatedInput.command;
   };
 
-  return { run, bash, denied, allowed, rewritten };
+  return { run, bash, denied, allowed, rewritten, argumentContexts };
 }
 
 module.exports = { harness };

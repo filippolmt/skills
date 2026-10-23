@@ -3,7 +3,7 @@
 // The denied commands fail under zsh with `command not found`; the allowed ones
 // run as written, or read a value the rule cannot see.
 const assert = require('assert');
-const { run, bash, denied, allowed } = require('./testing').harness('command.js');
+const { run, bash, denied, allowed, argumentContexts } = require('./testing').harness('command.js');
 
 let reason = denied('DCF="docker compose -f a.yml -f b.yml"; $DCF build nginx');
 assert.ok(/^zsh-wordsplit-guard: stored command\. /.test(reason), 'names the trap');
@@ -67,25 +67,31 @@ reason = denied("files=$(git status --porcelain | awk '{print $2}') && git add -
 assert.ok(/silent non-split/.test(reason), 'names the argument trap');
 assert.ok(reason.includes('${(f)files}') && reason.includes('${=files}') &&
   reason.includes('"${files[@]}"') && reason.includes('[nosplit]'), 'names line, IFS, array and opt-out');
-denied('files="$(printf \'a\\nb\')"; cmd ${files}');
-denied('files="$(printf "%s\\n" a b)"; cmd $files');
-denied('files="$(printf "%s\\n" "$(echo a)" b)"; cmd $files');
-denied('files=$(printf "%s\\n" "$(echo a)" b); cmd $files');
-denied('files=`printf "a\\nb"`; cmd $files');
-denied("files='a b'; cmd ${files}");
-denied('export files=$(printf "a\\nb"); cmd $files');
-denied('files="a\nb"; cmd $files');
-allowed('files=$(echo a); cmd "$files"');
-allowed('files=$(echo a); cmd ${=files}');
-allowed('files=$(echo a); cmd ${(f)files}');
-allowed('files=(a b); cmd "${files[@]}"');
-allowed('files=$(echo a); files=one; cmd $files');
-denied('files="a b"; files=one true; cmd $files');
-denied('files="a b"; files="one" true; cmd $files');
-denied('files="a b"; cmd $files>&1');
-denied('files="a b"; cmd $files</dev/null');
-allowed('files=$(echo a) cmd; other $files');
-allowed('echo files="a b"; cmd $files');
+for (const [check, setup, argument] of [
+  [denied, 'files="$(printf \'a\\nb\')"', '${files}'],
+  [denied, 'files="$(printf "%s\\n" a b)"', '$files'],
+  [denied, 'files="$(printf "%s\\n" "$(echo a)" b)"', '$files'],
+  [denied, 'files=$(printf "%s\\n" "$(echo a)" b)', '$files'],
+  [denied, 'files=`printf "a\\nb"`', '$files'],
+  [denied, "files='a b'", '${files}'],
+  [denied, 'export files=$(printf "a\\nb")', '$files'],
+  [denied, 'files="a\nb"', '$files'],
+  [denied, 'files="a b"; files=one true', '$files'],
+  [denied, 'files="a b"; files="one" true', '$files'],
+  [denied, 'files="a b"', '$files>&1'],
+  [denied, 'files="a b"', '$files</dev/null'],
+  [allowed, 'files=$(echo a)', '"$files"'],
+  [allowed, 'files=$(echo a)', '${=files}'],
+  [allowed, 'files=$(echo a)', '${(f)files}'],
+  [allowed, 'files=(a b)', '"${files[@]}"'],
+  [allowed, 'files=$(echo a); files=one', '$files'],
+  [allowed, 'files=$(echo a) cmd', '$files'],
+  [allowed, 'echo files="a b"', '$files'],
+  [allowed, 'files="one"', '$files'],
+  [allowed, 'files="a b"', '$files_extra'],
+  [allowed, 'files="a b"', '${files[1]}'],
+  [allowed, 'files="a b"', '$files[1]'],
+]) argumentContexts(check, setup, argument);
 allowed('files=$(echo a); x=$files; [[ -n $files ]]; case $files in a) :;; esac');
 allowed('files=$(echo a); export x=$files; eval "echo" $files');
 allowed('files="a b"; if eval $files; then :; fi');
@@ -93,10 +99,6 @@ allowed('files="a b"; command eval $files');
 allowed('files=$(echo a); cmd $files', { description: '[nosplit]' });
 assert.strictEqual(run(bash('files=$(echo a); cmd $files'), { ALLOW_ZSH_NOSPLIT: '1' }), null);
 allowed("files='$(echo a)'; cmd $files");
-allowed('files="one"; cmd $files');
-allowed('files="a b"; cmd $files_extra');
-allowed('files="a b"; cmd ${files[1]}');
-allowed('files="a b"; cmd $files[1]');
 allowed('files=$(echo a); cat <<EOF\n$files\nEOF');
 allowed("sh -c 'files=$(echo a); cmd $files'");
 
@@ -110,15 +112,5 @@ allowed('files="a b"; if true; then files=one; cmd $files; fi');
 allowed('echo then files="a b"; cmd $files');
 allowed('files="a b"; eval ${unused} $files');
 allowed('files="a b"; eval ${unused:-x|y} $files');
-
-for (const wrap of [
-  (body) => 'echo $(' + body + ')',
-  (body) => 'echo "$(' + body + ')"',
-  (body) => 'cat <<EOF\n$(' + body + ')\nEOF',
-]) {
-  denied(wrap('files="a b"; cmd $files'));
-  denied(wrap('files=$(printf "a\\nb"); cmd $files'));
-  allowed(wrap('files="a b"; cmd "$files"'));
-}
 
 console.log('zsh-wordsplit-guard stored-value rules: all checks passed');

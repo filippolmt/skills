@@ -36,7 +36,7 @@ everyday sense.
 `docs/adr/` holds the decisions and their reasoning, one file per decision
 (`NNNN-slug.md`, with a `status:`). Read the ADR a rule cites before you change
 that rule; write a new one when you settle a question the next agent would
-otherwise reopen. Reviews of cross-harness projection changes also read
+otherwise reopen. Guard and cross-harness projection reviews also read
 [`CODING_STANDARDS.md`](CODING_STANDARDS.md).
 
 ## Adding or updating an external skill
