@@ -6,8 +6,11 @@ on:
       - .agents/plugins/**
       - .claude-plugin/marketplace.json
       - .github/workflows/codex-integration.yml
+      - LICENSE
       - plugins/**
       - overlays/**
+      - shared/**
+      - scripts/catalog.js
       - scripts/distribution-meta.json
       - scripts/distribution.js
       - scripts/gen-codex.js
@@ -23,8 +26,11 @@ on:
       - .agents/plugins/**
       - .claude-plugin/marketplace.json
       - .github/workflows/codex-integration.yml
+      - LICENSE
       - plugins/**
       - overlays/**
+      - shared/**
+      - scripts/catalog.js
       - scripts/distribution-meta.json
       - scripts/distribution.js
       - scripts/gen-codex.js

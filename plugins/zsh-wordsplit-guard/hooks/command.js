@@ -123,7 +123,7 @@ const value = hit.value.slice(1, -1);
 // bash splits the value into literal words; copied unquoted into a function or
 // an array, a `<`, `|`, glob, or a word starting with `=` or `~` would become
 // syntax, so only plain text is shown.
-const hintWords = /^[\w\s.\/=:,@%+~$-]*$/.test(value) && !/(?:^|\s)[=~]/.test(value) ? value : '…';
+const hintWords = /^[\w\s.\/=:,@%+~-]*$/.test(value) && !/(?:^|\s)[=~]/.test(value) ? value : '…';
 // A prefix keeps the function off any command or builtin of the same name
 // (`git`, `exec`, `test`).
 const fn = 'run_' + name.toLowerCase();

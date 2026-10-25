@@ -84,10 +84,12 @@ workflow can give. An expired token fails the job's first step by name.
 
 An entry whose folder upstream deleted or renamed is **pruned** by that same
 regeneration: it leaves the catalog and every bundle's `dependencies` (breaking
-bump), the README is regenerated, and the self-merging PR names it
+bump), the entry's owned distribution metadata is removed, the README is regenerated,
+and the self-merging PR names it
 (`docs/adr/0015-an-upstream-removal-is-pruned-at-regeneration.md`). A removal that
-would change a non-bundle's behaviour or strip a bundle of the skill
-it is named after turns the run red instead.
+would change a non-bundle's behaviour, break a surviving runtime dependency, or
+strip a bundle of the skill it is named after turns the run red before any catalog,
+manifest, or metadata writes.
 
 A skill upstream **added** is not catalogued by anything automatic. For a
 **whole** source (ADR-0014) the `whole-sources` workflow keeps one issue open

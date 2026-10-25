@@ -12,6 +12,13 @@ assert.ok(/`DCF=\(docker compose -f a\.yml -f b\.yml\)`, then `"\$\{DCF\[@\]\}" 
 assert.ok(/`\$\{=DCF\} …`/.test(reason) && /\[nosplit\]/.test(reason), 'names the split and the opt-out');
 reason = denied('P="printf <%s>"; $P a');                     // a redirection if unquoted
 assert.ok(/`run_p\(\) \{ … "\$@"; \}`/.test(reason) && /`P=\(…\)`/.test(reason), 'no syntax copied');
+for (const value of ['echo $HOME', 'echo ${HOME}', 'echo $(pwd)', 'echo `pwd`']) {
+  for (const wrap of [s => s, s => 'out=$(' + s + ')', s => 'echo "$(' + s + ')"', s => 'cat <<EOF\n$(' + s + ')\nEOF']) {
+    const repair = denied(wrap("DC='" + value + "'; $DC"));
+    assert.ok(repair.includes('run_dc() { … "$@"; }') && repair.includes('DC=(…)'), 'expansions are not executable repair text');
+    assert.ok(repair.includes('${=DC}'), 'explicit splitting remains safe');
+  }
+}
 denied('DC="echo hi"\n${DC} there');                         // braced, after a newline
 reason = denied('GIT="git -C /tmp"; $GIT log');
 assert.ok(/`run_git\(\) \{ git -C \/tmp "\$@"; \}`/.test(reason), 'the function never shadows the command');

@@ -24,7 +24,7 @@
 // Deny rather than warn: an advisory arrives after the wrong output is already
 // in context, and the construct is narrow enough that a hit is almost always a
 // real bug. Flipping to `"ask"` is a one-line change if false positives show up.
-const { readBashInput, deny, maskedViews, noSplitOptedOut, NOSPLIT_OPT_OUT_HINT } = require('./scan');
+const { readBashInput, deny, maskedViews, maskNonSplitting, noSplitOptedOut, NOSPLIT_OPT_OUT_HINT } = require('./scan');
 
 // A `for NAME in <list>`, list ending at `;` or newline (zsh needs one before `do`).
 const FOR_HEADER = /\bfor\s+([A-Za-z_]\w*)\s+in\s+([^\n;]*)/g;
@@ -50,19 +50,53 @@ if (!input || noSplitOptedOut(input)) process.exit(0);
 // The masked view (scan.js) already drops what zsh does not run here: quoted
 // text, so a header that is only text (`echo "for x in $v"`) and the correct
 // forms `"$v"` and `"${a[@]}"` are gone, a `#` comment, and a heredoc body. On
-// top of it, a command substitution is blanked: `$(cmd)` is a splitting form.
+// top of it, substitutions are blanked only while reading list words: `$(cmd)`
+// splits, but a loop inside it still runs under zsh and must be checked.
 // The cost is honest and one-sided: a real loop nested inside a quoted payload
 // is invisible too, so `bash -c '... for x in $v ...'` — which does run under a
 // shell that splits — needs no special case, and `zsh -c '…'` slips through
 // with it. False negative over a wrong deny on the critical path.
 const words = maskedViews(input.command).words;
-const scannable = words
-  .replace(/\$\((?:[^()]|\([^()]*\))*\)/g, ' ')
-  .replace(/`[^`]*`/g, ' ');
+
+// The list may end mid-substitution at a semicolon/newline. Hide that remainder
+// too; its parameter expansions are arguments to another command, not loop words.
+// Prefix analysis keeps open scopes (the loop inherits their assignments), but
+// completed children cannot change the type of a variable in the current shell.
+function withoutSubstitutions(list, preserveOpen = false) {
+  let result = '';
+  for (let i = 0; i < list.length;) {
+    if (list.startsWith('$(', i)) {
+      // shortcut: balance parentheses, not shell grammar; use a parser if case-arm delimiters cause false hits.
+      let depth = 1;
+      const start = i;
+      i += 2;
+      while (i < list.length && depth) {
+        if (list[i] === '(') depth++;
+        else if (list[i] === ')') depth--;
+        i++;
+      }
+      result += depth && preserveOpen ? '$(' + withoutSubstitutions(list.slice(start + 2), true) : ' ';
+    } else if (list[i] === '`') {
+      const end = list.indexOf('`', i + 1);
+      result += end === -1 && preserveOpen ? '(' + withoutSubstitutions(list.slice(i + 1), true) : ' ';
+      i = end === -1 ? list.length : end + 1;
+    } else result += list[i++];
+  }
+  return result;
+}
+
+// Keywords count only after a command boundary, never after `echo then`, etc.
+function inCommandPosition(at) {
+  return /(?:^|[;&|(){}\n`])\s*(?:(?:then|do|else|elif|if|while|until|!|time)\s+)*$/.test(words.slice(0, at));
+}
 
 let hit = null;
-for (const header of scannable.matchAll(FOR_HEADER)) {
-  const found = (header[2].match(WORD) || [])
+let header;
+while ((header = FOR_HEADER.exec(words))) {
+  // A header's list may contain another loop: visit that header independently.
+  FOR_HEADER.lastIndex = header.index + 3;
+  if (!inCommandPosition(header.index)) continue;
+  const found = (withoutSubstitutions(header[2]).match(WORD) || [])
     .filter((word) => !HARMLESS_AROUND.test(word.replace(/\$\{[^}]*\}/g, '')))
     .map((word) => NONSPLIT_EXPANSION.exec(word))
     .find(Boolean);
@@ -70,7 +104,13 @@ for (const header of scannable.matchAll(FOR_HEADER)) {
   const name = found[1] || found[2];
   // `a=(x y); for i in $a` is fine: an array expands to several words even with
   // SH_WORD_SPLIT off. Only what was assigned BEFORE this loop can be one.
-  if (new RegExp('(?:^|[;&|(\\s])' + name + '=\\(').test(scannable.slice(0, header.index))) continue;
+  // shortcut: track textual assignments/unsets, not branch or subshell scope; use a parser if scope-related false hits appear.
+  const changes = new RegExp('(?:^|[;&|(\\n])\\s*(?:(?:then|do|else)\\s+)*' +
+    '(?:(?:export|local|typeset|declare|readonly)\\s+(?:-\\w+\\s+)*)?' +
+    '(?:[A-Za-z_]\\w*=[^\\s;&|]*\\s+)*' + name + '=(\\()?|' +
+    '(?:^|[;&|(\\n])\\s*unset\\s+(?:[^\\s;&|]+\\s+)*' + name + '(?=[\\s;&|]|$)', 'g');
+  const last = [...withoutSubstitutions(words.slice(0, header.index), true).matchAll(changes)].pop();
+  if (last && last[1]) continue;
   hit = { expansion: found[0], name: name, header: header[0].trim() };
   break;
 }
@@ -103,6 +143,7 @@ function bodyOf(text) {
 let itemHit = null;
 if (!hit) {
   for (const header of words.matchAll(ITEM_HEADER)) {
+    if (!inCommandPosition(header.index)) continue;
     const end = header.index + header[0].length;
     const listText = header[2] !== undefined ? header[2] : header[3];
     const listEnd = header[2] !== undefined ? end : end - 1;
@@ -116,7 +157,7 @@ if (!hit) {
     const quoted = list.match(/"(?:[^"\\]|\\.)*"|'[^']*'/g) || [];
     if (!quoted.some((word) => /\s/.test(word) && !/^"[\s\S]*[$`\\]/.test(word))) continue;
     const name = header[1];
-    const body = bodyOf(words.slice(end)).replace(/\[\[[\s\S]*?\]\]/g, ' ');
+    const body = maskNonSplitting(bodyOf(words.slice(end)));
     // `$c`, `${c}` or a braced modifier (`${c:-x}`, `${c%.py}`), as NONSPLIT_EXPANSION.
     const use = new RegExp('(?<![=\\w])(?<!\\bcase\\s+)(?<!\\beval\\s[^;&|\\n]*)\\$(?:' + name +
       '(?![\\w[])|\\{' + name + '(?:[:#%/][^}]*)?\\})').exec(body);

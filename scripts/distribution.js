@@ -191,6 +191,24 @@ function validateMetadata(metadata) {
   }
 }
 
+// Plan against the surviving inventory (including planned manifest edits) before any writes.
+function pruneDistributionMetadata(metadata, gone, inventory) {
+  validateMetadata(metadata);
+  const removed = new Set(gone);
+  const pruned = Object.fromEntries(Object.entries(metadata).map(([field, records]) => [
+    field,
+    Object.fromEntries(Object.entries(records).filter(([key]) =>
+      !removed.has(field === 'artifacts' ? key.split('/', 1)[0] : key))),
+  ]));
+  for (const [from, targets] of Object.entries(pruned.runtimeDependencies || {})) {
+    for (const target of targets) {
+      if (removed.has(target)) throw new Error(`${from}: cannot prune runtime dependency ${target}`);
+    }
+  }
+  validateDistribution(inventory.filter((entry) => !removed.has(entry.name)), pruned);
+  return pruned;
+}
+
 function validatePortableRuntime(file) {
   if (/\$\{CLAUDE_PLUGIN_ROOT\}|\$CLAUDE_PLUGIN_ROOT\b/.test(fs.readFileSync(file, 'utf8'))) {
     throw new Error(`${file}: unresolved CLAUDE_PLUGIN_ROOT runtime dependency; adapt the artifact or declare it unsupported`);
@@ -212,8 +230,9 @@ function validateDistribution(inventory, metadata = {}, options = {}) {
   for (const entry of Object.keys(metadata.presentationOverrides || {})) {
     if (!entries.has(entry)) throw new Error(`orphaned presentation override: ${entry}`);
   }
-  for (const from of Object.keys(metadata.runtimeDependencies || {})) {
+  for (const [from, targets] of Object.entries(metadata.runtimeDependencies || {})) {
     if (!entries.has(from)) throw new Error(`orphaned runtime dependency source: ${from}`);
+    for (const target of targets) if (!entries.has(target)) throw new Error(`${from}: unknown dependency ${target}`);
   }
   const result = inventory.map((entry) => {
     if (!entry.artifacts.length) throw new Error(`${entry.name}: no distribution artifacts discovered`);
@@ -296,4 +315,4 @@ function renderParity(inventory) {
   ].join('\n');
 }
 
-module.exports = { discoverArtifacts, declaredDependencies, classify, validateDistribution, validatePortableRuntime, renderParity, posix };
+module.exports = { discoverArtifacts, declaredDependencies, classify, validateDistribution, pruneDistributionMetadata, validatePortableRuntime, renderParity, posix };

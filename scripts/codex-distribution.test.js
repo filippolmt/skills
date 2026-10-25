@@ -10,6 +10,7 @@ function fixture() {
   const source = path.join(root, 'source');
   fs.mkdirSync(path.join(source, 'skill-one', 'scripts'), { recursive: true });
   fs.mkdirSync(path.join(root, 'shared'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'LICENSE'), 'MIT fixture licence\n');
   fs.writeFileSync(path.join(source, 'skill-one', 'SKILL.md'), '---\nname: one\ndescription: One.\n---\n');
   fs.writeFileSync(path.join(root, 'shared', 'tool.js'), 'console.log("ok");\n');
   fs.symlinkSync(path.join(root, 'shared', 'tool.js'), path.join(source, 'skill-one', 'scripts', 'tool.js'));
@@ -28,6 +29,7 @@ test('writes an installable marketplace package from the shared inventory', () =
   const inventory = [{
     name: 'one',
     sourceRoot: source,
+    repoRoot: root,
     runtimeDependencies: [],
     artifacts: [{
       kind: 'skill',

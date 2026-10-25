@@ -14,7 +14,9 @@ only path was a person running `/add-external-skill update`.
 **The generator prunes it.** A regeneration resolves every entry first. One whose
 `path` no longer exists at its `sha` leaves the catalog, its name leaves every
 bundle's `dependencies` with a breaking bump of that bundle's `version`, and the
-README is regenerated. The regeneration PR carries all of it, lists what was pruned
+README is regenerated. Distribution metadata owned by the removed entry leaves
+with it; metadata cannot outlive its catalog owner (ADR-0021). The regeneration PR
+carries all of it, lists what was pruned
 and what left the tree in its body, and **merges itself** like any other
 ([ADR-0011](0011-the-regeneration-pr-merges-itself.md)). Its body is the notice:
 the uninstall steps are in it and in the README's *When a skill leaves the catalog*.
@@ -25,13 +27,18 @@ regeneration can run. `--check` does fail while the catalog still lists one: aft
 a regeneration there is nothing left to prune, so a hit there means the prune did
 not happen.
 
-**Two removals are refused, loudly.** The regeneration run goes red, which stops the
+**Unsafe removals are refused before writes.** The regeneration run goes red, which stops the
 catalog advancing until someone decides:
 
 - a **non-bundle** that depends on the entry — `mode-router`'s hook routes to the
   modes it lists, so dropping one changes behaviour, not packaging;
 - a **bundle losing the skill it is named after** (`triage` from `triage-bundle`) —
-  what is left has no reason to exist.
+  what is left has no reason to exist;
+- a **surviving runtime dependency** on the entry, declared in distribution metadata
+  or an upstream manifest — dropping it changes a workflow's behavior.
+
+The prune plan validates surviving dependencies and metadata before writing the
+catalog, local manifests, or distribution metadata. Verification remains read-only.
 
 ## Consequences
 

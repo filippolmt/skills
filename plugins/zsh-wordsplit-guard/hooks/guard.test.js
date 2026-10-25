@@ -95,6 +95,56 @@ denied('for x in $v; do echo $x; done <<<"seed"');
 // The array escape hatch is ordered: only an assignment BEFORE the loop counts.
 denied('for i in $a; do echo $i; done; a=(uno due)');
 
+denied('a=(x y); unset a; a="x y"; for x in $a; do echo "$x"; done');
+denied('a=(x y); a="x y"; for x in $a; do echo "$x"; done');
+denied('a=(x y); unset -v a; for x in $a; do :; done');
+denied('a=(x y); unset other a third; for x in $a; do :; done');
+denied('a=(x y); export a="x y"; for x in $a; do :; done');
+denied('a=(x y); b=1 a="x y"; for x in $a; do :; done');
+allowed('a=(x y); unset other; for x in $a; do :; done');
+allowed('a=(x y); unset a; a=(p q); for x in $a; do :; done');
+allowed('a=(x y); echo a=scalar; for x in $a; do :; done');
+
+// A substitution is a shell of its own, not a reason to hide its loops or
+// the reassignment that invalidates an earlier array exemption.
+for (const wrap of [s => s, s => 'out=$(' + s + ')', s => 'echo "$(' + s + ')"',
+  s => 'cat <<EOF\n$(' + s + ')\nEOF', s => 'echo "$(echo "$(' + s + ')")"']) {
+  denied(wrap('a=(x y); unset a; a="x y"; for x in $a; do echo "$x"; done'));
+  denied(wrap('a=(x y); a="x y"; for x in $a; do echo "$x"; done'));
+  denied(wrap('for x in $v; do echo "$x"; done'));
+  allowed(wrap('a=(x y); for x in $a; do echo "$x"; done'));
+  allowed(wrap('for x in $(printf "%s\\n" $v); do echo "$x"; done'));
+  allowed(wrap('for x in $(echo $(echo $(printf "%s\\n" $v))); do :; done'));
+  allowed(wrap('for x in `printf "%s\\n" $v`; do :; done'));
+  allowed(wrap('echo "for x in $v; do :; done"'));
+  allowed(wrap("bash -c 'for x in $v; do :; done'"));
+}
+// Completed child substitutions cannot change the current shell's array type.
+for (const child of ['$(a="x y")', '$(unset a)', '`a="x y"`', '$(echo $(a="x y"))']) {
+  allowed('a=(x y); out=' + child + '; for x in $a; do printf "<%s>" "$x"; done');
+  allowed('a=(x y); echo "$(out=' + child + '; for x in $a; do :; done)"');
+}
+allowed('a=(x y); out=$(for x in $a; do printf "<%s>" "$x"; done)');
+allowed('a=(x y); echo "$(echo "$(for x in $a; do :; done)")"');
+denied('out=$(a=(x y)); for x in $a; do :; done');
+denied('a=(x y); out=$(unset a; a="x y"; for x in $a; do :; done)');
+
+// A keyword in argument position is not a loop, even inside a substitution.
+for (const wrap of [s => s, s => 'out=$(' + s + ')', s => 'echo "$(' + s + ')"',
+  s => 'cat <<EOF\n$(' + s + ')\nEOF']) {
+  allowed(wrap('echo for x in $v'));
+  allowed(wrap('echo then for x in $v'));
+  allowed(wrap('echo for c in "a b"; echo $c'));
+  denied(wrap('if true; then for x in $v; do :; done; fi'));
+  denied(wrap('for y in a b; do for x in $v; do :; done; done'));
+  denied(wrap('{ for x in $v; do :; done; }'));
+}
+
+// The outer list is a splitting substitution, but the loop inside still isn't.
+denied('for y in $(for x in $v; do echo "$x"; done); do echo "$y"; done');
+allowed('echo "$(echo \'for x in $v; do :; done\')"');
+allowed("cat <<'EOF'\n$(for x in $v; do :; done)\nEOF");
+
 // --- a loop variable built to hold several words -----------------------------
 // A list of quoted literals holding whitespace exists only to be split again in
 // the body; an unquoted `$c` there stays one word (docs/adr/0027).
@@ -124,6 +174,10 @@ allowed('for c in "a b"; do echo ${#c}; done');                  // a length is 
 allowed('for c in "a b" "c d"; do echo "$c"; done');             // quoted use: one word, as asked
 // Where zsh never splits anyway — and neither does bash — one word is right.
 allowed('for c in "a b"; do [[ -n $c ]] && echo ok; done');
+for (const wrap of [s => s, s => 'out=$(' + s + ')', s => 'echo "$(' + s + ')"', s => 'cat <<EOF\n$(' + s + ')\nEOF']) {
+  allowed(wrap('for c in "1 + 2"; do (( n = $c )); printf "%s\\n" "$n"; done'));
+  denied(wrap('for c in "1 + 2"; do (( n = $c )); echo done $c; done'));
+}
 allowed('for c in "a b"; do x=$c; echo "$x"; done');
 allowed('for c in "a b"; do case $c in a*) echo a;; esac; done');
 allowed('for f in "a.txt" "b.txt"; do cat $f; done');            // single-word items

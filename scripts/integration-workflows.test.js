@@ -9,6 +9,18 @@ for (const [name, generators, smoke] of [
   ['pi', ['gen-skills-tree', 'gen-distribution', 'gen-pi'], 'test-pi-package.sh'],
   ['codex', ['gen-skills-tree', 'gen-distribution', 'gen-codex'], 'test-codex-marketplace.sh'],
 ]) {
+  for (const event of ['pull_request', 'push']) {
+    test(`${name} integration covers projection inputs on ${event}`, () => {
+      const workflow = fs.readFileSync(path.join(root, `.github/workflows/${name}-integration.yml`), 'utf8');
+      const eventBlock = workflow.match(new RegExp(`^  ${event}:\\n([\\s\\S]*?)(?=^  \\w|^jobs:)`, 'm'));
+      assert.ok(eventBlock, `${event} trigger must exist`);
+      const paths = [...eventBlock[1].matchAll(/^      - (.+)$/gm)].map((match) => match[1]);
+      for (const input of ['shared/**', 'scripts/catalog.js', 'LICENSE', 'overlays/**']) {
+        assert.ok(paths.includes(input), `${event} must cover ${input}`);
+      }
+    });
+  }
+
   test(`${name} integration materializes projections before its smoke test`, () => {
     const workflow = fs.readFileSync(path.join(root, `.github/workflows/${name}-integration.yml`), 'utf8');
     const smokeIndex = workflow.lastIndexOf(smoke);

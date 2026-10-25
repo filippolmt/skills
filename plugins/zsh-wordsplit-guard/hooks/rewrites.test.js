@@ -69,7 +69,45 @@ const CASES = [
   { hook: 'expansion', named: '${N}:',
     bash: 'N=aba; printf "%s" "$N:gs/a/b/"', zsh: 'N=aba; printf "%s" "${N}:gs/a/b/"' },
 
+  ...['echo $HOME', 'echo ${HOME}', 'echo $(pwd)', 'echo `pwd`'].map(value => ({
+    hook: 'command', named: '${=DC}',
+    bash: "DC='" + value + "'; $DC", zsh: "DC='" + value + "'; ${=DC}",
+  })),
+  { hook: 'guard', named: '${=a}',
+    bash: 'a=(x y); unset a; a="x y"; for x in $a; do printf "<%s>" "$x"; done',
+    zsh: 'a=(x y); unset a; a="x y"; for x in ${=a}; do printf "<%s>" "$x"; done' },
+  ...[s => 'out=$(' + s + '); printf "%s\\n" "$out"',
+    s => 'echo "$(' + s + ')"', s => 'cat <<EOF\n$(' + s + ')\nEOF',
+    s => 'echo "$(echo "$(' + s + ')")"'].map(wrap => ({
+    hook: 'guard', named: '${=a}',
+    bash: wrap('a=(x y); unset a; a="x y"; for x in $a; do printf "<%s>" "$x"; done'),
+    zsh: wrap('a=(x y); unset a; a="x y"; for x in ${=a}; do printf "<%s>" "$x"; done'),
+  })),
+  { hook: 'guard', allowed: true, setup: 'v="a b"',
+    bash: 'echo "$(for x in $(echo $(echo $(printf "%s\\n" $v))); do printf "<%s>" "$x"; done)"' },
+  ...['a=(x y); out=$(a="x y"); for x in $a; do printf "<%s>" "$x"; done',
+    'v="a b"; echo "$(echo for x in $v)"',
+    'a=(x y); out=$(for x in $a; do printf "<%s>" "$x"; done); printf "%s" "$out"',
+    'a=(x y); echo "$(out=$(a="x y"); for x in $a; do printf "<%s>" "$x"; done)"',
+  // Bash's bare $a reads only element zero; use its full array for comparison.
+  ].map(zsh => ({ hook: 'guard', allowed: true, zsh,
+    bash: zsh.replace('in $a;', 'in "${a[@]}";') })),
+  { hook: 'guard', allowed: true,
+    bash: 'for c in "1 + 2"; do (( n = $c )); printf "%s\\n" "$n"; done' },
+
   // --- equals expansion ---
+  { hook: 'expansion', allowed: true,
+    bash: 'N=world; cat << =ls\nhello $N\n=ls' },
+  { hook: 'expansion', applied: true,
+    bash: 'N=world; cat << --x=*.md\nhello $N\n--x=*.md\necho =ls' },
+  { hook: 'expansion', applied: true,
+    bash: "N=world; cat << '=ls'\nhello $N\n=ls\necho =ls" },
+  { hook: 'expansion', applied: true,
+    bash: 'N=world; cat << =ls\nhello $N\n=ls\necho =ls' },
+  { hook: 'expansion', applied: true,
+    bash: 'N=world; cat <<- =ls\n\thello $N\n\t=ls\necho =ls' },
+  { hook: 'expansion', applied: true,
+    bash: 'N=world; cat << =ls\n$(echo =ls) $N\n=ls' },
   { hook: 'expansion', applied: true, bash: 'echo ===== =ls' },
   { hook: 'expansion', applied: true, bash: '[ a == a ] && echo same; [ a == b ] || echo differ' },
   { hook: 'expansion', applied: true, bash: 'echo "$(echo =ls)"' },
@@ -188,7 +226,10 @@ try {
   const covered = new Set();
   for (const c of CASES) {
     let zsh = c.zsh;
-    if (c.applied) {
+    if (c.allowed) {
+      zsh = c.zsh || c.bash;
+      hooks[c.hook].allowed(zsh);
+    } else if (c.applied) {
       zsh = hooks[c.hook].rewritten(c.bash);
     } else {
       const reason = hooks[c.hook].denied(c.bash);

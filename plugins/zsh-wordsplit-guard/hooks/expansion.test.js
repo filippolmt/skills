@@ -8,6 +8,11 @@ const { run, bash, denied, allowed, rewritten } = require('./testing').harness('
 const rewrites = (command, want) => assert.strictEqual(rewritten(command), want);
 
 // --- equals expansion ---------------------------------------------------------
+for (const delimiter of ['=ls', '--x=*.md', '${!t}', '${v@Q}']) {
+  allowed('N=world; cat << ' + delimiter + '\nhello $N\n' + delimiter);
+}
+rewrites('N=world; cat << =ls\n$(echo =ls) $N\n=ls', 'N=world; cat << =ls\n$(echo \\=ls) $N\n=ls');
+denied('cat << =ls\n${!t}\n=ls');
 rewrites('echo =====', 'echo \\=====');
 rewrites('echo =ls', 'echo \\=ls');           // silently prints /usr/bin/ls
 rewrites('echo foo =bar', 'echo foo \\=bar');

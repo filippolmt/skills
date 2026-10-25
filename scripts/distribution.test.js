@@ -3,7 +3,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { discoverArtifacts, declaredDependencies, classify, validateDistribution, renderParity } = require('./distribution.js');
+const { discoverArtifacts, declaredDependencies, classify, validateDistribution, pruneDistributionMetadata, renderParity } = require('./distribution.js');
 const { validatePackageRoots, inventoryForMode } = require('./gen-distribution.js');
 
 function fixture(files) {
@@ -136,6 +136,38 @@ test('validation verifies upstream adaptation sources', () => {
   assert.throws(() => validateDistribution(inventory, decision('native/missing.json')), /adaptation source does not exist/);
   assert.throws(() => validateDistribution(inventory, decision('../outside.json')), /adaptation source escapes repository/);
   fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('metadata prune removes only metadata owned by gone entries without mutating its inputs', () => {
+  const metadata = {
+    artifacts: { 'gone/hook:x': {}, 'gone-extra/skill:SKILL.md': { codex: { disposition: 'native' }, pi: { disposition: 'native' } } },
+    runtimeDependencies: { gone: ['one'], one: [] },
+    presentationOverrides: { gone: { displayName: 'Gone' }, one: { displayName: 'One' } },
+    unsupportedEntries: { gone: { codex: { disposition: 'unsupported' }, pi: { disposition: 'unsupported' } } },
+  };
+  const before = JSON.stringify(metadata);
+  const inventory = ['one', 'gone-extra'].map((name) => ({ name, artifacts: [{ entry: name, id: 'skill:SKILL.md', kind: 'skill' }] }));
+  const pruned = pruneDistributionMetadata(metadata, ['gone'], inventory);
+  assert.deepEqual(pruned, {
+    artifacts: { 'gone-extra/skill:SKILL.md': metadata.artifacts['gone-extra/skill:SKILL.md'] },
+    runtimeDependencies: { one: [] },
+    presentationOverrides: { one: { displayName: 'One' } },
+    unsupportedEntries: {},
+  });
+  assert.equal(JSON.stringify(metadata), before);
+});
+
+test('metadata prune rejects incoming runtime edges and unsafe surviving metadata', () => {
+  const inventory = [{ name: 'one', artifacts: [{ entry: 'one', id: 'skill:SKILL.md', kind: 'skill' }] }];
+  assert.throws(() => pruneDistributionMetadata({ runtimeDependencies: { one: ['gone'] } }, ['gone'], inventory), /cannot prune runtime dependency gone/);
+  assert.throws(() => pruneDistributionMetadata({ runtimeDependencies: { one: ['unknown'] } }, ['gone'], inventory), /unknown dependency unknown/);
+  assert.throws(() => pruneDistributionMetadata({ artifacts: { 'one/hook:stale': {} } }, ['gone'], inventory), /orphaned artifact metadata/);
+  assert.throws(() => pruneDistributionMetadata({}, ['gone'], [{ ...inventory[0], declaredDependencies: ['gone'] }]), /unknown dependency gone/);
+  assert.throws(() => pruneDistributionMetadata({ runtimeDependencies: { one: ['one'] } }, ['gone'], inventory), /dependency cycle/);
+});
+
+test('validation checks runtime targets owned by absent entries too', () => {
+  assert.throws(() => validateDistribution([], { runtimeDependencies: { gone: ['typo'] } }, { absentEntries: ['gone'] }), /gone: unknown dependency typo/);
 });
 
 test('validation tolerates metadata for an upstream path awaiting prune', () => {

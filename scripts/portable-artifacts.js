@@ -42,6 +42,29 @@ const upstreamUrl = (plugin, kind, repoPath) => (typeof plugin.source === 'objec
   ? `${plugin.source.url}/${kind}/${plugin.source.sha}/${repoPath}`
   : null);
 
+function validateSkillName(name) {
+  if (typeof name !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) || name.length > 64) {
+    throw new Error(`invalid skill name ${name || '(missing)'}`);
+  }
+  return name;
+}
+
+// Validate all portable names before a writer touches its destination. Legacy
+// discovery has no dispositions; Codex may supply a different native skill file.
+function validatePortableArtifacts(entry, harness) {
+  for (const artifact of entry.artifacts.filter((item) =>
+    ['skill', 'command', 'agent'].includes(item.kind) &&
+    (!harness || item.dispositions?.[harness]?.disposition !== 'unsupported'))) {
+    const sourcePath = harness === 'codex' && artifact.dispositions?.codex?.sourcePath;
+    if (artifact.kind === 'skill') {
+      const file = sourcePath ? path.join(entry.repoRoot, sourcePath) : path.join(entry.sourceRoot, artifact.path);
+      const name = parseFrontmatter(fs.readFileSync(file, 'utf8')).name;
+      if (!name && harness !== 'codex') throw new Error(`entry ${entry.name}: ${artifact.path} has no frontmatter name`);
+      validateSkillName(name);
+    } else if (!sourcePath) convertedSkillName(entry, artifact);
+  }
+}
+
 function validateSkillDirectories(skillsRoot) {
   for (const skill of fs.readdirSync(skillsRoot, { withFileTypes: true })) {
     if (!skill.isDirectory()) throw new Error(`unexpected entry in skills/: ${skill.name}`);
@@ -59,17 +82,50 @@ function validateSkillDirectories(skillsRoot) {
     if (!fs.existsSync(file)) throw new Error(`${skill.name}: missing SKILL.md`);
     const text = fs.readFileSync(file, 'utf8');
     const { name } = parseFrontmatter(text);
-    if (!name || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) || name.length > 64) {
-      throw new Error(`${skill.name}: invalid skill name ${name || '(missing)'}`);
-    }
+    validateSkillName(name);
     if (name !== skill.name) throw new Error(`${skill.name}: directory does not match skill name ${name}`);
     if (!/^description:[ \t]*(?:\S.*|[>|])[ \t]*$/m.test(text)) throw new Error(`${skill.name}: missing skill description`);
   }
 }
 
+const licenceIn = (dir) => fs.readdirSync(dir, { withFileTypes: true })
+  .find((item) => item.isFile() && /^(LICEN[SC]E|COPYING)(\..*)?$/i.test(item.name))?.name;
+
+function requireRedistributionLicence(entry, plugin) {
+  const licence = licenceIn(entry.repoRoot);
+  if (typeof plugin.source === 'object' && !licence) {
+    throw new Error(`entry ${entry.name}: ${plugin.source.url} ships no licence — no licence, no right to redistribute`);
+  }
+  return licence;
+}
+
+function copyAttribution(repoRoot, destination) {
+  const rejectSymlink = (file) => {
+    if (fs.lstatSync(file, { throwIfNoEntry: false })?.isSymbolicLink()) {
+      throw new Error(`${file}: attribution destination contains symlink`);
+    }
+  };
+  rejectSymlink(destination);
+  for (const item of fs.readdirSync(repoRoot, { withFileTypes: true })) {
+    if (!item.isFile() || !/^(LICEN[SC]E|COPYING|NOTICE|THIRD[-_ ]PARTY(?:[-_ ](?:NOTICES?|LICEN[SC]ES?))?)(\..*)?$/i.test(item.name)) continue;
+    const source = path.join(repoRoot, item.name);
+    let target = path.join(destination, item.name);
+    rejectSymlink(target);
+    if (fs.existsSync(target)) {
+      if (/^(LICEN[SC]E|COPYING)(\..*)?$/i.test(item.name) || fs.readFileSync(source).equals(fs.readFileSync(target))) continue;
+      // Keep both the skill's notice and the upstream root attribution.
+      target = path.join(destination, 'upstream-attribution', item.name);
+      rejectSymlink(path.dirname(target));
+      rejectSymlink(target);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+    }
+    fs.copyFileSync(source, target);
+  }
+}
+
 function addProvenance(entry, plugin, destination, sourcePath, transformation) {
-  const licence = fs.readdirSync(entry.repoRoot).find((name) => /^(LICEN[SC]E|COPYING)(\..*)?$/i.test(name));
-  if (licence && !fs.existsSync(path.join(destination, licence))) fs.copyFileSync(path.join(entry.repoRoot, licence), path.join(destination, licence));
+  requireRedistributionLicence(entry, plugin);
+  copyAttribution(entry.repoRoot, destination);
   if (fs.existsSync(path.join(destination, 'SOURCE.md'))) return;
   const upstream = upstreamUrl(plugin, 'tree', sourcePath) ?? sourcePath;
   fs.writeFileSync(path.join(destination, 'SOURCE.md'), [
@@ -81,7 +137,7 @@ function addProvenance(entry, plugin, destination, sourcePath, transformation) {
   ].join('\n'));
 }
 
-const convertedSkillName = (entry, artifact) => `${entry.name}-${path.basename(artifact.path, path.extname(artifact.path))}`;
+const convertedSkillName = (entry, artifact) => validateSkillName(`${entry.name}-${path.basename(artifact.path, path.extname(artifact.path))}`);
 
 // A converted skill lands in skills/<name>/, not next to its source, so a relative link
 // upstream wrote from commands/ or agents/ no longer resolves. Point it at the sibling
@@ -152,6 +208,7 @@ function rewriteRelativeLinks(body, sourceFile, entry, plugin) {
 }
 
 function writeConvertedSkill(entry, plugin, artifact, destination) {
+  requireRedistributionLicence(entry, plugin);
   const source = path.join(entry.sourceRoot, artifact.path);
   const text = fs.readFileSync(source, 'utf8');
   const description = parseFrontmatter(text).description ||
@@ -164,4 +221,4 @@ function writeConvertedSkill(entry, plugin, artifact, destination) {
   return name;
 }
 
-module.exports = { addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validateSkillDirectories, writeConvertedSkill };
+module.exports = { licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validateSkillName, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill };
