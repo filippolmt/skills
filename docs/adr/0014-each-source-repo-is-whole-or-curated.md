@@ -74,6 +74,7 @@ the exclusions.
 | `cloudflare/security-audit-skill` | whole | single skill |
 | `pbakaus/impeccable` | whole | whole-plugin entry |
 | `cathrynlavery/diagram-design` | whole | whole-plugin entry |
+| `AgriciDaniel/claude-seo` | whole | whole-plugin entry; optional extensions retain upstream's separate activation |
 | `Jeffallan/claude-skills` | curated | |
 | `antfu/skills` | curated | |
 | `mcollina/skills` | curated | |

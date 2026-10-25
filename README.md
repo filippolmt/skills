@@ -85,6 +85,18 @@ The tested target is local Codex CLI. ChatGPT desktop and Work are best effort:
 cloud execution cannot run every packaged local executable, lifecycle hook, or
 stdio MCP server.
 
+### Harness-specific limitations
+
+- `seo-toolkit` installs all 26 skills and 19 agents in Claude Code. Its shared
+  Python runtime and orchestration are not adapted for Codex or pi, so neither
+  receives an incomplete copy. In Claude, run `/seo setup` when Python tools are
+  needed; optional extensions retain upstream's separate activation.
+- `ui-ux-pro-max` currently requires Claude's plugin-root runtime. Use the Claude
+  plugin or upstream's harness-specific installer rather than the generated
+  Codex/pi distributions.
+- Impeccable's asset-producer agent has an upstream Codex adaptation but no
+  working pi conversion; use Claude or Codex for that workflow.
+
 ### When a skill leaves the catalog
 
 A skill removed from the catalog stays installed wherever you had it, and
@@ -510,6 +522,12 @@ Snapshot of the catalog — the source of truth is
 | Skill | What it does |
 |---|---|
 | `security-audit` | Security guidance and vulnerability review for codebases, APIs, services, CLI tools, libraries, and daemons. Use for security questions, focused reviews, vulnerability research, security audits, or pen tests. Run the complete workflow only for explicit codebase audit or pen-test requests, full/comprehensive/end-to-end reviews, or requested report artifacts. |
+
+### [AgriciDaniel/claude-seo](https://github.com/AgriciDaniel/claude-seo) — SEO analysis & AI search readiness
+
+| Plugin | What it bundles |
+|---|---|
+| `seo-toolkit` | Comprehensive SEO analysis: 26 skills and 19 agents covering technical SEO, content, schema, sitemaps, backlinks, local and international SEO, ecommerce, Google APIs, AI search, and agent readiness. |
 <!-- catalog:end -->
 
 ## External skills (auto-updated by Renovate)

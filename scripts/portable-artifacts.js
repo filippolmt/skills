@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { posix } = require('./distribution.js');
+const { posix, validatePortableRuntime } = require('./distribution.js');
 
 function copySelfContained(source, destination) {
   fs.mkdirSync(destination, { recursive: true });
@@ -51,6 +51,7 @@ function validateSkillDirectories(skillsRoot) {
         const file = path.join(dir, child.name);
         if (child.isSymbolicLink()) throw new Error(`${file}: generated package contains symlink`);
         if (child.isDirectory()) walk(file);
+        else if (child.name.endsWith('.md')) validatePortableRuntime(file);
       }
     };
     walk(root);
