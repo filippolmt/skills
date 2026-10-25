@@ -67,6 +67,7 @@ the exclusions.
 | `mattpocock/skills` | curated | Workflow routers and thin prompt macros are reviewed before admission; `skills/in-progress/` is unreleased work ([ADR-0017](0017-curate-the-matt-pocock-source.md)) |
 | `Leonxlnx/taste-skill` | curated | Only the production skill, `taste-skill` |
 | `Leonxlnx/imagegen-skills` | whole | The image-generation skills that moved out of `Leonxlnx/taste-skill` |
+| `Nutlope/hallmark` | whole | single skill |
 | `cloudflare/skills` | whole | |
 | `mvanhorn/cli-printing-press` | whole | |
 | `antonbabenko/terraform-skill` | whole | single skill |

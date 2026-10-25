@@ -46,5 +46,5 @@ jobs:
           node scripts/gen-skills-tree.js
           node scripts/gen-distribution.js
           node scripts/gen-pi.js
-      - name: Load representative package resources in an isolated pi home
+      - name: Load every generated skill and check bundle filtering in an isolated pi home
         run: bash scripts/test-pi-package.sh

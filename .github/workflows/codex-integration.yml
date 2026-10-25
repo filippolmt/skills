@@ -50,5 +50,5 @@ jobs:
           node scripts/gen-skills-tree.js
           node scripts/gen-distribution.js
           node scripts/gen-codex.js
-      - name: Install representative plugins in an isolated Codex home
+      - name: Install every generated plugin and check lifecycle in an isolated Codex home
         run: bash scripts/test-codex-marketplace.sh

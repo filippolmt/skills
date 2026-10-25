@@ -375,6 +375,12 @@ Snapshot of the catalog — the source of truth is
 | `to-questionnaire` | Turn a decision you can't fully answer into a questionnaire for someone else to fill in. |
 | `setup-pre-commit` | Set up Husky pre-commit hooks with lint-staged (Prettier), type checking, and tests in the current repo. |
 
+### [Nutlope/hallmark](https://github.com/Nutlope/hallmark) — anti-AI-slop interface design
+
+| Skill | What it does |
+|---|---|
+| `hallmark` | Design websites and new pages that look designed, not generated, with themes, design tokens, and automated anti-slop checks. |
+
 ### [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) — frontend design
 
 | Skill | What it does |
