@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/mvanhorn/cli-printing-press/tree/4cfef1fb4b67907016ed19a819dfafa7e809a868/skills/printing-press
-- **Commit**: `4cfef1fb4b67907016ed19a819dfafa7e809a868`
+- **Upstream**: https://github.com/mvanhorn/cli-printing-press/tree/118371ec613c7cbe01aaa3c3b71fa1be1ceb0b45/skills/printing-press
+- **Commit**: `118371ec613c7cbe01aaa3c3b71fa1be1ceb0b45`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `printing-press` in `.claude-plugin/marketplace.json`
