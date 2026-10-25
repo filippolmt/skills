@@ -25,8 +25,14 @@ commands() {
 
 pi install "$repo" >/dev/null
 all_commands="$(commands)"
-for skill in tdd settings-validator api-scaffolding-backend-architect; do
-  jq -e --arg name "skill:$skill" '.[] | select(.name == $name and .source == "skill" and .sourceInfo.origin == "package")' <<<"$all_commands" >/dev/null
+skill_count=0
+for skill_file in "$repo"/skills/*/SKILL.md; do
+  skill="$(basename "$(dirname "$skill_file")")"
+  if ! jq -e --arg name "skill:$skill" '.[] | select(.name == $name and .source == "skill" and .sourceInfo.origin == "package")' <<<"$all_commands" >/dev/null; then
+    printf 'generated skill did not load from pi package: %s\n' "$skill" >&2
+    exit 1
+  fi
+  skill_count=$((skill_count + 1))
 done
 
 node - "$repo" "$PI_CODING_AGENT_DIR/settings.json" <<'NODE'
@@ -50,4 +56,4 @@ if jq -e '.[] | select(.name == "skill:settings-validator")' <<<"$filtered_comma
   exit 1
 fi
 
-printf 'pi package smoke passed: native, local, converted, and bundle-filtered skills load.\n'
+printf 'pi package smoke passed: all %s generated skills load; bundle filtering passed.\n' "$skill_count"

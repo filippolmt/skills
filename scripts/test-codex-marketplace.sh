@@ -17,19 +17,25 @@ trap cleanup EXIT
 export CODEX_HOME="$local_home"
 codex plugin marketplace add "$repo" --json |
   jq -e '.marketplaceName == "filippo-skills"' >/dev/null
-codex plugin list --marketplace filippo-skills --available --json |
-  jq -e '.available[] | select(.pluginId == "tdd@filippo-skills")' >/dev/null
+expected_plugins="$(jq -ce '[.plugins[].name] | if length > 0 then . else error("empty Codex marketplace") end' "$repo/.agents/plugins/marketplace.json")"
+available="$(codex plugin list --marketplace filippo-skills --available --json)"
+jq -e --argjson expected "$expected_plugins" '
+  [.available[].pluginId] as $actual |
+  all($expected[]; . + "@filippo-skills" | IN($actual[]))
+' <<<"$available" >/dev/null
 
-for plugin in tdd api-scaffolding matt-pocock-bundle impeccable diagram-design; do
+while IFS= read -r plugin; do
   plugin_id="$plugin@filippo-skills"
   codex plugin add "$plugin_id" --json |
     jq -e --arg plugin_id "$plugin_id" '.pluginId == $plugin_id' >/dev/null
-done
+done < <(jq -r '.[]' <<<"$expected_plugins")
 
 installed="$(codex plugin list --marketplace filippo-skills --json)"
-jq -e '[.installed[] | select(.installed and .enabled)] | length == 5' <<<"$installed" >/dev/null
-jq -e '.installed[] | select(.pluginId == "tdd@filippo-skills")' <<<"$installed" >/dev/null
-jq -e '.installed[] | select(.pluginId == "matt-pocock-bundle@filippo-skills")' <<<"$installed" >/dev/null
+jq -e --argjson expected "$expected_plugins" '
+  [.installed[] | select(.installed and .enabled) | .pluginId] as $actual |
+  ($actual | length) == ($expected | length) and
+  all($expected[]; . + "@filippo-skills" | IN($actual[]))
+' <<<"$installed" >/dev/null
 node "$repo/scripts/test-codex-hooks.mjs"
 
 codex plugin remove tdd@filippo-skills --json |
@@ -69,4 +75,4 @@ codex plugin list --marketplace filippo-skills --json |
 codex plugin remove tdd@filippo-skills --json |
   jq -e '.pluginId == "tdd@filippo-skills"' >/dev/null
 
-printf 'Codex marketplace lifecycle passed: install, coexistence, hooks, trust, upgrade, and removal.\n'
+printf 'Codex marketplace lifecycle passed: all %s generated plugins install; coexistence, hooks, trust, upgrade, and removal passed.\n' "$(jq length <<<"$expected_plugins")"
