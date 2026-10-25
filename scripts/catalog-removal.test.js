@@ -138,7 +138,13 @@ test('offline CLI sequence accepts stale packages after a deliberate catalog rem
   f.succeeds('gen-skills-tree', '--verify-paths');
   f.succeeds('gen-distribution', '--verify');
   assert.deepEqual(snapshot(f.root), before);
-  assert.notEqual(f.cli('gen-distribution', '--check').status, 0);
+  // Keep parity current so only the orphaned package can make --check fail.
+  f.succeeds('gen-distribution');
+  const beforeCheck = snapshot(f.root);
+  const rejected = f.cli('gen-distribution', '--check');
+  assert.notEqual(rejected.status, 0, rejected.output);
+  assert.match(rejected.output, /generated package has no catalog entry: gone/);
+  assert.deepEqual(snapshot(f.root), beforeCheck, 'check must not write');
   f.generate();
   f.check();
   assert.equal(fs.existsSync(path.join(f.root, '.agents/plugins/packages/gone')), false);

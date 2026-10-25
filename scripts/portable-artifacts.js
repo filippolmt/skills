@@ -49,6 +49,22 @@ function validateSkillName(name) {
   return name;
 }
 
+// Validate all portable names before a writer touches its destination. Legacy
+// discovery has no dispositions; Codex may supply a different native skill file.
+function validatePortableArtifacts(entry, harness) {
+  for (const artifact of entry.artifacts.filter((item) =>
+    ['skill', 'command', 'agent'].includes(item.kind) &&
+    (!harness || item.dispositions?.[harness]?.disposition !== 'unsupported'))) {
+    const sourcePath = harness === 'codex' && artifact.dispositions?.codex?.sourcePath;
+    if (artifact.kind === 'skill') {
+      const file = sourcePath ? path.join(entry.repoRoot, sourcePath) : path.join(entry.sourceRoot, artifact.path);
+      const name = parseFrontmatter(fs.readFileSync(file, 'utf8')).name;
+      if (!name && harness !== 'codex') throw new Error(`entry ${entry.name}: ${artifact.path} has no frontmatter name`);
+      validateSkillName(name);
+    } else if (!sourcePath) convertedSkillName(entry, artifact);
+  }
+}
+
 function validateSkillDirectories(skillsRoot) {
   for (const skill of fs.readdirSync(skillsRoot, { withFileTypes: true })) {
     if (!skill.isDirectory()) throw new Error(`unexpected entry in skills/: ${skill.name}`);
@@ -205,4 +221,4 @@ function writeConvertedSkill(entry, plugin, artifact, destination) {
   return name;
 }
 
-module.exports = { licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validateSkillName, validateSkillDirectories, writeConvertedSkill };
+module.exports = { licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validateSkillName, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill };

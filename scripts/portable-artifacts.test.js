@@ -5,7 +5,7 @@ const os = require('os');
 const path = require('path');
 const { build, buildFromInventory } = require('./gen-skills-tree.js');
 const { writeCodexDistribution } = require('./gen-codex.js');
-const { copyAttribution, writeConvertedSkill } = require('./portable-artifacts.js');
+const { copyAttribution, validatePortableArtifacts, writeConvertedSkill } = require('./portable-artifacts.js');
 
 function fixture(t, { kind = 'skill', name = 'audit-example', licence = true, adapted = false } = {}) {
   const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'portable-audit-'));
@@ -25,6 +25,26 @@ function fixture(t, { kind = 'skill', name = 'audit-example', licence = true, ad
   const out = path.join(sandbox, 'out');
   return { sandbox, repo, source, file, plugin, artifact, inventory, out };
 }
+
+test('portable preflight respects harness filtering and Codex adaptation sources', (t) => {
+  const f = fixture(t, { name: 'Wrong_Name' });
+  const adapted = 'codex/SKILL.md';
+  fs.mkdirSync(path.join(f.repo, 'codex'));
+  fs.writeFileSync(path.join(f.repo, adapted), '---\nname: codex-example\n---\n');
+  f.artifact.dispositions.codex.sourcePath = adapted;
+  f.artifact.dispositions.pi.disposition = 'unsupported';
+  // Ignored artifacts need neither a readable source nor a portable name.
+  f.inventory.artifacts.push({ kind: 'hook', path: 'missing' }, {
+    kind: 'command', path: 'commands/Wrong_Name.md', dispositions: {
+      pi: { disposition: 'unsupported' }, codex: { disposition: 'adapted', sourcePath: adapted },
+    },
+  });
+  assert.doesNotThrow(() => validatePortableArtifacts(f.inventory, 'pi'));
+  assert.doesNotThrow(() => validatePortableArtifacts(f.inventory, 'codex'));
+  assert.throws(() => validatePortableArtifacts(f.inventory), /invalid skill name Wrong_Name/);
+  fs.writeFileSync(path.join(f.repo, adapted), '---\nname: Wrong_Adapted_Name\n---\n');
+  assert.throws(() => validatePortableArtifacts(f.inventory, 'codex'), /invalid skill name Wrong_Adapted_Name/);
+});
 
 for (const target of ['pi', 'legacy', 'codex', 'codex-adapted']) {
   test(`${target} preserves root licence, NOTICE and third-party attribution`, (t) => {

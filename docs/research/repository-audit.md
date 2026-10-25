@@ -11,7 +11,7 @@ All findings below are historical and addressed on `feat/repository-audit`:
 - Preserved upstream notices and enforced licensing for external conversions.
 - Planned metadata-aware pruning before writes, with offline CLI removal tests
   covering the sequence requested by #461.
-- Fixed all four guard cases and bumped `zsh-wordsplit-guard` to `0.7.2`.
+- Fixed all four guard cases and bumped `zsh-wordsplit-guard` to `0.7.3`.
 - Covered missing integration inputs and corrected onboarding, glossary, and
   GitHub repository description. Regenerated all distributions.
 
@@ -21,6 +21,20 @@ pass. Smokes passed both with installed pi `1.4.0` / Codex `0.164.0` and the pin
 minimum pi `1.0.4` / Codex `0.160.1`. Pi loaded 131 skills with bundle filtering;
 Codex installed all 92 plugins and passed hook trust/execution, coexistence,
 upgrade, and removal checks. This is not a behavioral audit of every upstream skill.
+
+Review follow-up also covers loops inside command substitutions, including quoted,
+heredoc, and nested forms; 81 mechanical shell comparisons pass. The three writers
+share portable-name preflight validation. The #461 test now isolates stale packages
+from stale parity and asserts `no catalog entry: gone`; removing orphan validation
+in a temporary mutation makes the test fail, whereas the previous test stayed green.
+
+A targeted replay of 1,062 historical commands changed guard denials from 29 to 31,
+with none removed. Both new hits contain `F=$(for f in $F; …)`, one preceded by a
+project `cd`: genuine silent non-splits, not false positives. Command IDs:
+`b44d5abdf182f16c1bc54734a00da297920303bb55a627c79f6170cf623f9ce7` and
+`64b34f9877cbba54bcfc796588fe49f672c6e6e162ac784e7e771af989001d91`.
+Assignment tracking and substitution balancing remain syntactic rather than a full
+shell parser; quoted `zsh -c` payloads remain outside inspection.
 
 The original findings and audit-time limitations follow unchanged.
 

@@ -9,7 +9,7 @@ const path = require('path');
 const { readCatalog, root } = require('./catalog.js');
 const { generate } = require('./gen-distribution.js');
 const { parseFrontmatter, treeFingerprint } = require('./gen-skills-tree.js');
-const { requireRedistributionLicence, addProvenance, convertedSkillName, copySelfContained, validateSkillName, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
+const { requireRedistributionLicence, addProvenance, convertedSkillName, copySelfContained, validateSkillName, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
 
 const OUTPUT = path.join(root, '.agents', 'plugins');
 const META = path.join(root, 'scripts', 'distribution-meta.json');
@@ -139,15 +139,11 @@ function writeCodexDistribution(plugins, inventory, output) {
     if (!entries) continue;
     validateSkillName(plugin.name);
     for (const member of entries) {
-      for (const artifact of member.artifacts.filter((item) =>
+      if (member.artifacts.some((item) =>
         ['skill', 'command', 'agent'].includes(item.kind) && codexOutcome(item).disposition !== 'unsupported')) {
         requireRedistributionLicence(member, catalog.get(member.name));
-        const outcome = codexOutcome(artifact);
-        if (artifact.kind === 'skill') {
-          const file = outcome.sourcePath ? path.join(member.repoRoot, outcome.sourcePath) : path.join(member.sourceRoot, artifact.path);
-          validateSkillName(parseFrontmatter(fs.readFileSync(file, 'utf8')).name);
-        } else if (!outcome.sourcePath) convertedSkillName(member, artifact);
       }
+      validatePortableArtifacts(member, 'codex');
     }
   }
   const packages = path.join(output, 'packages');

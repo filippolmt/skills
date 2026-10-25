@@ -52,7 +52,7 @@ const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 const { readCatalog, isLocal, isGitSubdir, isBundle, repoOf, root, MARKETPLACE } = require('./catalog.js');
 const { discoverArtifacts, pruneDistributionMetadata } = require('./distribution.js');
-const { licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validateSkillName, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
+const { licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
 
 const TREE = path.join(root, 'skills');
 const OVERLAYS = path.join(root, 'overlays');
@@ -265,15 +265,7 @@ function buildFromInventory(dest, plugins, inventory) {
     if (entry.artifacts.some((item) => ['skill', 'command', 'agent'].includes(item.kind) && item.dispositions?.pi?.disposition !== 'unsupported')) {
       requireRedistributionLicence(entry, plugin);
     }
-    for (const artifact of entry.artifacts.filter((item) =>
-      ['skill', 'command', 'agent'].includes(item.kind) && item.dispositions?.pi?.disposition !== 'unsupported')) {
-      if (artifact.kind !== 'skill') convertedSkillName(entry, artifact);
-      else {
-        const name = parseFrontmatter(fs.readFileSync(path.join(entry.sourceRoot, artifact.path), 'utf8')).name;
-        if (!name) throw new Error(`entry ${entry.name}: ${artifact.path} has no frontmatter name`);
-        validateSkillName(name);
-      }
-    }
+    validatePortableArtifacts(entry, 'pi');
   }
   const catalog = new Map(plugins.map((entry) => [entry.name, entry]));
   const written = new Map();
@@ -336,13 +328,7 @@ function build(dest, plugins, deps = {}) {
     for (const entry of plugins) {
       const sourceRoot = isGitSubdir(entry) ? resolveEntry(entry, fetch).abs : path.join(root, entry.source);
       if (!fs.existsSync(sourceRoot) || (isLocal(entry) && isBundle(entry))) continue;
-      for (const artifact of discoverArtifacts(entry, sourceRoot)) {
-        if (artifact.kind === 'skill') {
-          const name = parseFrontmatter(fs.readFileSync(path.join(sourceRoot, artifact.path), 'utf8')).name;
-          if (!name) throw new Error(`entry ${entry.name}: ${artifact.path} has no frontmatter name`);
-          validateSkillName(name);
-        } else if (['command', 'agent'].includes(artifact.kind)) convertedSkillName(entry, artifact);
-      }
+      validatePortableArtifacts({ ...entry, sourceRoot, artifacts: discoverArtifacts(entry, sourceRoot) });
     }
   }
 

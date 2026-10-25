@@ -76,6 +76,22 @@ const CASES = [
   { hook: 'guard', named: '${=a}',
     bash: 'a=(x y); unset a; a="x y"; for x in $a; do printf "<%s>" "$x"; done',
     zsh: 'a=(x y); unset a; a="x y"; for x in ${=a}; do printf "<%s>" "$x"; done' },
+  ...[s => 'out=$(' + s + '); printf "%s\\n" "$out"',
+    s => 'echo "$(' + s + ')"', s => 'cat <<EOF\n$(' + s + ')\nEOF',
+    s => 'echo "$(echo "$(' + s + ')")"'].map(wrap => ({
+    hook: 'guard', named: '${=a}',
+    bash: wrap('a=(x y); unset a; a="x y"; for x in $a; do printf "<%s>" "$x"; done'),
+    zsh: wrap('a=(x y); unset a; a="x y"; for x in ${=a}; do printf "<%s>" "$x"; done'),
+  })),
+  { hook: 'guard', allowed: true, setup: 'v="a b"',
+    bash: 'echo "$(for x in $(echo $(echo $(printf "%s\\n" $v))); do printf "<%s>" "$x"; done)"' },
+  ...['a=(x y); out=$(a="x y"); for x in $a; do printf "<%s>" "$x"; done',
+    'v="a b"; echo "$(echo for x in $v)"',
+    'a=(x y); out=$(for x in $a; do printf "<%s>" "$x"; done); printf "%s" "$out"',
+    'a=(x y); echo "$(out=$(a="x y"); for x in $a; do printf "<%s>" "$x"; done)"',
+  // Bash's bare $a reads only element zero; use its full array for comparison.
+  ].map(zsh => ({ hook: 'guard', allowed: true, zsh,
+    bash: zsh.replace('in $a;', 'in "${a[@]}";') })),
   { hook: 'guard', allowed: true,
     bash: 'for c in "1 + 2"; do (( n = $c )); printf "%s\\n" "$n"; done' },
 
@@ -211,8 +227,8 @@ try {
   for (const c of CASES) {
     let zsh = c.zsh;
     if (c.allowed) {
-      hooks[c.hook].allowed(c.bash);
-      zsh = c.bash;
+      zsh = c.zsh || c.bash;
+      hooks[c.hook].allowed(zsh);
     } else if (c.applied) {
       zsh = hooks[c.hook].rewritten(c.bash);
     } else {
