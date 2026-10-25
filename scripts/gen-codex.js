@@ -9,7 +9,7 @@ const path = require('path');
 const { readCatalog, root } = require('./catalog.js');
 const { generate } = require('./gen-distribution.js');
 const { parseFrontmatter, treeFingerprint } = require('./gen-skills-tree.js');
-const { addProvenance, convertedSkillName, copySelfContained, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
+const { requireRedistributionLicence, addProvenance, convertedSkillName, copySelfContained, validateSkillName, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
 
 const OUTPUT = path.join(root, '.agents', 'plugins');
 const META = path.join(root, 'scripts', 'distribution-meta.json');
@@ -133,6 +133,23 @@ function baseVersion(plugin, inventoryEntry) {
 function writeCodexDistribution(plugins, inventory, output) {
   const catalog = new Map(plugins.map((plugin) => [plugin.name, plugin]));
   const byName = new Map(inventory.map((entry) => [entry.name, entry]));
+  // Reject untrusted names and unlicensed payloads before replacing any output.
+  for (const plugin of plugins) {
+    const entries = closure(plugin.name, byName);
+    if (!entries) continue;
+    validateSkillName(plugin.name);
+    for (const member of entries) {
+      for (const artifact of member.artifacts.filter((item) =>
+        ['skill', 'command', 'agent'].includes(item.kind) && codexOutcome(item).disposition !== 'unsupported')) {
+        requireRedistributionLicence(member, catalog.get(member.name));
+        const outcome = codexOutcome(artifact);
+        if (artifact.kind === 'skill') {
+          const file = outcome.sourcePath ? path.join(member.repoRoot, outcome.sourcePath) : path.join(member.sourceRoot, artifact.path);
+          validateSkillName(parseFrontmatter(fs.readFileSync(file, 'utf8')).name);
+        } else if (!outcome.sourcePath) convertedSkillName(member, artifact);
+      }
+    }
+  }
   const packages = path.join(output, 'packages');
   fs.rmSync(packages, { recursive: true, force: true });
   fs.mkdirSync(packages, { recursive: true });
@@ -168,14 +185,17 @@ function writeCodexDistribution(plugins, inventory, output) {
         names.add(frontmatter.name);
         const destination = path.join(skillsRoot, frontmatter.name);
         copySelfContained(source, destination);
-        if (outcome.sourcePath) addProvenance(member, catalog.get(member.name), destination, outcome.sourcePath, 'Used the upstream Codex-specific Agent Skill payload.');
+        addProvenance(member, catalog.get(member.name), destination, outcome.sourcePath || artifact.path,
+          outcome.sourcePath ? 'Used the upstream Codex-specific Agent Skill payload.' : 'Copied Agent Skill into the Codex package projection.');
       }
       for (const artifact of member.artifacts.filter((item) => ['command', 'agent'].includes(item.kind) && codexOutcome(item).disposition === 'adapted' && !codexOutcome(item).sourcePath)) {
         const name = convertedSkillName(member, artifact);
         if (names.has(name)) throw new Error(`${plugin.name}: duplicate runtime skill ${name}`);
         const projected = path.join(root, 'skills', name);
         if (fs.existsSync(path.join(projected, 'SKILL.md'))) {
-          copySelfContained(projected, path.join(skillsRoot, name));
+          const destination = path.join(skillsRoot, name);
+          copySelfContained(projected, destination);
+          addProvenance(member, catalog.get(member.name), destination, artifact.path, 'Reused the portable command/agent conversion.');
           names.add(name);
         } else {
           names.add(writeConvertedSkill(member, catalog.get(member.name), artifact, path.join(skillsRoot, name)));

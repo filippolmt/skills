@@ -51,15 +51,11 @@ const path = require('path');
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 const { readCatalog, isLocal, isGitSubdir, isBundle, repoOf, root, MARKETPLACE } = require('./catalog.js');
-const { discoverArtifacts } = require('./distribution.js');
-const { addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
+const { discoverArtifacts, pruneDistributionMetadata } = require('./distribution.js');
+const { licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validateSkillName, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
 
 const TREE = path.join(root, 'skills');
 const OVERLAYS = path.join(root, 'overlays');
-
-// A licence is the right to redistribute. No licence, no copy — so the name is
-// looked up rather than assumed, and its absence is fatal.
-const LICENCE_RE = /^(LICEN[SC]E|COPYING)(\..*)?$/i;
 
 // --- pure ------------------------------------------------------------------
 
@@ -159,17 +155,26 @@ const git = (cwd, ...args) => execFileSync('git', args, { cwd, stdio: ['ignore',
 // enough: we only ever read files at that commit.
 function checkout(repo, url, sha) {
   const dir = path.join(os.tmpdir(), 'skills-tree', `${repo.replace(/\//g, '__')}@${sha.slice(0, 12)}`);
-  if (fs.existsSync(path.join(dir, '.git'))) return dir;
+  if (fs.existsSync(path.join(dir, '.git'))) {
+    try {
+      if (git(dir, 'rev-parse', 'HEAD').toString().trim() === sha) return dir;
+    } catch {
+      // An interrupted fetch has .git but no checked-out commit.
+    }
+  }
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(dir, { recursive: true });
-  git(dir, 'init', '-q');
-  git(dir, 'remote', 'add', 'origin', url);
-  git(dir, 'fetch', '-q', '--depth', '1', 'origin', sha);
-  git(dir, 'checkout', '-q', 'FETCH_HEAD');
+  try {
+    git(dir, 'init', '-q');
+    git(dir, 'remote', 'add', 'origin', url);
+    git(dir, 'fetch', '-q', '--depth', '1', 'origin', sha);
+    git(dir, 'checkout', '-q', 'FETCH_HEAD');
+  } catch (error) {
+    fs.rmSync(dir, { recursive: true, force: true });
+    throw error;
+  }
   return dir;
 }
-
-const licenceIn = (dir) => fs.readdirSync(dir).find((f) => LICENCE_RE.test(f));
 
 // Copy a directory, explicitly. `fs.cpSync` inherits the source's directory
 // modes and ownership, which is one more thing that can differ between a
@@ -184,7 +189,7 @@ function copyDir(src, dst) {
     if (e.name === '.git') continue;
     const from = path.join(src, e.name);
     const to = path.join(dst, e.name);
-    if (e.isSymbolicLink()) fs.symlinkSync(fs.readlinkSync(from), to);
+    if (e.isSymbolicLink()) throw new Error(`${from}: generated package contains symlink`);
     else if (e.isDirectory()) copyDir(from, to);
     else if (e.isFile()) {
       fs.writeFileSync(to, fs.readFileSync(from));
@@ -218,19 +223,31 @@ function unresolved(plugins, deps = {}) {
 
 // Take the pruned entries out of the catalog and every local plugin's
 // `dependencies`, then regenerate the README, whose two regions both derive from
-// them. Every manifest is computed before anything is written, so a removal
-// pruneManifest refuses leaves the working tree untouched. Returns the surviving
-// plugins.
+// them. Manifest dependencies and distribution metadata are planned and validated
+// against the surviving inventory before any writes. Unsafe runtime removals leave
+// the working tree untouched. Returns the surviving plugins.
 function prune(text, gone) {
   const doc = JSON.parse(text);
   doc.plugins = doc.plugins.filter((p) => !gone.includes(p.name));
   const writes = [[MARKETPLACE, formatLike(text, doc)]];
+  const dependencies = new Map();
   for (const p of doc.plugins.filter(isLocal)) {
     const file = path.join(root, p.source, '.claude-plugin', 'plugin.json');
     const raw = fs.readFileSync(file, 'utf8');
     const pruned = pruneManifest(JSON.parse(raw), gone, isBundle(p));
-    if (pruned) writes.push([file, formatLike(raw, pruned)]);
+    if (pruned) {
+      writes.push([file, formatLike(raw, pruned)]);
+      dependencies.set(p.name, pruned.dependencies);
+    }
   }
+  const { buildInventory } = require('./gen-distribution.js');
+  const { inventory } = buildInventory(doc.plugins);
+  const planned = inventory.map((entry) => dependencies.has(entry.name)
+    ? { ...entry, declaredDependencies: dependencies.get(entry.name) } : entry);
+  const metadataFile = path.join(root, 'scripts', 'distribution-meta.json');
+  const rawMetadata = fs.readFileSync(metadataFile, 'utf8');
+  const metadata = pruneDistributionMetadata(JSON.parse(rawMetadata), gone, planned);
+  writes.push([metadataFile, formatLike(rawMetadata, metadata)]);
   for (const [file, body] of writes) fs.writeFileSync(file, body);
   execFileSync('node', [path.join(root, 'scripts', 'gen-readme.js')], { stdio: 'inherit' });
   return doc.plugins;
@@ -242,6 +259,22 @@ function prune(text, gone) {
 // prunes those before it builds. `deps` exists so the test can hand over a fake
 // checkout and exercise those throws without a network.
 function buildFromInventory(dest, plugins, inventory) {
+  for (const entry of inventory) {
+    const plugin = plugins.find((item) => item.name === entry.name);
+    if (!plugin) throw new Error(`inventory entry has no catalog entry: ${entry.name}`);
+    if (entry.artifacts.some((item) => ['skill', 'command', 'agent'].includes(item.kind) && item.dispositions?.pi?.disposition !== 'unsupported')) {
+      requireRedistributionLicence(entry, plugin);
+    }
+    for (const artifact of entry.artifacts.filter((item) =>
+      ['skill', 'command', 'agent'].includes(item.kind) && item.dispositions?.pi?.disposition !== 'unsupported')) {
+      if (artifact.kind !== 'skill') convertedSkillName(entry, artifact);
+      else {
+        const name = parseFrontmatter(fs.readFileSync(path.join(entry.sourceRoot, artifact.path), 'utf8')).name;
+        if (!name) throw new Error(`entry ${entry.name}: ${artifact.path} has no frontmatter name`);
+        validateSkillName(name);
+      }
+    }
+  }
   const catalog = new Map(plugins.map((entry) => [entry.name, entry]));
   const written = new Map();
   const claim = (name, owner) => {
@@ -272,7 +305,7 @@ function buildFromInventory(dest, plugins, inventory) {
         if (!licence) throw new Error(`entry ${entry.name}: ${repoOf(plugin)} ships no licence — no licence, no right to redistribute`);
         copyDir(source, out);
         const own = licenceIn(out);
-        if (!own) fs.copyFileSync(path.join(entry.repoRoot, licence), path.join(out, licence));
+        copyAttribution(entry.repoRoot, out);
         const patch = path.join(OVERLAYS, `${name}.patch`);
         const overlay = fs.existsSync(patch);
         if (overlay) git(out, 'apply', patch);
@@ -298,6 +331,20 @@ function build(dest, plugins, deps = {}) {
   const overlays = deps.overlays || OVERLAYS;
   const missing = [];
   const written = new Map();
+
+  if (dest) {
+    for (const entry of plugins) {
+      const sourceRoot = isGitSubdir(entry) ? resolveEntry(entry, fetch).abs : path.join(root, entry.source);
+      if (!fs.existsSync(sourceRoot) || (isLocal(entry) && isBundle(entry))) continue;
+      for (const artifact of discoverArtifacts(entry, sourceRoot)) {
+        if (artifact.kind === 'skill') {
+          const name = parseFrontmatter(fs.readFileSync(path.join(sourceRoot, artifact.path), 'utf8')).name;
+          if (!name) throw new Error(`entry ${entry.name}: ${artifact.path} has no frontmatter name`);
+          validateSkillName(name);
+        } else if (['command', 'agent'].includes(artifact.kind)) convertedSkillName(entry, artifact);
+      }
+    }
+  }
 
   for (const entry of vendorList(plugins)) {
     const { repo, sha, repoDir, rel, abs, exists } = resolveEntry(entry, fetch);
@@ -328,7 +375,7 @@ function build(dest, plugins, deps = {}) {
       // A skill that ships its own licence keeps it: overwriting with the repo-root
       // one would break the byte-identity the whole design rests on.
       const own = licenceIn(out);
-      if (!own) fs.copyFileSync(path.join(repoDir, licence), path.join(out, licence));
+      copyAttribution(repoDir, out);
 
       // An overlay is a diff against the skill's own files, so it applies from
       // inside the vendored copy — `git apply` needs no repository for that.
@@ -441,8 +488,8 @@ if (require.main === module) {
       process.exit(1);
     }
 
-    // Only the real directory is rebuilt. `.agents/skills` is a symlink to it and
-    // survives untouched — it points at the path, not at the inode.
+    // pi consumes this directory; Codex packages are generated separately.
+    // There is deliberately no `.agents/skills` symlink (ADR-0021).
     fs.rmSync(TREE, { recursive: true, force: true });
     copyDir(staging, TREE);
     console.log(`skills/ regenerated (${names.length} skills): ${names.join(', ')}`);

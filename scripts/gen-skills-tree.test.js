@@ -8,6 +8,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { execFileSync } = require('child_process');
 const {
   parseFrontmatter,
   renderSource,
@@ -19,6 +20,7 @@ const {
   unresolved,
   build,
   buildFromInventory,
+  checkout,
 } = require('./gen-skills-tree.js');
 
 const gitsub = (name, p) => ({
@@ -159,7 +161,9 @@ const entry = (name, p) => ({
 
 function withBuild(files, plugins, fn) {
   const repo = fakeRepo(files);
-  const dest = fs.mkdtempSync(path.join(os.tmpdir(), 'fake-tree-'));
+  const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'fake-tree-'));
+  const dest = path.join(sandbox, 'skills');
+  fs.mkdirSync(dest);
   const overlays = fs.mkdtempSync(path.join(os.tmpdir(), 'fake-overlays-'));
   try {
     return fn({ dest, plugins, deps: { checkout: () => repo, overlays } });
@@ -167,6 +171,7 @@ function withBuild(files, plugins, fn) {
     fs.rmSync(repo, { recursive: true, force: true });
     fs.rmSync(dest, { recursive: true, force: true });
     fs.rmSync(overlays, { recursive: true, force: true });
+    fs.rmSync(sandbox, { recursive: true, force: true });
   }
 }
 
@@ -358,4 +363,50 @@ test('build with a null dest resolves every path and copies nothing', () => {
       assert.deepEqual(fs.readdirSync(dest), []);
     }
   );
+});
+
+test('checkout retries after a failed fetch instead of returning an incomplete cache', () => {
+  const repo = fakeRepo({ 'requested.txt': 'requested commit' });
+  const git = (...args) => execFileSync('git', args, { cwd: repo, stdio: 'pipe' }).toString().trim();
+  const name = `audit-cache-${path.basename(repo)}`;
+  let cache;
+  try {
+    git('init', '-q');
+    git('add', '.');
+    git('-c', 'user.name=Test', '-c', 'user.email=test@example.test', 'commit', '-qm', 'fixture');
+    const sha = git('rev-parse', 'HEAD');
+    cache = path.join(os.tmpdir(), 'skills-tree', `${name}@${sha.slice(0, 12)}`);
+    assert.throws(() => checkout(name, path.join(repo, 'missing-remote'), sha));
+    const result = checkout(name, repo, sha);
+    assert.equal(fs.readFileSync(path.join(result, 'requested.txt'), 'utf8'), 'requested commit');
+    assert.equal(execFileSync('git', ['rev-parse', 'HEAD'], { cwd: result }).toString().trim(), sha);
+    assert.equal(checkout(name, path.join(repo, 'missing-remote'), sha), result);
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+    if (cache) fs.rmSync(cache, { recursive: true, force: true });
+  }
+});
+
+// Name validation must precede every write, not just final tree validation.
+for (const builder of ['active', 'legacy']) {
+  for (const name of ['../escaped', 'nested/name', 'nested\\name', '.', 'Wrong_Name', 'a'.repeat(65)]) {
+    test(`${builder} rejects unsafe skill name ${name} before writing any skill`, () => {
+      withBuild({ LICENSE: 'MIT', 'first/SKILL.md': skill('safe'), 'bad/SKILL.md': skill(name) },
+        [entry('example', '.')], ({ dest, plugins, deps }) => {
+          const inventory = [{ name: 'example', repoRoot: deps.checkout(), sourceRoot: deps.checkout(),
+            artifacts: [{ kind: 'skill', path: 'first/SKILL.md' }, { kind: 'skill', path: 'bad/SKILL.md' }] }];
+          assert.throws(() => builder === 'active' ? buildFromInventory(dest, plugins, inventory) : build(dest, plugins, deps), /invalid skill name/);
+          assert.deepEqual(fs.readdirSync(dest), []);
+        });
+    });
+  }
+}
+
+test('converted names are rejected before destination writes', () => {
+  withBuild({ LICENSE: 'MIT', 'commands/check.md': '# Check' }, [entry('../escape', '.')], ({ dest, plugins, deps }) => {
+    const inventory = [{ name: '../escape', repoRoot: deps.checkout(), sourceRoot: deps.checkout(),
+      artifacts: [{ kind: 'command', path: 'commands/check.md' }] }];
+    assert.throws(() => buildFromInventory(dest, plugins, inventory), /invalid skill name/);
+    assert.deepEqual(fs.readdirSync(dest), []);
+  });
 });

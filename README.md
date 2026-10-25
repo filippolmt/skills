@@ -4,6 +4,12 @@ A skill marketplace for Claude Code, pi and Codex. Claude installs referenced
 upstream plugins, pi consumes the generated `skills/` package tree, and Codex
 installs generated native plugins from this repository's marketplace.
 
+## Choose your harness
+
+- **Claude Code:** [register the catalog](#adding-this-marketplace-claude-code), then [install individual plugins or bundles](#installing-skills).
+- **Codex CLI:** [register the native marketplace and install plugins](#codex).
+- **pi:** [load one repository package and select skills with filters](#the-tree-how-pi-gets-these-skills).
+
 ## Structure
 
 ```
@@ -24,9 +30,9 @@ skills/                            # generated: vendored copies read by pi
 overlays/                          # <skill>.patch, applied after the copy
 ```
 
-## Adding this marketplace
+## Adding this marketplace (Claude Code)
 
-Register it once, then it shows up in `/plugin`:
+In Claude Code, register it once, then it shows up in `/plugin`:
 
 ```
 /plugin marketplace add filippolmt/skills
@@ -36,13 +42,16 @@ Register it once, then it shows up in `/plugin`:
 
 ## Installing skills
 
-Each skill is its own plugin, so you only install the ones you want:
+In Claude Code, each skill is its own plugin **by default**; whole-plugin entries
+and bundles install several artifacts together. Install only what you want:
 
 ```
-/plugin install tdd
-/plugin install grill-me
+/plugin install tdd@filippo-skills
+/plugin install grill-me@filippo-skills
 ```
 
+Review the plugin details, choose an installation scope, and confirm in the panel.
+If activation is pending, run `/reload-plugins` or start a new session.
 Then invoke them namespaced: `/tdd:tdd`, `/grill-me:grill-me`. Model-invoked
 skills (e.g. `grilling`) are triggered by Claude automatically when relevant.
 
@@ -51,6 +60,16 @@ To refresh after upstream updates:
 ```
 /plugin marketplace update filippo-skills
 ```
+
+This interactive update refreshes the listing and updates installed plugins from
+this marketplace. Start a new session or run `/reload-plugins` to load updated
+content. To update just one plugin from your shell, use
+`claude plugin update tdd@filippo-skills`.
+
+Third-party marketplace auto-update is off by default. Enable it in `/plugin` →
+**Marketplaces** → **filippo-skills** → **Enable auto-update** if wanted.
+Renovate updates this repository's pins, not your installed copies. See
+[Claude's plugin update guidance](https://code.claude.com/docs/en/discover-plugins#keep-plugins-updated).
 
 ### Codex
 
@@ -62,6 +81,10 @@ codex plugin marketplace add filippolmt/skills
 codex plugin list --marketplace filippo-skills --available --json
 codex plugin add tdd@filippo-skills
 ```
+
+**Invocation check:** in a Codex session, open `/skills` or type `$` and select
+`tdd` from the installed plugin. If a bundle is also installed, select the intended
+plugin's skill rather than guessing its identity.
 
 Refresh the marketplace snapshot after updates:
 
@@ -139,7 +162,7 @@ For the core Matt Pocock workflows, install the consolidated bundle; individual
 skills remain available when you want a smaller setup:
 
 ```
-/plugin install matt-pocock-bundle
+/plugin install matt-pocock-bundle@filippo-skills
 ```
 
 <!-- bundles:start -->
@@ -158,12 +181,12 @@ For an individual fan-out skill outside a bundle, install the guard alongside it
 It is also what you want if you already have the skills and only need the fix:
 
 ```
-/plugin install agent-report-guard
+/plugin install agent-report-guard@filippo-skills
 ```
 
 ### Bash commands under zsh need `zsh-wordsplit-guard`
 
-The Bash tool runs zsh, where parameter expansion is not word-split. So
+When Claude Code's Bash tool runs zsh, parameter expansion is not word-split. So
 `for x in $var` runs the body **once** over the whole string — no error, just a
 wrong result from the second element on, which any check with a one-element
 sample still passes. Command substitution does split, so `for f in $(cmd)` is
@@ -176,7 +199,7 @@ array or `${=DC}` as the fix
 ([ADR-0031](docs/adr/0031-the-wordsplit-guard-flags-a-stored-command.md)):
 
 ```
-/plugin install zsh-wordsplit-guard
+/plugin install zsh-wordsplit-guard@filippo-skills
 ```
 
 The same plugin catches five more zsh traps: a word starting with `=`
@@ -203,7 +226,11 @@ uses the native marketplace above.
 | | how it finds `skills/` | to install |
 |---|---|---|
 | pi | its package **convention directory**, `<root>/skills` | `pi install git:github.com/filippolmt/skills` |
-| pi inside a checkout | root `skills/` | **nothing** |
+| pi inside a checkout | explicitly load the root as a package | `pi -e .` from the repository root |
+
+The root `skills/` is not a project discovery directory: entering this checkout
+alone does not load it. `pi -e .` loads the package for that invocation without
+saving an installation. See [pi's package documentation](https://github.com/earendil-works/pi/blob/v1.4.0/packages/coding-agent/docs/packages.md).
 
 There is deliberately no `.agents/skills` symlink: exposing loose skills beside
 installed plugins would give Codex duplicate identities.
@@ -218,7 +245,9 @@ pi update --extensions
 The second command updates all installed packages; pi does not update an existing
 package at startup. Deliberately install this one with **no** `@ref`: any ref makes
 a pi source *pinned*, so even an explicit update never advances it. Use `pi list`
-to inspect installed packages.
+to inspect installed packages. In an active session, run `/reload` after updating.
+
+**Invocation check:** with `tdd` enabled, run `/skill:tdd` in pi to load it explicitly.
 
 Per project instead of globally, add it to that repo's `.pi/settings.json` — pi
 installs a missing project package on startup once the project is trusted, but
@@ -341,7 +370,7 @@ Snapshot of the catalog — the source of truth is
 <!-- catalog:start -->
 **Local:**
 - `agent-report-guard` — Drops `name` from Agent tool calls so the subagent reports back on its own: a named agent becomes a mailbox teammate that notifies idle without a report body, leaving fan-out skills (code-review, research, printing-press) chasing the report with SendMessage. Opt out per call with `[mailbox]` in the description, or session-wide with ALLOW_NAMED_AGENTS=1.
-- `zsh-wordsplit-guard` — Catches Bash commands that zsh, the Bash tool's shell, runs differently from bash. A loop over a bare expansion (`for x in $var`) runs once over the whole string, since zsh does not word-split it; a glob or a path around the expansion (`for f in $D/*.log`) is left alone. Likewise a loop variable over quoted multi-word items (`for c in "a.py -v" "b.py"`) used unquoted in the body (`python3 $c`) stays one word. So does a command stored in a variable (`DC="docker compose -f a.yml"`) and run as `$DC build`, which zsh looks up as one command name. An unquoted argument (`cmd $files`) is also caught when the same call previously assigns the variable a multi-word quoted value or command substitution; quote it for one argument, or split explicitly. Also caught: `$name:` followed by a history modifier, even inside double quotes; brace the name as `${name}:…`. Also caught: an unquoted word or assignment value starting with `=` (`echo =====`, `[ a == b ]`, `v==x`), which zsh expands to a command path, and a glob in a `--flag=value` word (`--include=*.md`), which aborts on `no matches found` — both rewritten in place when the word is literal text, denied otherwise; and denied: parentheses in a `${var/pattern/…}` pattern, which zsh reads as a glob group; bash's `${!name}` forms, which zsh aborts on or reads as `$!`; and bash's `${v@Q}` transformations, which zsh aborts on. Each deny message names the form to use instead. The loop and stored-value rules opt out per call with `[nosplit]` in the description, or session-wide with ALLOW_ZSH_NOSPLIT=1; the other rules opt out by the rewrite they apply or name.
+- `zsh-wordsplit-guard` — Catches commands that run differently from bash when the Bash tool uses zsh. A loop over a bare expansion (`for x in $var`) runs once over the whole string, since zsh does not word-split it; a glob or a path around the expansion (`for f in $D/*.log`) is left alone. Likewise a loop variable over quoted multi-word items (`for c in "a.py -v" "b.py"`) used unquoted in the body (`python3 $c`) stays one word. So does a command stored in a variable (`DC="docker compose -f a.yml"`) and run as `$DC build`, which zsh looks up as one command name. An unquoted argument (`cmd $files`) is also caught when the same call previously assigns the variable a multi-word quoted value or command substitution; quote it for one argument, or split explicitly. Also caught: `$name:` followed by a history modifier, even inside double quotes; brace the name as `${name}:…`. Also caught: an unquoted word or assignment value starting with `=` (`echo =====`, `[ a == b ]`, `v==x`), which zsh expands to a command path, and a glob in a `--flag=value` word (`--include=*.md`), which aborts on `no matches found` — both rewritten in place when the word is literal text, denied otherwise; and denied: parentheses in a `${var/pattern/…}` pattern, which zsh reads as a glob group; bash's `${!name}` forms, which zsh aborts on or reads as `$!`; and bash's `${v@Q}` transformations, which zsh aborts on. Each deny message names the form to use instead. The loop and stored-value rules opt out per call with `[nosplit]` in the description, or session-wide with ALLOW_ZSH_NOSPLIT=1; the other rules opt out by the rewrite they apply or name.
 - `subito-listing` — Prepares a Subito.it sale listing, or diagnoses and improves one already live: a price grounded in comparables researched on the web (sold vs asking, read with playwright-cli), a numbered photo shot list, and a title and description ready to paste within the platform limits.
 - `subito-research` — Searches Subito.it for buyers: filters listings by criteria, judges each price against the market, checks scam signals, and prepares seller questions and an offer. Reads subito.it with playwright-cli.
 - `settings-validator` — Validates and improves Claude Code managed, user, shared-project, or project-local settings: confirms the intended configuration, checks every key against the official docs and published JSON schema, applies best practice, and returns complete corrected JSON.
@@ -606,7 +635,10 @@ To do it by hand instead:
    Renovate matches. Any other `ref` fails silently: no error, the entry is just
    never updated again.
 
-The folder pointed to by `path` must be a valid skill (contain `SKILL.md`).
+For a per-skill entry, `path` points at a folder containing `SKILL.md`. For a
+whole-plugin entry, it points at the plugin root containing
+`.claude-plugin/plugin.json`; use `"path": "."` when that is the repository root
+([ADR-0008](docs/adr/0008-whole-plugin-entries-cover-commands.md)).
 
 ## Adding your own skill to a plugin
 

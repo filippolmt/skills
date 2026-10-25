@@ -44,6 +44,7 @@ function heredocAt(text, at) {
   const m = /^<<(-?)[ \t]*((?:'[^'\n]*'|"[^"\n]*"|\\.|[^\s;&|<>()])+)/.exec(text.slice(at));
   if (!m || text[at + 2] === '<') return null;
   return {
+    length: m[0].length,
     delimiter: m[2].replace(/['"\\]/g, ''),
     stripTabs: m[1] === '-',
     expands: !/['"\\]/.test(m[2]),
@@ -105,8 +106,12 @@ function maskedViews(text, context) {
       keep(ch); top.depth = Math.max(0, top.depth - 1);
     } else if (ch === '<' && text[i + 1] === '<' && prev !== '<') {
       const heredoc = heredocAt(text, i);
-      if (heredoc) pending.push(heredoc);
-      keep(ch);
+      if (heredoc) {
+        pending.push(heredoc);
+        // Delimiter quoting controls body expansion; never treat it as a command word.
+        for (const c of text.slice(i, i + heredoc.length)) blank(c);
+        i += heredoc.length - 1;
+      } else keep(ch);
     } else if (ch === '\n' && pending.length) {
       keep(ch);
       // The bodies start on the next line, one after another, each ending on a

@@ -24,7 +24,7 @@
 // Deny rather than warn: an advisory arrives after the wrong output is already
 // in context, and the construct is narrow enough that a hit is almost always a
 // real bug. Flipping to `"ask"` is a one-line change if false positives show up.
-const { readBashInput, deny, maskedViews, noSplitOptedOut, NOSPLIT_OPT_OUT_HINT } = require('./scan');
+const { readBashInput, deny, maskedViews, maskNonSplitting, noSplitOptedOut, NOSPLIT_OPT_OUT_HINT } = require('./scan');
 
 // A `for NAME in <list>`, list ending at `;` or newline (zsh needs one before `do`).
 const FOR_HEADER = /\bfor\s+([A-Za-z_]\w*)\s+in\s+([^\n;]*)/g;
@@ -70,7 +70,13 @@ for (const header of scannable.matchAll(FOR_HEADER)) {
   const name = found[1] || found[2];
   // `a=(x y); for i in $a` is fine: an array expands to several words even with
   // SH_WORD_SPLIT off. Only what was assigned BEFORE this loop can be one.
-  if (new RegExp('(?:^|[;&|(\\s])' + name + '=\\(').test(scannable.slice(0, header.index))) continue;
+  // shortcut: track textual assignments/unsets, not branch or subshell scope; use a parser if scope-related false hits appear.
+  const changes = new RegExp('(?:^|[;&|(\\n])\\s*(?:(?:then|do|else)\\s+)*' +
+    '(?:(?:export|local|typeset|declare|readonly)\\s+(?:-\\w+\\s+)*)?' +
+    '(?:[A-Za-z_]\\w*=[^\\s;&|]*\\s+)*' + name + '=(\\()?|' +
+    '(?:^|[;&|(\\n])\\s*unset\\s+(?:[^\\s;&|]+\\s+)*' + name + '(?=[\\s;&|]|$)', 'g');
+  const last = [...scannable.slice(0, header.index).matchAll(changes)].pop();
+  if (last && last[1]) continue;
   hit = { expansion: found[0], name: name, header: header[0].trim() };
   break;
 }
@@ -116,7 +122,7 @@ if (!hit) {
     const quoted = list.match(/"(?:[^"\\]|\\.)*"|'[^']*'/g) || [];
     if (!quoted.some((word) => /\s/.test(word) && !/^"[\s\S]*[$`\\]/.test(word))) continue;
     const name = header[1];
-    const body = bodyOf(words.slice(end)).replace(/\[\[[\s\S]*?\]\]/g, ' ');
+    const body = maskNonSplitting(bodyOf(words.slice(end)));
     // `$c`, `${c}` or a braced modifier (`${c:-x}`, `${c%.py}`), as NONSPLIT_EXPANSION.
     const use = new RegExp('(?<![=\\w])(?<!\\bcase\\s+)(?<!\\beval\\s[^;&|\\n]*)\\$(?:' + name +
       '(?![\\w[])|\\{' + name + '(?:[:#%/][^}]*)?\\})').exec(body);

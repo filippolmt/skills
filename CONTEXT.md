@@ -9,7 +9,7 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Marketplace catalog** — the `plugins` array in
   `.claude-plugin/marketplace.json`. The single source of truth for what this
   marketplace offers. Every other tree in this repo is derived from it — the
-  README's catalog projection and the skills tree pi reads.
+  README's catalog projection, the skills tree pi reads, and native Codex packages.
 - **Plugin entry** — one object in the catalog. Either a **local plugin** (its
   `source` is a repo-relative path, e.g. `./plugins/agent-report-guard`) or a
   **git-subdir entry** (references an upstream folder, pins a `sha`).
@@ -74,9 +74,9 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   package; unsupported entries receive no installable stub.
 - **Skills tree** — `skills/`, one directory per portable skill or deterministic
   command/agent conversion. A further **catalog projection**: derived from the
-  marketplace catalog, checked in CI, never hand-edited. It is pi's **loose-skill projection**; Codex's legacy scan-root route
-  remains only until the native package projection replaces it (ADR-0021). Claude
-  reads the catalog instead.
+  marketplace catalog, checked in CI, never hand-edited. It is pi's **loose-skill
+  projection**; Codex uses native packages instead (ADR-0021). Claude reads the
+  catalog instead.
 - **Loose-skill projection** — a harness-neutral tree of unbundled skills, without
   plugin identity, hooks or MCP configuration. Here it is the skills tree consumed
   by pi; it is a fallback rather than first-class Codex distribution.
@@ -87,8 +87,10 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Prune** — what a regeneration does to an entry whose `path` no longer exists at
   its `sha`: the entry leaves the catalog, its name leaves every bundle's
   `dependencies` (breaking bump), and the regeneration PR names it. Not a skip — a
-  removal, recorded (ADR-0015). Refused, turning the run red, when a non-bundle
-  depends on the entry or a bundle would lose the skill it is named after.
+  removal, recorded (ADR-0015). Owned distribution metadata leaves with the entry.
+  Refused before catalog, manifest, or metadata writes when a non-bundle depends on
+  the entry, a surviving runtime dependency would break, or a bundle would lose
+  the skill it is named after.
 - **Parked run** — the `pull_request` run of `validate` that a `GITHUB_TOKEN` push
   leaves `completed` with `conclusion: action_required` and no check runs: created,
   awaiting an approval no token inside a workflow can give. Not a missing check — a
@@ -115,7 +117,8 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   lives on `main`; pi does not update existing packages at startup.
 - **Convention directory** — `skills/` at the root of a pi package, served with no
   manifest field naming it. Where the skills tree lives, and the reason this repo
-  needs no `package.json`.
+  needs no `package.json`. It is discovered when loading the package, not merely
+  when entering its checkout.
 - **Shared location** — `.agents/skills`, the Agent Skills standard's loose-skill
   path. This repository deliberately has no shared location: ADR-0021 removed the
   former symlink once every supported Codex package was materialised, preventing

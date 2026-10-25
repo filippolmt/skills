@@ -5,8 +5,12 @@ on:
     paths:
       - .claude-plugin/marketplace.json
       - .github/workflows/pi-integration.yml
+      - LICENSE
       - docs/pi-package-filters.md
+      - overlays/**
       - plugins/**
+      - shared/**
+      - scripts/catalog.js
       - scripts/distribution-meta.json
       - scripts/distribution.js
       - scripts/gen-distribution.js
@@ -20,8 +24,12 @@ on:
     paths:
       - .claude-plugin/marketplace.json
       - .github/workflows/pi-integration.yml
+      - LICENSE
       - docs/pi-package-filters.md
+      - overlays/**
       - plugins/**
+      - shared/**
+      - scripts/catalog.js
       - scripts/distribution-meta.json
       - scripts/distribution.js
       - scripts/gen-distribution.js

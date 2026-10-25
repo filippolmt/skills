@@ -95,6 +95,16 @@ denied('for x in $v; do echo $x; done <<<"seed"');
 // The array escape hatch is ordered: only an assignment BEFORE the loop counts.
 denied('for i in $a; do echo $i; done; a=(uno due)');
 
+denied('a=(x y); unset a; a="x y"; for x in $a; do echo "$x"; done');
+denied('a=(x y); a="x y"; for x in $a; do echo "$x"; done');
+denied('a=(x y); unset -v a; for x in $a; do :; done');
+denied('a=(x y); unset other a third; for x in $a; do :; done');
+denied('a=(x y); export a="x y"; for x in $a; do :; done');
+denied('a=(x y); b=1 a="x y"; for x in $a; do :; done');
+allowed('a=(x y); unset other; for x in $a; do :; done');
+allowed('a=(x y); unset a; a=(p q); for x in $a; do :; done');
+allowed('a=(x y); echo a=scalar; for x in $a; do :; done');
+
 // --- a loop variable built to hold several words -----------------------------
 // A list of quoted literals holding whitespace exists only to be split again in
 // the body; an unquoted `$c` there stays one word (docs/adr/0027).
@@ -124,6 +134,10 @@ allowed('for c in "a b"; do echo ${#c}; done');                  // a length is 
 allowed('for c in "a b" "c d"; do echo "$c"; done');             // quoted use: one word, as asked
 // Where zsh never splits anyway — and neither does bash — one word is right.
 allowed('for c in "a b"; do [[ -n $c ]] && echo ok; done');
+for (const wrap of [s => s, s => 'out=$(' + s + ')', s => 'echo "$(' + s + ')"', s => 'cat <<EOF\n$(' + s + ')\nEOF']) {
+  allowed(wrap('for c in "1 + 2"; do (( n = $c )); printf "%s\\n" "$n"; done'));
+  denied(wrap('for c in "1 + 2"; do (( n = $c )); echo done $c; done'));
+}
 allowed('for c in "a b"; do x=$c; echo "$x"; done');
 allowed('for c in "a b"; do case $c in a*) echo a;; esac; done');
 allowed('for f in "a.txt" "b.txt"; do cat $f; done');            // single-word items
