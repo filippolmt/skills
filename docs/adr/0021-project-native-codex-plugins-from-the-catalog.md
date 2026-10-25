@@ -34,7 +34,12 @@ Each artifact receives exactly one Codex disposition and one pi disposition:
 `native`, `adapted`, or `unsupported`. Unsupported means the exact limitation and
 best fallback are recorded; a manual workaround is not called parity. The
 human-readable parity matrix is generated from this same inventory and metadata,
-never maintained separately.
+never maintained separately. When the whole entry requires an unavailable runtime,
+`unsupportedEntries` records its Codex and pi limitations once; artifact-specific
+decisions take precedence when a proven adaptation exists. Both source validation
+and generated-skill validation reject unresolved `CLAUDE_PLUGIN_ROOT` references
+in Markdown advertised as portable. Pi omits unsupported skills and conversions
+rather than copying them despite their dispositions.
 
 **Codex gets a repo-scoped native marketplace.** The generated catalog lives at
 `.agents/plugins/marketplace.json`; self-contained packages live under

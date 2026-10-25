@@ -10,9 +10,11 @@ Arguments: `$ARGUMENTS`
 - `<owner/repo> [path] [name]` → **add mode** (default).
 - `update` (optionally `update <owner/repo>` to scope to one repo) → **update mode**.
 
-Granularity is the CLAUDE.md rule; what it does not say is where `name` comes
-from — the skill folder's basename for a per-skill entry, the `name` in
-`plugin.json` for a whole-plugin one.
+Granularity is the CLAUDE.md rule. Default `name` to the skill folder's basename
+for a per-skill entry, or the upstream manifest's name for a whole-plugin entry.
+If Claude rejects that name as reserved, choose a descriptive catalog alias and
+report it; keep the upstream source unchanged. Validate the new catalog entry
+before regenerating the README, using the existing `claude plugin validate .`.
 
 ## Fetches
 
@@ -83,11 +85,20 @@ For every discovered Claude artifact:
 4. When no equivalent exists, keep the explicit generated adaptation or
    unsupported limitation and fallback. Never infer parity from a manifest alone.
 
-Run `node scripts/gen-distribution.js --verify`, then regenerate the parity matrix
-and installable packages with `node scripts/gen-distribution.js`,
-`node scripts/gen-pi.js`, and `node scripts/gen-codex.js`. Done means every artifact has one Codex and pi
-disposition, every recorded upstream equivalent exists at the pinned SHA, and
-partial Codex packages stay out of the marketplace.
+Check runtime closure, not just file presence: a skill calling a plugin-root
+launcher needs its scripts, shared data, dependencies, and harness-specific path
+resolution. The inventory and generated-skill validators reject unresolved
+`CLAUDE_PLUGIN_ROOT` references. Use a proven upstream adaptation where available;
+otherwise record the exact unsupported limitation and fallback. When an entire
+entry requires an unavailable runtime, `unsupportedEntries` in
+`scripts/distribution-meta.json` supplies both harness outcomes; artifact-specific
+records take precedence.
+
+Run `node scripts/gen-distribution.js --verify`. Done means every artifact has one
+Codex and pi disposition, every recorded upstream equivalent exists at the pinned
+SHA, and unsupported runtime closures are not advertised as portable. This is a
+catalog change: leave package and parity-document generation to CI's `regenerate`
+workflow, as specified by CLAUDE.md.
 
 ## Add mode
 
@@ -131,7 +142,9 @@ partial Codex packages stay out of the marketplace.
    skills), e.g. `"…: bash-pro and posix-shell-pro agents plus the
    bash-defensive-patterns, bats-testing-patterns, and shellcheck-configuration
    skills."`.
-6. **Regenerate the README** (see below), then validate.
+6. Validate the catalog with `claude plugin validate .` first, resolving reserved
+   names with a descriptive alias. **Regenerate the README** (see below), then run
+   the remaining checks.
 
 Done when every skill the discovery in step 2 turned up is either an entry in
 `marketplace.json` or named as deliberately left out, and the repo has a row in
@@ -220,10 +233,13 @@ The README **Available skills** catalog is a **projection** of
 ```bash
 node scripts/gen-readme.js --check        # README catalog matches marketplace.json
 node scripts/gen-distribution.js --verify # Codex/pi outcomes and upstream equivalents resolve
-node scripts/gen-distribution.js --check  # parity document matches those decisions
-node scripts/gen-pi.js --check           # pi bundle filters match runtime closures
-node scripts/gen-codex.js --check        # Codex packages match the inventory
+node scripts/check-renovate.js           # every upstream pin remains auto-updatable
+node scripts/check-name-collisions.js    # catalog names and local artifacts are unique
+bash scripts/run-tests.sh                # same deterministic suite as CI
 claude plugin validate .
 ```
-Report what changed (added / removed / description updates). Do not commit —
-leave that to the user.
+Generated `skills/`, Codex packages, pi filters, and the parity matrix intentionally
+remain stale until the post-merge regeneration workflow. Do not run their
+`--check` modes against a catalog-only change. Report what changed (added / removed /
+description updates), unsupported harness outcomes, and checks actually run.
+Do not commit — leave that to the user.

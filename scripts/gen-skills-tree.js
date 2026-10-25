@@ -252,7 +252,8 @@ function buildFromInventory(dest, plugins, inventory) {
   for (const entry of inventory) {
     const plugin = catalog.get(entry.name);
     if (!plugin) throw new Error(`inventory entry has no catalog entry: ${entry.name}`);
-    for (const artifact of entry.artifacts.filter((item) => ['skill', 'command', 'agent'].includes(item.kind))) {
+    for (const artifact of entry.artifacts.filter((item) =>
+      ['skill', 'command', 'agent'].includes(item.kind) && item.dispositions?.pi?.disposition !== 'unsupported')) {
       if (artifact.kind !== 'skill') {
         const name = convertedSkillName(entry, artifact);
         claim(name, entry.name);

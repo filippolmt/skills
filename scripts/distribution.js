@@ -9,7 +9,7 @@ const MANIFEST_METADATA = new Set([
   'keywords', 'skills', 'commands', 'agents', 'hooks', 'mcpServers', 'dependencies',
 ]);
 const STATUSES = new Set(['native', 'adapted', 'unsupported']);
-const METADATA_FIELDS = new Set(['runtimeDependencies', 'artifacts', 'presentationOverrides']);
+const METADATA_FIELDS = new Set(['runtimeDependencies', 'artifacts', 'presentationOverrides', 'unsupportedEntries']);
 const OUTCOME_FIELDS = new Set(['disposition', 'detail', 'limitation', 'fallback', 'sourcePath', 'evidencePath']);
 const PRESENTATION_FIELDS = new Set(['displayName', 'description']);
 const posix = (p) => p.split(path.sep).join('/');
@@ -140,7 +140,7 @@ const derived = {
 
 function classify(item, metadata) {
   const key = `${item.entry}/${item.id}`;
-  const decision = metadata.artifacts?.[key] || derived[item.kind];
+  const decision = metadata.artifacts?.[key] || metadata.unsupportedEntries?.[item.entry] || derived[item.kind];
   if (!decision) throw new Error(`${key}: unclassified ${item.kind} artifact`);
   for (const harness of ['codex', 'pi']) {
     const outcome = decision[harness];
@@ -157,7 +157,14 @@ function validateMetadata(metadata) {
   for (const key of Object.keys(metadata)) {
     if (!METADATA_FIELDS.has(key)) throw new Error(`unknown distribution metadata field: ${key}`);
   }
-  for (const [key, decision] of Object.entries(metadata.artifacts || {})) {
+  for (const [entry, decision] of Object.entries(metadata.unsupportedEntries || {})) {
+    for (const harness of ['codex', 'pi']) {
+      if (decision?.[harness]?.disposition !== 'unsupported') {
+        throw new Error(`${entry}: unsupported entry requires unsupported Codex and pi outcomes`);
+      }
+    }
+  }
+  for (const [key, decision] of Object.entries({ ...metadata.unsupportedEntries, ...metadata.artifacts })) {
     if (!decision || typeof decision !== 'object' || Array.isArray(decision)) throw new Error(`${key}: artifact decision must be an object`);
     for (const harness of Object.keys(decision)) {
       if (!['codex', 'pi'].includes(harness)) throw new Error(`${key}: unknown harness: ${harness}`);
@@ -184,11 +191,20 @@ function validateMetadata(metadata) {
   }
 }
 
+function validatePortableRuntime(file) {
+  if (/\$\{CLAUDE_PLUGIN_ROOT\}|\$CLAUDE_PLUGIN_ROOT\b/.test(fs.readFileSync(file, 'utf8'))) {
+    throw new Error(`${file}: unresolved CLAUDE_PLUGIN_ROOT runtime dependency; adapt the artifact or declare it unsupported`);
+  }
+}
+
 function validateDistribution(inventory, metadata = {}, options = {}) {
   validateMetadata(metadata);
   const absent = new Set(options.absentEntries || []);
   const entries = new Set([...inventory.map((entry) => entry.name), ...absent]);
   const artifacts = new Set(inventory.flatMap((entry) => entry.artifacts.map((item) => `${entry.name}/${item.id}`)));
+  for (const entry of Object.keys(metadata.unsupportedEntries || {})) {
+    if (!entries.has(entry)) throw new Error(`orphaned unsupported entry: ${entry}`);
+  }
   for (const key of Object.keys(metadata.artifacts || {})) {
     const owner = key.split('/', 1)[0];
     if (!artifacts.has(key) && !absent.has(owner)) throw new Error(`orphaned artifact metadata: ${key}`);
@@ -224,6 +240,13 @@ function validateDistribution(inventory, metadata = {}, options = {}) {
             throw new Error(`${entry.name}/${item.id}: ${harness} ${label} escapes repository: ${outcome[field]}`);
           }
           if (!fs.existsSync(file)) throw new Error(`${entry.name}/${item.id}: ${harness} ${label} does not exist: ${outcome[field]}`);
+        }
+        if (entry.sourceRoot && ['skill', 'command', 'agent'].includes(item.kind) && outcome.disposition !== 'unsupported') {
+          const source = outcome.sourcePath
+            ? path.resolve(entry.repoRoot, outcome.sourcePath)
+            : path.join(entry.sourceRoot, item.path);
+          // Native agent TOML has its own runtime contract; Markdown is what we project as skills.
+          if (source.endsWith('.md')) validatePortableRuntime(source);
         }
       }
     }
@@ -273,4 +296,4 @@ function renderParity(inventory) {
   ].join('\n');
 }
 
-module.exports = { discoverArtifacts, declaredDependencies, classify, validateDistribution, renderParity, posix };
+module.exports = { discoverArtifacts, declaredDependencies, classify, validateDistribution, validatePortableRuntime, renderParity, posix };

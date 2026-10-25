@@ -11,7 +11,33 @@
     "triage": ["grilling", "domain-modeling"],
     "wayfinder": ["grilling", "domain-modeling", "research", "prototype"]
   },
+  "unsupportedEntries": {
+    "seo-toolkit": {
+      "codex": {
+        "disposition": "unsupported",
+        "limitation": "The workflows require Claude's plugin-root variable, root-level Python launcher and resources, and Claude subagents; copying individual skill folders does not preserve that runtime closure.",
+        "fallback": "Install seo-toolkit@filippo-skills in Claude Code and run /seo setup before using Python tools. Optional extensions require upstream's separate activation."
+      },
+      "pi": {
+        "disposition": "unsupported",
+        "limitation": "The loose-skill projection does not preserve the upstream plugin-root runtime, Python launcher, shared resources, subagent orchestration, or schema hook.",
+        "fallback": "Use seo-toolkit@filippo-skills in Claude Code; no incomplete pi skills are published."
+      }
+    }
+  },
   "artifacts": {
+    "ui-ux-pro-max/skill:SKILL.md": {
+      "codex": {
+        "disposition": "unsupported",
+        "limitation": "The pinned skill invokes its search tool through CLAUDE_PLUGIN_ROOT, which is unavailable in Codex.",
+        "fallback": "Use the Claude plugin or upstream's harness-specific installer."
+      },
+      "pi": {
+        "disposition": "unsupported",
+        "limitation": "The pinned skill invokes its search tool through CLAUDE_PLUGIN_ROOT, which is unavailable in pi.",
+        "fallback": "Use the Claude plugin or upstream's harness-specific installer."
+      }
+    },
     "diagram-design/command:commands/doctor.md": {
       "codex": {
         "disposition": "adapted",
@@ -104,8 +130,9 @@
         "evidencePath": "tests/build.test.js"
       },
       "pi": {
-        "disposition": "adapted",
-        "detail": "Will be converted to a deterministic namespaced skill."
+        "disposition": "unsupported",
+        "limitation": "The Claude asset producer invokes sibling plugin tools through CLAUDE_PLUGIN_ROOT; a namespaced skill conversion does not adapt those commands.",
+        "fallback": "Use Impeccable's upstream Codex-native agent or the Claude plugin for asset production."
       }
     },
     "impeccable/agent:agents/impeccable-documenter.md": {
@@ -142,6 +169,18 @@
       "pi": {
         "disposition": "adapted",
         "detail": "Will be converted to a deterministic namespaced skill."
+      }
+    },
+    "seo-toolkit/hook:hooks/hooks.json#PostToolUse[0]": {
+      "codex": {
+        "disposition": "unsupported",
+        "limitation": "Upstream ships only a Claude Edit/Write PostToolUse registration for JSON-LD validation, with no native Codex equivalent.",
+        "fallback": "Use the Claude plugin for automatic validation, or run python3 hooks/validate-schema.py <file> from an upstream checkout after editing HTML-like files."
+      },
+      "pi": {
+        "disposition": "unsupported",
+        "limitation": "pi packages cannot install declarative lifecycle hooks for automatic JSON-LD validation.",
+        "fallback": "Run python3 hooks/validate-schema.py <file> from an upstream checkout after editing HTML-like files."
       }
     },
     "agent-report-guard/hook:hooks/hooks.json#PreToolUse[0]": {
