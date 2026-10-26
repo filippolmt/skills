@@ -36,6 +36,10 @@ MAX_EDGES = 5000
 # with others. Real statements are a few hundred characters at most; the cap
 # keeps per-statement parsing work bounded.
 MAX_STATEMENT_CHARS = 4096
+# Sequence `autonumber` start and step. Mermaid numbers steps with JS numbers,
+# which stay exact up to 15 digits. Checking the length first also keeps the
+# error the same on Pythons with and without an int-from-string digit limit.
+MAX_AUTONUMBER_DIGITS = 15
 SUPPORTED_KINDS = "flowchart, sequenceDiagram, stateDiagram-v2, erDiagram"
 UNSUPPORTED_KINDS = {
     "pie",
@@ -115,6 +119,8 @@ class Diagram:
     edges: list[Edge] = field(default_factory=list)
     fragments: list[dict[str, Any]] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
+    # Sequence `autonumber` directives: step numbers are content, prose cites them.
+    autonumber: list[dict[str, Any]] = field(default_factory=list)
     discarded: dict[str, int] = field(
         default_factory=lambda: {"style_directives": 0, "click_handlers": 0, "config_directives": 0}
     )
@@ -973,6 +979,19 @@ def _parse_sequence(
             continue
         if lowered.startswith(("activate ", "deactivate ", "+", "-")):
             continue
+        numbering = re.match(r"^autonumber(?:\s+(off)|\s+(\d+)(?:\s+(\d+))?)?$", text, re.I)
+        if numbering:
+            off, start, step = numbering.groups()
+            entry = {"line": line_number, "off": bool(off)}
+            if not off:
+                if any(len(value or "") > MAX_AUTONUMBER_DIGITS for value in (start, step)):
+                    _fail(
+                        f"autonumber value exceeds {MAX_AUTONUMBER_DIGITS} digits "
+                        f"at line {line_number}"
+                    )
+                entry.update(start=int(start or 1), step=int(step or 1))
+            diagram.autonumber.append(entry)
+            continue
         if lowered.startswith("note "):
             _, separator, note = text.partition(":")
             diagram.notes.append(clean_label(note if separator else text[5:]))
@@ -1405,6 +1424,12 @@ def digest(
                 f"{item['kind']}({_fragment_digest(item)})" for item in diagram.fragments
             )
             output.append(f"- fragments: {fragments}")
+        if diagram.autonumber:
+            numbering = "; ".join(
+                "off" if item["off"] else f"from {item['start']}, step {item['step']}"
+                for item in diagram.autonumber
+            )
+            output.append(f"- autonumber: {numbering}")
         if diagram.notes:
             output.append(
                 f"- notes: {'; '.join(_escape_markdown(note) for note in diagram.notes[:6])}"
@@ -1501,6 +1526,7 @@ def to_json(path: Path, blocks: list[SourceBlock], selected: list[Diagram]) -> s
                     "discarded": diagram.discarded,
                     "fragments": diagram.fragments,
                     "notes": diagram.notes,
+                    "autonumber": diagram.autonumber,
                     "nodes": [asdict(node) for node in diagram.nodes],
                     "edges": [asdict(edge) for edge in diagram.edges],
                 }
