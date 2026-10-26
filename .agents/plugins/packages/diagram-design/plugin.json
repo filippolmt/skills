@@ -1,6 +1,6 @@
 {
   "name": "diagram-design",
-  "version": "0.0.0+catalog.a0a6bcc6ef88.c330413f710f",
+  "version": "0.0.0+catalog.10cfad6a7be7.432b7e953a4b",
   "description": "An opinionated editorial diagram system, drawn to one house style and branded from your own tokens: architecture, flowchart, sequence, state, ER, timeline, swimlane, quadrant, radar, Gantt, heatmap, waterfall, Sankey, fishbone, Wardley map, kanban, journey and blueprint diagrams as self-contained HTML/SVG/PNG. Bundles the diagram-design skill plus the doctor, export-diagram, import-drawio, import-excalidraw, import-mermaid and profile commands — redraw .drawio, Excalidraw or Mermaid sources at a chosen size and detail, onboard brand tokens from a website, add semantic patterns, callouts, accessible motion or sketchy styling.",
   "author": {
     "name": "Cathryn Lavery",
