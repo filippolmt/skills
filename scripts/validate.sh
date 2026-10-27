@@ -18,7 +18,7 @@ run() {
 run bash scripts/run-tests.sh                        # every test; CI runs this same script
 run node scripts/gen-readme.js --check               # README's generated regions match the catalog
 run node scripts/gen-skills-tree.js --verify-paths   # resolve paths and classify every Codex/pi artifact
-run node scripts/check-renovate.js                   # Renovate regexes cover every git-subdir entry
+run node scripts/check-renovate.js                   # Renovate regexes cover every external entry
 run node scripts/check-name-collisions.js            # what claude plugin validate does NOT cover
 run claude plugin validate .                         # marketplace + all local plugins
 
