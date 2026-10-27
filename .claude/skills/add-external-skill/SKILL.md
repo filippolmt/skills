@@ -234,15 +234,10 @@ The README **Available skills** catalog is a **projection** of
 ## Finish
 
 ```bash
-node scripts/gen-readme.js --check        # README catalog matches marketplace.json
-node scripts/gen-distribution.js --verify # Codex/pi outcomes and upstream equivalents resolve
-node scripts/check-renovate.js           # every upstream pin remains auto-updatable
-node scripts/check-name-collisions.js    # catalog names and local artifacts are unique
-bash scripts/run-tests.sh                # same deterministic suite as CI
-claude plugin validate .
+bash scripts/validate.sh --catalog-only
 ```
 Generated `skills/`, Codex packages, pi filters, and the parity matrix intentionally
-remain stale until the post-merge regeneration workflow. Do not run their
-`--check` modes against a catalog-only change. Report what changed (added / removed /
+remain stale until the post-merge regeneration workflow; `--catalog-only` skips
+their checks. Report what changed (added / removed /
 description updates), unsupported harness outcomes, and checks actually run.
 Do not commit — leave that to the user.

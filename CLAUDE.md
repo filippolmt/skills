@@ -128,25 +128,17 @@ loads the file twice (`Duplicate hooks file detected`). A stale entry in
 ## Validate before committing
 
 ```
-bash scripts/run-tests.sh             # every test; CI runs this same script
-node scripts/gen-readme.js --check    # README's generated regions match the catalog
-node scripts/gen-skills-tree.js --verify-paths  # resolve paths and classify every Codex/pi artifact
-node scripts/gen-distribution.js --check # parity matrix matches the inventory
-node scripts/gen-pi.js --check        # pi bundle filters match runtime closures
-node scripts/gen-codex.js --check     # native Codex packages match the inventory
-bash scripts/test-pi-package.sh       # pi 1.0.4 package/filter smoke
-bash scripts/test-codex-marketplace.sh # Codex 0.160.1 lifecycle/hook smoke
-node scripts/check-renovate.js        # Renovate regexes cover every external entry
-node scripts/check-name-collisions.js # what validate does NOT cover
-claude plugin validate .              # marketplace + all local plugins
+bash scripts/validate.sh                  # the full list; stops at the first failure
+bash scripts/validate.sh --catalog-only   # a catalog-only change: skips projection checks and smokes
 ```
 
-This is what CI and regeneration jointly enforce. Pull-request validation
+The script is the union of what CI and regeneration enforce; neither workflow
+runs it, each keeps its own subset. Pull-request validation
 deliberately does **not** compare generated package contents: a `sha` bump makes
 the committed projections stale by design, so comparing them on a pull request
 would redden every Renovate PR. Those comparisons live in the `regenerate`
 workflow, where stale projections are the signal to act rather than a failure. A `PostToolUse` hook
-(`.claude/settings.json`) runs the last two on every Edit or Write to `marketplace.json`,
+(`.claude/settings.json`) runs its last two checks on every Edit or Write to `marketplace.json`,
 `plugin.json`, a `SKILL.md` or a `commands/*.md`, and blocks the edit (exit 2) if
 either fails — the rest are yours to run.
 

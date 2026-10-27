@@ -694,6 +694,9 @@ node scripts/check-name-collisions.js           # what validate does NOT cover
 claude plugin validate .                        # marketplace + all local plugins
 ```
 
+`bash scripts/validate.sh --catalog-only` runs this list in one command; without
+the flag it also runs the projection checks and package smoke tests.
+
 Output must be clean — warnings count as failures. Path-filtered pi and Codex
 integration workflows separately materialize the current revision in their
 workspaces before running package smoke tests. Committed projection comparisons
