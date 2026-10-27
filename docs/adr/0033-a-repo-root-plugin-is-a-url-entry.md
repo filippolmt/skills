@@ -32,9 +32,12 @@ entry per throwaway marketplace, counting `SKILL.md` in the install cache:
   change is a missing `path`.
 - Both Renovate regexes take `path` as optional. `check-renovate.js` counts
   every external entry (git-subdir or url) and fails on a git-subdir entry whose
-  `path` is the repo root (`""`, `.`, `./`, `/`), naming the url shape as the fix.
-- `catalog.js` owns the classification: `isExternal` (git-subdir or url) and
-  `entryPath` (`.` for a url entry), so the tree generator, whole-sources,
+  `path` is the repo root (`""`, `.`, `./`, `/`), naming the url shape as the fix,
+  and on a url entry that carries a `path`: Claude Code ignores it and installs
+  the whole repo (verified with the same probe), so the field only misleads.
+- `catalog.js` owns the classification: `isExternal` (git-subdir or url),
+  `isRepoRoot` (every spelling of the root) and `entryPath` (the root always
+  spelled `.`, which a url entry always is), so the tree generator, whole-sources,
   branch-pin and description checks treat a url entry as a whole-plugin entry
   rooted at the repo root.
 

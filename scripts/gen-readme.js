@@ -53,7 +53,7 @@ function renderCatalog(marketplace, meta) {
     out.push(['**Local:**', ...locals.map((p) => `- \`${p.name}\` — ${p.description}`)].join('\n'));
   }
 
-  // Grouped git-subdir entries, in the editorial order from catalog-meta.json.
+  // Grouped external entries, in the editorial order from catalog-meta.json.
   for (const g of meta.groups || []) {
     const entries = plugins.filter(
       (p) => repoOf(p) === g.repo && !omit.has(p.name)
@@ -65,7 +65,7 @@ function renderCatalog(marketplace, meta) {
     out.push(table(cols, entries.map((p) => `| \`${p.name}\` | ${p.description} |`)));
   }
 
-  // Drift guard: every git-subdir entry must be classified (grouped or omitted).
+  // Drift guard: every external entry must be classified (grouped or omitted).
   const grouped = new Set((meta.groups || []).map((g) => g.repo));
   const unclassified = plugins
     .filter((p) => repoOf(p) && !omit.has(p.name))

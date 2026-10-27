@@ -37,7 +37,7 @@ function parseFrontmatter(text) {
   return { name: field('name'), description: field('description') };
 }
 
-// A file of a git-subdir entry, upstream at the pinned sha; null for a local plugin.
+// A file of an external entry, upstream at the pinned sha; null for a local plugin.
 const upstreamUrl = (plugin, kind, repoPath) => (typeof plugin.source === 'object'
   ? `${plugin.source.url}/${kind}/${plugin.source.sha}/${repoPath}`
   : null);

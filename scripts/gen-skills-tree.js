@@ -4,7 +4,7 @@
 // The tree is a PROJECTION of .claude-plugin/marketplace.json, in the same sense
 // the README's catalog table is: derived, checked in CI, never hand-edited. It
 // exists because pi cannot address a subdirectory of somebody else's repository,
-// which is what all our git-subdir entries are — see ADR-0010 and ADR-0021.
+// which is what most of our external entries are — see ADR-0010 and ADR-0021.
 //
 // The tree lives at `skills/` because that is pi's package convention directory: a
 // package is served from it with no manifest field naming it, which is why this repo
@@ -205,11 +205,11 @@ function resolveEntry(entry, fetch = checkout) {
   const sub = entryPath(entry);
   if (!sha) throw new Error(`entry ${entry.name}: no sha to resolve — every external entry must pin one`);
   const repoDir = fetch(repo, url, sha);
-  // `.` is a url entry's path (ADR-0033), `./x` and `x` are the same
+  // `entryPath` spells the root `.` (ADR-0033); `./x` and `x` are the same
   // subdirectory — but a leading dot is not a prefix to strip: the real paths
   // include `.claude/skills/…`, which loses its meaning the moment it becomes
   // `claude/skills/…`.
-  const rel = sub === '.' ? '' : String(sub || '').replace(/^\.\//, '').replace(/\/$/, '');
+  const rel = sub === '.' ? '' : sub.replace(/^\.\//, '').replace(/\/$/, '');
   const abs = rel ? path.join(repoDir, rel) : repoDir;
   return { repo, sha, repoDir, rel, abs, exists: fs.existsSync(abs) };
 }

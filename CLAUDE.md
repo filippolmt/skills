@@ -44,7 +44,8 @@ otherwise reopen. Guard and cross-harness projection reviews also read
 ## Adding or updating an external skill
 
 External skills are **referenced upstream** via `git-subdir`: an entry names a
-folder in somebody else's repo and pins a `sha`, and that is what Claude installs.
+folder in somebody else's repo and pins a `sha`, and that is what Claude installs
+(a plugin that is the whole repo is a `url` entry instead, ADR-0033).
 The generated tree at `skills/` is the exception the reference does not cover —
 adding an entry therefore also **vendors a copy** of that upstream on the next
 regeneration, which is where redistribution is decided. Both branches run through
@@ -52,8 +53,8 @@ the **`/add-external-skill`** skill, which the agent also follows when asked in
 plain words: `<owner/repo> [path] [name]` appends entries, `update` reconciles existing
 ones against upstream (skills added and removed, tag/`sha` bumps, refreshed
 descriptions). It also picks the `ref`, regenerates the README and validates.
-Copy the entry shape from any existing `git-subdir` entry. Every external entry
-credits its upstream author explicitly; the marketplace owner is the publisher,
+Copy the entry shape from any existing `git-subdir` entry, or from `seo-toolkit`
+for a url entry. Every external entry credits its upstream author explicitly; the marketplace owner is the publisher,
 not the default author ([ADR-0018](docs/adr/0018-credit-the-upstream-author.md)).
 
 `node scripts/gen-readme.js` generates **two** regions of the README from
@@ -135,7 +136,7 @@ node scripts/gen-pi.js --check        # pi bundle filters match runtime closures
 node scripts/gen-codex.js --check     # native Codex packages match the inventory
 bash scripts/test-pi-package.sh       # pi 1.0.4 package/filter smoke
 bash scripts/test-codex-marketplace.sh # Codex 0.160.1 lifecycle/hook smoke
-node scripts/check-renovate.js        # Renovate regexes cover every git-subdir entry
+node scripts/check-renovate.js        # Renovate regexes cover every external entry
 node scripts/check-name-collisions.js # what validate does NOT cover
 claude plugin validate .              # marketplace + all local plugins
 ```

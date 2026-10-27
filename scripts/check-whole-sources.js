@@ -16,7 +16,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { readCatalog, isExternal, entryPath: pathOf, repoOf, root } = require('./catalog.js');
+const { readCatalog, isExternal, entryPath, repoOf, root } = require('./catalog.js');
 const { githubApi } = require('./github.js');
 
 const ADR = path.join(root, 'docs', 'adr', '0014-each-source-repo-is-whole-or-curated.md');
@@ -59,7 +59,6 @@ const excluded = (dir, patterns) => patterns.some((p) =>
   p.includes('/') ? globToRegExp(p).test(dir) : path.posix.basename(dir) === p);
 
 const wholeSources = (sources) => [...sources].filter(([, { kind }]) => kind === 'whole').map(([repo]) => repo);
-const entryPath = (e) => pathOf(e) || '.';
 const entriesOf = (catalog, repo) => catalog.filter((e) => repoOf(e) === repo);
 const within = (dir, pluginRoot) => pluginRoot === '.' || dir === pluginRoot || dir.startsWith(`${pluginRoot}/`);
 

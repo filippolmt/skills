@@ -19,12 +19,12 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   root (its own `.claude-plugin/plugin.json`); installing it brings every
   bundled skill and subagent at once. A git-subdir entry when the root is a
   subfolder; a url entry when the root is the repo root (ADR-0033).
-- **Whole source** — a git-subdir source repo whose every skill is catalogued: a
+- **Whole source** — an external entry's source repo whose every skill is catalogued: a
   new upstream skill gets an entry unless it is a **catalog exclusion**
   (`docs/adr/0014-each-source-repo-is-whole-or-curated.md`, which classifies
   each repo). One still missing is reported by the `whole-sources` workflow
   (ADR-0024).
-- **Curated source** — a git-subdir source repo whose skills are picked by hand: a
+- **Curated source** — an external entry's source repo whose skills are picked by hand: a
   new upstream skill is reported, never added.
 - **Catalog exclusion** — an upstream skill deliberately left without an entry,
   listed with its reason in ADR-0014. Neither added nor reported by

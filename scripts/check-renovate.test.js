@@ -6,7 +6,7 @@
 // trees that FAIL — running it against the live repo (as CI does) only ever shows
 // the passing shape, which is the one case that proves nothing.
 const assert = require('assert');
-const { coverageError, repoRootSubdirError } = require('./check-renovate.js');
+const { coverageError, entryShapeError } = require('./check-renovate.js');
 
 // Two git-subdir entries pinned the two ways renovate.json splits on — a branch
 // `ref` and a tag `ref` — a url entry (a plugin that is its whole repo, ADR-0033),
@@ -65,14 +65,21 @@ assert.match(coverageError(CATALOG, managers(BRANCH, WITH_PATH)), /matches 2 ent
 // sparse-checks-out `path` in cone mode, so `.` brings only the top-level files
 // (ADR-0033). Such an entry must be a url entry instead. ---
 const rooted = (p) => ({ name: `rooted-${p}`, source: { source: 'git-subdir', url: 'https://github.com/o/r', path: p, ref: 'main', sha: 'a' } });
-assert.strictEqual(repoRootSubdirError(CATALOG.plugins), null, 'no rooted git-subdir entry => no error');
+assert.strictEqual(entryShapeError(CATALOG.plugins), null, 'no rooted git-subdir entry => no error');
 for (const p of ['.', './', '', '/']) {
-  err = repoRootSubdirError([...CATALOG.plugins, rooted(p)]);
+  err = entryShapeError([...CATALOG.plugins, rooted(p)]);
   assert.match(err, new RegExp(`rooted-${p.replace(/[./]/g, '\\$&')}`), `path ${JSON.stringify(p)} is named`);
   assert.match(err, /"source": "url"/, 'and the fix is named');
 }
-assert.strictEqual(repoRootSubdirError([rooted('plugin'), rooted('.claude/skills/x')]), null,
+assert.strictEqual(entryShapeError([rooted('plugin'), rooted('.claude/skills/x')]), null,
   'a real subdirectory, dotted or not, is fine');
+
+// --- a url entry carrying a `path`: Claude Code ignores it and installs the whole
+// repo, so the field only misleads the next author into thinking it narrows it ---
+const urlWithPath = { name: 'url-with-path', source: { source: 'url', url: 'https://github.com/o/r', path: 'plugin', ref: 'main', sha: 'a' } };
+err = entryShapeError([...CATALOG.plugins, urlWithPath]);
+assert.match(err, /url-with-path/, 'the url entry with a path is named');
+assert.match(err, /ignores `path`/, 'and why it is wrong');
 
 // --- a catalog with no git-subdir entries at all: nothing to cover, and the
 // managers matching nothing is then correct ---
