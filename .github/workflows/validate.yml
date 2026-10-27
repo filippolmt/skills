@@ -32,7 +32,7 @@ jobs:
         # is named here, not failed: the PR has to merge for regeneration to prune it
         # (ADR-0015). A missing sha or a failed clone still fails.
         run: node scripts/gen-skills-tree.js --verify-paths
-      - name: Check Renovate regex covers every git-subdir entry
+      - name: Check Renovate regex covers every external entry
         run: node scripts/check-renovate.js
       - name: Check no local command or skill name is already taken
         run: node scripts/check-name-collisions.js
