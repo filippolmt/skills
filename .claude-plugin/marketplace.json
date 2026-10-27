@@ -1211,7 +1211,7 @@
         "url": "https://github.com/cathrynlavery/diagram-design",
         "path": ".",
         "ref": "main",
-        "sha": "97d795138448f6a739a0cebc3d9beb37a42077f1"
+        "sha": "01d472794c0065c5e5384fbb8b55798e7f0fdfed"
       },
       "description": "An opinionated editorial diagram system, drawn to one house style and branded from your own tokens: architecture, flowchart, sequence, state, ER, timeline, swimlane, quadrant, radar, Gantt, heatmap, waterfall, Sankey, fishbone, Wardley map, kanban, journey and blueprint diagrams as self-contained HTML/SVG/PNG. Bundles the diagram-design skill plus the doctor, export-diagram, import-drawio, import-excalidraw, import-mermaid and profile commands — redraw .drawio, Excalidraw or Mermaid sources at a chosen size and detail, onboard brand tokens from a website, add semantic patterns, callouts, accessible motion or sketchy styling.",
       "author": {
