@@ -205,11 +205,8 @@ function resolveEntry(entry, fetch = checkout) {
   const sub = entryPath(entry);
   if (!sha) throw new Error(`entry ${entry.name}: no sha to resolve — every external entry must pin one`);
   const repoDir = fetch(repo, url, sha);
-  // `entryPath` spells the root `.` (ADR-0033); `./x` and `x` are the same
-  // subdirectory — but a leading dot is not a prefix to strip: the real paths
-  // include `.claude/skills/…`, which loses its meaning the moment it becomes
-  // `claude/skills/…`.
-  const rel = sub === '.' ? '' : sub.replace(/^\.\//, '').replace(/\/$/, '');
+  // `entryPath` spells the root `.` and normalizes a subfolder (ADR-0033).
+  const rel = sub === '.' ? '' : sub;
   const abs = rel ? path.join(repoDir, rel) : repoDir;
   return { repo, sha, repoDir, rel, abs, exists: fs.existsSync(abs) };
 }

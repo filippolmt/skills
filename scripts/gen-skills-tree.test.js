@@ -22,6 +22,7 @@ const {
   buildFromInventory,
   checkout,
 } = require('./gen-skills-tree.js');
+const { entryPath } = require('./catalog.js');
 
 const gitsub = (name, p) => ({
   name,
@@ -208,6 +209,15 @@ test('a url entry resolves to the repo root and vendors its nested skills', () =
       assert.deepEqual(build(dest, plugins, deps), ['tdd']);
     }
   );
+});
+
+// `entryPath` normalizes once for every consumer: `./x/` and `x` are one folder,
+// while a leading dot alone is part of the name.
+test('entryPath strips `./` and a trailing slash, never a bare leading dot', () => {
+  const at = (p) => entryPath({ source: { source: 'git-subdir', path: p } });
+  assert.equal(at('./skills/tdd/'), 'skills/tdd');
+  assert.equal(at('.claude/skills/x'), '.claude/skills/x');
+  assert.equal(at('./'), '.');
 });
 
 test('build throws when the upstream ships no licence', () => {

@@ -107,7 +107,7 @@ async function raw(repo, sha, file) {
 
 async function upstreamDescription(e, sha) {
   const sub = entryPath(e);
-  const dir = sub === '.' ? '' : `${sub.replace(/\/$/, '')}/`;
+  const dir = sub === '.' ? '' : `${sub}/`;
   const manifest = await raw(repoOf(e), sha, `${dir}.claude-plugin/plugin.json`);
   if (manifest) return descriptionOf({ manifest });
   const skill = await raw(repoOf(e), sha, `${dir}SKILL.md`);

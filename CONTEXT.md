@@ -11,7 +11,7 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   marketplace offers. Every other tree in this repo is derived from it — the
   README's catalog projection, the skills tree pi reads, and native Codex packages.
 - **Plugin entry** — one object in the catalog. Either a **local plugin** (its
-  `source` is a repo-relative path, e.g. `./plugins/agent-report-guard`) or a
+  `source` is a repo-relative path, e.g. `./plugins/agent-report-guard`) or an
   **external entry**: a **git-subdir entry** (references an upstream folder,
   pins a `sha`) or a **url entry** (references a whole upstream repo, pins a
   `sha`).

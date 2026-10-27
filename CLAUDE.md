@@ -54,8 +54,8 @@ plain words: `<owner/repo> [path] [name]` appends entries, `update` reconciles e
 ones against upstream (skills added and removed, tag/`sha` bumps, refreshed
 descriptions). It also picks the `ref`, regenerates the README and validates.
 Copy the entry shape from any existing `git-subdir` entry, or from `seo-toolkit`
-for a url entry. Every external entry credits its upstream author explicitly; the marketplace owner is the publisher,
-not the default author ([ADR-0018](docs/adr/0018-credit-the-upstream-author.md)).
+for a url entry. Every external entry credits its upstream author explicitly; the
+marketplace owner is the publisher, not the default author ([ADR-0018](docs/adr/0018-credit-the-upstream-author.md)).
 
 `node scripts/gen-readme.js` generates **two** regions of the README from
 `marketplace.json`: the **Available skills** catalog projection, and the

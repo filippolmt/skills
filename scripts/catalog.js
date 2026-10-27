@@ -35,9 +35,13 @@ const isExternal = (e) => isGitSubdir(e) || isUrl(e);
 // one installs empty, which is why check-renovate rejects them.
 const isRepoRoot = (p) => ['', '.', './', '/'].includes(String(p ?? '').trim());
 
-// Where an external entry's plugin sits in its repo, with the root always `.`: a
-// url entry is the root by definition.
-const entryPath = (e) => (isUrl(e) || isRepoRoot(e.source.path) ? '.' : e.source.path);
+// Where an external entry's plugin sits in its repo, normalized once for every
+// consumer: the root is always `.` (a url entry is the root by definition), and
+// a subfolder loses a leading `./` and a trailing `/`. Only the `./` prefix goes:
+// a leading dot alone is meaningful (`.claude/skills/…`).
+const entryPath = (e) => (isUrl(e) || isRepoRoot(e.source.path)
+  ? '.'
+  : e.source.path.trim().replace(/^\.\//, '').replace(/\/$/, ''));
 
 // `owner/repo` for an external entry, null for anything else — including an
 // entry with no usable `url`, which is not a repo we can name.

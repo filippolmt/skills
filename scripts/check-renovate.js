@@ -25,6 +25,7 @@ const { readCatalog, isGitSubdir, isUrl, isExternal, isRepoRoot, root } = requir
 // `catalog` is `{ text, plugins }` from readCatalog(): the regexes are matched
 // against the file as written, because that is what Renovate itself matches.
 const externalCount = (catalog) => catalog.plugins.filter(isExternal).length;
+const entries = (n) => `entr${n === 1 ? 'y' : 'ies'}`;
 
 function coverageError(catalog, renovate) {
   const expected = externalCount(catalog);
@@ -57,8 +58,8 @@ function coverageError(catalog, renovate) {
   }
 
   if (matched !== expected) {
-    return `Renovate regex matches ${matched} entr${matched === 1 ? 'y' : 'ies'} but ` +
-      `marketplace.json has ${expected} external entr${expected === 1 ? 'y' : 'ies'}.\n` +
+    return `Renovate regex matches ${matched} ${entries(matched)} but ` +
+      `marketplace.json has ${expected} external ${entries(expected)}.\n` +
       'The customManager matchStrings in renovate.json is out of sync with the ' +
       'entry shape — sha auto-bumps will silently stop. Fix the regex.';
   }
@@ -77,12 +78,12 @@ function entryShapeError(plugins) {
   const pathed = plugins.filter((e) => isUrl(e) && e.source.path !== undefined).map((e) => e.name);
   const errors = [];
   if (rooted.length) {
-    errors.push(`git-subdir entr${rooted.length === 1 ? 'y' : 'ies'} rooted at the repo root: ${rooted.join(', ')}.\n` +
+    errors.push(`git-subdir ${entries(rooted.length)} rooted at the repo root: ${rooted.join(', ')}.\n` +
       'Claude Code installs only the top-level files of such an entry. Use ' +
       '{ "source": "url", "url", "ref", "sha" } with no `path` instead (ADR-0033).');
   }
   if (pathed.length) {
-    errors.push(`url entr${pathed.length === 1 ? 'y' : 'ies'} with a \`path\`: ${pathed.join(', ')}.\n` +
+    errors.push(`url ${entries(pathed.length)} with a \`path\`: ${pathed.join(', ')}.\n` +
       'Claude Code ignores `path` on a url source and installs the whole repo. Drop ' +
       'it, or use git-subdir for a subfolder (ADR-0033).');
   }
@@ -95,9 +96,10 @@ if (require.main === module) {
   const catalog = readCatalog();
   const renovate = JSON.parse(fs.readFileSync(path.join(root, 'renovate.json'), 'utf8'));
 
-  const error = entryShapeError(catalog.plugins) || coverageError(catalog, renovate);
-  if (error) {
-    console.error(error);
+  // Both checks run: a shape error must not hide a coverage error until the next run.
+  const errors = [entryShapeError(catalog.plugins), coverageError(catalog, renovate)].filter(Boolean);
+  if (errors.length) {
+    console.error(errors.join('\n'));
     process.exit(1);
   }
 

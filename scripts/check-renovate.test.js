@@ -81,10 +81,10 @@ err = entryShapeError([...CATALOG.plugins, urlWithPath]);
 assert.match(err, /url-with-path/, 'the url entry with a path is named');
 assert.match(err, /ignores `path`/, 'and why it is wrong');
 
-// --- a catalog with no git-subdir entries at all: nothing to cover, and the
+// --- a catalog with no external entries at all: nothing to cover, and the
 // managers matching nothing is then correct ---
 const localOnly = { text: '{"plugins":[{"name":"x","source":"./plugins/x"}]}', plugins: [{ name: 'x', source: './plugins/x' }] };
 assert.strictEqual(coverageError(localOnly, managers(BRANCH, TAG)), null,
-  'no git-subdir entries => zero matches is the right answer');
+  'no external entries => zero matches is the right answer');
 
 console.log('ok');
