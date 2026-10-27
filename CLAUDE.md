@@ -129,7 +129,7 @@ loads the file twice (`Duplicate hooks file detected`). A stale entry in
 
 ```
 bash scripts/validate.sh                  # the full list; stops at the first failure
-bash scripts/validate.sh --catalog-only   # a catalog-only change: skips the projection --checks
+bash scripts/validate.sh --catalog-only   # a catalog-only change: skips projection checks and smokes
 ```
 
 The script is the union of what CI and regeneration enforce; neither workflow
