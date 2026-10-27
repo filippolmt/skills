@@ -18,7 +18,7 @@ const offenders = fs.readdirSync(__dirname)
     .filter(Boolean));
 
 assert.deepStrictEqual(offenders, [],
-  `classify entries with catalog.js predicates (isLocal, isGitSubdir, …):\n${offenders.join('\n')}`);
+  `classify entries with catalog.js predicates (isLocal, isExternal, isGitSubdir, isUrl):\n${offenders.join('\n')}`);
 for (const spelling of ["typeof plugin.source === 'object'", 'typeof plugin?.source', 'typeof (e.source)',
   "e.source.source === 'url'", 'e.source?.source']) {
   assert.ok(RE_DERIVED.test(spelling), `the pattern catches ${spelling}`);
