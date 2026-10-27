@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { readCatalog, root } = require('./catalog.js');
+const { readCatalog, isLocal, root } = require('./catalog.js');
 const { generate } = require('./gen-distribution.js');
 const { parseFrontmatter, treeFingerprint } = require('./gen-skills-tree.js');
 const { requireRedistributionLicence, addProvenance, convertedSkillName, copySelfContained, validateSkillName, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
@@ -121,7 +121,7 @@ function validateCodexPackages(packages) {
 }
 
 function baseVersion(plugin, inventoryEntry) {
-  if (typeof plugin.source === 'object') {
+  if (!isLocal(plugin)) {
     const match = String(plugin.source.ref || '').match(/(?:^|-)v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$/);
     return match ? match[1] : '0.0.0';
   }
@@ -201,7 +201,7 @@ function writeCodexDistribution(plugins, inventory, output) {
     writeHooks(entries, packageRoot);
     writeMcp(entries, packageRoot);
 
-    const sourceId = typeof plugin.source === 'object' ? plugin.source.sha.slice(0, 12) : 'local';
+    const sourceId = !isLocal(plugin) ? plugin.source.sha.slice(0, 12) : 'local';
     const fingerprint = crypto.createHash('sha256')
       .update(treeFingerprint(packageRoot))
       .update(JSON.stringify({ name: plugin.name, description: plugin.description, dependencies: entries.map((item) => item.name) }))
@@ -211,7 +211,7 @@ function writeCodexDistribution(plugins, inventory, output) {
       version: `${baseVersion(plugin, entry)}+catalog.${sourceId}.${fingerprint}`,
       description: plugin.description,
       author: plugin.author,
-      repository: typeof plugin.source === 'object' ? plugin.source.url : undefined,
+      repository: !isLocal(plugin) ? plugin.source.url : undefined,
       skills: './skills/',
     };
     for (const key of Object.keys(manifest)) if (manifest[key] === undefined) delete manifest[key];

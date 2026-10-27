@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { posix, validatePortableRuntime } = require('./distribution.js');
+const { isLocal } = require('./catalog.js');
 
 function copySelfContained(source, destination) {
   fs.mkdirSync(destination, { recursive: true });
@@ -38,7 +39,7 @@ function parseFrontmatter(text) {
 }
 
 // A file of an external entry, upstream at the pinned sha; null for a local plugin.
-const upstreamUrl = (plugin, kind, repoPath) => (typeof plugin.source === 'object'
+const upstreamUrl = (plugin, kind, repoPath) => (!isLocal(plugin)
   ? `${plugin.source.url}/${kind}/${plugin.source.sha}/${repoPath}`
   : null);
 
@@ -93,7 +94,7 @@ const licenceIn = (dir) => fs.readdirSync(dir, { withFileTypes: true })
 
 function requireRedistributionLicence(entry, plugin) {
   const licence = licenceIn(entry.repoRoot);
-  if (typeof plugin.source === 'object' && !licence) {
+  if (!isLocal(plugin) && !licence) {
     throw new Error(`entry ${entry.name}: ${plugin.source.url} ships no licence — no licence, no right to redistribute`);
   }
   return licence;
