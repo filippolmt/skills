@@ -59,7 +59,7 @@ When a repair is requested or doctor indicates a host-specific repair, return to
 
 **Grok session expiry handling:** The grok CLI backend for X reports three auth states: `ok` (non-expired credentials), `expired` (access_token `expires_at` is past), and `missing` (never signed in). When doctor reports grok as **degraded** with an expiry timestamp, say "Grok session expired at {timestamp}; will attempt refresh at run time. If refresh fails, run `grok login --device-auth`" — not "Grok CLI is not signed in" (which misrepresents the history). The refresh attempt happens automatically at research time: an expired access_token does not prove the refresh_token is dead. If the run then fails with `auth_revoked` or `invalid_grant`, the user truly needs to re-login. **Host-facing copy:** when `sources.x.run_outcome.state` is `auth-failed` and the prior run's outcome was `ok`, say "X used {fallback} after the Grok session expired — run `grok login --device-auth` to restore first-party X." Avoid "Grok CLI is not signed in" when `run_outcome` history shows it worked recently. Avoid proactively installing grok or prompting about grok unless the user asks for first-party X search; the cookie and XAI_API_KEY paths work without a Grok subscription.
 
-**Grok build compatibility:** X research supports only `grok 1.0.46 (2765805b9442)`, optionally followed by `[stable]`. The engine checks the build before staging credentials and uses an agent profile with no local tools. If the engine reports `unsupported grok CLI version`, explain that the installed build has not passed the tool-boundary audit. Suggest removing the `LAST30DAYS_X_BACKEND=grok` pin or choosing another configured X backend. Do not bypass the build check or retry with unrestricted Grok tools.
+**Grok build compatibility:** X research needs a stable `grok` build at 1.0.46 or newer; the engine audits each new build locally (no credits, no xAI traffic) before staging credentials. `unsupported grok CLI version` means the build is older or not stable: suggest updating grok. `failed the grok tool-boundary audit` means the build exposed forbidden tools: suggest updating grok, removing the `LAST30DAYS_X_BACKEND=grok` pin, or another X backend. `could not complete the grok tool-boundary audit` retries next run. Never bypass the build check or the audit, or retry with unrestricted Grok tools.
 
 
 Then display (use "and more" if 5+ sources, otherwise list all with Oxford comma):
@@ -114,14 +114,13 @@ Known keyword-trap classes and how to handle each:
   > "{TOPIC} is a huge category - are you asking about {specific-facet-A}, {specific-facet-B}, or {specific-facet-C}? Each is a different community. Pick one or tell me the angle."
 
 **Class 5: Non-English / non-Latin-script topic (Hebrew, Arabic, Chinese, Japanese, etc.)**
-- Pattern: topic contains non-Latin characters (Hebrew [\u0590-\u05FF], Arabic [\u0600-\u06FF], CJK [\u4E00-\u9FFF], etc.).
-- Why it fails without intervention: Reddit, HackerNews, GitHub, and Polymarket are English-dominant platforms. A Hebrew brand like "קפה עלית" scores zero entity-matches across all four sources and returns only English-language noise as fallback padding.
-- Action: **Mandatory pre-flight steps for non-English topics:**
-  1. **Force `--web-backend brave`** in the engine command. Brave indexes non-English web (Ynet/Walla/Mako for Hebrew; Haber7/Hurriyet for Turkish; etc.) and is the only available source with real-language coverage.
-  2. **Skip `--subreddits` targeting unless the topic has a known English-speaking community.** Generic subreddits (r/food, r/Israel) return English noise; omit them or scope tightly to known bilingual communities.
-  3. **Note in the Resolved block:** "Non-English topic detected ([language]). Routing to `--web-backend brave`; Reddit/HN/GitHub will likely return zero on-topic results."
-  4. **X/Twitter and YouTube are the highest-value missing sources for non-English topics.** Surface this clearly in the output so the user knows what would unlock deeper coverage.
-- Do NOT skip this class check for mixed-script queries (e.g. "קפה עלית Elite Coffee") - if any non-Latin characters are present, Class 5 applies.
+- Pattern: Any non-Latin character, including mixed-script queries.
+- Risk: English-dominant Reddit, Hacker News, GitHub, and Polymarket may miss entity matches.
+- Required steps:
+  1. **Leave `--web-backend` unset unless the user requested a backend.** Configured API priority: Brave, Exa, Serper, Parallel. Without a search API key, use the host's native web search when available; otherwise retain the engine's keyless floor. Never force `--web-backend brave` for non-Latin text; explicit Brave requires a resolved `BRAVE_API_KEY`.
+  2. Skip `--subreddits` unless a known English-speaking or bilingual community covers the topic. Avoid generic communities.
+  3. In Resolved, state the language, web search in that language, and possible English-source coverage gaps. Name a backend only if the engine or host reports it available.
+  4. Flag missing X/Twitter and YouTube as the highest-value sources for deeper coverage.
 
 **Pre-Flight decision flow (do this BEFORE any WebSearch):**
 1. Read the topic. Match against Classes 1-5 above.
@@ -171,7 +170,7 @@ Before running the engine, determine every applicable targeting flag and resolve
 | `--devto-tags={t1,t2}` | Step 0.55 | Tech topics: 1-3 lowercase tags (`claudecode,ai`); enables dev.to |
 | `--tiktok-creators={c1,c2,...}` | Step 0.55 | Creator / influencer / brand topics |
 | `--ig-creators={c1,c2,...}` | Step 0.55 | Creator / brand topics |
-| `--web-backend brave` | Step 0.45 Class 5 | **MANDATORY** for non-Latin-script topics (Hebrew, Arabic, CJK, etc.) — Brave is the only source that indexes non-English web |
+| `--web-backend {backend}` | Explicit user request | Otherwise use automatic selection, including non-Latin topics. API backends require their resolved credential. |
 | `--web-backend parallel-mcp` | Explicit user request only | Use only when the user asks to use Parallel Search MCP. This opts the run into sending its search objective and queries to `https://search.parallel.ai/mcp`; never select it automatically. Anonymous use sends no authorization header; an existing `PARALLEL_API_KEY` is sent as Bearer auth. |
 | `--auto-resolve` | Fallback | WebSearch is available but Step 0.55 could not resolve everything cleanly — use as belt-and-suspenders |
 
@@ -514,7 +513,8 @@ Only show lines for platforms where something was resolved. Skip empty lines. On
 - `search_query` should be concise and keyword-heavy - match how content is TITLED on platforms
 - `ranking_query` should read like a natural language question
 - **X disambiguation:** express your disambiguation intent in `ranking_query` (e.g., "What are people saying about Rome the city in Italy, not AS Roma or Rome Odunze?") — do not phrase-quote `search_query` for X or invent X operators; the engine handles X query compilation internally.
-- **DISAMBIGUATION (mandatory for collision-prone names — the #1 cause of off-topic noise).** Anchor the `search_query` with the disambiguating context you resolved in Step 0.5 / 0.55 — the entity's company, role, or domain — when the topic name (a) is a common word or has non-product meanings ("Loom" = weaving tool, "Tella" = soccer player), OR (b) is a PERSON whose name collides with other public figures or common words. Apply the anchor to **EVERY subquery, not just the primary**, and mirror it in the `ranking_query`. Anchor on a SPECIFIC named entity (a company/product/firm), not a generic domain word. Examples: `"kevin rose digg founder"` not `"kevin rose"` (collides with Kevin Warsh / Leon Rose / Kevin Hart); `"lan xuezhao basis set ventures"` not `"lan xuezhao"` (collides with "Lanzhou" food, cdrama edits); `"trevin chow compound engineering"` not `"trevin chow"` (collides with Trevin Wax / Trevin Brown); `"tella screen recording"` not `"tella"`. The `ranking_query` carries the same anchor: `"ranking_query": "What has Kevin Rose, founder of Digg, been doing in the last 30 days?"`, not a bare `"...Kevin Rose..."`. A bare collision-prone name as a subquery is the named 2026-06-17 failure mode — "Kevin Rose" returned 55 items with ~0 about the actual founder until every subquery was anchored to "Digg founder". When the name is globally unambiguous (Kanye West, Nvidia, Peter Steinberger/OpenClaw), no anchor is needed.
+- For collision-prone people, set `"person_identity_anchors"` to bare verified org names (`["Digg"]`); evidence must name one. Only the X subject is exempt.
+- **DISAMBIGUATION (mandatory for collision-prone names — the #1 cause of off-topic noise).** Anchor the `search_query` with the disambiguating context you resolved in Step 0.5 / 0.55 — the entity's company, role, or domain — when the topic name (a) is a common word or has non-product meanings ("Loom" = weaving tool, "Tella" = soccer player), OR (b) is a PERSON whose name collides with other public figures or common words. Apply the anchor to **EVERY subquery, not just the primary**, and mirror it in the `ranking_query`. Anchor on a SPECIFIC named entity (a company/product/firm), not a generic domain word. Examples: `"kevin rose digg founder"` not `"kevin rose"` (collides with Kevin Warsh / Leon Rose / Kevin Hart); `"lan xuezhao basis set ventures"` not `"lan xuezhao"` (collides with "Lanzhou" food, cdrama edits); `"trevin chow compound engineering"` not `"trevin chow"` (collides with Trevin Wax / Trevin Brown); `"tella screen recording"` not `"tella"`. The `ranking_query` carries the same anchor: `"ranking_query": "What has Kevin Rose, founder of Digg, been doing in the last 30 days?"`, not a bare `"...Kevin Rose..."`. When the name is globally unambiguous (Kanye West, Nvidia, Peter Steinberger/OpenClaw), no anchor is needed.
 - **For comparison queries**, each main-entity subquery should include TOPIC_A's product category: "tella screen recorder review" not just "tella review".
 - NEVER include temporal phrases in search_query: no "last 30 days", "recent", month names, year numbers
 - NEVER include meta-research phrases: no "news", "updates", "public appearances"
@@ -571,6 +571,8 @@ Store your plan as `QUERY_PLAN_JSON` - you'll pass it to the script in the next 
 **IMPORTANT: Include `--x-handle={RESOLVED_HANDLE}` in the command. For comparison mode, use the single parallel comparison invocation in `comparison.md`, with outer targeting for the main entity and per-peer targeting in `--competitors-plan`. Also include the resolved Step 0.55 flags listed below.**
 
 Fill `{TOPIC}` below with the parsed topic as literal data, excluding skill-mode controls and engine CLI flags. Choose a quoted heredoc delimiter that does not occur as a line in the topic. Map recognized CLI flags separately to the engine command. Never evaluate raw slash-command text or depend on a shell `$ARGUMENTS` variable.
+
+For research topics matching administrative commands (for example `setup`), add `--research-only` to treat the topic as text. Omit it for explicitly requested administrative actions and follow their runtime flow.
 
 ```bash
 # SKILL_DIR is already bound to the directory containing the loaded root SKILL.md.
