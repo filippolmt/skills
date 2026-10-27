@@ -24,9 +24,11 @@ names those limitations.
 entry would **drop** — further skills, subagents, or commands — gets a **single
 `git-subdir` entry whose `path` is the plugin root**: installing it brings every
 artifact at once. See `api-scaffolding` and `shell-scripting` from
-`wshobson/agents`. When the plugin root *is* the repo root, the `path` is `"."`,
-never `""` — an empty path matches neither Renovate manager
-(`docs/adr/0008-whole-plugin-entries-cover-commands.md`); see `diagram-design`.
+`wshobson/agents`. When the plugin root *is* the repo root, the entry is a
+**url entry** — `"source": "url"` with `url`, `ref`, `sha` and no `path` — never
+git-subdir at `"."`: Claude Code sparse-checks-out that `path` and installs only
+the repo's top-level files (`docs/adr/0033-a-repo-root-plugin-is-a-url-entry.md`);
+see `diagram-design`. `check-renovate.js` rejects a root git-subdir `path`.
 
 `CONTEXT.md` is the domain glossary — the naming authority. Read it before you
 coin a name, and whenever a task says *bundle*, *projection*, *overlay*, *guard* or
@@ -102,7 +104,8 @@ reported the same way (`docs/adr/0029-report-upstream-descriptions-changed-since
 
 ## Gotchas
 
-**The Renovate seam.** `renovate.json` matches the `git-subdir` entry shape with
+**The Renovate seam.** `renovate.json` matches the external entry shape (`path`
+optional, so url entries match too) with
 two `customManager` regexes, told apart by `ref` (`main`/`master` vs
 `[prefix-]vX.Y.Z`). A regex that stops matching fails **silently** — zero
 matches, no error, auto-updates simply stop. So the entry shape and both regexes

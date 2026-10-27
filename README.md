@@ -637,8 +637,10 @@ To do it by hand instead:
 
 For a per-skill entry, `path` points at a folder containing `SKILL.md`. For a
 whole-plugin entry, it points at the plugin root containing
-`.claude-plugin/plugin.json`; use `"path": "."` when that is the repository root
-([ADR-0008](docs/adr/0008-whole-plugin-entries-cover-commands.md)).
+`.claude-plugin/plugin.json`. When that is the repository root, use
+`"source": "url"` with `url`, `ref` and `sha` and no `path`: a git-subdir `"."`
+installs only the top-level files
+([ADR-0033](docs/adr/0033-a-repo-root-plugin-is-a-url-entry.md)).
 
 ## Adding your own skill to a plugin
 

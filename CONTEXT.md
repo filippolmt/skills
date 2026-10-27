@@ -12,10 +12,13 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   README's catalog projection, the skills tree pi reads, and native Codex packages.
 - **Plugin entry** — one object in the catalog. Either a **local plugin** (its
   `source` is a repo-relative path, e.g. `./plugins/agent-report-guard`) or a
-  **git-subdir entry** (references an upstream folder, pins a `sha`).
-- **Whole-plugin entry** — a git-subdir entry whose `path` points at an upstream
-  plugin root (its own `.claude-plugin/plugin.json`); installing it brings every
-  bundled skill and subagent at once.
+  **external entry**: a **git-subdir entry** (references an upstream folder,
+  pins a `sha`) or a **url entry** (references a whole upstream repo, pins a
+  `sha`).
+- **Whole-plugin entry** — an external entry that points at an upstream plugin
+  root (its own `.claude-plugin/plugin.json`); installing it brings every
+  bundled skill and subagent at once. A git-subdir entry when the root is a
+  subfolder; a url entry when the root is the repo root (ADR-0033).
 - **Whole source** — a git-subdir source repo whose every skill is catalogued: a
   new upstream skill gets an entry unless it is a **catalog exclusion**
   (`docs/adr/0014-each-source-repo-is-whole-or-curated.md`, which classifies

@@ -195,6 +195,21 @@ test('unresolved names exactly the entries whose path is gone at their sha', () 
   );
 });
 
+// A plugin that IS its upstream repo is a url entry with no `path` (ADR-0033): it
+// resolves to the checkout's root and vendors the skills nested inside it.
+test('a url entry resolves to the repo root and vendors its nested skills', () => {
+  const whole = { name: 'whole', source: { source: 'url', url: 'https://github.com/acme/skills', ref: 'v1.0.0', sha: 'abc123def456' } };
+  withBuild(
+    { LICENSE: 'MIT', '.claude-plugin/plugin.json': '{"name":"whole"}', 'skills/tdd/SKILL.md': skill('tdd') },
+    [whole],
+    ({ dest, plugins, deps }) => {
+      assert.deepEqual(vendorList(plugins).map((e) => e.name), ['whole']);
+      assert.deepEqual(unresolved(plugins, deps), []);
+      assert.deepEqual(build(dest, plugins, deps), ['tdd']);
+    }
+  );
+});
+
 test('build throws when the upstream ships no licence', () => {
   withBuild({ 'skills/tdd/SKILL.md': skill('tdd') }, [entry('tdd', 'skills/tdd')], ({ dest, plugins, deps }) => {
     assert.throws(() => build(dest, plugins, deps), /no licence, no right to redistribute/);

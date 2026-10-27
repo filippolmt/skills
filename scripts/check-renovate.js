@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 // check-renovate — guard the implicit seam between renovate.json's customManager
-// regex and the git-subdir entry shape in marketplace.json.
+// regex and the external entry shape in marketplace.json.
 //
 // Renovate bumps each pinned `sha` by matching entries with a regex in
 // renovate.json. If the entry shape changes and the regex is not updated in
 // lockstep, matching silently drops to zero and auto-updates stop with no error.
-// This asserts the regex matches EXACTLY the git-subdir entries — run in CI.
+// This asserts the regex matches EXACTLY the external entries — run in CI. It also
+// rejects the one git-subdir shape that installs empty: a `path` at the repo root.
 //
 // Usage: node scripts/check-renovate.js   (exit 1 on mismatch)
 
 const fs = require('fs');
 const path = require('path');
-const { readCatalog, isGitSubdir, root } = require('./catalog.js');
+const { readCatalog, isGitSubdir, isExternal, root } = require('./catalog.js');
 
 // Pure: the message this guard exists to print, or null when the regexes cover the
 // catalog exactly. Split from the file reading because the guard's own failure mode
@@ -22,10 +23,10 @@ const { readCatalog, isGitSubdir, root } = require('./catalog.js');
 //
 // `catalog` is `{ text, plugins }` from readCatalog(): the regexes are matched
 // against the file as written, because that is what Renovate itself matches.
-const gitSubdirCount = (catalog) => catalog.plugins.filter(isGitSubdir).length;
+const externalCount = (catalog) => catalog.plugins.filter(isExternal).length;
 
 function coverageError(catalog, renovate) {
-  const expected = gitSubdirCount(catalog);
+  const expected = externalCount(catalog);
 
   // EVERY customManager counts, not just the first: the entry shape is split
   // across two of them by `ref` (a branch -> git-refs, a tag -> github-tags), and
@@ -56,7 +57,7 @@ function coverageError(catalog, renovate) {
 
   if (matched !== expected) {
     return `Renovate regex matches ${matched} entr${matched === 1 ? 'y' : 'ies'} but ` +
-      `marketplace.json has ${expected} git-subdir entr${expected === 1 ? 'y' : 'ies'}.\n` +
+      `marketplace.json has ${expected} external entr${expected === 1 ? 'y' : 'ies'}.\n` +
       'The customManager matchStrings in renovate.json is out of sync with the ' +
       'entry shape — sha auto-bumps will silently stop. Fix the regex.';
   }
@@ -64,13 +65,28 @@ function coverageError(catalog, renovate) {
   return null;
 }
 
-module.exports = { coverageError };
+// Pure: the message naming every git-subdir entry whose `path` is the repo root, or
+// null. Claude Code sparse-checks-out that path in cone mode, so the root brings
+// only the top-level files: the plugin installs with no skills, agents or hooks,
+// and `claude plugin validate` passes it. A plugin that is its whole repo is a url
+// entry (docs/adr/0033-a-repo-root-plugin-is-a-url-entry.md).
+function repoRootSubdirError(plugins) {
+  const rooted = plugins
+    .filter((e) => isGitSubdir(e) && ['', '.', './', '/'].includes(String(e.source.path ?? '').trim()))
+    .map((e) => e.name);
+  if (!rooted.length) return null;
+  return `git-subdir entr${rooted.length === 1 ? 'y' : 'ies'} rooted at the repo root: ${rooted.join(', ')}.\n` +
+    'Claude Code installs only the top-level files of such an entry. Use ' +
+    '{ "source": "url", "url", "ref", "sha" } with no `path` instead (ADR-0033).';
+}
+
+module.exports = { coverageError, repoRootSubdirError };
 
 if (require.main === module) {
   const catalog = readCatalog();
   const renovate = JSON.parse(fs.readFileSync(path.join(root, 'renovate.json'), 'utf8'));
 
-  const error = coverageError(catalog, renovate);
+  const error = repoRootSubdirError(catalog.plugins) || coverageError(catalog, renovate);
   if (error) {
     console.error(error);
     process.exit(1);
@@ -78,5 +94,5 @@ if (require.main === module) {
 
   // The count, not just "ok": zero entries and zero matches also passes, and that
   // is the one green worth being able to spot.
-  console.log(`Renovate regex matches all ${gitSubdirCount(catalog)} git-subdir entries.`);
+  console.log(`Renovate regex matches all ${externalCount(catalog)} external entries.`);
 }

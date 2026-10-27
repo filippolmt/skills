@@ -106,7 +106,9 @@ workflow, as specified by CLAUDE.md.
 2. Decide granularity. `path` points at a plugin root (has
    `.claude-plugin/plugin.json`) holding artifacts a per-skill entry would drop
    — further skills, subagents, or commands → one **whole-plugin** entry at that
-   root (`"."` when the plugin root is the repo root); skip per-skill discovery,
+   root — or, when the plugin root is the repo root, a **url entry**
+   (`"source": "url"`, `url`, `ref`, `sha`, no `path`; git-subdir `"."`
+   installs empty, ADR-0033); skip per-skill discovery,
    take `name` from the `plugin.json`. Otherwise discover skills: `path` = a skill folder →
    single entry; a parent folder → only folders under it (empty → stop,
    report); omitted → all (batch).

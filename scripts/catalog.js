@@ -19,16 +19,25 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 const MARKETPLACE = path.join(root, '.claude-plugin', 'marketplace.json');
 
-// A local plugin's `source` is a repo-relative path STRING (`./plugins/x`); a
-// git-subdir entry's is an OBJECT carrying `source: 'git-subdir'`. That single
-// difference in type is the whole classification.
+// A local plugin's `source` is a repo-relative path STRING (`./plugins/x`); an
+// external entry's is an OBJECT. That single difference in type is the whole
+// local/external classification.
 const isLocal = (e) => !!e && typeof e.source === 'string';
 const isGitSubdir = (e) => !!e && !!e.source && e.source.source === 'git-subdir';
+// An external entry is a git-subdir entry, or a url entry: a plugin that IS its
+// whole upstream repo. Claude Code sparse-checks-out a git-subdir `path`, so `.`
+// installs only the repo's top-level files; the url source clones it whole
+// (docs/adr/0033-a-repo-root-plugin-is-a-url-entry.md).
+const isUrl = (e) => !!e && !!e.source && e.source.source === 'url';
+const isExternal = (e) => isGitSubdir(e) || isUrl(e);
 
-// `owner/repo` for a git-subdir entry, null for anything else — including a
-// git-subdir entry with no usable `url`, which is not a repo we can name.
+// Where an external entry's plugin sits in its repo: a url entry is the root.
+const entryPath = (e) => (isUrl(e) ? '.' : e.source.path);
+
+// `owner/repo` for an external entry, null for anything else — including an
+// entry with no usable `url`, which is not a repo we can name.
 function repoOf(entry) {
-  if (!isGitSubdir(entry) || typeof entry.source.url !== 'string') return null;
+  if (!isExternal(entry) || typeof entry.source.url !== 'string') return null;
   return entry.source.url.replace(/^https:\/\/github\.com\//, '');
 }
 
@@ -55,4 +64,4 @@ function readCatalog() {
   return { text, plugins: JSON.parse(text).plugins || [] };
 }
 
-module.exports = { readCatalog, isLocal, isGitSubdir, isBundle, repoOf, root, MARKETPLACE };
+module.exports = { readCatalog, isLocal, isGitSubdir, isExternal, entryPath, isBundle, repoOf, root, MARKETPLACE };

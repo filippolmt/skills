@@ -17,7 +17,7 @@
 const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const { readCatalog, isGitSubdir, repoOf, root } = require('./catalog.js');
+const { readCatalog, isExternal, entryPath, repoOf, root } = require('./catalog.js');
 
 const CATALOG = '.claude-plugin/marketplace.json';
 const BOT = /\[bot\]$/;
@@ -38,7 +38,7 @@ function reviewedShas(history, acknowledged) {
   const reviewed = new Map();
   let previous = new Map();
   for (const { bot, plugins } of history) {
-    const current = new Map(plugins.filter(isGitSubdir).map((e) => [e.name, e]));
+    const current = new Map(plugins.filter(isExternal).map((e) => [e.name, e]));
     for (const [name, e] of current) {
       const before = previous.get(name);
       const touched = !before || before.source.sha !== e.source.sha || before.description !== e.description;
@@ -62,7 +62,7 @@ function fenced(label, body) {
 // to prune). The texts travel with the finding, so a review needs no second fetch.
 async function findings(catalog, reviewed, upstream) {
   const entries = [];
-  for (const e of catalog.filter(isGitSubdir)) {
+  for (const e of catalog.filter(isExternal)) {
     const base = reviewed.get(e.name);
     if (!base || base === e.source.sha) continue;
     const [before, after] = [await upstream(e, base), await upstream(e, e.source.sha)];
@@ -106,7 +106,8 @@ async function raw(repo, sha, file) {
 }
 
 async function upstreamDescription(e, sha) {
-  const dir = e.source.path === '.' ? '' : `${e.source.path.replace(/\/$/, '')}/`;
+  const sub = entryPath(e);
+  const dir = sub === '.' ? '' : `${sub.replace(/\/$/, '')}/`;
   const manifest = await raw(repoOf(e), sha, `${dir}.claude-plugin/plugin.json`);
   if (manifest) return descriptionOf({ manifest });
   const skill = await raw(repoOf(e), sha, `${dir}SKILL.md`);

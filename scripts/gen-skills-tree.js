@@ -50,7 +50,7 @@ const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
-const { readCatalog, isLocal, isGitSubdir, isBundle, repoOf, root, MARKETPLACE } = require('./catalog.js');
+const { readCatalog, isLocal, isExternal, entryPath, isBundle, repoOf, root, MARKETPLACE } = require('./catalog.js');
 const { discoverArtifacts, pruneDistributionMetadata } = require('./distribution.js');
 const { licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
 
@@ -60,11 +60,11 @@ const OVERLAYS = path.join(root, 'overlays');
 // --- pure ------------------------------------------------------------------
 
 
-// Which entries need an upstream checkout: every git-subdir entry, always. Local
+// Which entries need an upstream checkout: every external entry, always. Local
 // plugin artifacts are projected in a second pass; bundles remain filter snippets,
 // not skill directories.
 function vendorList(plugins) {
-  return plugins.filter(isGitSubdir);
+  return plugins.filter(isExternal);
 }
 
 // What lands beside every vendored copy: where it came from and under what
@@ -201,10 +201,11 @@ function copyDir(src, dst) {
 // Where an entry's `path` lands in its checkout, and whether anything is there.
 function resolveEntry(entry, fetch = checkout) {
   const repo = repoOf(entry);
-  const { url, sha, path: sub } = entry.source;
-  if (!sha) throw new Error(`entry ${entry.name}: no sha to resolve — every git-subdir entry must pin one`);
+  const { url, sha } = entry.source;
+  const sub = entryPath(entry);
+  if (!sha) throw new Error(`entry ${entry.name}: no sha to resolve — every external entry must pin one`);
   const repoDir = fetch(repo, url, sha);
-  // `.` is a whole-plugin entry's path (ADR-0008), `./x` and `x` are the same
+  // `.` is a url entry's path (ADR-0033), `./x` and `x` are the same
   // subdirectory — but a leading dot is not a prefix to strip: the real paths
   // include `.claude/skills/…`, which loses its meaning the moment it becomes
   // `claude/skills/…`.
@@ -292,7 +293,7 @@ function buildFromInventory(dest, plugins, inventory) {
       claim(name, entry.name);
       if (!dest) continue;
       const out = path.join(dest, name);
-      if (isGitSubdir(plugin)) {
+      if (isExternal(plugin)) {
         const licence = licenceIn(entry.repoRoot);
         if (!licence) throw new Error(`entry ${entry.name}: ${repoOf(plugin)} ships no licence — no licence, no right to redistribute`);
         copyDir(source, out);
@@ -326,7 +327,7 @@ function build(dest, plugins, deps = {}) {
 
   if (dest) {
     for (const entry of plugins) {
-      const sourceRoot = isGitSubdir(entry) ? resolveEntry(entry, fetch).abs : path.join(root, entry.source);
+      const sourceRoot = isExternal(entry) ? resolveEntry(entry, fetch).abs : path.join(root, entry.source);
       if (!fs.existsSync(sourceRoot) || (isLocal(entry) && isBundle(entry))) continue;
       validatePortableArtifacts({ ...entry, sourceRoot, artifacts: discoverArtifacts(entry, sourceRoot) });
     }
@@ -440,7 +441,7 @@ if (require.main === module) {
   const goneList = gone.map((n) => `  ${n}`).join('\n');
 
   if (process.argv.includes('--verify-paths')) {
-    const resolved = catalog.filter(isGitSubdir).length - gone.length;
+    const resolved = catalog.filter(isExternal).length - gone.length;
     console.log(`${resolved} catalog paths resolve at their pinned sha.`);
     if (gone.length) console.log(`Removed upstream, pruned by the next regeneration:\n${goneList}`);
     // Artifact classification belongs to pull-request validation too: a path can
