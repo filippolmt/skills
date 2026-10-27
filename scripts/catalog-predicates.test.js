@@ -1,12 +1,16 @@
-// Only catalog.js decides what kind of entry a plugin is. A script that reads
-// `typeof plugin.source` or `plugin.source.source` itself answers that question a
-// second time, and the next source kind slips past it silently: `typeof ===
-// 'object'` held for git-subdir and url alike only by accident.
-const assert = require('node:assert');
+#!/usr/bin/env node
+// Self-check that catalog.js alone classifies entries. Run: node scripts/catalog-predicates.test.js
+//
+// A script in scripts/ that reads `typeof plugin.source` or `plugin.source.source`
+// itself answers that question a second time, and the next source kind slips past
+// it silently: `typeof === 'object'` held for git-subdir and url alike only by
+// accident. Scope: the top level of scripts/, by pattern; a destructured `source`
+// is not caught.
+const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 
-const RE_DERIVED = /typeof [A-Za-z_.]*\.source\b|\.source\.source\b/;
+const RE_DERIVED = /typeof [^ ]*\.source\b|\??\.source\??\.source\b/;
 const offenders = fs.readdirSync(__dirname)
   .filter((f) => f.endsWith('.js') && !f.endsWith('.test.js') && f !== 'catalog.js')
   .flatMap((f) => fs.readFileSync(path.join(__dirname, f), 'utf8').split('\n')
@@ -15,7 +19,9 @@ const offenders = fs.readdirSync(__dirname)
 
 assert.deepStrictEqual(offenders, [],
   `classify entries with catalog.js predicates (isLocal, isGitSubdir, …):\n${offenders.join('\n')}`);
-assert.ok(RE_DERIVED.test("typeof plugin.source === 'object'") && RE_DERIVED.test("e.source.source === 'url'"),
-  'the pattern still catches both spellings');
+for (const spelling of ["typeof plugin.source === 'object'", 'typeof plugin?.source', 'typeof (e.source)',
+  "e.source.source === 'url'", 'e.source?.source']) {
+  assert.ok(RE_DERIVED.test(spelling), `the pattern catches ${spelling}`);
+}
 
 console.log('ok');

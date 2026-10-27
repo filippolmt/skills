@@ -39,9 +39,9 @@ function parseFrontmatter(text) {
 }
 
 // A file of an external entry, upstream at the pinned sha; null for a local plugin.
-const upstreamUrl = (plugin, kind, repoPath) => (!isLocal(plugin)
-  ? `${plugin.source.url}/${kind}/${plugin.source.sha}/${repoPath}`
-  : null);
+const upstreamUrl = (plugin, kind, repoPath) => (isLocal(plugin)
+  ? null
+  : `${plugin.source.url}/${kind}/${plugin.source.sha}/${repoPath}`);
 
 function validateSkillName(name) {
   if (typeof name !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) || name.length > 64) {

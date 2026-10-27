@@ -201,7 +201,7 @@ function writeCodexDistribution(plugins, inventory, output) {
     writeHooks(entries, packageRoot);
     writeMcp(entries, packageRoot);
 
-    const sourceId = !isLocal(plugin) ? plugin.source.sha.slice(0, 12) : 'local';
+    const sourceId = isLocal(plugin) ? 'local' : plugin.source.sha.slice(0, 12);
     const fingerprint = crypto.createHash('sha256')
       .update(treeFingerprint(packageRoot))
       .update(JSON.stringify({ name: plugin.name, description: plugin.description, dependencies: entries.map((item) => item.name) }))
@@ -211,7 +211,7 @@ function writeCodexDistribution(plugins, inventory, output) {
       version: `${baseVersion(plugin, entry)}+catalog.${sourceId}.${fingerprint}`,
       description: plugin.description,
       author: plugin.author,
-      repository: !isLocal(plugin) ? plugin.source.url : undefined,
+      repository: isLocal(plugin) ? undefined : plugin.source.url,
       skills: './skills/',
     };
     for (const key of Object.keys(manifest)) if (manifest[key] === undefined) delete manifest[key];

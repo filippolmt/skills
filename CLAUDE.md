@@ -128,10 +128,12 @@ loads the file twice (`Duplicate hooks file detected`). A stale entry in
 ## Validate before committing
 
 ```
-bash scripts/validate.sh   # the full list, one command per check; stops at the first failure
+bash scripts/validate.sh                  # the full list; stops at the first failure
+bash scripts/validate.sh --catalog-only   # a catalog-only change: skips the projection --checks
 ```
 
-The script is what CI and regeneration jointly enforce. Pull-request validation
+The script is the union of what CI and regeneration enforce; neither workflow
+runs it, each keeps its own subset. Pull-request validation
 deliberately does **not** compare generated package contents: a `sha` bump makes
 the committed projections stale by design, so comparing them on a pull request
 would redden every Renovate PR. Those comparisons live in the `regenerate`
