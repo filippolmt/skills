@@ -7,7 +7,7 @@ import math
 import re
 from datetime import datetime
 
-from . import http, providers, relevance, schema, signals
+from . import entity_extract, http, providers, relevance, schema, signals
 
 
 # Penalty applied when a candidate does not mention the primary entity
@@ -281,6 +281,13 @@ def rerank_candidates(
     subject role. Only it can be the topic's own account (_subject_handles);
     ``--x-related`` and discovered handles are first-party but never subjects.
     """
+    # Enforce identity before either scoring path and before first-party/rescue
+    # floors. A high score or a related author's status cannot revive a namesake.
+    if plan.person_identity_anchors:
+        candidates = [candidate for candidate in candidates if candidate.source_items and all(
+            entity_extract.matches_person_identity(item, plan.person_identity_anchors, primary_handle)
+            for item in candidate.source_items
+        )]
     handles = resolved_handles or set()
     shortlisted = candidates[:shortlist_size]
     primary_entity = _primary_entity(topic)
@@ -807,25 +814,27 @@ def _candidate_haystack(candidate: schema.Candidate) -> str:
     would see.
     """
     parts: list[str] = [candidate.title or "", candidate.snippet or ""]
-    metadata = candidate.metadata or {}
+    metadata_sources = [candidate.metadata or {}]
+    metadata_sources.extend(item.metadata or {} for item in candidate.source_items)
 
-    transcript_snippet = metadata.get("transcript_snippet") or ""
-    if isinstance(transcript_snippet, str):
-        parts.append(transcript_snippet)
+    for metadata in metadata_sources:
+        transcript_snippet = metadata.get("transcript_snippet") or ""
+        if isinstance(transcript_snippet, str):
+            parts.append(transcript_snippet)
 
-    for hl in metadata.get("transcript_highlights") or []:
-        if isinstance(hl, str):
-            parts.append(hl)
+        for hl in metadata.get("transcript_highlights") or []:
+            if isinstance(hl, str):
+                parts.append(hl)
 
-    for tc in metadata.get("top_comments") or []:
-        if isinstance(tc, dict):
-            parts.append(str(tc.get("excerpt", "") or tc.get("text", "") or ""))
-        elif isinstance(tc, str):
-            parts.append(tc)
+        for tc in metadata.get("top_comments") or []:
+            if isinstance(tc, dict):
+                parts.append(str(tc.get("excerpt", "") or tc.get("text", "") or ""))
+            elif isinstance(tc, str):
+                parts.append(tc)
 
-    for insight in metadata.get("comment_insights") or []:
-        if isinstance(insight, str):
-            parts.append(insight)
+        for insight in metadata.get("comment_insights") or []:
+            if isinstance(insight, str):
+                parts.append(insight)
 
     return " ".join(parts).lower()
 
