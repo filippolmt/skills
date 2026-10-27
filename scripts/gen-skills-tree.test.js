@@ -22,6 +22,7 @@ const {
   buildFromInventory,
   checkout,
 } = require('./gen-skills-tree.js');
+const { entryPath } = require('./catalog.js');
 
 const gitsub = (name, p) => ({
   name,
@@ -193,6 +194,30 @@ test('unresolved names exactly the entries whose path is gone at their sha', () 
       assert.deepEqual(unresolved(plugins, deps), ['gone']);
     }
   );
+});
+
+// A plugin that IS its upstream repo is a url entry with no `path` (ADR-0033): it
+// resolves to the checkout's root and vendors the skills nested inside it.
+test('a url entry resolves to the repo root and vendors its nested skills', () => {
+  const whole = { name: 'whole', source: { source: 'url', url: 'https://github.com/acme/skills', ref: 'v1.0.0', sha: 'abc123def456' } };
+  withBuild(
+    { LICENSE: 'MIT', '.claude-plugin/plugin.json': '{"name":"whole"}', 'skills/tdd/SKILL.md': skill('tdd') },
+    [whole],
+    ({ dest, plugins, deps }) => {
+      assert.deepEqual(vendorList(plugins).map((e) => e.name), ['whole']);
+      assert.deepEqual(unresolved(plugins, deps), []);
+      assert.deepEqual(build(dest, plugins, deps), ['tdd']);
+    }
+  );
+});
+
+// `entryPath` normalizes once for every consumer: `./x/` and `x` are one folder,
+// while a leading dot alone is part of the name.
+test('entryPath strips `./` and a trailing slash, never a bare leading dot', () => {
+  const at = (p) => entryPath({ source: { source: 'git-subdir', path: p } });
+  assert.equal(at('./skills/tdd/'), 'skills/tdd');
+  assert.equal(at('.claude/skills/x'), '.claude/skills/x');
+  assert.equal(at('./'), '.');
 });
 
 test('build throws when the upstream ships no licence', () => {

@@ -13,7 +13,7 @@
 // this repo green. See docs/adr/0004-rename-the-handoff-command.md.
 //
 // Only local artifacts are checked, because only they are ours to rename. What an
-// upstream git-subdir entry contains is not knowable without fetching it; its
+// upstream external entry contains is not knowable without fetching it; its
 // catalog `name` is, and that is what local names are compared against.
 //
 // Usage: node scripts/check-name-collisions.js   (exit 1 on collision)

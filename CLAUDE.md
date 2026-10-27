@@ -24,9 +24,11 @@ names those limitations.
 entry would **drop** — further skills, subagents, or commands — gets a **single
 `git-subdir` entry whose `path` is the plugin root**: installing it brings every
 artifact at once. See `api-scaffolding` and `shell-scripting` from
-`wshobson/agents`. When the plugin root *is* the repo root, the `path` is `"."`,
-never `""` — an empty path matches neither Renovate manager
-(`docs/adr/0008-whole-plugin-entries-cover-commands.md`); see `diagram-design`.
+`wshobson/agents`. When the plugin root *is* the repo root, the entry is a
+**url entry** — `"source": "url"` with `url`, `ref`, `sha` and no `path` — never
+git-subdir at `"."`: Claude Code sparse-checks-out that `path` and installs only
+the repo's top-level files (`docs/adr/0033-a-repo-root-plugin-is-a-url-entry.md`);
+see `diagram-design`. `check-renovate.js` rejects a root git-subdir `path`.
 
 `CONTEXT.md` is the domain glossary — the naming authority. Read it before you
 coin a name, and whenever a task says *bundle*, *projection*, *overlay*, *guard* or
@@ -42,7 +44,8 @@ otherwise reopen. Guard and cross-harness projection reviews also read
 ## Adding or updating an external skill
 
 External skills are **referenced upstream** via `git-subdir`: an entry names a
-folder in somebody else's repo and pins a `sha`, and that is what Claude installs.
+folder in somebody else's repo and pins a `sha`, and that is what Claude installs
+(a plugin that is the whole repo is a `url` entry instead, ADR-0033).
 The generated tree at `skills/` is the exception the reference does not cover —
 adding an entry therefore also **vendors a copy** of that upstream on the next
 regeneration, which is where redistribution is decided. Both branches run through
@@ -50,9 +53,9 @@ the **`/add-external-skill`** skill, which the agent also follows when asked in
 plain words: `<owner/repo> [path] [name]` appends entries, `update` reconciles existing
 ones against upstream (skills added and removed, tag/`sha` bumps, refreshed
 descriptions). It also picks the `ref`, regenerates the README and validates.
-Copy the entry shape from any existing `git-subdir` entry. Every external entry
-credits its upstream author explicitly; the marketplace owner is the publisher,
-not the default author ([ADR-0018](docs/adr/0018-credit-the-upstream-author.md)).
+Copy the entry shape from any existing `git-subdir` entry, or from `seo-toolkit`
+for a url entry. Every external entry credits its upstream author explicitly; the
+marketplace owner is the publisher, not the default author ([ADR-0018](docs/adr/0018-credit-the-upstream-author.md)).
 
 `node scripts/gen-readme.js` generates **two** regions of the README from
 `marketplace.json`: the **Available skills** catalog projection, and the
@@ -102,7 +105,8 @@ reported the same way (`docs/adr/0029-report-upstream-descriptions-changed-since
 
 ## Gotchas
 
-**The Renovate seam.** `renovate.json` matches the `git-subdir` entry shape with
+**The Renovate seam.** `renovate.json` matches the external entry shape (`path`
+optional, so url entries match too) with
 two `customManager` regexes, told apart by `ref` (`main`/`master` vs
 `[prefix-]vX.Y.Z`). A regex that stops matching fails **silently** — zero
 matches, no error, auto-updates simply stop. So the entry shape and both regexes
@@ -132,7 +136,7 @@ node scripts/gen-pi.js --check        # pi bundle filters match runtime closures
 node scripts/gen-codex.js --check     # native Codex packages match the inventory
 bash scripts/test-pi-package.sh       # pi 1.0.4 package/filter smoke
 bash scripts/test-codex-marketplace.sh # Codex 0.160.1 lifecycle/hook smoke
-node scripts/check-renovate.js        # Renovate regexes cover every git-subdir entry
+node scripts/check-renovate.js        # Renovate regexes cover every external entry
 node scripts/check-name-collisions.js # what validate does NOT cover
 claude plugin validate .              # marketplace + all local plugins
 ```

@@ -11,17 +11,20 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   marketplace offers. Every other tree in this repo is derived from it — the
   README's catalog projection, the skills tree pi reads, and native Codex packages.
 - **Plugin entry** — one object in the catalog. Either a **local plugin** (its
-  `source` is a repo-relative path, e.g. `./plugins/agent-report-guard`) or a
-  **git-subdir entry** (references an upstream folder, pins a `sha`).
-- **Whole-plugin entry** — a git-subdir entry whose `path` points at an upstream
-  plugin root (its own `.claude-plugin/plugin.json`); installing it brings every
-  bundled skill and subagent at once.
-- **Whole source** — a git-subdir source repo whose every skill is catalogued: a
+  `source` is a repo-relative path, e.g. `./plugins/agent-report-guard`) or an
+  **external entry**: a **git-subdir entry** (references an upstream folder,
+  pins a `sha`) or a **url entry** (references a whole upstream repo, pins a
+  `sha`).
+- **Whole-plugin entry** — an external entry that points at an upstream plugin
+  root (its own `.claude-plugin/plugin.json`); installing it brings every
+  bundled skill and subagent at once. A git-subdir entry when the root is a
+  subfolder; a url entry when the root is the repo root (ADR-0033).
+- **Whole source** — an external entry's source repo whose every skill is catalogued: a
   new upstream skill gets an entry unless it is a **catalog exclusion**
   (`docs/adr/0014-each-source-repo-is-whole-or-curated.md`, which classifies
   each repo). One still missing is reported by the `whole-sources` workflow
   (ADR-0024).
-- **Curated source** — a git-subdir source repo whose skills are picked by hand: a
+- **Curated source** — an external entry's source repo whose skills are picked by hand: a
   new upstream skill is reported, never added.
 - **Catalog exclusion** — an upstream skill deliberately left without an entry,
   listed with its reason in ADR-0014. Neither added nor reported by

@@ -568,7 +568,8 @@ Snapshot of the catalog — the source of truth is
 ## External skills (auto-updated by Renovate)
 
 For Claude, third-party entries (e.g. `mattpocock/skills`) reference their
-upstream folder via `git-subdir`; Claude installs from that reference rather than
+upstream folder via `git-subdir`, or the whole upstream repo via `url` when the
+plugin is that repo; Claude installs from that reference rather than
 from a copy in this repository. The post-merge regeneration then vendors each
 portable artifact into `skills/` for pi and into self-contained native packages
 under `.agents/plugins/` for Codex.
@@ -637,8 +638,10 @@ To do it by hand instead:
 
 For a per-skill entry, `path` points at a folder containing `SKILL.md`. For a
 whole-plugin entry, it points at the plugin root containing
-`.claude-plugin/plugin.json`; use `"path": "."` when that is the repository root
-([ADR-0008](docs/adr/0008-whole-plugin-entries-cover-commands.md)).
+`.claude-plugin/plugin.json`. When that is the repository root, use
+`"source": "url"` with `url`, `ref` and `sha` and no `path`: a git-subdir `"."`
+installs only the top-level files
+([ADR-0033](docs/adr/0033-a-repo-root-plugin-is-a-url-entry.md)).
 
 ## Adding your own skill to a plugin
 
@@ -686,7 +689,7 @@ generated regions nor command/skill name collisions:
 bash scripts/run-tests.sh                       # every node test; CI runs this same script
 node scripts/gen-readme.js --check              # README's generated regions match the catalog
 node scripts/gen-skills-tree.js --verify-paths  # resolve every path; name what regeneration will prune
-node scripts/check-renovate.js                  # Renovate regexes cover every git-subdir entry
+node scripts/check-renovate.js                  # Renovate regexes cover every external entry
 node scripts/check-name-collisions.js           # what validate does NOT cover
 claude plugin validate .                        # marketplace + all local plugins
 ```

@@ -106,7 +106,9 @@ workflow, as specified by CLAUDE.md.
 2. Decide granularity. `path` points at a plugin root (has
    `.claude-plugin/plugin.json`) holding artifacts a per-skill entry would drop
    — further skills, subagents, or commands → one **whole-plugin** entry at that
-   root (`"."` when the plugin root is the repo root); skip per-skill discovery,
+   root — or, when the plugin root is the repo root, a **url entry**
+   (`"source": "url"`, `url`, `ref`, `sha`, no `path`; git-subdir `"."`
+   installs empty, ADR-0033); skip per-skill discovery,
    take `name` from the `plugin.json`. Otherwise discover skills: `path` = a skill folder →
    single entry; a parent folder → only folders under it (empty → stop,
    report); omitted → all (batch).
@@ -153,7 +155,7 @@ skill left out of a whole source goes in its exclusions table, with the reason.
 
 ## Update mode
 
-For each `git-subdir` source repo in `marketplace.json` (or the one named):
+For each external source repo (git-subdir or url entry) in `marketplace.json` (or the one named):
 
 1. Discover the repo's current skill folders, and its latest tag or branch HEAD
    to match how its entries are pinned.
@@ -164,7 +166,8 @@ For each `git-subdir` source repo in `marketplace.json` (or the one named):
      add an entry (as in add mode). On a **curated source**, list it and **ask**;
      one declined goes in the exclusions table so it is not asked again. A repo
      with no row → ask which kind it is and add the row.
-   - **Removed** upstream (entry whose `path` no longer has `SKILL.md`) → list
+   - **Removed** upstream (a git-subdir entry whose `path` no longer has
+     `SKILL.md`, or a url entry whose repo is gone) → list
      it, **ask to confirm**, then delete the entry (see **Removing an entry**).
      Left alone, regeneration prunes it anyway once Renovate moves its `sha`
      (ADR-0015); doing it here just gets there first.
@@ -189,7 +192,7 @@ For each `git-subdir` source repo in `marketplace.json` (or the one named):
      rewrite needs no record.
 3. **Regenerate the README**, then validate.
 
-Done when every `git-subdir` repo in scope is accounted for — reconciled, or
+Done when every external source repo in scope is accounted for — reconciled, or
 reported as already current. A repo silently skipped is one Renovate keeps
 bumping while its entry list drifts.
 
@@ -220,7 +223,7 @@ The README **Available skills** catalog is a **projection** of
   { "repo": "<owner>/<repo>", "tagline": "<short label>", "kind": "skill" }
   ```
   Use `"kind": "plugin"` for a whole-plugin entry (renders a "What it bundles"
-  column). The generator **throws** if any git-subdir entry's repo has no group
+  column). The generator **throws** if any external entry's repo has no group
   (or is not omitted), so this can't be silently
   missed.
 - Run the generator:

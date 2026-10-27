@@ -16,7 +16,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { readCatalog, isGitSubdir, repoOf, root } = require('./catalog.js');
+const { readCatalog, isExternal, entryPath, repoOf, root } = require('./catalog.js');
 const { githubApi } = require('./github.js');
 
 const ADR = path.join(root, 'docs', 'adr', '0014-each-source-repo-is-whole-or-curated.md');
@@ -59,7 +59,6 @@ const excluded = (dir, patterns) => patterns.some((p) =>
   p.includes('/') ? globToRegExp(p).test(dir) : path.posix.basename(dir) === p);
 
 const wholeSources = (sources) => [...sources].filter(([, { kind }]) => kind === 'whole').map(([repo]) => repo);
-const entryPath = (e) => e.source.path || '.';
 const entriesOf = (catalog, repo) => catalog.filter((e) => repoOf(e) === repo);
 const within = (dir, pluginRoot) => pluginRoot === '.' || dir === pluginRoot || dir.startsWith(`${pluginRoot}/`);
 
@@ -101,7 +100,7 @@ async function upstreamTree(repo, sha) {
 
 async function main() {
   const { sources, exclusions } = parseAdr(fs.readFileSync(ADR, 'utf8'));
-  const catalog = readCatalog().plugins.filter(isGitSubdir);
+  const catalog = readCatalog().plugins.filter(isExternal);
   const upstream = new Map();
   for (const repo of wholeSources(sources)) {
     // Entries of one repo normally share a sha; if a bump left them apart, read each

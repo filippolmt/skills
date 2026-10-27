@@ -37,8 +37,8 @@ create/maintain bundle split was considered and dropped: `-reprint` hands back t
 
 ## Decision
 
-Every git-subdir source repo is one of two kinds, and the kind decides what
-happens to a skill upstream adds:
+Every external source repo (git-subdir or url entry, ADR-0033) is one of two
+kinds, and the kind decides what happens to a skill upstream adds:
 
 - **Whole source** — every skill the repo ships is catalogued. A new upstream
   skill gets an entry, unless it is a **catalog exclusion** listed below.

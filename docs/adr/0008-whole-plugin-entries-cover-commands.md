@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; the repo-root `"path": "."` rule superseded by ADR-0033
 ---
 
 # Whole-plugin entries cover commands, and their root may be the repo root
@@ -23,7 +23,9 @@ exception exists to prevent; only the artifact kind is new.
 - The exception's trigger is **what a per-skill entry would drop**, not which
   artifact kind does the dropping. Several skills, subagents, **or commands** —
   any of them makes the plugin root the entry's `path`.
-- A plugin root that is the repo root is written `"path": "."`, never `""`. Both
+- *(Superseded by ADR-0033: `.` installs only top-level files; a repo-root
+  plugin is a url entry.)* A plugin root that is the repo root is written
+  `"path": "."`, never `""`. Both
   Renovate `customManager` regexes require a non-empty path
   (`"path":\s*"[^"]+"`); `.` satisfies them, `""` matches neither, and an entry
   matching neither manager is never updated again — silently, with no error

@@ -1,17 +1,19 @@
 #!/usr/bin/env node
 // check-renovate — guard the implicit seam between renovate.json's customManager
-// regex and the git-subdir entry shape in marketplace.json.
+// regex and the external entry shape in marketplace.json.
 //
 // Renovate bumps each pinned `sha` by matching entries with a regex in
 // renovate.json. If the entry shape changes and the regex is not updated in
 // lockstep, matching silently drops to zero and auto-updates stop with no error.
-// This asserts the regex matches EXACTLY the git-subdir entries — run in CI.
+// This asserts the regex matches EXACTLY the external entries — run in CI. It also
+// rejects the two entry shapes that do not install what they say: a git-subdir
+// `path` at the repo root, and a url entry carrying a `path`.
 //
 // Usage: node scripts/check-renovate.js   (exit 1 on mismatch)
 
 const fs = require('fs');
 const path = require('path');
-const { readCatalog, isGitSubdir, root } = require('./catalog.js');
+const { readCatalog, isGitSubdir, isUrl, isExternal, isRepoRoot, root } = require('./catalog.js');
 
 // Pure: the message this guard exists to print, or null when the regexes cover the
 // catalog exactly. Split from the file reading because the guard's own failure mode
@@ -22,10 +24,11 @@ const { readCatalog, isGitSubdir, root } = require('./catalog.js');
 //
 // `catalog` is `{ text, plugins }` from readCatalog(): the regexes are matched
 // against the file as written, because that is what Renovate itself matches.
-const gitSubdirCount = (catalog) => catalog.plugins.filter(isGitSubdir).length;
+const externalCount = (catalog) => catalog.plugins.filter(isExternal).length;
+const entries = (n) => `entr${n === 1 ? 'y' : 'ies'}`;
 
 function coverageError(catalog, renovate) {
-  const expected = gitSubdirCount(catalog);
+  const expected = externalCount(catalog);
 
   // EVERY customManager counts, not just the first: the entry shape is split
   // across two of them by `ref` (a branch -> git-refs, a tag -> github-tags), and
@@ -55,8 +58,8 @@ function coverageError(catalog, renovate) {
   }
 
   if (matched !== expected) {
-    return `Renovate regex matches ${matched} entr${matched === 1 ? 'y' : 'ies'} but ` +
-      `marketplace.json has ${expected} git-subdir entr${expected === 1 ? 'y' : 'ies'}.\n` +
+    return `Renovate regex matches ${matched} ${entries(matched)} but ` +
+      `marketplace.json has ${expected} external ${entries(expected)}.\n` +
       'The customManager matchStrings in renovate.json is out of sync with the ' +
       'entry shape — sha auto-bumps will silently stop. Fix the regex.';
   }
@@ -64,19 +67,43 @@ function coverageError(catalog, renovate) {
   return null;
 }
 
-module.exports = { coverageError };
+// Pure: the message naming every entry whose shape misstates what Claude Code
+// installs, or null. A git-subdir `path` at the repo root is sparse-checked-out
+// in cone mode, so only the top-level files land: no skills, agents or hooks, and
+// `claude plugin validate` passes it. A url entry is cloned whole, so a `path` on
+// it is ignored and only misleads the next author
+// (docs/adr/0033-a-repo-root-plugin-is-a-url-entry.md).
+function entryShapeError(plugins) {
+  const rooted = plugins.filter((e) => isGitSubdir(e) && isRepoRoot(e.source.path)).map((e) => e.name);
+  const pathed = plugins.filter((e) => isUrl(e) && e.source.path !== undefined).map((e) => e.name);
+  const errors = [];
+  if (rooted.length) {
+    errors.push(`git-subdir ${entries(rooted.length)} rooted at the repo root: ${rooted.join(', ')}.\n` +
+      'Claude Code installs only the top-level files of such an entry. Use ' +
+      '{ "source": "url", "url", "ref", "sha" } with no `path` instead (ADR-0033).');
+  }
+  if (pathed.length) {
+    errors.push(`url ${entries(pathed.length)} with a \`path\`: ${pathed.join(', ')}.\n` +
+      'Claude Code ignores `path` on a url source and installs the whole repo. Drop ' +
+      'it, or use git-subdir for a subfolder (ADR-0033).');
+  }
+  return errors.length ? errors.join('\n') : null;
+}
+
+module.exports = { coverageError, entryShapeError };
 
 if (require.main === module) {
   const catalog = readCatalog();
   const renovate = JSON.parse(fs.readFileSync(path.join(root, 'renovate.json'), 'utf8'));
 
-  const error = coverageError(catalog, renovate);
-  if (error) {
-    console.error(error);
+  // Both checks run: a shape error must not hide a coverage error until the next run.
+  const errors = [entryShapeError(catalog.plugins), coverageError(catalog, renovate)].filter(Boolean);
+  if (errors.length) {
+    console.error(errors.join('\n'));
     process.exit(1);
   }
 
   // The count, not just "ok": zero entries and zero matches also passes, and that
   // is the one green worth being able to spot.
-  console.log(`Renovate regex matches all ${gitSubdirCount(catalog)} git-subdir entries.`);
+  console.log(`Renovate regex matches all ${externalCount(catalog)} external entries.`);
 }

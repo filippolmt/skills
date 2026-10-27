@@ -6,14 +6,17 @@
 // trees that FAIL — running it against the live repo (as CI does) only ever shows
 // the passing shape, which is the one case that proves nothing.
 const assert = require('assert');
-const { coverageError } = require('./check-renovate.js');
+const { coverageError, entryShapeError } = require('./check-renovate.js');
 
 // Two git-subdir entries pinned the two ways renovate.json splits on — a branch
-// `ref` and a tag `ref` — plus a local plugin, which no manager should claim.
+// `ref` and a tag `ref` — a url entry (a plugin that is its whole repo, ADR-0033),
+// which carries no `path` and must be claimed all the same, plus a local plugin,
+// which no manager should claim.
 const TEXT = `{
   "plugins": [
     { "name": "branch-pinned", "source": { "source": "git-subdir", "url": "https://github.com/o/r", "path": "skills/a", "ref": "main", "sha": "aaaaaaa" } },
     { "name": "tag-pinned", "source": { "source": "git-subdir", "url": "https://github.com/o/r", "path": "skills/b", "ref": "skill-v1.2.3", "sha": "bbbbbbb" } },
+    { "name": "whole-repo", "source": { "source": "url", "url": "https://github.com/o/whole", "ref": "v2.0.0", "sha": "ccccccc" } },
     { "name": "local-plugin", "source": "./plugins/local" }
   ]
 }`;
@@ -25,16 +28,16 @@ const BRANCH = '"ref": "(?:main|master)", "sha": "(?<currentDigest>[^"]+)"';
 const TAG = '"ref": "[a-z-]*v[0-9][^"]*", "sha": "(?<currentDigest>[^"]+)"';
 const managers = (...matchStrings) => ({ customManagers: matchStrings.map((m) => ({ matchStrings: [m] })) });
 
-// --- covered: the two managers together claim both git-subdir entries, and the
+// --- covered: the two managers together claim every external entry, and the
 // local plugin is not expected to be claimed by either ---
 assert.strictEqual(coverageError(CATALOG, managers(BRANCH, TAG)), null,
-  'both managers together cover every git-subdir entry');
+  'both managers together cover every external entry');
 
 // --- the failure this guard exists for: one manager's shape stops matching, so
 // its entries silently drop out of Renovate's reach ---
 let err = coverageError(CATALOG, managers(BRANCH));
-assert.match(err, /matches 1 entry but/, 'the uncovered entry is counted');
-assert.match(err, /has 2 git-subdir entries/, 'against the number that should be covered');
+assert.match(err, /matches 1 entry but/, 'the uncovered entries are counted');
+assert.match(err, /has 3 external entries/, 'against the number that should be covered');
 assert.match(err, /auto-bumps will silently stop/, 'and says what breaks');
 
 // --- and the opposite, which is also both faults at once: the branch entry is
@@ -53,10 +56,35 @@ assert.match(coverageError(CATALOG, {}), /no customManager with matchStrings fou
 assert.match(coverageError(CATALOG, { customManagers: [{ description: 'no matchStrings' }] }),
   /no customManager with matchStrings found/, 'a manager without matchStrings is not a manager');
 
-// --- a catalog with no git-subdir entries at all: nothing to cover, and the
+// --- the url entry alone: a manager that still demands a `path` misses it ---
+const WITH_PATH = '"path": "[^"]+", "ref": "[a-z-]*v[0-9][^"]*", "sha": "(?<currentDigest>[^"]+)"';
+assert.match(coverageError(CATALOG, managers(BRANCH, WITH_PATH)), /matches 2 entries but/,
+  'a tag regex requiring `path` drops the url entry');
+
+// --- a git-subdir entry rooted at the repo root installs EMPTY: Claude Code
+// sparse-checks-out `path` in cone mode, so `.` brings only the top-level files
+// (ADR-0033). Such an entry must be a url entry instead. ---
+const rooted = (p) => ({ name: `rooted-${p}`, source: { source: 'git-subdir', url: 'https://github.com/o/r', path: p, ref: 'main', sha: 'a' } });
+assert.strictEqual(entryShapeError(CATALOG.plugins), null, 'no rooted git-subdir entry => no error');
+for (const p of ['.', './', '', '/']) {
+  err = entryShapeError([...CATALOG.plugins, rooted(p)]);
+  assert.match(err, new RegExp(`rooted-${p.replace(/[./]/g, '\\$&')}`), `path ${JSON.stringify(p)} is named`);
+  assert.match(err, /"source": "url"/, 'and the fix is named');
+}
+assert.strictEqual(entryShapeError([rooted('plugin'), rooted('.claude/skills/x')]), null,
+  'a real subdirectory, dotted or not, is fine');
+
+// --- a url entry carrying a `path`: Claude Code ignores it and installs the whole
+// repo, so the field only misleads the next author into thinking it narrows it ---
+const urlWithPath = { name: 'url-with-path', source: { source: 'url', url: 'https://github.com/o/r', path: 'plugin', ref: 'main', sha: 'a' } };
+err = entryShapeError([...CATALOG.plugins, urlWithPath]);
+assert.match(err, /url-with-path/, 'the url entry with a path is named');
+assert.match(err, /ignores `path`/, 'and why it is wrong');
+
+// --- a catalog with no external entries at all: nothing to cover, and the
 // managers matching nothing is then correct ---
 const localOnly = { text: '{"plugins":[{"name":"x","source":"./plugins/x"}]}', plugins: [{ name: 'x', source: './plugins/x' }] };
 assert.strictEqual(coverageError(localOnly, managers(BRANCH, TAG)), null,
-  'no git-subdir entries => zero matches is the right answer');
+  'no external entries => zero matches is the right answer');
 
 console.log('ok');
