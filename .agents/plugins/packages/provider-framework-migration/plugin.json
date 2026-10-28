@@ -1,6 +1,6 @@
 {
   "name": "provider-framework-migration",
-  "version": "0.0.0+catalog.f706481af9b8.9900d3336890",
+  "version": "0.0.0+catalog.bc6b14b77481.66fc1ff7275a",
   "description": "Migrate Terraform provider resources and data sources from Plugin SDKv2 to the Plugin Framework, muxing both in one provider and mapping schemas per resource.",
   "author": {
     "name": "HashiCorp",
