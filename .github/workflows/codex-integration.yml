@@ -48,7 +48,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
       - name: Install the tested Codex CLI
         run: npm install --global @openai/codex@0.160.1
       - name: Materialize Codex packages for this revision
