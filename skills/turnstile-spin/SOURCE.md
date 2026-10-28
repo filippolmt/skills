@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/cloudflare/skills/tree/86505e44f87d801aa1864a3c4109e9a8ae5c409f/skills/turnstile-spin
-- **Commit**: `86505e44f87d801aa1864a3c4109e9a8ae5c409f`
+- **Upstream**: https://github.com/cloudflare/skills/tree/49a31e0b3229ccdffe4944be9c61bc7481d1d432/skills/turnstile-spin
+- **Commit**: `49a31e0b3229ccdffe4944be9c61bc7481d1d432`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `turnstile-spin` in `.claude-plugin/marketplace.json`
