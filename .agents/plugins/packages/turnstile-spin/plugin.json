@@ -1,6 +1,6 @@
 {
   "name": "turnstile-spin",
-  "version": "0.0.0+catalog.86505e44f87d.9060fb999b84",
+  "version": "0.0.0+catalog.49a31e0b3229.51687a1ce19b",
   "description": "Set up, repair, or migrate to Cloudflare Turnstile bot verification in an existing frontend and backend, including server-side Siteverify.",
   "author": {
     "name": "Cloudflare",

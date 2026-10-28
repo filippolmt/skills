@@ -1,6 +1,6 @@
 {
   "name": "cf-cli",
-  "version": "0.0.0+catalog.86505e44f87d.cf65a41f49c0",
+  "version": "0.0.0+catalog.49a31e0b3229.e858a76a1232",
   "description": "Cloudflare's official cf CLI (beta) for the public Cloudflare API and Workers projects.",
   "author": {
     "name": "Cloudflare",
