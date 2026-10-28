@@ -1,6 +1,6 @@
 {
   "name": "provider-resources",
-  "version": "0.0.0+catalog.f706481af9b8.768b1e4e0121",
+  "version": "0.0.0+catalog.bc6b14b77481.6d7a6aed6f9c",
   "description": "Implement Terraform provider resources and data sources with the Plugin Framework: CRUD, schema design, plan modifiers and validators, waiters, import, and acceptance test coverage.",
   "author": {
     "name": "HashiCorp",

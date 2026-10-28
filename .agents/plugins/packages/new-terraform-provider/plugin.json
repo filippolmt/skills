@@ -1,6 +1,6 @@
 {
   "name": "new-terraform-provider",
-  "version": "0.0.0+catalog.f706481af9b8.7848deb21d4a",
+  "version": "0.0.0+catalog.bc6b14b77481.9963dc6c7939",
   "description": "Scaffold a new Terraform provider with the Plugin Framework: workspace layout, Go module, provider server main.go, and a provider.go with schema and Configure.",
   "author": {
     "name": "HashiCorp",
