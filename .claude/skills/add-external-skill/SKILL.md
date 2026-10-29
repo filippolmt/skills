@@ -157,8 +157,17 @@ skill left out of a whole source goes in its exclusions table, with the reason.
 
 For each external source repo (git-subdir or url entry) in `marketplace.json` (or the one named):
 
-1. Discover the repo's current skill folders, and its latest tag or branch HEAD
-   to match how its entries are pinned.
+1. Run the read-only freshness audit before changing pins:
+   ```bash
+   node scripts/check-upstream-versions.js
+   # Scope an update, or preflight a particular tag:
+   node scripts/check-upstream-versions.js <owner/repo> [candidate-tag]
+   ```
+   It reports each current ref/SHA against the latest tag in its own series or
+   branch HEAD, and branch-to-tag candidates as ahead, identical, behind or
+   diverged relative to the pinned SHA. Exit 1 means review needed; exit 2 means
+   incomplete: resolve the API error or truncated tree before proceeding.
+   Discover skill folders at the proposed SHA, not just default-branch HEAD.
 2. Reconcile against the existing entries:
    - **New** upstream folder (no entry) → look the repo up in
      `docs/adr/0014-each-source-repo-is-whole-or-curated.md`. Skip a **catalog
@@ -171,11 +180,23 @@ For each external source repo (git-subdir or url entry) in `marketplace.json` (o
      it, **ask to confirm**, then delete the entry (see **Removing an entry**).
      Left alone, regeneration prunes it anyway once Renovate moves its `sha`
      (ADR-0015); doing it here just gets there first.
-   - **Branch-pinned repo that now tags** → when a `main`/`master` entry's repo
-     publishes a tag of the shape *Pinning the `ref`* names (`vX.Y.Z`, optionally
-     prefixed), re-pin every entry of that repo as tag-pinned; the next bullet
-     moves it. When that tag does not descend from the pinned `sha`, ask first:
-     the switch would downgrade or leave the pinned history.
+   - **Branch-pinned repo that now tags** → choose a tag series explicitly when
+     several exist. Before proposing a behind/diverged candidate, run the scoped
+     audit with that tag. It compares pinned and candidate trees for absent
+     skill/plugin paths and removed nested skills, including repo-root plugins,
+     and lists possible new locations by name; a name match is a lead, not proof of a move.
+     Complete the loss/move inventory **before asking for downgrade approval**:
+     compare the pinned and candidate trees for every entry, including whole-plugin
+     artifacts, runtime closure, and `scripts/distribution-meta.json` source and
+     evidence paths. Inspect possible moves to distinguish relocation from loss.
+     Show the user the current and proposed ref/SHA, history relation, every
+     removed or moved skill/artifact, affected catalog names and bundles, and
+     proposed path/metadata changes. Report no losses explicitly when none exist.
+     Only then ask to confirm the downgrade/history change and any removals;
+     approval of an update alone is not approval of these losses. After approval,
+     re-pin the affected entries to the chosen tag and apply the agreed moves or
+     removals (see **Removing an entry**). An ahead/identical candidate can move
+     directly after verifying its paths and runtime closure.
    - Bump each surviving entry to the SHA its `ref` now resolves to: a
      tag-pinned entry moves `ref` and `sha` together to the latest tag, keeping
      its tag series; a branch-pinned entry takes that branch's HEAD. (Renovate
@@ -232,6 +253,9 @@ The README **Available skills** catalog is a **projection** of
   ```
 
 ## Finish
+
+When delegating distribution work or checking full packages, follow
+`docs/agents/distribution-validation.md` for the acceptance matrix and validation order.
 
 ```bash
 bash scripts/validate.sh --catalog-only

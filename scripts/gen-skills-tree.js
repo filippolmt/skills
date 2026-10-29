@@ -26,8 +26,8 @@
 //
 // Usage:
 //   node scripts/gen-skills-tree.js                 # prune, then rewrite skills/ in place
-//   node scripts/gen-skills-tree.js --verify-paths  # resolve every path, name what a
-//                                                   # regeneration will prune, copy nothing
+//   node scripts/gen-skills-tree.js --verify-paths  # resolve paths, classify artifacts,
+//                                                   # build in temp; never change projections
 //   node scripts/gen-skills-tree.js --check         # exit 1 if the tree is out of date
 //                                                   # or the catalog has something to prune
 //
@@ -39,7 +39,9 @@
 // is actionable: inside the regeneration job, as the signal that there is something
 // to regenerate. For the same reason `--verify-paths` does not fail on an entry
 // upstream removed: the Renovate PR moving its `sha` has to merge for regeneration
-// to run at all, and regeneration is where the prune happens.
+// to run at all, and regeneration is where the prune happens. Verification builds
+// the surviving inventory in temp too, so overlay drift fails before merge without
+// comparing or rewriting the intentionally stale committed projections.
 //
 // The pure functions (parseFrontmatter, renderSource, vendorList, treeFingerprint,
 // breakingBump, pruneManifest, formatLike) are exported for the test; the network
@@ -256,7 +258,8 @@ function prune(text, gone) {
 // that would silently lose a skill — an unresolved entry included, since the CLI
 // prunes those before it builds. `deps` exists so the test can hand over a fake
 // checkout and exercise those throws without a network.
-function buildFromInventory(dest, plugins, inventory) {
+function buildFromInventory(dest, plugins, inventory, deps = {}) {
+  const overlays = deps.overlays || OVERLAYS;
   for (const entry of inventory) {
     const plugin = plugins.find((item) => item.name === entry.name);
     if (!plugin) throw new Error(`inventory entry has no catalog entry: ${entry.name}`);
@@ -296,7 +299,7 @@ function buildFromInventory(dest, plugins, inventory) {
         copyDir(source, out);
         const own = licenceIn(out);
         copyAttribution(entry.repoRoot, out);
-        const patch = path.join(OVERLAYS, `${name}.patch`);
+        const patch = path.join(overlays, `${name}.patch`);
         const overlay = fs.existsSync(patch);
         if (overlay) git(out, 'apply', patch);
         fs.writeFileSync(path.join(out, 'SOURCE.md'), renderSource({
@@ -314,6 +317,17 @@ function buildFromInventory(dest, plugins, inventory) {
     }
   }
   return [...written.keys()].sort();
+}
+
+function verifyFromInventory(plugins, inventory, deps = {}) {
+  const staging = fs.mkdtempSync(path.join(os.tmpdir(), 'skills-tree-verify-'));
+  try {
+    const names = buildFromInventory(staging, plugins, inventory, deps);
+    validateSkillDirectories(staging);
+    return names;
+  } finally {
+    fs.rmSync(staging, { recursive: true, force: true });
+  }
 }
 
 function build(dest, plugins, deps = {}) {
@@ -425,6 +439,7 @@ module.exports = {
   unresolved,
   build,
   buildFromInventory,
+  verifyFromInventory,
   checkout,
   resolveEntry,
 };
@@ -443,7 +458,12 @@ if (require.main === module) {
     if (gone.length) console.log(`Removed upstream, pruned by the next regeneration:\n${goneList}`);
     // Artifact classification belongs to pull-request validation too: a path can
     // still resolve while a new command, agent, hook, or MCP capability appears.
-    execFileSync('node', [path.join(root, 'scripts', 'gen-distribution.js'), '--verify'], { stdio: 'inherit' });
+    const metadata = JSON.parse(fs.readFileSync(path.join(root, 'scripts', 'distribution-meta.json'), 'utf8'));
+    const { generate } = require('./gen-distribution.js');
+    const { inventory } = generate(catalog, metadata, {}, { allowMissing: true });
+    console.log(`${inventory.length} catalog entries have classified Codex and pi artifacts.`);
+    const names = verifyFromInventory(catalog, inventory);
+    console.log(`${names.length} skills build with overlays in temp; committed projections unchanged.`);
     process.exit(0);
   }
   if (check && gone.length) {

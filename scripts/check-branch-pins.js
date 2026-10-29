@@ -100,4 +100,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { releaseTagPattern, branchPins, latestTags, describe };
+module.exports = { releaseTagPattern, branchPins, latestTags, describe, tagNames };

@@ -488,12 +488,9 @@ Snapshot of the catalog — the source of truth is
 
 | Skill | What it does |
 |---|---|
-| `new-terraform-provider` | Scaffold a new Terraform provider with the Plugin Framework: workspace layout, Go module, provider server main.go, and a provider.go with schema and Configure. |
-| `provider-actions` | Implement Terraform provider actions with the Plugin Framework — imperative operations that run at lifecycle events (before/after create, update, destroy). |
-| `provider-configuration` | Implement Terraform provider configuration and authentication with the Plugin Framework: credential schema, env var fallbacks, credential chains, unknown-value guards, and secret redaction. |
+| `new-terraform-provider` | Scaffold a Terraform Plugin Framework provider workspace with a Go module and provider server main.go. |
+| `provider-actions` | Implement Terraform provider actions with the Plugin Framework — imperative operations that run before or after create and update. |
 | `provider-docs` | Create, update, and review Terraform provider documentation for the Registry using tfplugindocs templates and schema descriptions. |
-| `provider-ephemeral-resources` | Implement Terraform provider ephemeral resources with the Plugin Framework: Open/Renew/Close lifecycle, ephemeral schema design, and flowing values into write-only attributes. |
-| `provider-framework-migration` | Migrate Terraform provider resources and data sources from Plugin SDKv2 to the Plugin Framework, muxing both in one provider and mapping schemas per resource. |
 | `provider-resources` | Implement Terraform provider resources and data sources with the Plugin Framework: CRUD, schema design, plan modifiers and validators, waiters, import, and acceptance test coverage. |
 | `provider-test-patterns` | Terraform provider acceptance test patterns with terraform-plugin-testing: TestCase/TestStep, state and plan checks, cross-step comparisons, import testing, and sweepers. |
 | `run-acceptance-tests` | Run Terraform provider acceptance tests (TestAcc*): required environment variables and diagnosing failing or suspiciously passing tests. |
@@ -579,6 +576,19 @@ Claude plugin. Whole-plugin entries instead point at an upstream plugin root so
 its commands, agents, hooks, and further skills stay together. An entry can also
 project several discovered artifacts into pi and Codex. Renovate updates the
 pinned commit when upstream moves; eligible updates merge automatically.
+
+Check whether catalog pins are current (separately from package validity):
+
+```bash
+node scripts/check-upstream-versions.js
+node scripts/check-upstream-versions.js hashicorp/agent-skills v1.0.0
+```
+
+The optional repo/tag scopes the read-only audit and preflights absent paths and
+possible relocations before a downgrade decision. Exit 1 means updates or tag
+candidates need review; exit 2 means the audit could not complete. Set
+`GITHUB_TOKEN` for authenticated API limits. This checks catalog pins, not installed
+copies, and does not replace Renovate.
 
 The fastest way to add one is the `/add-external-skill` skill, which automates
 every step below. Point it at a skill folder to add one skill, or at a repo /
@@ -688,14 +698,20 @@ generated regions nor command/skill name collisions:
 ```
 bash scripts/run-tests.sh                       # every node test; CI runs this same script
 node scripts/gen-readme.js --check              # README's generated regions match the catalog
-node scripts/gen-skills-tree.js --verify-paths  # resolve every path; name what regeneration will prune
+node scripts/gen-skills-tree.js --verify-paths  # classify artifacts and build in temp, including overlays
 node scripts/check-renovate.js                  # Renovate regexes cover every external entry
 node scripts/check-name-collisions.js           # what validate does NOT cover
 claude plugin validate .                        # marketplace + all local plugins
 ```
 
-`bash scripts/validate.sh --catalog-only` runs this list in one command; without
-the flag it also runs the projection checks and package smoke tests.
+`bash scripts/validate.sh --catalog-only` runs this list in one command. For full
+validation without changing your checkout, use `bash scripts/validate.sh --isolated`:
+it snapshots committed, staged, unstaged and non-ignored untracked files into a
+disposable worktree, runs the offline tests first, then materializes projections
+and runs their checks and package smokes. The temporary worktree is removed on
+success or failure. The bare command instead checks already-materialized outputs
+in place. See [distribution validation](docs/agents/distribution-validation.md)
+for delegated work and its acceptance matrix.
 
 Output must be clean — warnings count as failures. Path-filtered pi and Codex
 integration workflows separately materialize the current revision in their

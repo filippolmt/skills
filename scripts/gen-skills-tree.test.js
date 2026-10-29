@@ -20,6 +20,7 @@ const {
   unresolved,
   build,
   buildFromInventory,
+  verifyFromInventory,
   checkout,
 } = require('./gen-skills-tree.js');
 const { entryPath } = require('./catalog.js');
@@ -299,6 +300,33 @@ test('shared inventory projects upstream, local, and converted skills together',
   } finally {
     fs.rmSync(repo, { recursive: true, force: true });
     fs.rmSync(dest, { recursive: true, force: true });
+  }
+});
+
+test('verification applies overlays without changing upstream or committed projections', () => {
+  const repo = fakeRepo({ LICENSE: 'MIT', 'external/SKILL.md': skill('core') + 'Original context.\nOriginal instruction.\n' });
+  const overlays = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-overlays-'));
+  const plugins = [entry('external', 'external')];
+  const inventory = [{
+    name: 'external', sourceRoot: path.join(repo, 'external'), repoRoot: repo,
+    artifacts: [{ kind: 'skill', path: 'SKILL.md' }],
+  }];
+  const source = path.join(repo, 'external', 'SKILL.md');
+  const patch = '--- a/SKILL.md\n+++ b/SKILL.md\n@@ -7,2 +7,2 @@\n Original context.\n-Original instruction.\n+Portable instruction.\n';
+  const committed = treeFingerprint(path.join(__dirname, '..', 'skills'));
+  try {
+    fs.writeFileSync(path.join(overlays, 'core.patch'), patch);
+    const before = treeFingerprint(repo);
+    assert.deepEqual(verifyFromInventory(plugins, inventory, { overlays }), ['core']);
+    assert.equal(treeFingerprint(repo), before);
+    fs.writeFileSync(source, fs.readFileSync(source, 'utf8').replace('Original context.', 'New upstream context.'));
+    const changed = treeFingerprint(repo);
+    assert.throws(() => verifyFromInventory(plugins, inventory, { overlays }), /patch does not apply/);
+    assert.equal(treeFingerprint(repo), changed);
+    assert.equal(treeFingerprint(path.join(__dirname, '..', 'skills')), committed);
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+    fs.rmSync(overlays, { recursive: true, force: true });
   }
 });
 

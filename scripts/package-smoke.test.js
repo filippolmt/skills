@@ -56,6 +56,7 @@ function runSmoke(harness, env = {}) {
     const script = `test-${harness === 'pi' ? 'pi-package' : 'codex-marketplace'}.sh`;
     write(`scripts/${script}`, fs.readFileSync(path.join(__dirname, script)));
     write('scripts/test-codex-hooks.mjs', '// Hook behavior is covered by the real CLI smoke.\n');
+    write('scripts/codex-smoke-warnings.js', fs.readFileSync(path.join(__dirname, 'codex-smoke-warnings.js')));
     const names = ['tdd', 'code-review', 'domain-modeling', 'new-upstream-skill'];
     for (const name of names) write(`skills/${name}/SKILL.md`, `---\nname: ${name}\ndescription: Fixture\n---\n`);
     write('.agents/plugins/marketplace.json', JSON.stringify({ plugins: names.map(name => ({ name })) }));

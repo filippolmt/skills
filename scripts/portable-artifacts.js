@@ -66,8 +66,47 @@ function validatePortableArtifacts(entry, harness) {
   }
 }
 
+// Read only the scalar subset we can validate without a YAML dependency; never
+// silently skip an invocation hidden in an unsupported YAML representation.
+function validateDefaultPrompt(file, names) {
+  if (!fs.existsSync(file)) return;
+  const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^\s*#/.test(line) || !/\bdefault_prompt["']?\s*:/.test(line)) continue;
+    const fail = () => { throw new Error(`${file}:${i + 1}: unsupported default_prompt YAML; use a single-line plain or quoted string`); };
+    const match = /^( *)(?:default_prompt|"default_prompt"|'default_prompt'):[ \t]*(.*)$/.exec(line);
+    if (!match) fail();
+    const next = lines.slice(i + 1).find((item) => item.trim() && !/^\s*#/.test(item));
+    if (next && next.search(/\S/) > match[1].length) fail();
+    const raw = match[2];
+    let prompt;
+    if (raw.startsWith('"')) {
+      const quoted = /^("(?:[^"\\]|\\.)*")[ \t]*(?:#.*)?$/.exec(raw);
+      if (!quoted) fail();
+      try { prompt = JSON.parse(quoted[1]); } catch { fail(); }
+    } else if (raw.startsWith("'")) {
+      const quoted = /^'((?:[^']|'')*)'[ \t]*(?:#.*)?$/.exec(raw);
+      if (!quoted) fail();
+      prompt = quoted[1].replaceAll("''", "'");
+    } else {
+      if (!raw || /^[>|&*!\[\]{}%@`]/.test(raw) || /:\s/.test(raw)) fail();
+      prompt = raw.replace(/\s+#.*$/, '');
+    }
+    // Codex skill names are lowercase kebab-case; uppercase/underscore shell
+    // variables such as $HOME and $TF_VAR_region are not skill invocations.
+    for (const invocation of prompt.matchAll(/\$([a-z0-9]+(?:-[a-z0-9]+)*)(?![A-Za-z0-9_-])/g)) {
+      if (!names.has(invocation[1])) {
+        throw new Error(`${file}: default_prompt invokes $${invocation[1]}, but no such skill exists in this generated distribution`);
+      }
+    }
+  }
+}
+
 function validateSkillDirectories(skillsRoot) {
-  for (const skill of fs.readdirSync(skillsRoot, { withFileTypes: true })) {
+  const skills = fs.readdirSync(skillsRoot, { withFileTypes: true });
+  const names = new Set(skills.filter((skill) => skill.isDirectory()).map((skill) => skill.name));
+  for (const skill of skills) {
     if (!skill.isDirectory()) throw new Error(`unexpected entry in skills/: ${skill.name}`);
     const root = path.join(skillsRoot, skill.name);
     const walk = (dir) => {
@@ -86,6 +125,7 @@ function validateSkillDirectories(skillsRoot) {
     validateSkillName(name);
     if (name !== skill.name) throw new Error(`${skill.name}: directory does not match skill name ${name}`);
     if (!/^description:[ \t]*(?:\S.*|[>|])[ \t]*$/m.test(text)) throw new Error(`${skill.name}: missing skill description`);
+    validateDefaultPrompt(path.join(root, 'agents', 'openai.yaml'), names);
   }
 }
 

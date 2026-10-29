@@ -9,10 +9,27 @@ for command_name in codex jq node; do
 done
 
 repo="$(git rev-parse --show-toplevel)"
-local_home="$(mktemp -d "$repo/.codex-marketplace-test.XXXXXX")"
-git_home="$(mktemp -d "$repo/.codex-marketplace-git-test.XXXXXX")"
-cleanup() { rm -rf "$local_home" "$git_home" "${upgrade_err:-}"; }
+# Codex refuses helper aliases beneath the OS temp directory, even for temp checkouts.
+smoke_home="$(mktemp -d "$HOME/.codex-smoke.XXXXXX")"
+cleanup() { rm -rf "$smoke_home"; }
 trap cleanup EXIT
+local_home="$smoke_home/local"
+git_home="$smoke_home/git"
+mkdir "$local_home" "$git_home"
+
+codex() {
+  local output status=0
+  output="$(command codex "$@" 2>"$smoke_home/stderr")" || status=$?
+  printf '%s\n' "$output"
+  cat "$smoke_home/stderr" >&2
+  if ! node "$repo/scripts/codex-smoke-warnings.js" "$smoke_home/stderr" <<<"$output"; then
+    touch "$smoke_home/warning"
+    printf '%s\n' "$output" >&2
+    printf 'Codex smoke rejected warning output\n' >&2
+    return 1
+  fi
+  return "$status"
+}
 
 export CODEX_HOME="$local_home"
 codex plugin marketplace add "$repo" --json |
@@ -40,8 +57,8 @@ node "$repo/scripts/test-codex-hooks.mjs"
 
 codex plugin remove tdd@filippo-skills --json |
   jq -e '.pluginId == "tdd@filippo-skills"' >/dev/null
-if codex plugin list --marketplace filippo-skills --json |
-  jq -e '.installed[] | select(.pluginId == "tdd@filippo-skills")' >/dev/null; then
+remaining="$(codex plugin list --marketplace filippo-skills --json)"
+if jq -e '.installed[] | select(.pluginId == "tdd@filippo-skills")' <<<"$remaining" >/dev/null; then
   printf 'removed plugin is still installed\n' >&2
   exit 1
 fi
@@ -54,14 +71,14 @@ codex plugin add tdd@filippo-skills --json |
 # Codex gives the upgrade's git clone a fixed 30s, which a slow link can miss (#438).
 # Only that timeout is retried, after a pause; any other failure fails at once.
 attempts=3
-upgrade_err="$(mktemp)"
+upgrade_err="$smoke_home/upgrade-stderr"
 for attempt in $(seq "$attempts"); do
   if upgrade="$(codex plugin marketplace upgrade filippo-skills --json 2>"$upgrade_err")" &&
     jq -e '.selectedMarketplaces == ["filippo-skills"] and (.upgradedRoots | length == 1) and (.errors | length == 0)' >/dev/null <<<"$upgrade"; then
     cat "$upgrade_err" >&2
     break
   fi
-  if [ "$attempt" -eq "$attempts" ] || ! grep -q 'timed out' - "$upgrade_err" <<<"$upgrade"; then
+  if [ -e "$smoke_home/warning" ] || [ "$attempt" -eq "$attempts" ] || ! grep -q 'timed out' - "$upgrade_err" <<<"$upgrade"; then
     printf '%s\n' "$upgrade" >&2
     cat "$upgrade_err" >&2
     printf 'marketplace upgrade failed (attempt %s/%s)\n' "$attempt" "$attempts" >&2
