@@ -1,6 +1,6 @@
 {
   "name": "provider-test-patterns",
-  "version": "0.0.0+catalog.bc6b14b77481.7af02aceea49",
+  "version": "1.0.0+catalog.146815e19dec.a93a37bbbb8b",
   "description": "Terraform provider acceptance test patterns with terraform-plugin-testing: TestCase/TestStep, state and plan checks, cross-step comparisons, import testing, and sweepers.",
   "author": {
     "name": "HashiCorp",

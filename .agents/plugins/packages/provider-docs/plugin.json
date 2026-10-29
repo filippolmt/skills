@@ -1,6 +1,6 @@
 {
   "name": "provider-docs",
-  "version": "0.0.0+catalog.bc6b14b77481.12d8764e4b37",
+  "version": "1.0.0+catalog.146815e19dec.8ded22ad5b9c",
   "description": "Create, update, and review Terraform provider documentation for the Registry using tfplugindocs templates and schema descriptions.",
   "author": {
     "name": "HashiCorp",

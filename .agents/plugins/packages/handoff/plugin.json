@@ -1,6 +1,6 @@
 {
   "name": "handoff",
-  "version": "1.3.1+catalog.24fe0ef7737e.32d7827d454c",
+  "version": "1.3.2+catalog.d1478fcb140d.fed10b2afc5a",
   "description": "Compact the current conversation into a handoff document for another agent to pick up.",
   "author": {
     "name": "Matt Pocock",

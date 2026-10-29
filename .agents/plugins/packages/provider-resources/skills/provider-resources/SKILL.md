@@ -1,17 +1,7 @@
 ---
 name: provider-resources
-description: >-
-  Implement Terraform Provider resources and data sources using the Plugin
-  Framework: CRUD operations, schema design, plan modifiers and validators,
-  not-found handling, waiters for eventually consistent APIs, import support,
-  resource design principles, and required acceptance test coverage. Use when
-  adding or changing a resource or data source, deciding whether an API
-  concept should be a resource, wiring a resource to the provider's
-  configured client, handling drift or resource-not-found, or reviewing a
-  resource implementation before submission.
-license: MPL-2.0
+description: Implement Terraform Provider resources and data sources using the Plugin Framework. Use when developing CRUD operations, schema design, state management, and acceptance testing for provider resources.
 metadata:
-  lifecycle-status: active
   copyright: Copyright IBM Corp. 2026
   version: "0.0.1"
 ---
@@ -20,103 +10,87 @@ metadata:
 
 ## Overview
 
-This guide covers developing Terraform Provider resources and data sources.
-Resources represent infrastructure objects that Terraform manages through
-Create, Read, Update, and Delete (CRUD) operations.
+This guide covers developing Terraform Provider resources and data sources using the Terraform Plugin Framework. Resources represent infrastructure objects that Terraform manages through Create, Read, Update, and Delete (CRUD) operations.
 
-**Use the [Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework)
-for all net-new resources and data sources.** Plugin SDKv2 is for maintaining
-resources that already exist on it; do not write new code against it. A
-provider can serve both during migration by muxing
-([terraform-plugin-mux](https://developer.hashicorp.com/terraform/plugin/mux)),
-so adopting the Framework never requires a big-bang rewrite. To tell which
-mode an existing provider is in, check `go.mod`: `terraform-plugin-mux`
-present means it serves both SDKv2 and Framework code; only
-`terraform-plugin-sdk/v2` means SDKv2-only; only
-`terraform-plugin-framework` means Framework-only. Be cautious about
-*migrating* existing SDKv2 resources: the Framework distinguishes null from
-zero values, so naive migrations change behavior for existing users (use the
-`provider-framework-migration` skill, if available).
-
-**References** (load when needed):
-- `references/design-principles.md` — what should (and should not) become a
-  resource; data source semantics; relationship and async-task modeling
-- `references/retries-and-waiters.md` — eventual consistency, retry
-  patterns, and status/wait function structure
+**References:**
+- [Terraform Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework)
+- [Resource Development](https://developer.hashicorp.com/terraform/plugin/framework/resources)
+- [Data Source Development](https://developer.hashicorp.com/terraform/plugin/framework/data-sources)
 
 ## File Structure
 
-Most providers keep every resource in a single package:
+Resources follow the standard service package structure:
 
 ```
-internal/provider/
-├── provider.go                  # Provider schema + Configure
-├── widget_resource.go           # Resource implementation
-├── widget_resource_test.go      # Acceptance tests
-├── widget_data_source.go        # Data source (if applicable)
-└── widget_data_source_test.go
+internal/service/<service>/
+├── <resource_name>.go           # Resource implementation
+├── <resource_name>_test.go      # Acceptance tests
+├── <resource_name>_data_source.go    # Data source (if applicable)
+├── find.go                      # Finder functions
+├── exports_test.go              # Test exports
+└── service_package_gen.go       # Auto-generated registration
 ```
 
-Large multi-service providers (e.g. terraform-provider-aws) split into
-`internal/service/<service>/` packages instead, with an idiomatic file
-taxonomy worth adopting once a package grows: `consts.go`, `find.go`
-(finders), `status.go` (status functions), `wait.go` (waiters), `sweep.go`
-(test sweepers), `exports_test.go`.
-
-Documentation lives in `docs/` and is generated with `tfplugindocs`:
-
+Documentation structure:
 ```
-docs/
-├── resources/<name>.md          # generated; optional <name>.md.tmpl template
-└── data-sources/<name>.md
-```
+website/docs/r/
+└── <service>_<resource_name>.html.markdown  # Resource documentation
 
-(Hand-written `website/docs/r/*.html.markdown` trees exist in some older,
-large providers — follow the target repo's convention when editing one.)
+website/docs/d/
+└── <service>_<resource_name>.html.markdown  # Data source documentation
+```
 
 ## Resource Structure
 
-A Framework resource is a struct holding the API client, with interface
-assertions making the implemented behaviors explicit:
+### SDKv2 Resource Pattern
 
 ```go
-var (
-    _ resource.Resource                = &widgetResource{}
-    _ resource.ResourceWithConfigure   = &widgetResource{}
-    _ resource.ResourceWithImportState = &widgetResource{}
-)
+func ResourceExample() *schema.Resource {
+    return &schema.Resource{
+        CreateWithoutTimeout: resourceExampleCreate,
+        ReadWithoutTimeout:   resourceExampleRead,
+        UpdateWithoutTimeout: resourceExampleUpdate,
+        DeleteWithoutTimeout: resourceExampleDelete,
 
-func NewWidgetResource() resource.Resource {
-    return &widgetResource{}
-}
+        Importer: &schema.ResourceImporter{
+            StateContext: schema.ImportStatePassthroughContext,
+        },
 
-type widgetResource struct {
-    client *examplecloud.Client
-}
+        Schema: map[string]*schema.Schema{
+            "name": {
+                Type:         schema.TypeString,
+                Required:     true,
+                ForceNew:     true,
+                ValidateFunc: validation.StringLenBetween(1, 255),
+            },
+            "arn": {
+                Type:     schema.TypeString,
+                Computed: true,
+            },
+            "tags":     tftags.TagsSchema(),
+            "tags_all": tftags.TagsSchemaComputed(),
+        },
 
-func (r *widgetResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-    resp.TypeName = req.ProviderTypeName + "_widget"
-}
-
-// Configure receives the client the provider built in its own Configure.
-func (r *widgetResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-    if req.ProviderData == nil {
-        return // provider not yet configured (e.g. validation phase)
+        CustomizeDiff: verify.SetTagsDiff,
     }
-    client, ok := req.ProviderData.(*examplecloud.Client)
-    if !ok {
-        resp.Diagnostics.AddError(
-            "Unexpected Resource Configure Type",
-            fmt.Sprintf("Expected *examplecloud.Client, got: %T.", req.ProviderData),
-        )
-        return
-    }
-    r.client = client
+}
+```
+
+### Plugin Framework Resource Pattern
+
+```go
+type resourceExample struct {
+    framework.ResourceWithConfigure
 }
 
-func (r *widgetResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *resourceExample) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+    resp.TypeName = req.ProviderTypeName + "_example"
+}
+
+func (r *resourceExample) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
         Attributes: map[string]schema.Attribute{
+            "id": framework.IDAttribute(),
             "name": schema.StringAttribute{
                 Required: true,
                 PlanModifiers: []planmodifier.String{
@@ -126,7 +100,7 @@ func (r *widgetResource) Schema(ctx context.Context, req resource.SchemaRequest,
                     stringvalidator.LengthBetween(1, 255),
                 },
             },
-            "id": schema.StringAttribute{
+            "arn": schema.StringAttribute{
                 Computed: true,
                 PlanModifiers: []planmodifier.String{
                     stringplanmodifier.UseStateForUnknown(),
@@ -137,105 +111,100 @@ func (r *widgetResource) Schema(ctx context.Context, req resource.SchemaRequest,
 }
 ```
 
-How the provider's `Configure` produces that client — schema, credential
-resolution, validation — is covered by the `provider-configuration` skill
-(if available).
-
-**On `id`:** SDKv2 required a magic `id` attribute; the Framework does not.
-If the API has its own identifier, expose it under its real meaning and do
-not add a second, redundant `id`. Only keep `id` when it *is* the API's
-identifier (as above).
-
 ## CRUD Operations
 
-### Create
+### Create Operation
 
 ```go
-func (r *widgetResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-    var data widgetResourceModel
+func (r *resourceExample) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+    var data resourceExampleModel
     resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
     if resp.Diagnostics.HasError() {
         return
     }
 
-    input := &examplecloud.CreateWidgetInput{
+    conn := r.Meta().ExampleClient(ctx)
+
+    input := &example.CreateExampleInput{
         Name: data.Name.ValueStringPointer(),
     }
 
-    output, err := r.client.CreateWidget(ctx, input)
+    output, err := conn.CreateExample(ctx, input)
     if err != nil {
         resp.Diagnostics.AddError(
-            "Error creating Widget",
-            fmt.Sprintf("creating Widget (%s): %s", data.Name.ValueString(), err),
+            "Error creating Example",
+            fmt.Sprintf("Could not create example %s: %s", data.Name.ValueString(), err),
         )
         return
     }
 
-    data.ID = types.StringPointerValue(output.ID)
-
-    // For eventually consistent APIs, wait for the resource to be usable
-    // before returning — see references/retries-and-waiters.md.
+    data.ID = types.StringPointerValue(output.Id)
+    data.ARN = types.StringPointerValue(output.Arn)
 
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 ```
 
-### Read
-
-Read must handle out-of-band deletion by removing the resource from state so
-the next plan recreates it, rather than erroring forever:
+### Read Operation
 
 ```go
-func (r *widgetResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    var data widgetResourceModel
+func (r *resourceExample) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+    var data resourceExampleModel
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
     if resp.Diagnostics.HasError() {
         return
     }
 
-    output, err := findWidgetByID(ctx, r.client, data.ID.ValueString())
-    if isNotFound(err) {
-        tflog.Warn(ctx, "Widget not found, removing from state", map[string]any{"id": data.ID.ValueString()})
+    conn := r.Meta().ExampleClient(ctx)
+
+    output, err := findExampleByID(ctx, conn, data.ID.ValueString())
+    if tfresource.NotFound(err) {
+        resp.Diagnostics.AddWarning(
+            "Resource not found",
+            fmt.Sprintf("Example %s not found, removing from state", data.ID.ValueString()),
+        )
         resp.State.RemoveResource(ctx)
         return
     }
     if err != nil {
         resp.Diagnostics.AddError(
-            "Error reading Widget",
-            fmt.Sprintf("reading Widget (%s): %s", data.ID.ValueString(), err),
+            "Error reading Example",
+            fmt.Sprintf("Could not read example %s: %s", data.ID.ValueString(), err),
         )
         return
     }
 
     data.Name = types.StringPointerValue(output.Name)
+    data.ARN = types.StringPointerValue(output.Arn)
 
     resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 ```
 
-### Update
-
-Only call the API for attributes that actually changed; compare plan against
-state:
+### Update Operation
 
 ```go
-func (r *widgetResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    var plan, state widgetResourceModel
+func (r *resourceExample) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+    var plan, state resourceExampleModel
     resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
     resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
     if resp.Diagnostics.HasError() {
         return
     }
 
+    conn := r.Meta().ExampleClient(ctx)
+
     if !plan.Description.Equal(state.Description) {
-        input := &examplecloud.UpdateWidgetInput{
-            ID:          plan.ID.ValueStringPointer(),
+        input := &example.UpdateExampleInput{
+            Id:          plan.ID.ValueStringPointer(),
             Description: plan.Description.ValueStringPointer(),
         }
-        if _, err := r.client.UpdateWidget(ctx, input); err != nil {
+
+        _, err := conn.UpdateExample(ctx, input)
+        if err != nil {
             resp.Diagnostics.AddError(
-                "Error updating Widget",
-                fmt.Sprintf("updating Widget (%s): %s", plan.ID.ValueString(), err),
+                "Error updating Example",
+                fmt.Sprintf("Could not update example %s: %s", plan.ID.ValueString(), err),
             )
             return
         }
@@ -245,65 +214,35 @@ func (r *widgetResource) Update(ctx context.Context, req resource.UpdateRequest,
 }
 ```
 
-### Delete
-
-Treat "already gone" as success — the desired end state is reached:
+### Delete Operation
 
 ```go
-func (r *widgetResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-    var data widgetResourceModel
+func (r *resourceExample) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+    var data resourceExampleModel
     resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
     if resp.Diagnostics.HasError() {
         return
     }
 
-    _, err := r.client.DeleteWidget(ctx, &examplecloud.DeleteWidgetInput{
-        ID: data.ID.ValueStringPointer(),
+    conn := r.Meta().ExampleClient(ctx)
+
+    _, err := conn.DeleteExample(ctx, &example.DeleteExampleInput{
+        Id: data.ID.ValueStringPointer(),
     })
-    if isNotFound(err) {
+
+    if tfresource.NotFound(err) {
         return
     }
+
     if err != nil {
         resp.Diagnostics.AddError(
-            "Error deleting Widget",
-            fmt.Sprintf("deleting Widget (%s): %s", data.ID.ValueString(), err),
+            "Error deleting Example",
+            fmt.Sprintf("Could not delete example %s: %s", data.ID.ValueString(), err),
         )
         return
     }
 }
 ```
-
-### Import
-
-With `ResourceWithImportState` asserted, passthrough of the identifier is
-one line:
-
-```go
-func (r *widgetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-    resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
-}
-```
-
-For multi-part identifiers, parse a delimited import ID (commonly
-comma-separated) and set each attribute explicitly.
-
-## Resource Design Principles
-
-Before implementing, check the shape of the thing being modeled (full
-treatment in `references/design-principles.md`):
-
-- A resource is the *smallest* useful building block; if the API offers
-  CRUD for it, it likely deserves its own resource.
-- A resource should talk to **one** API/service only — cross-service
-  resources break permissions, auditing, and endpoint configuration.
-- Data sources are read-only and side-effect free. A *singular* data source
-  errors on zero or multiple matches; a *plural* data source (plural noun
-  name) returns zero-or-more as a collection and errors on neither.
-- Attached policies/rules, long-running task invocations, and versioned
-  artifacts usually deserve their *own* resources rather than attributes on
-  the parent.
-- Start/stop or enable/disable state belongs as an attribute *in* the
-  resource, not as a separate resource.
 
 ## Schema Design
 
@@ -311,7 +250,7 @@ treatment in `references/design-principles.md`):
 
 | Terraform Type | Framework Type | Use Case |
 |----------------|----------------|----------|
-| `string` | `schema.StringAttribute` | Names, identifiers |
+| `string` | `schema.StringAttribute` | Names, ARNs, IDs |
 | `number` | `schema.Int64Attribute`, `schema.Float64Attribute` | Counts, sizes |
 | `bool` | `schema.BoolAttribute` | Feature flags |
 | `list` | `schema.ListAttribute` | Ordered collections |
@@ -319,27 +258,41 @@ treatment in `references/design-principles.md`):
 | `map` | `schema.MapAttribute` | Key-value pairs |
 | `object` | `schema.SingleNestedAttribute` | Complex nested config |
 
-Give every attribute a `MarkdownDescription` — `tfplugindocs` publishes it,
-and it is the primary user-facing documentation.
-
 ### Plan Modifiers
 
 ```go
 // Force replacement when value changes
 stringplanmodifier.RequiresReplace()
 
-// Keep a known value during plan instead of (known after apply)
+// Preserve unknown value during plan
 stringplanmodifier.UseStateForUnknown()
+
+// Custom plan modifier
+stringplanmodifier.RequiresReplaceIf(
+    func(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
+        // Custom logic
+    },
+    "description",
+    "markdown description",
+)
 ```
 
 ### Validators
 
 ```go
+// String validators
 stringvalidator.LengthBetween(1, 255)
 stringvalidator.RegexMatches(regexp.MustCompile(`^[a-z0-9-]+$`), "must be lowercase alphanumeric with hyphens")
-stringvalidator.OneOf("small", "medium", "large")
+stringvalidator.OneOf("option1", "option2", "option3")
+
+// Int64 validators
 int64validator.Between(1, 100)
+int64validator.AtLeast(1)
+int64validator.AtMost(1000)
+
+// List validators
 listvalidator.SizeAtLeast(1)
+listvalidator.SizeAtMost(10)
 ```
 
 ### Sensitive Attributes
@@ -348,93 +301,97 @@ listvalidator.SizeAtLeast(1)
 "password": schema.StringAttribute{
     Required:  true,
     Sensitive: true,
-},
+    Validators: []validator.String{
+        stringvalidator.LengthAtLeast(8),
+    },
+}
 ```
 
 ## State Management
 
-### Finders
-
-Centralize "get one thing or a typed not-found" in a finder so Read, Delete,
-waiters, and tests all share identical not-found semantics:
+### Handling Resource Not Found
 
 ```go
-func findWidgetByID(ctx context.Context, client *examplecloud.Client, id string) (*examplecloud.Widget, error) {
-    output, err := client.GetWidget(ctx, &examplecloud.GetWidgetInput{ID: &id})
-    if err != nil {
-        var apiErr *examplecloud.NotFoundError
-        if errors.As(err, &apiErr) {
-            return nil, &retry.NotFoundError{LastError: err}
-        }
-        return nil, fmt.Errorf("getting Widget (%s): %w", id, err)
+func findExampleByID(ctx context.Context, conn *example.Client, id string) (*example.Example, error) {
+    input := &example.GetExampleInput{
+        Id: &id,
     }
-    if output == nil || output.Widget == nil {
-        return nil, &retry.NotFoundError{Message: "empty result"}
-    }
-    return output.Widget, nil
-}
 
-func isNotFound(err error) bool {
-    var nfe *retry.NotFoundError
-    return errors.As(err, &nfe)
+    output, err := conn.GetExample(ctx, input)
+    if err != nil {
+        var notFound *types.ResourceNotFoundException
+        if errors.As(err, &notFound) {
+            return nil, &retry.NotFoundError{
+                LastError:   err,
+                LastRequest: input,
+            }
+        }
+        return nil, err
+    }
+
+    if output == nil || output.Example == nil {
+        return nil, tfresource.NewEmptyResultError(input)
+    }
+
+    return output.Example, nil
 }
 ```
 
 ### Waiting for Resource States
 
-Many APIs return from Create/Delete before the resource is usable/gone. Use
-`retry.StateChangeConf` (from
-`github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry` — usable from
-Framework providers), with a status function built on the finder and
-timeouts in named constants:
-
 ```go
-stateConf := &retry.StateChangeConf{
-    Pending: []string{"CREATING", "PENDING"},
-    Target:  []string{"ACTIVE"},
-    Refresh: statusWidget(ctx, r.client, id), // one poll of the finder: (obj, status, err)
-    Timeout: widgetCreatedTimeout,
-}
-outputRaw, err := stateConf.WaitForStateContext(ctx)
-```
+func waitExampleCreated(ctx context.Context, conn *example.Client, id string, timeout time.Duration) (*example.Example, error) {
+    stateConf := &retry.StateChangeConf{
+        Pending: []string{"CREATING", "PENDING"},
+        Target:  []string{"ACTIVE", "AVAILABLE"},
+        Refresh: statusExample(ctx, conn, id),
+        Timeout: timeout,
+    }
 
-The full status/wait function pairs (create and delete waiters, failure-state
-handling, post-create not-found retries, eventual-consistency patterns) are
-in `references/retries-and-waiters.md` — read it whenever the API is
-asynchronous or eventually consistent.
+    outputRaw, err := stateConf.WaitForStateContext(ctx)
+    if output, ok := outputRaw.(*example.Example); ok {
+        return output, err
+    }
+
+    return nil, err
+}
+
+func statusExample(ctx context.Context, conn *example.Client, id string) retry.StateRefreshFunc {
+    return func() (interface{}, string, error) {
+        output, err := findExampleByID(ctx, conn, id)
+        if tfresource.NotFound(err) {
+            return nil, "", nil
+        }
+        if err != nil {
+            return nil, "", err
+        }
+        return output, string(output.Status), nil
+    }
+}
+```
 
 ## Testing
 
-Every resource ships with, at minimum:
-
-- **`_basic`** — create with minimal config, assert attributes, then an
-  import step (`ImportState: true`, `ImportStateVerify: true`)
-- **`_disappears`** — delete the object out-of-band mid-test; the next plan
-  must propose recreation, not error
-- **Per-attribute tests** — exercise updates for each non-trivial argument
-
-Naming grammar: tests `TestAcc{Resource}_{group?}_{description}`, helpers
-`testAccCheck{Resource}Exists` / `testAccCheck{Resource}Destroy`, config
-functions `testAcc{Resource}Config_{description}`. Keep configs
-self-contained, randomize real resource names, and never hardcode
-environment-specific values (account IDs, zones, versions).
+### Basic Acceptance Test
 
 ```go
-func TestAccWidget_basic(t *testing.T) {
-    rName := acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-    resourceName := "examplecloud_widget.test"
+func TestAccExampleResource_basic(t *testing.T) {
+    ctx := acctest.Context(t)
+    rName := sdkacctest.RandomWithPrefix(acctest.ResourcePrefix)
+    resourceName := "provider_example.test"
 
     resource.ParallelTest(t, resource.TestCase{
-        PreCheck:                 func() { testAccPreCheck(t) },
-        ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-        CheckDestroy:             testAccCheckWidgetDestroy,
+        PreCheck:                 func() { acctest.PreCheck(ctx, t) },
+        ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories,
+        CheckDestroy:             testAccCheckExampleDestroy(ctx),
         Steps: []resource.TestStep{
             {
-                Config: testAccWidgetConfig_basic(rName),
-                ConfigStateChecks: []statecheck.StateCheck{
-                    statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("name"), knownvalue.StringExact(rName)),
-                    statecheck.ExpectKnownValue(resourceName, tfjsonpath.New("id"), knownvalue.NotNull()),
-                },
+                Config: testAccExampleConfig_basic(rName),
+                Check: resource.ComposeTestCheckFunc(
+                    testAccCheckExampleExists(ctx, resourceName),
+                    resource.TestCheckResourceAttr(resourceName, "name", rName),
+                    resource.TestCheckResourceAttrSet(resourceName, "arn"),
+                ),
             },
             {
                 ResourceName:      resourceName,
@@ -444,45 +401,130 @@ func TestAccWidget_basic(t *testing.T) {
         },
     })
 }
+```
 
-func testAccWidgetConfig_basic(rName string) string {
-    return fmt.Sprintf(`
-resource "examplecloud_widget" "test" {
-  name = %[1]q
-}
-`, rName)
+### Disappears Test
+
+```go
+func TestAccExampleResource_disappears(t *testing.T) {
+    ctx := acctest.Context(t)
+    rName := sdkacctest.RandomWithPrefix(acctest.ResourcePrefix)
+    resourceName := "provider_example.test"
+
+    resource.ParallelTest(t, resource.TestCase{
+        PreCheck:                 func() { acctest.PreCheck(ctx, t) },
+        ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories,
+        CheckDestroy:             testAccCheckExampleDestroy(ctx),
+        Steps: []resource.TestStep{
+            {
+                Config: testAccExampleConfig_basic(rName),
+                Check: resource.ComposeTestCheckFunc(
+                    testAccCheckExampleExists(ctx, resourceName),
+                    acctest.CheckResourceDisappears(ctx, acctest.Provider, ResourceExample(), resourceName),
+                ),
+                ExpectNonEmptyPlan: true,
+            },
+        },
+    })
 }
 ```
 
-Use the `provider-test-patterns` skill (if available) for the full testing
-treatment: config helper style (`%[1]q` indexed verbs), statecheck/plancheck,
-CompareValue, custom StateCheck implementations for exists/disappears
-helpers, sweepers, and ephemeral resource testing. Use the
-`run-acceptance-tests` skill for executing and debugging test runs.
+### Test Helper Functions
+
+```go
+func testAccCheckExampleExists(ctx context.Context, name string) resource.TestCheckFunc {
+    return func(s *terraform.State) error {
+        rs, ok := s.RootModule().Resources[name]
+        if !ok {
+            return fmt.Errorf("Not found: %s", name)
+        }
+
+        conn := acctest.Provider.Meta().(*conns.Client).ExampleClient(ctx)
+        _, err := findExampleByID(ctx, conn, rs.Primary.ID)
+
+        return err
+    }
+}
+
+func testAccCheckExampleDestroy(ctx context.Context) resource.TestCheckFunc {
+    return func(s *terraform.State) error {
+        conn := acctest.Provider.Meta().(*conns.Client).ExampleClient(ctx)
+
+        for _, rs := range s.RootModule().Resources {
+            if rs.Type != "provider_example" {
+                continue
+            }
+
+            _, err := findExampleByID(ctx, conn, rs.Primary.ID)
+            if tfresource.NotFound(err) {
+                continue
+            }
+            if err != nil {
+                return err
+            }
+
+            return fmt.Errorf("Example %s still exists", rs.Primary.ID)
+        }
+
+        return nil
+    }
+}
+```
+
+### Running Tests
+
+```bash
+# Compile tests
+go test -c -o /dev/null ./internal/service/<service>
+
+# Run acceptance tests
+TF_ACC=1 go test ./internal/service/<service> -run TestAccExample -v -timeout 60m
+
+# Run with specific provider version
+TF_ACC=1 go test ./internal/service/<service> -run TestAccExample -v
+
+# Run sweeper to clean up
+TF_ACC=1 go test ./internal/service/<service> -sweep=<region> -v
+```
 
 ## Error Handling
 
-Match API errors by type, not message text, and wrap with context:
+### Common Error Patterns
 
 ```go
-var notFound *examplecloud.NotFoundError
+// Handle specific API errors
+var notFound *types.ResourceNotFoundException
 if errors.As(err, &notFound) {
-    // resource doesn't exist
+    // Resource doesn't exist
 }
 
-// Wrapping inside helpers: preserve the cause with %w
-return fmt.Errorf("creating Widget (%s): %w", name, err)
+var conflict *types.ConflictException
+if errors.As(err, &conflict) {
+    // Resource state conflict
+}
+
+var throttle *types.ThrottlingException
+if errors.As(err, &throttle) {
+    // Rate limited - SDK handles retry
+}
 ```
 
-Diagnostics follow a consistent grammar — summary names the operation and
-type, detail carries identifier and cause:
+### Diagnostics
 
 ```go
+// Add error
 resp.Diagnostics.AddError(
-    "Error creating Widget",
-    fmt.Sprintf("creating Widget (%s): %s", name, err),
+    "Error creating resource",
+    fmt.Sprintf("Could not create resource: %s", err),
 )
 
+// Add warning
+resp.Diagnostics.AddWarning(
+    "Resource modified outside Terraform",
+    "Resource was modified outside of Terraform, state may be inconsistent",
+)
+
+// Add attribute error
 resp.Diagnostics.AddAttributeError(
     path.Root("name"),
     "Invalid name",
@@ -490,32 +532,68 @@ resp.Diagnostics.AddAttributeError(
 )
 ```
 
-## Documentation
+## Documentation Standards
 
-Write attribute `MarkdownDescription`s first — they are the source of
-truth. Then generate Registry documentation with `tfplugindocs`
-(`go generate ./...` where wired up), adding `docs/**/*.md.tmpl` templates
-only for prose and examples the generator cannot derive. Use the
-`provider-docs` skill (if available) for the full documentation workflow and
-Registry publication rules.
+### Resource Documentation
+
+```markdown
+---
+subcategory: "Service Name"
+layout: "provider"
+page_title: "Provider: provider_example"
+description: |-
+  Manages an Example resource.
+---
+
+# Resource: provider_example
+
+Manages an Example resource.
+
+## Example Usage
+
+### Basic Usage
+
+\```hcl
+resource "provider_example" "example" {
+  name = "my-example"
+}
+\```
+
+## Argument Reference
+
+* `name` - (Required) Name of the example.
+* `description` - (Optional) Description of the example.
+
+## Attribute Reference
+
+* `id` - ID of the example.
+* `arn` - ARN of the example.
+
+## Import
+
+Example can be imported using the ID:
+
+\```
+$ terraform import provider_example.example example-id-12345
+\```
+```
 
 ## Pre-Submission Checklist
 
-- [ ] Plugin Framework used (no new SDKv2 code)
+- [ ] Code compiles without errors
+- [ ] All tests pass locally
 - [ ] Resource has all CRUD operations implemented
-- [ ] Read removes missing resources from state; Delete tolerates already-deleted
-- [ ] No redundant `id` attribute (real API identifier exposed instead)
-- [ ] Import implemented and covered by an `ImportStateVerify` step
-- [ ] `_basic`, `_disappears`, and per-attribute tests present
-- [ ] Waiters used where the API is eventually consistent
-- [ ] Error messages name the operation, type, and identifier
-- [ ] Sensitive attributes marked; every attribute has a description
-- [ ] Docs generated with `tfplugindocs`
-- [ ] Changelog entry added, if the repo tracks release notes (check CONTRIBUTING)
+- [ ] Import is implemented and tested
+- [ ] Disappears test is included
+- [ ] Documentation is complete with examples
+- [ ] Error messages are clear and actionable
+- [ ] Sensitive attributes are marked
+- [ ] Plan modifiers are appropriate
+- [ ] Validators cover edge cases
 
 ## References
 
 - [Terraform Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework)
-- [Resource Development](https://developer.hashicorp.com/terraform/plugin/framework/resources)
-- [Data Source Development](https://developer.hashicorp.com/terraform/plugin/framework/data-sources)
-- [HashiCorp Provider Design Principles](https://developer.hashicorp.com/terraform/plugin/best-practices/hashicorp-provider-design-principles)
+- [Terraform Plugin SDKv2](https://developer.hashicorp.com/terraform/plugin/sdkv2)
+- [Acceptance Testing](https://developer.hashicorp.com/terraform/plugin/testing/acceptance-tests)
+- [terraform-plugin-framework GitHub](https://github.com/hashicorp/terraform-plugin-framework)

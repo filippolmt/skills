@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/hashicorp/agent-skills/tree/bc6b14b77481c3cbfbb06a0166be7245ed45798c/plugins/terraform/skills/run-acceptance-tests
-- **Commit**: `bc6b14b77481c3cbfbb06a0166be7245ed45798c`
+- **Upstream**: https://github.com/hashicorp/agent-skills/tree/146815e19decbb28252eebcf4125054e0a8783f1/terraform/provider-development/skills/run-acceptance-tests
+- **Commit**: `146815e19decbb28252eebcf4125054e0a8783f1`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `run-acceptance-tests` in `.claude-plugin/marketplace.json`
