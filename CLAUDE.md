@@ -117,7 +117,9 @@ exactly. A `ref` of any other shape (`1.2.0`, a bare SHA) matches neither manage
 and is never updated again.
 A branch pin whose repo starts publishing tags is reported by the `whole-sources`
 workflow in its own issue (`docs/adr/0026-report-branch-pins-once-upstream-tags.md`,
-`node scripts/check-branch-pins.js`).
+`node scripts/check-branch-pins.js`). For an update/freshness audit, run
+`node scripts/check-upstream-versions.js [owner/repo [candidate-tag]]`: it checks
+latest same-series tags or branch HEADs and preflights downgrade paths before approval.
 
 **Double-registered hooks.** A local plugin's `hooks/hooks.json` loads
 automatically; `manifest.hooks` (in `.claude-plugin/plugin.json`) is for

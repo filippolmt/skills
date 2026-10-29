@@ -3,12 +3,27 @@ import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import readline from 'node:readline';
 
-const child = spawn('codex', ['app-server', '--stdio'], { stdio: ['pipe', 'pipe', 'inherit'] });
+import { hasWarning } from './codex-smoke-warnings.js';
+const child = spawn('codex', ['app-server', '--stdio'], { stdio: ['pipe', 'pipe', 'pipe'] });
+let stderr = '';
+child.stderr.on('data', (chunk) => {
+  stderr += chunk;
+  process.stderr.write(chunk);
+});
+const closed = new Promise((resolve, reject) => {
+  child.on('error', reject);
+  child.on('close', (code, signal) => resolve({ code, signal }));
+});
 const lines = readline.createInterface({ input: child.stdout, crlfDelay: Infinity });
 const waiters = new Map();
 const timer = setTimeout(() => child.kill(), 20_000);
+let stdoutWarning = false;
 
 lines.on('line', (line) => {
+  if (hasWarning(line)) {
+    stdoutWarning = true;
+    process.stderr.write(`${line}\n`);
+  }
   const message = JSON.parse(line);
   const waiter = waiters.get(message.id);
   if (waiter) {
@@ -51,10 +66,15 @@ try {
     }),
     encoding: 'utf8',
   });
+  process.stderr.write(execution.stderr || '');
   assert.equal(execution.status, 0, execution.stderr);
-  console.log('Codex hook smoke passed: discovery, trust gate, and command execution verified.');
+  assert.ok(!hasWarning(execution.stderr) && !hasWarning(execution.stdout), `Codex hook command emitted a warning: ${execution.stdout}`);
 } finally {
   clearTimeout(timer);
   child.stdin.end();
   child.kill();
+  const { code, signal } = await closed;
+  assert.ok(code === 0 || (code === null && signal === 'SIGTERM'), `Codex app-server exited with ${code ?? signal}`);
+  assert.ok(!stdoutWarning && !hasWarning(stderr), 'Codex app-server emitted a warning');
 }
+console.log('Codex hook smoke passed: discovery, trust gate, and command execution verified.');

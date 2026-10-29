@@ -3,9 +3,9 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { build, buildFromInventory } = require('./gen-skills-tree.js');
+const { build, buildFromInventory, verifyFromInventory } = require('./gen-skills-tree.js');
 const { writeCodexDistribution } = require('./gen-codex.js');
-const { copyAttribution, validatePortableArtifacts, writeConvertedSkill } = require('./portable-artifacts.js');
+const { copyAttribution, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
 
 function fixture(t, { kind = 'skill', name = 'audit-example', licence = true, adapted = false } = {}) {
   const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'portable-audit-'));
@@ -143,6 +143,73 @@ for (const file of ['NOTICE.md', 'SOURCE.md']) {
       assert.equal(fs.existsSync(path.join(f.sandbox, 'escaped')), false);
     });
   }
+}
+
+for (const target of ['pi', 'codex']) {
+  for (const scenario of ['mismatch', 'self', 'dependency', 'absent dependency', 'no metadata', 'environment']) {
+    test(`${target} validates native default_prompt references: ${scenario}`, (t) => {
+      const f = fixture(t, { name: 'audit-provider-docs' });
+      const agents = path.join(f.source, 'skills/example/agents');
+      fs.mkdirSync(agents);
+      const prompt = scenario === 'mismatch' ? 'Use $terraform-provider-docs to write docs.'
+        : scenario === 'dependency' || scenario === 'absent dependency' ? 'Use $sibling-docs.'
+          : scenario === 'environment' ? 'Read $HOME, $TF_VAR_region, $env_var and ${PATH}.'
+            : 'Use $audit-provider-docs.';
+      if (scenario !== 'no metadata') fs.writeFileSync(path.join(agents, 'openai.yaml'), `interface:\n  default_prompt: ${JSON.stringify(prompt)}\n`);
+      const plugins = [f.plugin];
+      const inventory = [f.inventory];
+      if (scenario === 'dependency') {
+        const dependency = fixture(t, { name: 'sibling-docs' });
+        dependency.plugin.name = 'dependency-plugin';
+        dependency.inventory.name = dependency.plugin.name;
+        f.inventory.runtimeDependencies = [dependency.plugin.name];
+        plugins.push(dependency.plugin);
+        inventory.push(dependency.inventory);
+      }
+      const run = () => target === 'pi'
+        ? verifyFromInventory(plugins, inventory)
+        : writeCodexDistribution(plugins, inventory, f.out);
+      if (scenario === 'mismatch' || scenario === 'absent dependency') {
+        assert.throws(run, new RegExp(`openai\\.yaml: default_prompt invokes \\$${scenario === 'mismatch' ? 'terraform-provider-docs' : 'sibling-docs'}.*generated distribution`));
+      } else assert.doesNotThrow(run);
+    });
+  }
+}
+
+for (const scalar of [
+  '"Use $audit-example." # comment',
+  "'Use $audit-example; it''s valid.'",
+  'Use $audit-example. # $missing-skill is only a comment',
+  '"Use \\u0024audit-example."',
+]) {
+  test(`default_prompt supports single-line YAML scalar ${scalar}`, (t) => {
+    const f = fixture(t);
+    buildFromInventory(f.out, [f.plugin], [f.inventory]);
+    const agents = path.join(f.out, 'audit-example/agents');
+    fs.mkdirSync(agents);
+    fs.writeFileSync(path.join(agents, 'openai.yaml'), `interface:\n  default_prompt: ${scalar}\n`);
+    assert.doesNotThrow(() => validateSkillDirectories(f.out));
+  });
+}
+
+for (const yaml of [
+  '  default_prompt: >-\n    Use $missing-skill.',
+  '  default_prompt: |\n    Use $missing-skill.',
+  '  default_prompt: "Use\n    $missing-skill."',
+  "  default_prompt: 'Use\n    $missing-skill.'",
+  '  default_prompt: Use\n    $missing-skill.',
+  '  default_prompt: *prompt',
+  '  default_prompt: "Use \\qmissing-skill."',
+  '  interface: {default_prompt: "Use $missing-skill."}',
+]) {
+  test(`default_prompt rejects unsupported YAML clearly: ${JSON.stringify(yaml)}`, (t) => {
+    const f = fixture(t);
+    buildFromInventory(f.out, [f.plugin], [f.inventory]);
+    const agents = path.join(f.out, 'audit-example/agents');
+    fs.mkdirSync(agents);
+    fs.writeFileSync(path.join(agents, 'openai.yaml'), `interface:\n${yaml}\n`);
+    assert.throws(() => validateSkillDirectories(f.out), /openai\.yaml:\d+: unsupported default_prompt YAML/);
+  });
 }
 
 test('root notices do not overwrite a skill-specific notice', (t) => {

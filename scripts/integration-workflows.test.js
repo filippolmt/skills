@@ -15,7 +15,8 @@ for (const [name, generators, smoke] of [
       const eventBlock = workflow.match(new RegExp(`^  ${event}:\\n([\\s\\S]*?)(?=^  \\w|^jobs:)`, 'm'));
       assert.ok(eventBlock, `${event} trigger must exist`);
       const paths = [...eventBlock[1].matchAll(/^      - (.+)$/gm)].map((match) => match[1]);
-      for (const input of ['shared/**', 'scripts/catalog.js', 'LICENSE', 'overlays/**']) {
+      for (const input of ['shared/**', 'scripts/catalog.js', 'LICENSE', 'overlays/**',
+        ...(name === 'codex' ? ['scripts/codex-smoke-warnings.js'] : [])]) {
         assert.ok(paths.includes(input), `${event} must cover ${input}`);
       }
     });

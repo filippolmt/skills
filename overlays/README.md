@@ -17,6 +17,3 @@ The point is the failure mode. When upstream changes the lines a patch touches,
 `git apply` **fails** and the generation stops. A replacement file would keep
 working while silently freezing the skill at a months-old upstream — the same
 silent-drift class as the Renovate seam this repo documents elsewhere.
-
-This directory is empty on purpose: none of the vendored skills needs adaptation
-today, and an overlay that is not needed is a fork waiting to happen.

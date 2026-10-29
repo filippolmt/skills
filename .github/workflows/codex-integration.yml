@@ -19,6 +19,7 @@ on:
       - scripts/portable-artifacts.js
       - scripts/test-codex-hooks.mjs
       - scripts/test-codex-marketplace.sh
+      - scripts/codex-smoke-warnings.js
       - skills/**
   push:
     branches: [main]
@@ -39,6 +40,7 @@ on:
       - scripts/portable-artifacts.js
       - scripts/test-codex-hooks.mjs
       - scripts/test-codex-marketplace.sh
+      - scripts/codex-smoke-warnings.js
       - skills/**
 
 jobs:
