@@ -48,7 +48,7 @@ async function audit(catalog, { repo, tag, api = githubApi, tags = tagNames } = 
       return cache.get(ref);
     };
     const trees = new Map();
-    const preflight = async (candidate, sha, affected) => {
+    const treeAt = async (sha) => {
       if (!trees.has(sha)) {
         const body = await api(`repos/${source}/git/trees/${sha}?recursive=1`);
         if (body.truncated !== false || !Array.isArray(body.tree)) {
@@ -56,11 +56,27 @@ async function audit(catalog, { repo, tag, api = githubApi, tags = tagNames } = 
         }
         trees.set(sha, body.tree);
       }
-      const missing = missingPaths(affected, trees.get(sha));
-      lines.push(`  Path preflight ${candidate} (${affected.length} entries): ${missing.length} absent skill/plugin paths`);
-      for (const item of missing) {
-        lines.push(`    ${item.name}: absent ${item.path}; possible new locations (name match only): ` +
-          (item.possibleLocations.join(', ') || 'none'));
+      return trees.get(sha);
+    };
+    const preflight = async (candidate, sha, affected) => {
+      const proposed = await treeAt(sha);
+      const pinned = await treeAt(affected[0].source.sha);
+      const missing = missingPaths(affected, proposed);
+      const skillDirs = (tree) => tree.filter((item) => item.type === 'blob' &&
+        (item.path === 'SKILL.md' || item.path.endsWith('/SKILL.md'))).map((item) => path.posix.dirname(item.path));
+      const candidates = skillDirs(proposed);
+      const removed = affected.flatMap((entry) => {
+        const dir = entryPath(entry);
+        return skillDirs(pinned).filter((skill) => (dir === '.' || skill === dir || skill.startsWith(`${dir}/`)) &&
+          !candidates.includes(skill)).map((skill) => ({ name: entry.name, path: skill,
+          possibleLocations: candidates.filter((next) => path.posix.basename(next) === path.posix.basename(skill)) }));
+      });
+      lines.push(`  Path preflight ${candidate} (${affected.length} entries): ${missing.length} absent skill/plugin paths; ${removed.length} removed/moved skills`);
+      for (const [items, label] of [[missing, 'absent'], [removed, 'removed/moved']]) {
+        for (const item of items) {
+          lines.push(`    ${item.name}: ${label} ${item.path}; possible new locations (name match only): ` +
+            (item.possibleLocations.join(', ') || 'none'));
+        }
       }
     };
     // Entries can intentionally pin different series or digests; audit each pin.

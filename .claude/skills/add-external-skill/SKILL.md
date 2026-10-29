@@ -182,9 +182,9 @@ For each external source repo (git-subdir or url entry) in `marketplace.json` (o
      (ADR-0015); doing it here just gets there first.
    - **Branch-pinned repo that now tags** → choose a tag series explicitly when
      several exist. Before proposing a behind/diverged candidate, run the scoped
-     audit with that tag. It lists every affected entry's absent skill/plugin
-     path and possible new locations matching its skill folder name or catalog
-     alias; a name match is a lead, not proof of a move.
+     audit with that tag. It compares pinned and candidate trees for absent
+     skill/plugin paths and removed nested skills, including repo-root plugins,
+     and lists possible new locations by name; a name match is a lead, not proof of a move.
      Complete the loss/move inventory **before asking for downgrade approval**:
      compare the pinned and candidate trees for every entry, including whole-plugin
      artifacts, runtime closure, and `scripts/distribution-meta.json` source and

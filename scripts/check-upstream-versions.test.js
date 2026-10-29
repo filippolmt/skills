@@ -9,7 +9,7 @@ const entry = (name, ref = 'main', sha = 'pinned', dir = `skills/${name}`) => ({
 });
 const blob = (path) => ({ type: 'blob', path });
 const text = (result) => result.lines.join('\n');
-function fake({ commits = {}, status = 'ahead', tree = [], fail } = {}) {
+function fake({ commits = {}, status = 'ahead', tree = [], trees = {}, fail } = {}) {
   const calls = [];
   const api = async (url) => {
     calls.push(url);
@@ -20,7 +20,7 @@ function fake({ commits = {}, status = 'ahead', tree = [], fail } = {}) {
       return { sha: commits[ref] };
     }
     if (url.includes('/compare/')) return { status };
-    if (url.includes('/git/trees/')) return { truncated: false, tree };
+    if (url.includes('/git/trees/')) return { truncated: false, tree: trees[url.split('/git/trees/')[1].split('?')[0]] || tree };
     throw new Error(`Unexpected request: ${url}`);
   };
   return { api, calls };
@@ -81,6 +81,26 @@ test('downgrade preflight lists every lost entry, possible moves and no-match lo
   assert.doesNotMatch(text(result), /kept: absent/);
 });
 
+for (const rootPlugin of [false, true]) {
+  test(`downgrade inventories lost nested skills even with a surviving ${rootPlugin ? 'root' : 'subdirectory'} plugin`, async () => {
+    const prefix = rootPlugin ? '' : 'plugins/whole/';
+    const plugin = entry('whole', 'main', 'pinned', 'plugins/whole');
+    if (rootPlugin) { plugin.source.source = 'url'; delete plugin.source.path; }
+    const kept = blob(`${prefix}.claude-plugin/plugin.json`);
+    const { api, calls } = fake({ commits: { main: 'pinned', 'v1.0.0': 'release' }, status: 'behind',
+      trees: {
+        pinned: [kept, blob(`${prefix}skills/kept/SKILL.md`), blob(`${prefix}skills/gone/SKILL.md`), blob(`${prefix}skills/moved/SKILL.md`)],
+        release: [kept, blob(`${prefix}skills/kept/SKILL.md`), blob('old/moved/SKILL.md')],
+      } });
+    const result = await audit([plugin], { api, tags: async () => ['v1.0.0'] });
+    assert.ok(calls.includes('repos/acme/skills/git/trees/pinned?recursive=1'));
+    assert.match(text(result), /0 absent skill\/plugin paths; 2 removed\/moved skills/);
+    assert.match(text(result), /gone; possible new locations.*none/);
+    assert.match(text(result), /moved; possible new locations.*old\/moved/);
+    assert.doesNotMatch(text(result), /removed\/moved .*skills\/kept/);
+  });
+}
+
 test('scoped explicit candidate preflights even an ahead tag and excludes other repos', async () => {
   const { api, calls } = fake({ commits: { main: 'new', 'v1.0.0': 'release' }, tree: [] });
   const other = entry('other');
@@ -108,11 +128,13 @@ test('API failures in tags, commits, comparisons and trees reject instead of pas
   }
 });
 
-test('truncated candidate trees and invalid API responses reject', async () => {
-  for (const body of [{ truncated: true, tree: [] }, { tree: [] }, { truncated: false }]) {
-    const { api: base } = fake({ commits: { main: 'new', 'v1.0.0': 'release' }, status: 'behind' });
-    const api = (url) => url.includes('/git/trees/') ? body : base(url);
-    await assert.rejects(audit([entry('one')], { api, tags: async () => ['v1.0.0'] }), /preflight incomplete/);
+test('truncated pinned or candidate trees and invalid API responses reject', async () => {
+  for (const sha of ['pinned', 'release']) {
+    for (const body of [{ truncated: true, tree: [] }, { tree: [] }, { truncated: false }]) {
+      const { api: base } = fake({ commits: { main: 'new', 'v1.0.0': 'release' }, status: 'behind' });
+      const api = (url) => url.includes(`/git/trees/${sha}?`) ? body : base(url);
+      await assert.rejects(audit([entry('one')], { api, tags: async () => ['v1.0.0'] }), /preflight incomplete/);
+    }
   }
   await assert.rejects(audit([entry('one')], { api: async () => ({}), tags: async () => [] }), /missing commit SHA/);
   const { api } = fake({ commits: { main: 'new', 'v1.0.0': 'release' }, status: 'unknown' });
