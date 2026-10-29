@@ -254,6 +254,9 @@ The README **Available skills** catalog is a **projection** of
 
 ## Finish
 
+When delegating distribution work or checking full packages, follow
+`docs/agents/distribution-validation.md` for the acceptance matrix and validation order.
+
 ```bash
 bash scripts/validate.sh --catalog-only
 ```

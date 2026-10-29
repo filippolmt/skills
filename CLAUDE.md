@@ -132,9 +132,13 @@ loads the file twice (`Duplicate hooks file detected`). A stale entry in
 ## Validate before committing
 
 ```
-bash scripts/validate.sh                  # the full list; stops at the first failure
+bash scripts/validate.sh --isolated       # full validation in a disposable snapshot; leaves this checkout untouched
 bash scripts/validate.sh --catalog-only   # a catalog-only change: skips projection checks and smokes
 ```
+
+For delegated distribution changes and the acceptance matrix, follow
+[`docs/agents/distribution-validation.md`](docs/agents/distribution-validation.md).
+The bare `bash scripts/validate.sh` checks already-materialized projections in place.
 
 The script is the union of what CI and regeneration enforce; neither workflow
 runs it, each keeps its own subset. Pull-request validation
