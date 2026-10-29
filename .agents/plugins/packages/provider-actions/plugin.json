@@ -1,7 +1,7 @@
 {
   "name": "provider-actions",
-  "version": "0.0.0+catalog.bc6b14b77481.9b7c42ebbd77",
-  "description": "Implement Terraform provider actions with the Plugin Framework — imperative operations that run at lifecycle events (before/after create, update, destroy).",
+  "version": "1.0.0+catalog.146815e19dec.f95db3bb0cfb",
+  "description": "Implement Terraform provider actions with the Plugin Framework — imperative operations that run before or after create and update.",
   "author": {
     "name": "HashiCorp",
     "url": "https://github.com/hashicorp"

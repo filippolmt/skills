@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/cloudflare/skills/tree/49a31e0b3229ccdffe4944be9c61bc7481d1d432/skills/nextjs-on-cloudflare
-- **Commit**: `49a31e0b3229ccdffe4944be9c61bc7481d1d432`
+- **Upstream**: https://github.com/cloudflare/skills/tree/e5b01101e07f617a7807e79a5aa14dee9a078d0b/skills/nextjs-on-cloudflare
+- **Commit**: `e5b01101e07f617a7807e79a5aa14dee9a078d0b`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `nextjs-on-cloudflare` in `.claude-plugin/marketplace.json`

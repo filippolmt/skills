@@ -1013,46 +1013,10 @@
       "category": "Developer Tools"
     },
     {
-      "name": "provider-configuration",
-      "source": {
-        "source": "local",
-        "path": "./.agents/plugins/packages/provider-configuration"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
       "name": "provider-docs",
       "source": {
         "source": "local",
         "path": "./.agents/plugins/packages/provider-docs"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
-      "name": "provider-ephemeral-resources",
-      "source": {
-        "source": "local",
-        "path": "./.agents/plugins/packages/provider-ephemeral-resources"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
-      "name": "provider-framework-migration",
-      "source": {
-        "source": "local",
-        "path": "./.agents/plugins/packages/provider-framework-migration"
       },
       "policy": {
         "installation": "AVAILABLE",
