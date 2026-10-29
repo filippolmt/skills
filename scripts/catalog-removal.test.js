@@ -124,6 +124,23 @@ test('offline CLI sequence prunes upstream removal and its metadata, then all pr
   assert.deepEqual(snapshot(f.root), generated, 'second generation must be idempotent');
 });
 
+test('PR verification rejects overlay drift but accepts compatible overlays with stale projections', (t) => {
+  const f = fixture(t);
+  const patch = '--- a/SKILL.md\n+++ b/SKILL.md\n@@ -4,3 +4,3 @@\n ---\n \n-# Previous one\n+# Portable one\n';
+  f.write('overlays/one.patch', patch);
+  const before = snapshot(f.root);
+  const rejected = f.cli('gen-skills-tree', '--verify-paths');
+  assert.notEqual(rejected.status, 0, rejected.output);
+  assert.match(rejected.output, /one\.patch/);
+  assert.match(rejected.output, /patch does not apply/);
+  assert.deepEqual(snapshot(f.root), before, 'failed verification must not write');
+  f.write('overlays/one.patch', patch.replace('# Previous one', '# one'));
+  const compatible = snapshot(f.root);
+  assert.match(f.succeeds('gen-skills-tree', '--verify-paths'), /skills build with overlays in temp/);
+  assert.deepEqual(snapshot(f.root), compatible, 'successful verification must not rewrite stale projections');
+  assert.notEqual(f.cli('gen-skills-tree', '--check').status, 0, 'committed projections really are stale');
+});
+
 test('offline CLI sequence accepts stale packages after a deliberate catalog removal until regeneration', (t) => {
   const f = fixture(t);
   const catalog = f.read('.claude-plugin/marketplace.json');
