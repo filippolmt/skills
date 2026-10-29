@@ -31,6 +31,13 @@ if [ "$mode" = --isolated ]; then
   git diff --binary --no-ext-diff --no-textconv HEAD > "$scratch/work.patch"
   if [ -s "$scratch/work.patch" ]; then git -C "$worktree" apply --binary "$scratch/work.patch"; fi
   git ls-files --others --exclude-standard -z > "$scratch/untracked"
+  while IFS= read -r -d '' file; do
+    # Git collapses nested repositories to directories; tar would include their ignored files.
+    if [ -d "$file" ] && [ ! -L "$file" ]; then
+      printf 'Cannot snapshot untracked directory %s; ignore or move the nested repository first.\n' "$file" >&2
+      exit 1
+    fi
+  done < "$scratch/untracked"
   tar -cf "$scratch/untracked.tar" --null -T "$scratch/untracked"
   tar -xf "$scratch/untracked.tar" -C "$worktree"
   cd "$worktree"

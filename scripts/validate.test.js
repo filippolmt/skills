@@ -106,6 +106,30 @@ for (const fail of ['offline', 'scripts/gen-codex.js', 'smoke']) {
   });
 }
 
+test('isolated validation rejects untracked nested repositories instead of copying ignored secrets', (t) => {
+  const f = fixture(t);
+  f.git('init', '-q', 'nested');
+  f.write('nested/.gitignore', 'secret.txt\n');
+  f.write('nested/secret.txt', 'must not enter validation');
+  const before = f.state();
+  const result = f.run();
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /untracked directory.*nested/);
+  assert.equal(result.trace, '', 'validation must not start after snapshot rejection');
+  assert.deepEqual(f.state(), before);
+  assert.equal(fs.readFileSync(path.join(f.repo, 'nested/secret.txt'), 'utf8'), 'must not enter validation');
+});
+
+test('snapshot creation failure cleans up before any validation executes', (t) => {
+  const f = fixture(t);
+  f.write('bin/tar', '#!/bin/bash\nexit 31\n', 0o755);
+  const before = f.state();
+  const result = f.run();
+  assert.equal(result.status, 31, result.stderr);
+  assert.equal(result.trace, '');
+  assert.deepEqual(f.state(), before);
+});
+
 test('catalog-only keeps projections untouched and does not run smokes', (t) => {
   const f = fixture(t);
   const before = f.state();

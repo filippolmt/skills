@@ -25,8 +25,9 @@ For full validation, use `bash scripts/validate.sh --isolated`. It snapshots HEA
 plus staged, unstaged and non-ignored untracked changes into a disposable detached
 worktree. It runs the offline suite first, validates the catalog, then regenerates
 and checks projections and runs pi/Codex smokes there. Ignored local files are not
-copied. The original checkout and index stay untouched; the temporary worktree is
-removed on success or failure. Keep the source checkout unchanged while it snapshots.
+copied. Untracked nested repositories are rejected rather than recursively copied;
+ignore or move them before validating. The original checkout and index stay
+untouched; the temporary worktree is removed on success or failure. Keep the source checkout unchanged while it snapshots.
 
 `bash scripts/validate.sh --catalog-only` remains the lighter in-place catalog
 check. No generated outputs from isolated validation belong in the feature commit;
