@@ -53,7 +53,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 const { readCatalog, isLocal, isExternal, entryPath, isBundle, repoOf, root, MARKETPLACE } = require('./catalog.js');
-const { discoverArtifacts, pruneDistributionMetadata } = require('./distribution.js');
+const { discoverArtifacts, isMod, pruneDistributionMetadata } = require('./distribution.js');
 const { licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
 
 const TREE = path.join(root, 'skills');
@@ -356,6 +356,7 @@ function build(dest, plugins, deps = {}) {
     if (!licence) throw new Error(`entry ${entry.name}: ${repo} ships no licence — no licence, no right to redistribute`);
 
     const artifacts = discoverArtifacts(entry, abs);
+    if (isMod(artifacts)) continue; // Claude-only as a whole (ADR-0034)
     const portableEntry = { name: entry.name, sourceRoot: abs, repoRoot: repoDir, artifacts };
     const skills = artifacts.filter((item) => item.kind === 'skill');
     for (const skill of skills) {
@@ -399,6 +400,7 @@ function build(dest, plugins, deps = {}) {
   for (const entry of plugins.filter((item) => isLocal(item) && !isBundle(item))) {
     const sourceRoot = path.join(root, entry.source);
     const artifacts = discoverArtifacts(entry, sourceRoot);
+    if (isMod(artifacts)) continue; // Claude-only as a whole (ADR-0034)
     const portableEntry = { name: entry.name, sourceRoot, repoRoot: root, artifacts };
     for (const artifact of artifacts.filter((item) => ['skill', 'command', 'agent'].includes(item.kind))) {
       let name;

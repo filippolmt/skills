@@ -100,8 +100,9 @@ plugins can coexist under Codex namespacing; the integration test installs both
 `tdd` and `matt-pocock-bundle` together.
 
 The native marketplace contains every supported entry with its complete runtime
-closure. Claude-only guards that have no Codex condition are documented rather
-than exposed as installable stubs; see
+closure. Claude-only guards that have no Codex condition, and mods, which run
+only inside Claude Code, are documented rather than exposed as installable
+stubs; see
 [`docs/distribution-parity.md`](docs/distribution-parity.md).
 
 The tested target is local Codex CLI. ChatGPT desktop and Work are best effort:

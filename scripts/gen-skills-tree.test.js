@@ -212,6 +212,25 @@ test('a url entry resolves to the repo root and vendors its nested skills', () =
   );
 });
 
+// A mod is Claude-only as a whole (ADR-0034): its skills are not vendored either.
+test('a mod vendors nothing, its skills included', () => {
+  const mod = { name: 'mod', source: { source: 'url', url: 'https://github.com/acme/skills', ref: 'v1.0.0', sha: 'abc123def456' } };
+  withBuild(
+    {
+      LICENSE: 'MIT',
+      '.claude-plugin/plugin.json': '{"name":"mod"}',
+      'hooks/hooks.json': '{"modules":["./register.ts"]}',
+      'hooks/register.ts': 'export function register() {}',
+      'skills/tdd/SKILL.md': skill('tdd'),
+    },
+    [mod],
+    ({ dest, plugins, deps }) => {
+      assert.deepEqual(build(dest, plugins, deps), []);
+      assert.deepEqual(fs.readdirSync(dest), []);
+    }
+  );
+});
+
 // `entryPath` normalizes once for every consumer: `./x/` and `x` are one folder,
 // while a leading dot alone is part of the name.
 test('entryPath strips `./` and a trailing slash, never a bare leading dot', () => {

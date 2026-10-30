@@ -61,9 +61,9 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 
 ## Agent distribution
 
-- **Artifact inventory** — the complete set of skills, commands, agents, hooks, hooks modules,
-  MCP configuration and other distribution-relevant artifacts discovered under one
-  plugin entry's source. Unknown artifacts fail validation rather than disappearing.
+- **Artifact inventory** — the complete set of skills, commands, agents, hooks,
+  hooks modules, MCP configuration and other distribution-relevant artifacts
+  discovered under one plugin entry's source. Unknown artifacts fail validation rather than disappearing.
 - **Harness disposition** — one artifact's outcome for one harness: **native** when
   it travels unchanged, **adapted** when it keeps its user-facing outcome through a
   harness-specific representation, or **unsupported** with an exact limitation and
@@ -161,12 +161,10 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Mod** — a plugin with a hooks module: it changes Claude Code's own
   interface or behaviour from inside its engine, and no other harness can load
   it. The whole entry is Claude-only — its skills and commands too, since they
-  presuppose the module — so Codex and pi get no package, only the parity
-  matrix's `unsupported` rows (ADR-0034).
-- **Hooks module** — the TypeScript or JavaScript file a hooks file names under
-  `modules`, registering function hooks. Not a **hook**: a hook is one declared
-  event registration, which another harness may adapt; a hooks module never
-  travels.
+  presuppose the module (ADR-0034).
+- **Hooks module** — the code a mod runs inside Claude Code, registering
+  function hooks. Not a **hook**: a hook is one declared event registration,
+  which another harness may adapt; a hooks module never travels.
 
 ## Agent spawns
 
