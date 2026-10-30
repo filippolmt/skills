@@ -170,7 +170,7 @@ test('an interrupted work keeps its elapsed time while subagents run, and a late
   await startTurn($, 't3')
   agents.push(agent('a2', 'write tests'))
   await clock.advance(5000)
-  expect(await band($)).toBe('work running 0m · 1 subagent · slowest: write tests')
+  expect(await band($)).toBe('work running 5s · 1 subagent · slowest: write tests')
 })
 
 test('a subagent that ends between two polls still records the work as "with"', async ($, on) => {
@@ -243,7 +243,7 @@ test('a mod installed mid-session, with no session.start, still polls and record
   agents.push(agent('a1', 'scan the repo'))
   await endTurn($, 't1')
   await clock.advance(5000)
-  expect(await band($)).toBe('work running 0m · 1 subagent · slowest: scan the repo')
+  expect(await band($)).toBe('work running 5s · 1 subagent · slowest: scan the repo')
 
   agents.splice(0, 1, { ...agents[0]!, status: 'completed' })
   await clock.advance(5000)

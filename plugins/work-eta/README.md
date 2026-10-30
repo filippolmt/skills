@@ -24,6 +24,7 @@ end. A prompt counts as yours unless its origin is a task notification.
 
 Shown above the prompt only while a work is in progress, refreshed every 5 s.
 
+- **Elapsed**: seconds during the first minute (`40s`), whole minutes after.
 - **Estimate**: the 90th percentile of your past works of the same bucket that
   lasted at least as long as the current one, as minutes and as a clock time. It
   sharpens as the work runs.

@@ -18,7 +18,8 @@ const MIN_CONDITIONAL = 5
 type Bucket = 'with' | 'without'
 const bucketOf = (hadSubagents: boolean): Bucket => (hadSubagents ? 'with' : 'without')
 
-const minutes = (ms: number) => `${Math.floor(ms / 60000)}m`
+// Seconds under a minute, so the first minute does not read as a stuck `0m`.
+const duration = (ms: number) => (ms < 60000 ? `${Math.floor(ms / 1000)}s` : `${Math.floor(ms / 60000)}m`)
 
 const clockTime = (ms: number) => {
   const d = new Date(ms)
@@ -35,7 +36,7 @@ const durations = async ($: EngineInterface, bucket: Bucket) => {
 const estimate = (history: number[], elapsed: number, now: number) => {
   if (history.length < MIN_WORKS) return null
   const longer = history.filter(d => d >= elapsed).sort((a, b) => a - b)
-  if (longer.length < MIN_CONDITIONAL) return `longer than usual (${minutes(elapsed)}+)`
+  if (longer.length < MIN_CONDITIONAL) return `longer than usual (${duration(elapsed)}+)`
   const p90 = longer[Math.ceil(longer.length * 0.9) - 1]!
   return `usually done within ${Math.ceil(p90 / 60000)}m (≈${clockTime(now + p90 - elapsed)})`
 }
@@ -71,7 +72,7 @@ const refresh = async ($: EngineInterface) => {
     if (!isSet) return
   }
 
-  const parts = [`work running ${minutes(elapsed)}`]
+  const parts = [`work running ${duration(elapsed)}`]
   if (active.length > 0) {
     const slowest = active.reduce((a, b) => (firstSeen[b.id]! < firstSeen[a.id]! ? b : a))
     parts.push(`${active.length} subagent${active.length === 1 ? '' : 's'}`, `slowest: ${slowest.description}`)
