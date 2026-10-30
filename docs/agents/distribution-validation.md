@@ -30,5 +30,10 @@ ignore or move them before validating. The original checkout and index stay
 untouched; the temporary worktree is removed on success or failure. Keep the source checkout unchanged while it snapshots.
 
 `bash scripts/validate.sh --catalog-only` remains the lighter in-place catalog
-check. No generated outputs from isolated validation belong in the feature commit;
-the post-merge regeneration workflow publishes those projections.
+check. Of the generated outputs, only the README's regions belong in the feature
+commit (`node scripts/gen-readme.js`), since pull-request CI checks them; leave
+every other projection to the post-merge regeneration workflow.
+
+A change confined to one local plugin, catalog and projections untouched (a hook
+fix, a mod's code and tests, a version bump), needs only `bash scripts/run-tests.sh`
+and `claude plugin validate .` while iterating; run `--isolated` once, before the PR.

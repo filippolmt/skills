@@ -136,8 +136,12 @@ bash scripts/validate.sh --isolated       # full validation in a disposable snap
 bash scripts/validate.sh --catalog-only   # a catalog-only change: skips projection checks and smokes
 ```
 
-For delegated distribution changes and the acceptance matrix, follow
+For which check a change needs (a change inside one local plugin, which
+generated outputs to commit), delegated distribution changes and the acceptance
+matrix, follow
 [`docs/agents/distribution-validation.md`](docs/agents/distribution-validation.md).
+For a mod's tests, typecheck and live checks, follow
+[`docs/agents/mod-testing.md`](docs/agents/mod-testing.md).
 The bare `bash scripts/validate.sh` checks already-materialized projections in place.
 
 The script is the union of what CI and regeneration enforce; neither workflow
