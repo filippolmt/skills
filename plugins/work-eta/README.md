@@ -50,6 +50,8 @@ last 200 durations per bucket. Two sessions finishing at once may lose a sample.
   short.
 - The work's end is seen within 5 s (the poll period). Only native events are
   used, no `classic.*` hooks, so the mod also runs where those are disabled.
+- Headless sessions (`claude -p`, the SDK) are ignored: nothing is shown or
+  recorded.
 - Claude Code only: Codex and pi cannot load a mod.
 
 ## Install

@@ -17,7 +17,13 @@ const BAND = {
 } as const
 
 // The engine beneath the plugin: a mocked clock and store, and a subagent list the test edits.
-const engine = async ($: Engine, on: On, store: Record<string, unknown> = {}) => {
+// `session` says how the session started: `none` stands for a mod installed mid-session.
+const engine = async (
+  $: Engine,
+  on: On,
+  store: Record<string, unknown> = {},
+  session: 'interactive' | 'headless' | 'none' = 'interactive',
+) => {
   const clock = mock.clock(on, { now: Date.UTC(2026, 9, 30, 12) })
   mock.store(on, store)
   const agents: AgentInfo[] = []
@@ -31,7 +37,9 @@ const engine = async ($: Engine, on: On, store: Record<string, unknown> = {}) =>
     const { Text } = $.ui.resolve(e)
     return <Text>other band</Text>
   })
-  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  if (session !== 'none') {
+    await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: session === 'interactive' })
+  }
   return { clock, agents }
 }
 
@@ -210,4 +218,30 @@ test('the bucket switches to "with" when the first subagent starts', async ($, o
   agents.push(agent('a1', 'scan the repo'))
   await clock.advance(5000)
   expect(await band($)).toMatch(/usually done within 40m/)
+})
+
+test('a headless session records no work', async ($, on) => {
+  const { clock } = await engine($, on, { without: samples(...Array(19).fill(30)) }, 'headless')
+  await startTurn($, 't1')
+  await clock.advance(MIN)
+  expect(await band($)).toBe(undefined)
+  await endTurn($, 't1')
+})
+
+test('a mod installed mid-session, with no session.start, still polls and records', async ($, on) => {
+  const { clock, agents } = await engine($, on, { with: samples(...Array(19).fill(30)) }, 'none')
+  await startTurn($, 't1')
+  agents.push(agent('a1', 'scan the repo'))
+  await endTurn($, 't1')
+  await clock.advance(5000)
+  expect(await band($)).toBe('work running 0m · 1 subagent · slowest: scan the repo')
+
+  agents.splice(0, 1, { ...agents[0]!, status: 'completed' })
+  await clock.advance(5000)
+  expect(await band($)).toBe(undefined)
+
+  await startTurn($, 't2')
+  agents.push(agent('a2', 'write tests'))
+  await clock.advance(5000)
+  expect(await band($)).toMatch(/usually done within 30m/)
 })
