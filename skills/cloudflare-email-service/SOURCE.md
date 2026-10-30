@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/cloudflare/skills/tree/83a27eb901c2c63f6caaf0eca6168993a322d268/skills/cloudflare-email-service
-- **Commit**: `83a27eb901c2c63f6caaf0eca6168993a322d268`
+- **Upstream**: https://github.com/cloudflare/skills/tree/ed2d6ba89033ba8015591005ed9382cef550417f/skills/cloudflare-email-service
+- **Commit**: `ed2d6ba89033ba8015591005ed9382cef550417f`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `cloudflare-email-service` in `.claude-plugin/marketplace.json`

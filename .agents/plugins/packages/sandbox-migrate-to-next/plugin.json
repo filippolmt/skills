@@ -1,6 +1,6 @@
 {
   "name": "sandbox-migrate-to-next",
-  "version": "0.0.0+catalog.83a27eb901c2.f162a00b348c",
+  "version": "0.0.0+catalog.ed2d6ba89033.863ef822ef5c",
   "description": "Migrate Cloudflare Sandbox apps from stable @cloudflare/sandbox to @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-next for apps already on the preview.",
   "author": {
     "name": "Cloudflare",
