@@ -10,7 +10,7 @@ Checked 2026-10-25 against repository commit `ae3d8841f177fac25548798e808a4ad54d
 
 ## Scope
 
-Public onboarding in [README.md](../../README.md), the GitHub repository description, and the implementation behind the advertised distribution paths. Read [CLAUDE.md](../../CLAUDE.md) and [CONTEXT.md](../../CONTEXT.md); terminology below follows their catalog, bundle, runtime closure, and package-filter definitions. This is a documentation audit, not a new distribution design.
+Public onboarding in [README.md](../../README.md), the GitHub repository description, and the implementation behind the advertised distribution paths. Read [CLAUDE.md](../../CLAUDE.md) and [GLOSSARY.md](../../GLOSSARY.md); terminology below follows their catalog, bundle, runtime closure, and package-filter definitions. This is a documentation audit, not a new distribution design.
 
 The three distribution routes are real and different: Claude installs catalog references, Codex installs generated self-contained native plugins, and pi installs one repository package with selectable skills. Preserve that distinction rather than replacing everything with loose-skill installation instructions.
 
@@ -114,7 +114,7 @@ The installed package is `/usr/local/lib/node_modules/@earendil-works/pi-coding-
 
 ### Repository implementation
 
-- **R1:** [Claude catalog](../../.claude-plugin/marketplace.json), [Codex marketplace](../../.agents/plugins/marketplace.json), and [domain glossary](../../CONTEXT.md).
+- **R1:** [Claude catalog](../../.claude-plugin/marketplace.json), [Codex marketplace](../../.agents/plugins/marketplace.json), and [domain glossary](../../GLOSSARY.md).
 - **R2:** [ADR-0008](../adr/0008-whole-plugin-entries-cover-commands.md), whole-plugin paths; [catalog helpers](../../scripts/catalog.js), bundle detection.
 - **R3:** [Codex generator](../../scripts/gen-codex.js), [generated tdd manifest](../../.agents/plugins/packages/tdd/plugin.json), [Codex lifecycle smoke](../../scripts/test-codex-marketplace.sh), and [pi package smoke](../../scripts/test-pi-package.sh). The latter installs the repo as a package from another working directory; it does not test automatic discovery merely by entering the checkout.
 

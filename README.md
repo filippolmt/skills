@@ -745,7 +745,7 @@ bump only for changes that leave every plugin's behaviour alone — repo docs,
   regeneration PR merges itself; and
   [ADR-0008](docs/adr/0008-whole-plugin-entries-cover-commands.md), why a few
   entries point at a whole plugin instead of a single skill.
-- [`CONTEXT.md`](CONTEXT.md) — the domain glossary, and the naming authority.
+- [`GLOSSARY.md`](GLOSSARY.md) — the domain glossary, and the naming authority.
   *Bundle*, *projection*, *overlay*, *guard* and *spawn* are
   defined terms there, each narrower than its everyday sense.
 - [`CLAUDE.md`](CLAUDE.md) — the operating instructions for agents working in
