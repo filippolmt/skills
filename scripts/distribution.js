@@ -1,5 +1,6 @@
 // Shared read-only model of what each catalog entry distributes. Writers consume
-// this inventory; they do not rediscover skills, commands, agents, hooks, or MCP.
+// this inventory; they do not rediscover skills, commands, agents, hooks, hooks
+// modules, or MCP.
 const fs = require('fs');
 const path = require('path');
 const { isBundle } = require('./catalog.js');
@@ -7,12 +8,17 @@ const { isBundle } = require('./catalog.js');
 const MANIFEST_METADATA = new Set([
   'name', 'version', 'description', 'author', 'homepage', 'repository', 'license',
   'keywords', 'skills', 'commands', 'agents', 'hooks', 'mcpServers', 'dependencies',
+  'types', 'userConfig',
+  // Fields Claude Code never reads: a schema hint, free-form data, directory-listing links.
+  '$schema', 'metadata', 'icon', 'documentationUrl', 'supportUrl', 'privacyPolicyUrl', 'termsOfServiceUrl',
 ]);
+const MODULE_SUFFIXES = new Set(['.ts', '.tsx', '.jsx', '.js', '.mjs', '.cjs', '.mts', '.cts']);
 const STATUSES = new Set(['native', 'adapted', 'unsupported']);
 const METADATA_FIELDS = new Set(['runtimeDependencies', 'artifacts', 'presentationOverrides', 'unsupportedEntries']);
 const OUTCOME_FIELDS = new Set(['disposition', 'detail', 'limitation', 'fallback', 'sourcePath', 'evidencePath']);
 const PRESENTATION_FIELDS = new Set(['displayName', 'description']);
 const posix = (p) => p.split(path.sep).join('/');
+const inside = (root, target) => target.startsWith(`${root}${path.sep}`);
 
 function filesUnder(dir, accept) {
   if (!fs.existsSync(dir)) return [];
@@ -34,7 +40,7 @@ function declaredFiles(root, value, defaults, accept, label) {
   const files = new Set();
   for (const item of paths) {
     const target = path.resolve(root, item);
-    if (target !== root && !target.startsWith(`${root}${path.sep}`)) throw new Error(`${label} path escapes plugin root: ${item}`);
+    if (target !== root && !inside(root, target)) throw new Error(`${label} path escapes plugin root: ${item}`);
     if (!fs.existsSync(target)) {
       if (!defaults.includes(item)) throw new Error(`${label} path does not exist: ${item}`);
       continue;
@@ -85,10 +91,21 @@ function discoverArtifacts(entry, root) {
   }
 
   for (const hooksFile of declaredFiles(root, manifest.hooks, ['hooks/hooks.json'], () => true, 'hooks')) {
-    const hooks = json(hooksFile, 'invalid hook configuration').hooks || {};
+    const config = json(hooksFile, 'invalid hook configuration');
+    const hooks = config.hooks || {};
     for (const event of Object.keys(hooks).sort()) {
       const registrations = Array.isArray(hooks[event]) ? hooks[event] : [];
       registrations.forEach((_, i) => out.push(artifact(entry, root, 'hook', hooksFile, `#${event}[${i}]`)));
+    }
+    const modules = config.modules === undefined ? [] : config.modules;
+    if (!Array.isArray(modules) || modules.some((item) => typeof item !== 'string')) throw new Error(`${hooksFile}: modules must be an array of paths`);
+    for (const item of modules) {
+      // A module path is relative to the hooks file naming it, not to the plugin root.
+      const file = path.resolve(path.dirname(hooksFile), item);
+      if (!inside(root, file)) throw new Error(`hooks module path escapes plugin root: ${item}`);
+      if (!fs.existsSync(file) || !fs.statSync(file).isFile()) throw new Error(`hooks module path does not exist: ${item}`);
+      if (!MODULE_SUFFIXES.has(path.extname(file))) throw new Error(`hooks module is not a file Claude Code loads: ${item}`);
+      out.push(artifact(entry, root, 'hooks-module', file));
     }
   }
 
@@ -137,10 +154,18 @@ const derived = {
     pi: { disposition: 'adapted', detail: 'Published as a generated package-filter snippet.' },
   },
 };
+// A mod is Claude-only as a whole: its other artifacts presuppose the module (ADR-0034).
+const claudeOnly = {
+  disposition: 'unsupported',
+  limitation: "Function-hook modules run only inside Claude Code's engine.",
+  fallback: 'Install the plugin in Claude Code; no equivalent exists.',
+};
+const modOutcome = { codex: claudeOnly, pi: claudeOnly };
+const isMod = (artifacts) => artifacts.some((item) => item.kind === 'hooks-module');
 
-function classify(item, metadata) {
+function classify(item, metadata, mod) {
   const key = `${item.entry}/${item.id}`;
-  const decision = metadata.artifacts?.[key] || metadata.unsupportedEntries?.[item.entry] || derived[item.kind];
+  const decision = metadata.artifacts?.[key] || metadata.unsupportedEntries?.[item.entry] || (mod ? modOutcome : derived[item.kind]);
   if (!decision) throw new Error(`${key}: unclassified ${item.kind} artifact`);
   for (const harness of ['codex', 'pi']) {
     const outcome = decision[harness];
@@ -241,10 +266,11 @@ function validateDistribution(inventory, metadata = {}, options = {}) {
       ...(metadata.runtimeDependencies?.[entry.name] || []),
     ])];
     for (const target of runtimeDependencies) if (!entries.has(target)) throw new Error(`${entry.name}: unknown dependency ${target}`);
+    const mod = isMod(entry.artifacts);
     return {
       ...entry,
       runtimeDependencies,
-      artifacts: entry.artifacts.map((item) => ({ ...item, dispositions: classify(item, metadata) })),
+      artifacts: entry.artifacts.map((item) => ({ ...item, dispositions: classify(item, metadata, mod) })),
     };
   });
 
@@ -315,4 +341,4 @@ function renderParity(inventory) {
   ].join('\n');
 }
 
-module.exports = { discoverArtifacts, declaredDependencies, classify, validateDistribution, pruneDistributionMetadata, validatePortableRuntime, renderParity, posix };
+module.exports = { discoverArtifacts, isMod, declaredDependencies, classify, validateDistribution, pruneDistributionMetadata, validatePortableRuntime, renderParity, posix };

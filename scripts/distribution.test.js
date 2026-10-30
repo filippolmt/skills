@@ -71,6 +71,77 @@ test('discovers artifacts from manifest-declared paths', () => {
   }
 });
 
+test('a mod is inventoried by its hooks modules and is Claude-only as a whole', () => {
+  const dir = fixture({
+    '.claude-plugin/plugin.json': JSON.stringify({ name: 'mod', hooks: './hooks/band.json', types: './types/index.d.ts', userConfig: {}, icon: './icon.png', metadata: {} }),
+    'hooks/hooks.json': JSON.stringify({ hooks: { Stop: [{}] }, modules: ['./register.tsx'] }),
+    'hooks/band.json': JSON.stringify({ hooks: {}, modules: ['./band/register.tsx'] }),
+    'hooks/register.tsx': 'export function register() {}',
+    'hooks/band/register.tsx': 'export function register() {}',
+    'skills/one/SKILL.md': '---\nname: one\ndescription: One.\n---\n',
+  });
+  try {
+    const artifacts = discoverArtifacts({ name: 'mod' }, dir);
+    assert.deepEqual(artifacts.map((a) => a.id), [
+      'hook:hooks/hooks.json#Stop[0]',
+      'hooks-module:hooks/band/register.tsx',
+      'hooks-module:hooks/register.tsx',
+      'skill:skills/one/SKILL.md',
+    ]);
+    const [entry] = validateDistribution([{ name: 'mod', artifacts }], {});
+    for (const item of entry.artifacts) {
+      for (const harness of ['codex', 'pi']) assert.equal(item.dispositions[harness].disposition, 'unsupported', `${item.id} ${harness}`);
+    }
+    assert.match(renderParity([entry]), /`hooks-module:hooks\/register.tsx` \| — \| Unsupported — Function-hook modules run only inside Claude Code's engine/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a plugin with only a hooks module is one Claude-only artifact', () => {
+  const dir = fixture({
+    '.claude-plugin/plugin.json': JSON.stringify({ name: 'mod' }),
+    'hooks/hooks.json': JSON.stringify({ modules: ['./register.js'] }),
+    'hooks/register.js': 'export function register() {}',
+  });
+  try {
+    const artifacts = discoverArtifacts({ name: 'mod' }, dir);
+    assert.deepEqual(artifacts.map((a) => a.id), ['hooks-module:hooks/register.js']);
+    const [entry] = validateDistribution([{ name: 'mod', artifacts }], {});
+    assert.equal(entry.artifacts[0].dispositions.codex.disposition, 'unsupported');
+    assert.equal(entry.artifacts[0].dispositions.pi.disposition, 'unsupported');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a per-artifact record overrides the derived mod outcome', () => {
+  const artifacts = [
+    { entry: 'mod', id: 'hooks-module:hooks/register.js', kind: 'hooks-module' },
+    { entry: 'mod', id: 'skill:skills/one/SKILL.md', kind: 'skill' },
+  ];
+  const native = { codex: { disposition: 'native' }, pi: { disposition: 'native' } };
+  const [entry] = validateDistribution([{ name: 'mod', artifacts }], { artifacts: { 'mod/skill:skills/one/SKILL.md': native } });
+  assert.deepEqual(entry.artifacts.map((a) => a.dispositions.pi.disposition), ['unsupported', 'native']);
+  assert.throws(() => classify(artifacts[0], {}), /unclassified hooks-module artifact/);
+});
+
+test('a hooks module path must be a loadable file inside the plugin', () => {
+  for (const [modules, files, error] of [
+    ['./register.tsx', {}, /array of paths/],
+    [['../../escape.ts'], {}, /escapes plugin root/],
+    [['./missing.tsx'], {}, /does not exist/],
+    [['./register.py'], { 'hooks/register.py': '' }, /not a file Claude Code loads/],
+  ]) {
+    const dir = fixture({ '.claude-plugin/plugin.json': '{}', 'hooks/hooks.json': JSON.stringify({ modules }), ...files });
+    try {
+      assert.throws(() => discoverArtifacts({ name: 'mod' }, dir), error);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }
+});
+
 test('reads manifest dependencies as derivable runtime edges', () => {
   const dir = fixture({ '.claude-plugin/plugin.json': JSON.stringify({ name: 'bundle', dependencies: ['one', 'two'] }) });
   try {

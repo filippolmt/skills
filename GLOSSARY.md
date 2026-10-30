@@ -62,8 +62,8 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 ## Agent distribution
 
 - **Artifact inventory** — the complete set of skills, commands, agents, hooks,
-  MCP configuration and other distribution-relevant artifacts discovered under one
-  plugin entry's source. Unknown artifacts fail validation rather than disappearing.
+  hooks modules, MCP configuration and other distribution-relevant artifacts
+  discovered under one plugin entry's source. Unknown artifacts fail validation rather than disappearing.
 - **Harness disposition** — one artifact's outcome for one harness: **native** when
   it travels unchanged, **adapted** when it keeps its user-facing outcome through a
   harness-specific representation, or **unsupported** with an exact limitation and
@@ -113,8 +113,9 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Overlay drift** — an overlay whose upstream has moved under it. Surfaces as the
   patch failing to apply, which is the property the form is chosen for.
 - **Portable entry** — a catalog entry that has a vendored copy. Excluded are the
-  bundles and the guards: neither agent has `dependencies` or a
-  subagent a plugin can ship, and pi has no declarative hooks at all.
+  bundles, the guards and the mods: neither agent has `dependencies` or a
+  subagent a plugin can ship, pi has no declarative hooks at all, and a mod
+  runs only inside Claude Code.
 - **pi package** — this repository installed whole, as one unit. There is exactly
   one, never one per entry, because pi has no per-subdirectory source.
 - **Ref-less source** — a pi package source carrying no `ref`. The only shape that
@@ -154,6 +155,16 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   (`ALLOW_NAMED_AGENTS=1`, `ALLOW_ZSH_NOSPLIT=1`). A rule whose fix is a
   same-meaning rewrite — quoting, escaping — has none: the rewrite is the way
   through.
+
+## Mods
+
+- **Mod** — a plugin with a hooks module: it changes Claude Code's own
+  interface or behaviour from inside its engine, and no other harness can load
+  it. The whole entry is Claude-only — its skills and commands too, since they
+  presuppose the module (ADR-0034).
+- **Hooks module** — the code a mod runs inside Claude Code, registering
+  function hooks. Not a **hook**: a hook is one declared event registration,
+  which another harness may adapt; a hooks module never travels.
 
 ## Agent spawns
 

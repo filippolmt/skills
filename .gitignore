@@ -6,3 +6,6 @@ graphify-out/
 
 # Per-machine Claude Code settings: never tracked
 .claude/settings.local.json
+
+# Engine-written type declarations of a mod loaded from its folder
+**/.claude-plugin/types/
