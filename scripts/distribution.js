@@ -8,6 +8,8 @@ const MANIFEST_METADATA = new Set([
   'name', 'version', 'description', 'author', 'homepage', 'repository', 'license',
   'keywords', 'skills', 'commands', 'agents', 'hooks', 'mcpServers', 'dependencies',
   'types', 'userConfig',
+  // Fields Claude Code never reads: a schema hint, free-form data, directory-listing links.
+  '$schema', 'metadata', 'icon', 'documentationUrl', 'supportUrl', 'privacyPolicyUrl', 'termsOfServiceUrl',
 ]);
 const MODULE_SUFFIXES = new Set(['.ts', '.tsx', '.jsx', '.js', '.mjs', '.cjs', '.mts', '.cts']);
 const STATUSES = new Set(['native', 'adapted', 'unsupported']);

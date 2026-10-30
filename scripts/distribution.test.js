@@ -73,7 +73,7 @@ test('discovers artifacts from manifest-declared paths', () => {
 
 test('a mod is inventoried by its hooks modules and is Claude-only as a whole', () => {
   const dir = fixture({
-    '.claude-plugin/plugin.json': JSON.stringify({ name: 'mod', hooks: './hooks/band.json', types: './types/index.d.ts', userConfig: {} }),
+    '.claude-plugin/plugin.json': JSON.stringify({ name: 'mod', hooks: './hooks/band.json', types: './types/index.d.ts', userConfig: {}, icon: './icon.png', metadata: {} }),
     'hooks/hooks.json': JSON.stringify({ hooks: { Stop: [{}] }, modules: ['./register.tsx'] }),
     'hooks/band.json': JSON.stringify({ hooks: {}, modules: ['./band/register.tsx'] }),
     'hooks/register.tsx': 'export function register() {}',

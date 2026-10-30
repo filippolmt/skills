@@ -6,9 +6,11 @@ status: accepted
 
 A **mod** loads a hooks module — a file a hooks file names under `modules` —
 that runs inside Claude Code's engine, reaching everything through `$`, with no
-Node and no DOM (plugin-authoring reference, Claude Code 2.1.314). No other
-harness can load it. The inventory read only a hooks file's `hooks` key, so a
-mod yielded no artifacts and failed with `no distribution artifacts discovered`.
+Node and no DOM, in the CLI, Desktop app and VS Code extension alone
+(code.claude.com/docs/en/plugins/mods/reference, checked against Claude Code
+2.1.314). No other harness can load it. The inventory read only a hooks
+file's `hooks` key, so a mod yielded no artifacts and failed with
+`no distribution artifacts discovered`.
 
 ## Decision
 
@@ -30,6 +32,10 @@ mod yielded no artifacts and failed with `no distribution artifacts discovered`.
   tree copy or pi filter is emitted.
 - `types` (a mod's `$` contract) and `userConfig` (its `register` options) are
   manifest metadata, not artifacts.
+  So are the fields the manifest reference says Claude Code never reads
+  (`$schema`, `metadata`, `icon` and the directory-listing URLs), which a mod
+  submitted to Anthropic's directory carries; an unknown field still fails as
+  an unclassified `manifest-capability`.
 
 ## Considered options
 
