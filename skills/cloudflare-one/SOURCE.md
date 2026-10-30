@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/cloudflare/skills/tree/e5b01101e07f617a7807e79a5aa14dee9a078d0b/skills/cloudflare-one
-- **Commit**: `e5b01101e07f617a7807e79a5aa14dee9a078d0b`
+- **Upstream**: https://github.com/cloudflare/skills/tree/c668cb2d1e28e0ba38efc73625b31732a6d5d13c/skills/cloudflare-one
+- **Commit**: `c668cb2d1e28e0ba38efc73625b31732a6d5d13c`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `cloudflare-one` in `.claude-plugin/marketplace.json`
