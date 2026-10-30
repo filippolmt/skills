@@ -30,7 +30,7 @@ git-subdir at `"."`: Claude Code sparse-checks-out that `path` and installs only
 the repo's top-level files (`docs/adr/0033-a-repo-root-plugin-is-a-url-entry.md`);
 see `diagram-design`. `check-renovate.js` rejects a root git-subdir `path`.
 
-`CONTEXT.md` is the domain glossary — the naming authority. Read it before you
+`GLOSSARY.md` is the domain glossary — the naming authority. Read it before you
 coin a name, and whenever a task says *bundle*, *projection*, *overlay*, *guard* or
 *spawn*: each is a defined term here, narrower than its
 everyday sense.
@@ -61,7 +61,7 @@ marketplace owner is the publisher, not the default author ([ADR-0018](docs/adr/
 `marketplace.json`: the **Available skills** catalog projection, and the
 **bundle projection** — the bundle table inside *Installing skills*
 (`docs/adr/0012-the-bundle-table-lives-next-to-the-install.md`). A bundle appears
-in one and never the other; `CONTEXT.md` is the authority on both terms. Change
+in one and never the other; `GLOSSARY.md` is the authority on both terms. Change
 the catalog entry — plus its group in `scripts/catalog-meta.json` when the source
 repo is new — and regenerate; the generator throws on a git-subdir repo with no
 group, and `--check` compares both regions.
@@ -194,4 +194,4 @@ Use the five default triage labels. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
-Single-context layout using `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
+Single-context layout using `GLOSSARY.md` and `docs/adr/`. See `docs/agents/domain.md`.

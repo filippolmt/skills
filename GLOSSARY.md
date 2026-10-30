@@ -1,4 +1,6 @@
-# CONTEXT — domain glossary
+# GLOSSARY — domain glossary
+
+Formerly `CONTEXT.md`; older ADRs cite it by that name.
 
 Domain language for this marketplace. Use these names in code, docs, and design
 discussion. (Architecture vocabulary — module, seam, depth — lives in the
