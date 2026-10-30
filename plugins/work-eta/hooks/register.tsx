@@ -86,9 +86,21 @@ const refresh = async ($: EngineInterface) => {
 const patch = ($: EngineInterface, change: (work: Work) => Partial<Work>) =>
   update($, workAtom, work => (work ? { ...work, ...change(work) } : null))
 
+let isPolling = false
+
+// Also started at a turn: a mod installed mid-session may never hear session.start.
+const startPolling = ($: EngineInterface) => {
+  if (isPolling) return
+  isPolling = true
+  $.clock.every(TICK_MS, () => refresh($))
+}
+
+// A headless run (`claude -p`, the SDK before a client attaches) draws nowhere: no work to wait on, none recorded.
+const isDrawn = async ($: EngineInterface) => (await $.session.surfaces()).length > 0
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    $.clock.every(TICK_MS, () => refresh($))
+    if (await isDrawn($)) startPolling($)
     return next(e)
   })
 
@@ -108,11 +120,14 @@ export const register: Register = on => {
       const now = await $.clock.now()
       const { value: isPromptPending = false } = await $.state.get(PROMPT_PENDING)
       await $.state.set(PROMPT_PENDING, false)
+      const canStart = isPromptPending && (await isDrawn($))
+      // The turn that starts a work starts the poll that ends it.
+      if (canStart) startPolling($)
       // A turn started during a work continues it.
       await update($, workAtom, work =>
         work
           ? { ...work, isTurnRunning: true }
-          : isPromptPending
+          : canStart
             ? { startedAt: now, isTurnRunning: true, isDiscarded: false, hadSubagents: false, firstSeen: {} }
             : null,
       )
