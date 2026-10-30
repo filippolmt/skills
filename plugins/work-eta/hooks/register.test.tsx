@@ -1,4 +1,4 @@
-import type { AgentInfo, On } from 'claude-code'
+import type { AgentInfo, On, RenderSurface } from 'claude-code'
 import { expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 
@@ -28,6 +28,9 @@ const engine = async (
   mock.store(on, store)
   const agents: AgentInfo[] = []
   on('agent.list', () => ({ value: agents }))
+  // Where the session draws: none in a headless run until a client attaches.
+  const surfaces: RenderSurface[] = session === 'headless' ? [] : ['terminal']
+  on('session.surfaces', () => ({ value: surfaces }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('prompt.submit', (_, e) => ({ text: e.text }))
   on('turn.start', (_, e) => ({ turnId: e.turnId }))
@@ -40,7 +43,7 @@ const engine = async (
   if (session !== 'none') {
     await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: session === 'interactive' })
   }
-  return { clock, agents }
+  return { clock, agents, surfaces }
 }
 
 // A typed prompt and the main turn it starts.
@@ -220,12 +223,18 @@ test('the bucket switches to "with" when the first subagent starts', async ($, o
   expect(await band($)).toMatch(/usually done within 40m/)
 })
 
-test('a headless session records no work', async ($, on) => {
-  const { clock } = await engine($, on, { without: samples(...Array(19).fill(30)) }, 'headless')
+test('a headless session shows and records no work', async ($, on) => {
+  const { clock, surfaces } = await engine($, on, { without: samples(...Array(19).fill(30)) }, 'headless')
   await startTurn($, 't1')
   await clock.advance(MIN)
   expect(await band($)).toBe(undefined)
   await endTurn($, 't1')
+
+  // A client attaching later (an SDK host) draws the band; the history still holds 19, so no estimate.
+  surfaces.push('desktop')
+  await startTurn($, 't2')
+  await clock.advance(MIN)
+  expect(await band($)).toBe('work running 1m')
 })
 
 test('a mod installed mid-session, with no session.start, still polls and records', async ($, on) => {
