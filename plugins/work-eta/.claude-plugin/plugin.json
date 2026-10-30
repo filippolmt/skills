@@ -1,7 +1,7 @@
 {
   "name": "work-eta",
   "description": "A band above the prompt, shown while a work runs (your prompt until the main turn and every subagent are done): elapsed time, active subagents, the slowest one, and when works like it usually finish — the 90th percentile of your past works of the same kind that ran at least this long, shown once 20 are recorded.",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "author": {
     "name": "Filippo Merante Caparrotta"
   },

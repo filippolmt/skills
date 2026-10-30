@@ -32,13 +32,20 @@ const durations = async ($: EngineInterface, bucket: Bucket) => {
   return Array.isArray(stored) ? stored.filter((d): d is number => Number.isFinite(d)) : []
 }
 
-// The tail after the elapsed time: the 90th percentile of past works that lasted at least as long.
-const estimate = (history: number[], elapsed: number, now: number) => {
-  if (history.length < MIN_WORKS) return null
+// Seconds count down so the band reads as a countdown; it moves in TICK_MS steps.
+const countdown = (ms: number) => {
+  const s = Math.floor(ms / 1000)
+  return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, '0')}s`
+}
+
+// The band's head: when the work should end, from the 90th percentile of past works that lasted
+// at least as long; the elapsed time while the bucket has too few works to estimate.
+const head = (history: number[], elapsed: number, now: number) => {
+  if (history.length < MIN_WORKS) return `work running ${duration(elapsed)}`
   const longer = history.filter(d => d >= elapsed).sort((a, b) => a - b)
   if (longer.length < MIN_CONDITIONAL) return `longer than usual (${duration(elapsed)}+)`
   const p90 = longer[Math.ceil(longer.length * 0.9) - 1]!
-  return `usually done within ${Math.ceil(p90 / 60000)}m (≈${clockTime(now + p90 - elapsed)})`
+  return `ends in ${countdown(p90 - elapsed)} (≈${clockTime(now + p90 - elapsed)})`
 }
 
 // Closes the work and records its duration unless it was interrupted.
@@ -72,13 +79,11 @@ const refresh = async ($: EngineInterface) => {
     if (!isSet) return
   }
 
-  const parts = [`work running ${duration(elapsed)}`]
+  const parts = [head(await durations($, bucketOf(hadSubagents)), elapsed, now)]
   if (active.length > 0) {
     const slowest = active.reduce((a, b) => (firstSeen[b.id]! < firstSeen[a.id]! ? b : a))
     parts.push(`${active.length} subagent${active.length === 1 ? '' : 's'}`, `slowest: ${slowest.description}`)
   }
-  const tail = estimate(await durations($, bucketOf(hadSubagents)), elapsed, now)
-  if (tail) parts.push(tail)
   const line = parts.join(' · ')
   if ((await $.state.get(LINE)).value !== line) await $.state.set(LINE, line)
 }

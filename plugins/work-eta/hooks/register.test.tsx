@@ -62,7 +62,7 @@ const band = async ($: Engine) => {
   const lines = new Set<string | undefined>()
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ ...BAND, surface })
-    lines.add((await ui.find({ type: 'Text', text: /^work running/ }))?.text)
+    lines.add((await ui.find({ type: 'Text', text: /^(work running|ends in|longer than usual)/ }))?.text)
     expect((await ui.find({ type: 'Text', text: /other band/ }))?.text).toBe('other band')
     await ui.unmount()
   }
@@ -78,14 +78,14 @@ test('fewer than 20 works in the bucket: elapsed time only', async ($, on) => {
   expect(await band($)).toBe('work running 8m')
 })
 
-test('20 works: the 90th percentile of those at least as long as now, as minutes and clock time', async ($, on) => {
+test('20 works: the 90th percentile of those at least as long as now, as a countdown and clock time', async ($, on) => {
   // 1..20 minutes; at 8m the conditional samples are 8..20 (13 of them), p90 the 12th: 19m.
   const { clock } = await engine($, on, { without: samples(...Array.from({ length: 20 }, (_, i) => i + 1)) })
   await startTurn($, 't1')
   await clock.advance(8 * MIN)
 
   const line = await band($)
-  expect(line).toMatch(/^work running 8m · usually done within 19m \(≈\d\d:\d\d\)$/)
+  expect(line).toMatch(/^ends in 11m 00s \(≈\d\d:\d\d\)$/)
   const at = new Date(clock.now() + 11 * MIN)
   expect(line).toContain(`${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`)
 })
@@ -95,7 +95,7 @@ test('fewer than 5 works lasted this long: longer than usual', async ($, on) => 
   await startTurn($, 't1')
   await clock.advance(10 * MIN)
 
-  expect(await band($)).toBe('work running 10m · longer than usual (10m+)')
+  expect(await band($)).toBe('longer than usual (10m+)')
 })
 
 test('no band outside a work', async ($, on) => {
@@ -124,7 +124,7 @@ test('a turn ending while a subagent runs does not end the work', async ($, on) 
   await startTurn($, 't2')
   agents.push(agent('a3', 'write tests'))
   await clock.advance(5000)
-  expect(await band($)).toMatch(/usually done within 30m/)
+  expect(await band($)).toMatch(/^ends in 29m 55s /)
 })
 
 test('a turn started during a work continues it', async ($, on) => {
@@ -182,7 +182,7 @@ test('a subagent that ends between two polls still records the work as "with"', 
   await startTurn($, 't2')
   await $.turn.start({ text: 'look', turnId: 's2', agentId: 'a2' })
   await clock.advance(MIN)
-  expect(await band($)).toMatch(/usually done within 30m/)
+  expect(await band($)).toMatch(/^ends in 29m 00s /)
 })
 
 test('a turn no typed prompt started, such as a task notification, starts no work', async ($, on) => {
@@ -206,7 +206,7 @@ test('a completed work is recorded, and the next one gets an estimate', async ($
 
   await startTurn($, 't2')
   await clock.advance(MIN)
-  expect(await band($)).toMatch(/^work running 1m · usually done within 30m/)
+  expect(await band($)).toMatch(/^ends in 29m 00s /)
 })
 
 test('the bucket switches to "with" when the first subagent starts', async ($, on) => {
@@ -216,11 +216,11 @@ test('the bucket switches to "with" when the first subagent starts', async ($, o
   })
   await startTurn($, 't1')
   await clock.advance(MIN)
-  expect(await band($)).toMatch(/usually done within 5m/)
+  expect(await band($)).toMatch(/^ends in 4m 00s /)
 
   agents.push(agent('a1', 'scan the repo'))
   await clock.advance(5000)
-  expect(await band($)).toMatch(/usually done within 40m/)
+  expect(await band($)).toMatch(/^ends in 38m 55s /)
 })
 
 test('a headless session shows and records no work', async ($, on) => {
@@ -252,5 +252,5 @@ test('a mod installed mid-session, with no session.start, still polls and record
   await startTurn($, 't2')
   agents.push(agent('a2', 'write tests'))
   await clock.advance(5000)
-  expect(await band($)).toMatch(/usually done within 30m/)
+  expect(await band($)).toMatch(/^ends in 29m 55s /)
 })
