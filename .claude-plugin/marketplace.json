@@ -47,6 +47,14 @@
       }
     },
     {
+      "name": "work-eta",
+      "source": "./plugins/work-eta",
+      "description": "A band above the prompt, shown while a work runs (your prompt until the main turn and every subagent are done): elapsed time, active subagents, the slowest one, and when works like it usually finish — the 90th percentile of your past works of the same kind that ran at least this long, shown once 20 are recorded.",
+      "author": {
+        "name": "Filippo Merante Caparrotta"
+      }
+    },
+    {
       "name": "printing-press-bundle",
       "source": "./plugins/printing-press-bundle",
       "description": "Install printing-press with the sibling skills that create and maintain a CLI locally (printing-press-polish, printing-press-score, printing-press-reprint, and the internal printing-press-output-review) and agent-report-guard, the hook that keeps its subagents reporting back. Bundles them as dependencies.",

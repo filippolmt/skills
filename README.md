@@ -375,6 +375,7 @@ Snapshot of the catalog — the source of truth is
 - `subito-listing` — Prepares a Subito.it sale listing, or diagnoses and improves one already live: a price grounded in comparables researched on the web (sold vs asking, read with playwright-cli), a numbered photo shot list, and a title and description ready to paste within the platform limits.
 - `subito-research` — Searches Subito.it for buyers: filters listings by criteria, judges each price against the market, checks scam signals, and prepares seller questions and an offer. Reads subito.it with playwright-cli.
 - `settings-validator` — Validates and improves Claude Code managed, user, shared-project, or project-local settings: confirms the intended configuration, checks every key against the official docs and published JSON schema, applies best practice, and returns complete corrected JSON.
+- `work-eta` — A band above the prompt, shown while a work runs (your prompt until the main turn and every subagent are done): elapsed time, active subagents, the slowest one, and when works like it usually finish — the 90th percentile of your past works of the same kind that ran at least this long, shown once 20 are recorded.
 
 ### [mattpocock/skills](https://github.com/mattpocock/skills) — engineering & productivity
 
