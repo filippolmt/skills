@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/cloudflare/skills/tree/c668cb2d1e28e0ba38efc73625b31732a6d5d13c/skills/durable-objects
-- **Commit**: `c668cb2d1e28e0ba38efc73625b31732a6d5d13c`
+- **Upstream**: https://github.com/cloudflare/skills/tree/83a27eb901c2c63f6caaf0eca6168993a322d268/skills/durable-objects
+- **Commit**: `83a27eb901c2c63f6caaf0eca6168993a322d268`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `durable-objects` in `.claude-plugin/marketplace.json`
