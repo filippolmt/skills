@@ -1,6 +1,6 @@
 {
   "name": "cloudflare-one-migrations",
-  "version": "0.0.0+catalog.e5b01101e07f.288dce752dd1",
+  "version": "0.0.0+catalog.c668cb2d1e28.57fc2d6bd465",
   "description": "Assess and plan migrations from existing VPN, SWG, or SASE platforms to Cloudflare One — policy mapping, parity gaps, and rollout.",
   "author": {
     "name": "Cloudflare",
