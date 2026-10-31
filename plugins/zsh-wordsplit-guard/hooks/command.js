@@ -76,6 +76,20 @@ function reassignedBefore(name, from, to) {
   return false;
 }
 
+// Whether the command from `start` to `end` hands its stdout to a pipe, a
+// redirection or an enclosing substitution.
+// shortcut: any open `(` counts, so a plain subshell `( echo $v )` is denied too; track `$(`/`<(` apart if that bites.
+function stdoutConsumed(start, end) {
+  let open = 0, ticks = 0;
+  for (const c of words.slice(0, start)) {
+    if (c === '(') open++;
+    else if (c === ')' && open) open--;
+    else if (c === '`') ticks++;
+  }
+  const rest = /^[^;&|\n)`]*(\|?)(.?)/.exec(words.slice(end));
+  return open > 0 || ticks % 2 === 1 || rest[0].includes('>') || (rest[1] === '|' && rest[2] !== '|');
+}
+
 let hit = null;
 for (const a of words.matchAll(new RegExp(ASSIGNMENT_AT + '([A-Za-z_]\\w*)=', 'g'))) {
   const at = a.index + a[0].length;
@@ -98,6 +112,9 @@ for (const a of words.matchAll(new RegExp(ASSIGNMENT_AT + '([A-Za-z_]\\w*)=', 'g
     const command = (before + ' ').replace(new RegExp('^' + COMMAND_START), '').trim();
     // These contexts do not split in bash either, or parse the value again.
     if (!command || /^(?:case|for|select|eval)\b/.test(command)) continue;
+    // echo/print joins its arguments with spaces: on the tool output only
+    // whitespace differs, but a consumer reads other lines than in bash (#570).
+    if (/^(?:echo|print)\b/.test(command) && !stdoutConsumed(found.index, found.index + found[0].length)) continue;
     deny('zsh-wordsplit-guard: silent non-split. `' + found[0] + '` as an unquoted ' +
       'argument after assigning `' + name + '` a multi-word value or command substitution ' +
       'stays ONE argument: the Bash tool runs zsh, where parameter expansion is not word-split. ' +

@@ -37,7 +37,7 @@ denied('x=$(DC="docker compose"; $DC ps)');                   // inside a substi
 denied('echo "$(DC="docker compose"; $DC ps)"');
 
 allowed('CMD=ls; $CMD -la');                                  // one word: correct
-denied('DC="docker compose"; echo $DC');                      // multi-word argument
+denied('DC="docker compose"; echo $DC | wc -l');              // multi-word argument, consumed
 allowed('DC="docker compose"; "$DC" ps');                     // quoted: one word in bash too
 allowed('DC="docker compose"; ${=DC} ps');                    // explicit split
 allowed('DC=(docker compose); "${DC[@]}" ps');                // an array
@@ -47,7 +47,7 @@ allowed('DC="docker compose"; DC=ls; $DC');                   // reassigned befo
 allowed('DC="docker compose"; DC=(docker compose); $DC ps');  // an array: several words
 allowed('N="1 + 1"; (( $N ))');                              // arithmetic, not a command
 allowed('echo DC="a b"; $DC');                               // an argument, not an assignment
-denied('DC="docker compose"; echo do $DC');                   // a keyword as an argument
+denied('DC="docker compose"; cmd do $DC');                    // a keyword as an argument
 allowed('DC="docker compose"; [[ -n $DC ]] && echo set');
 allowed('DC="docker compose"; x=$DC; case $DC in d*) echo d;; esac');
 allowed('DC="$HOME/bin"; $DC/tool');                          // no space outside the expansion
@@ -111,7 +111,7 @@ allowed("sh -c 'files=$(echo a); cmd $files'");
 
 denied("if true; then files=$(printf 'a\\nb'); printf '<%s>' $files; fi");
 denied('files="a b"; printf "<%s>" ${unused} $files');
-denied('files="a b"; echo done $files');
+denied('files="a b"; cmd done $files');
 denied('for x in a; do files="a b"; cmd $files; done');
 denied('if false; then :; else files="a b"; cmd $files; fi');
 denied('files="a b"; if true; then files=one true; cmd $files; fi');
@@ -119,5 +119,16 @@ allowed('files="a b"; if true; then files=one; cmd $files; fi');
 allowed('echo then files="a b"; cmd $files');
 allowed('files="a b"; eval ${unused} $files');
 allowed('files="a b"; eval ${unused:-x|y} $files');
+
+// echo/print to the tool output: zsh differs from bash only in whitespace (#570).
+allowed('cd repo && sha=$(git rev-parse HEAD) && echo $sha && glab mr merge 627 --sha "$sha" --yes');
+allowed('v=$(cmd) && echo $v; print -r -- $v');
+denied('v=$(cmd) && rm $v');
+allowed('v=$(cmd) && echo $v || echo none');                  // || is not a pipe
+denied('v=$(cmd); echo $v > out.txt');                        // a consumer reads the lines
+denied('v=$(cmd); echo $v |& wc -l');
+denied('v=$(cmd); x=$(true; echo $v)');
+denied('v=$(cmd); x=`echo $v; true`');
+denied('v=$(cmd); diff <(echo $v) f');
 
 console.log('zsh-wordsplit-guard stored-value rules: all checks passed');
