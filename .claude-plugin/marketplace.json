@@ -874,7 +874,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/agents-sdk",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Build, debug, or review AI agents on Cloudflare Workers with the Agents SDK (the agents package).",
       "author": {
@@ -889,7 +889,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/cloudflare-email-service",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Send and receive transactional emails with Cloudflare Email Service (Email Sending + Email Routing).",
       "author": {
@@ -904,7 +904,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/cloudflare-one-migrations",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Assess and plan migrations from existing VPN, SWG, or SASE platforms to Cloudflare One — policy mapping, parity gaps, and rollout.",
       "author": {
@@ -919,7 +919,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/cloudflare-one",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Guides Cloudflare One Zero Trust and SASE work across Access, Gateway, WARP, Tunnel, WAN, DLP, CASB, device posture, and identity.",
       "author": {
@@ -934,7 +934,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/cloudflare",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Discover and choose Cloudflare products for apps, APIs, AI agents, storage, networking, and security, then find the relevant skill or documentation.",
       "author": {
@@ -949,7 +949,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/durable-objects",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Build, debug, or review Cloudflare Durable Objects code for persistent state and coordination.",
       "author": {
@@ -964,7 +964,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/sandbox-migrate-to-next",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Migrate Cloudflare Sandbox apps from stable @cloudflare/sandbox to @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-next for apps already on the preview.",
       "author": {
@@ -979,7 +979,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/sandbox-next",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Build or maintain Cloudflare Sandbox apps on @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-migrate-to-next when porting a stable app.",
       "author": {
@@ -994,7 +994,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/sandbox-stable",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Build or maintain Cloudflare Sandbox apps on the stable @cloudflare/sandbox package. Use sandbox-next for preview apps and sandbox-migrate-to-next for stable-to-preview migrations.",
       "author": {
@@ -1009,7 +1009,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/turnstile-spin",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Set up, repair, or migrate to Cloudflare Turnstile bot verification in an existing frontend and backend, including server-side Siteverify.",
       "author": {
@@ -1024,7 +1024,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/web-perf",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Audit, diagnose, or optimize page load and interaction performance via Chrome DevTools MCP — Core Web Vitals and Lighthouse performance scores.",
       "author": {
@@ -1039,7 +1039,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/workers-best-practices",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Review and author Cloudflare Workers code against production best practices and common anti-patterns.",
       "author": {
@@ -1054,7 +1054,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/wrangler",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Run or troubleshoot Wrangler CLI commands in projects with a Wrangler configuration file — local development, Previews, deployment, and resource management; new projects use the cf CLI instead.",
       "author": {
@@ -1069,7 +1069,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/nextjs-on-cloudflare",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Build, migrate, and deploy Next.js apps on Cloudflare Workers with vinext.",
       "author": {
@@ -1084,7 +1084,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/basin",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Build and troubleshoot Cloudflare Basin analytics workflows with Basin Pipelines, Basin Catalog, and Basin SQL.",
       "author": {
@@ -1099,7 +1099,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/cf-cli",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Cloudflare's official cf CLI (beta) for the public Cloudflare API and Workers projects.",
       "author": {
@@ -1114,7 +1114,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/gateway-workers",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Build, debug, or review Cloudflare Workers invoked by the Forward action in Gateway HTTP policies, including the GatewayMiddleware entrypoint, Gateway types, context, and continuation.",
       "author": {
@@ -1129,7 +1129,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/k2",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Build and troubleshoot Cloudflare K2 or K2 Streams durable logs.",
       "author": {
@@ -1144,7 +1144,7 @@
         "url": "https://github.com/cloudflare/skills",
         "path": "skills/workers-profiling",
         "ref": "main",
-        "sha": "e44f580f9c4fa3bf268e284ae7706c7954ba31fd"
+        "sha": "1a33048817d06df12882cb881dfc754e7039954a"
       },
       "description": "Profile or debug CPU usage and memory allocation in deployed Cloudflare Workers and Durable Objects.",
       "author": {
