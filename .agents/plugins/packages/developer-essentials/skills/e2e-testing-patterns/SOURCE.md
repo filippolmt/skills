@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/wshobson/agents/tree/9924f719b2ddbbf5326459e55b8720bad8f693c6/plugins/developer-essentials/skills/e2e-testing-patterns
-- **Commit**: `9924f719b2ddbbf5326459e55b8720bad8f693c6`
+- **Upstream**: https://github.com/wshobson/agents/tree/7e2fb559cf4b824b27f1fec49fe88f7511066d26/plugins/developer-essentials/skills/e2e-testing-patterns
+- **Commit**: `7e2fb559cf4b824b27f1fec49fe88f7511066d26`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `developer-essentials` in `.claude-plugin/marketplace.json`

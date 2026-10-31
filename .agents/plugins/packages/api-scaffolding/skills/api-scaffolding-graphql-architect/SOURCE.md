@@ -1,5 +1,5 @@
 # Source
 
-- **Source**: https://github.com/wshobson/agents/tree/9924f719b2ddbbf5326459e55b8720bad8f693c6/agents/graphql-architect.md
+- **Source**: https://github.com/wshobson/agents/tree/7e2fb559cf4b824b27f1fec49fe88f7511066d26/agents/graphql-architect.md
 - **Catalog entry**: `api-scaffolding`
 - **Transformation**: Converted agent to a deterministic namespaced Agent Skill; relative links repointed at sibling skills or the upstream file.
