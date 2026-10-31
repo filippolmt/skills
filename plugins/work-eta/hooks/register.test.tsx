@@ -254,3 +254,40 @@ test('a mod installed mid-session, with no session.start, still polls and record
   await clock.advance(5000)
   expect(await band($)).toMatch(/^ends in 29m 55s /)
 })
+
+test('the elapsed time: seconds in the first minute, minutes after, hours past sixty', async ($, on) => {
+  const { clock } = await engine($, on)
+  await startTurn($, 't1')
+  await clock.advance(55_000)
+  expect(await band($)).toBe('work running 55s')
+  await clock.advance(5000)
+  expect(await band($)).toBe('work running 1m')
+  await clock.advance(74 * MIN)
+  expect(await band($)).toBe('work running 1h 15m')
+})
+
+test('the countdown goes below a minute and never shows 0s before jumping back up', async ($, on) => {
+  const { clock } = await engine($, on, { without: samples(...Array(20).fill(10)) })
+  await startTurn($, 't1')
+  await clock.advance(9 * MIN + 30_000)
+  expect(await band($)).toMatch(/^ends in 30s \(≈\d\d:\d\d\)$/)
+  await clock.advance(25_000)
+  expect(await band($)).toMatch(/^ends in 5s /)
+  // The samples end within this tick: no estimate is left, rather than `ends in 0s`.
+  await clock.advance(5000)
+  expect(await band($)).toBe('longer than usual (10m+)')
+})
+
+test('a countdown past an hour reads in hours', async ($, on) => {
+  const { clock } = await engine($, on, { without: samples(...Array(20).fill(120)) })
+  await startTurn($, 't1')
+  await clock.advance(10 * MIN)
+  expect(await band($)).toMatch(/^ends in 1h 50m \(≈\d\d:\d\d\)$/)
+})
+
+test('longer than usual reads in seconds under a minute', async ($, on) => {
+  const { clock } = await engine($, on, { without: Array(20).fill(10_000) })
+  await startTurn($, 't1')
+  await clock.advance(30_000)
+  expect(await band($)).toBe('longer than usual (30s+)')
+})

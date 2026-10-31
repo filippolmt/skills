@@ -26,11 +26,13 @@ Shown above the prompt only while a work is in progress, refreshed every 5 s.
 
 - **Countdown**: `ends in 12m 35s (≈17:42)`, the time left and the clock time the
   work should end, from the 90th percentile of your past works of the same bucket
-  that lasted at least as long as the current one. It counts down in 5 s steps and
-  sharpens as the work runs, so it can jump when the work outlasts a sample.
+  that lasted at least a tick (5 s) longer than the current one so far. It counts
+  down in 5 s steps and sharpens as the work runs, so it can jump when the work
+  outlasts a sample; it never shows `0s`. Past an hour: `1h 15m`.
 - Fewer than 5 such works: `longer than usual (Nm+)`, with no countdown.
 - Fewer than 20 recorded works in that bucket: `work running 40s`, the elapsed
-  time (seconds in the first minute, whole minutes after). Nothing is seeded.
+  time (seconds in the first minute, whole minutes after, hours past sixty
+  minutes). Nothing is seeded.
 - **Bucket**: with or without subagents. The band switches to "with" when the first
   subagent starts; a work is recorded as "with" if any subagent ran, a teammate
   included.

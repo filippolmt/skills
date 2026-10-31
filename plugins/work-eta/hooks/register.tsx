@@ -18,12 +18,20 @@ const MIN_CONDITIONAL = 5
 type Bucket = 'with' | 'without'
 const bucketOf = (hadSubagents: boolean): Bucket => (hadSubagents ? 'with' : 'without')
 
-// Seconds under a minute, so the first minute does not read as a stuck `0m`.
-const duration = (ms: number) => (ms < 60000 ? `${Math.floor(ms / 1000)}s` : `${Math.floor(ms / 60000)}m`)
+const pad = (n: number) => String(n).padStart(2, '0')
+
+// Seconds under a minute, so the first minute does not read as a stuck `0m`; hours past sixty
+// minutes. `withSeconds` keeps them after the first minute too, for the countdown.
+const timeLabel = (ms: number, withSeconds: boolean) => {
+  const s = Math.floor(ms / 1000)
+  const m = Math.floor(s / 60)
+  if (s < 60) return `${s}s`
+  if (m >= 60) return `${Math.floor(m / 60)}h ${pad(m % 60)}m`
+  return withSeconds ? `${m}m ${pad(s % 60)}s` : `${m}m`
+}
 
 const clockTime = (ms: number) => {
   const d = new Date(ms)
-  const pad = (n: number) => String(n).padStart(2, '0')
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
@@ -32,20 +40,15 @@ const durations = async ($: EngineInterface, bucket: Bucket) => {
   return Array.isArray(stored) ? stored.filter((d): d is number => Number.isFinite(d)) : []
 }
 
-// Seconds count down so the band reads as a countdown; it moves in TICK_MS steps.
-const countdown = (ms: number) => {
-  const s = Math.floor(ms / 1000)
-  return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, '0')}s`
-}
-
-// The band's head: when the work should end, from the 90th percentile of past works that lasted
-// at least as long; the elapsed time while the bucket has too few works to estimate.
-const head = (history: number[], elapsed: number, now: number) => {
-  if (history.length < MIN_WORKS) return `work running ${duration(elapsed)}`
-  const longer = history.filter(d => d >= elapsed).sort((a, b) => a - b)
-  if (longer.length < MIN_CONDITIONAL) return `longer than usual (${duration(elapsed)}+)`
-  const p90 = longer[Math.ceil(longer.length * 0.9) - 1]!
-  return `ends in ${countdown(p90 - elapsed)} (≈${clockTime(now + p90 - elapsed)})`
+// The band's headline: when the work should end, from the 90th percentile of past works that
+// lasted at least a tick longer than now, so the countdown never sits at `0s` before jumping back
+// up; the elapsed time while the bucket has too few works to estimate.
+const headline = (history: number[], elapsed: number, now: number) => {
+  if (history.length < MIN_WORKS) return `work running ${timeLabel(elapsed, false)}`
+  const longer = history.filter(d => d - elapsed >= TICK_MS).sort((a, b) => a - b)
+  if (longer.length < MIN_CONDITIONAL) return `longer than usual (${timeLabel(elapsed, false)}+)`
+  const remaining = longer[Math.ceil(longer.length * 0.9) - 1]! - elapsed
+  return `ends in ${timeLabel(remaining, true)} (≈${clockTime(now + remaining)})`
 }
 
 // Closes the work and records its duration unless it was interrupted.
@@ -72,14 +75,14 @@ const refresh = async ($: EngineInterface) => {
 
   if (!work.isTurnRunning && active.length === 0) return close($, work, version, bucketOf(hadSubagents), elapsed)
 
-  // Writes only what changed: the line moves once a minute, and each write redraws the band.
+  // Writes only what changed: each write redraws the band, and the line moves at most once a tick.
   const isSameAgents = active.length === Object.keys(work.firstSeen).length && active.every(a => a.id in work.firstSeen)
   if (!isSameAgents || hadSubagents !== work.hadSubagents) {
     const { isSet } = await $.state.set(WORK, { ...work, firstSeen, hadSubagents }, { ifVersion: version })
     if (!isSet) return
   }
 
-  const parts = [head(await durations($, bucketOf(hadSubagents)), elapsed, now)]
+  const parts = [headline(await durations($, bucketOf(hadSubagents)), elapsed, now)]
   if (active.length > 0) {
     const slowest = active.reduce((a, b) => (firstSeen[b.id]! < firstSeen[a.id]! ? b : a))
     parts.push(`${active.length} subagent${active.length === 1 ? '' : 's'}`, `slowest: ${slowest.description}`)
