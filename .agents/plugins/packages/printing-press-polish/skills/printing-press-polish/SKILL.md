@@ -466,6 +466,11 @@ fi
 # CLI lives under $PRESS_RUNSTATE/runs/<id>/working/<cli> (mid-pipeline
 # polish). Without it, scorecard looks adjacent to the binary, doesn't
 # find research.json, and reports `unable: true`.
+# A bare scorecard and scorecard --write-manifest report the same total.
+# A verify summary already in .printing-press.json is included either way;
+# a Calibration line means that summary raised the total. --spec changes
+# the domain denominator, which human output prints beside the total —
+# compare runs that passed the same spec.
 "$PRINTING_PRESS_BIN" scorecard --dir "$CLI_DIR" $SPEC_FLAG "${RESEARCH_ARGS[@]}" --live-check --json > /tmp/polish-scorecard.json 2>&1 || true
 "$PRINTING_PRESS_BIN" scorecard --dir "$CLI_DIR" $SPEC_FLAG 2>&1
 "$PRINTING_PRESS_BIN" tools-audit "$CLI_DIR" --json > /tmp/polish-tools-audit-before.json 2>&1 || true
@@ -522,7 +527,7 @@ Parse findings into categories:
 | Output entity warnings | scorecard JSON | `live_check.features[].warnings` — raw HTML entities in human output |
 | Output plausibility | Phase 4.85 | Findings from the agentic output review |
 | MCP tool quality | tools-audit | Empty Short, thin Short, missing read-only annotations, thin MCP descriptions |
-| Customer PII | pii-audit | Card last-4, email, phone, ZIP+4, postal-address shapes in high-risk files (manuscripts, fixtures, README) |
+| Customer PII | pii-audit | Card last-4, email, phone, ZIP+4, postal-address, and account-identifier shapes in high-risk files (manuscripts, fixtures, README) |
 
 **Environmental failures vs. CLI defects.** Some Phase 1 outputs surface failures that aren't real CLI bugs and should not block ship:
 
@@ -705,6 +710,7 @@ only to inspect the current output.
 | README Quick Start | `research.json::narrative.quickstart[]` | Edit the command/comment in `research.json`, then regenerate or re-run the dogfood/rendering step. |
 | SKILL Recipes | `research.json::narrative.recipes[]` | Edit the recipe title, command, or explanation in `research.json`, then regenerate or re-run the dogfood/rendering step. |
 | README/SKILL Troubleshooting | `research.json::narrative.troubleshoots[]` | Edit the symptom/fix pair in `research.json`, then regenerate or re-run the dogfood/rendering step. |
+| `.printing-press.json` `homepage` | `research.json::homepage` | Fix it in `research.json`, then correct or remove `homepage` in the working CLI's `.printing-press.json` before regenerating: an existing manifest value wins over research on regenerate. A value already in the library manifest also wins on promote and publish, so correct a published homepage in the library copy too. |
 | `.printing-press.json` `display_name`, `description`, `mcp_*` | `WriteManifestForGenerate`; for description/display-name overrides, edit the spec (`info.title`, `info.x-display-name`, `info.description`) | Edit the spec or rerun the manifest writer. Do not hand-edit generated manifest metadata unless you are doing temporary diagnosis. |
 
 Recommended loop for these rendered sections: edit the source field, re-run
@@ -810,7 +816,7 @@ Proceed to "After all fixes" only when the audit's summary line reads `no pendin
 
 ### Priority 8: Customer-PII gate
 
-**Your goal now is to clear the PII ledger so promote and publish gates pass.** The PII gate is the deterministic floor that prevents real customer values from reaching published library content. It catches card-last-4, email, US phone, ZIP+4, and postal-address shapes in high-risk files.
+**Your goal now is to clear the PII ledger so promote and publish gates pass.** The PII gate is the deterministic floor that prevents real customer values from reaching published library content. It catches card-last-4, email, US phone, ZIP+4, postal-address, and account-identifier shapes in high-risk files.
 
 Stop and:
 
