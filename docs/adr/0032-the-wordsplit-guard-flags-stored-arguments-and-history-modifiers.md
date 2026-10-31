@@ -20,14 +20,9 @@ command-local assignment prefixes do not. Assignments after reserved words
 (`then`, `do`, `else`, etc.) count too; a preceding parameter expansion in the
 argument list keeps the surrounding command context. A later persistent
 reassignment ends that assignment's reach. Quoted uses, arrays, explicit splits, arithmetic, `[[ … ]]`,
-assignment values, `case` words and `eval` arguments remain allowed.
-
-An `echo` or `print` argument is allowed too when its output reaches only the
-tool output (#570): both join their arguments with spaces, so zsh and bash differ
-in whitespace alone, and the deny dropped the whole compound command for it.
-Piped, redirected or inside a substitution, the consumer reads other lines than
-in bash (`echo $v | wc -l` counts 2 in zsh, 1 in bash), so the deny stays. Any
-open parenthesis counts as a consumer, a plain subshell included.
+assignment values, `case` words and `eval` arguments remain allowed. (Amended by
+[ADR-0035](0035-the-wordsplit-guard-allows-a-stored-value-echoed-to-the-tool-output.md):
+an `echo`/`print` argument whose output reaches only the tool output is allowed.)
 
 A substitution's output may be one word: the hook cannot know. We accept that
 extra check because stored lists are otherwise silently passed as one argument.

@@ -130,5 +130,28 @@ denied('v=$(cmd); echo $v |& wc -l');
 denied('v=$(cmd); x=$(true; echo $v)');
 denied('v=$(cmd); x=`echo $v; true`');
 denied('v=$(cmd); diff <(echo $v) f');
+denied('v=$(cmd); tee >(echo $v) </dev/null');
+allowed('v=$(cmd); echo -n $v; f() { echo $v; }');
+denied('v=$(cmd); x="$(echo $v)"');
+denied('v=$(cmd); cat <<EOF\n$(echo $v)\nEOF');
+denied('v=$(cmd); echo $v &>f');
+denied('v=$(cmd); { echo $v; } | wc -l');                   // a group's output: conservative
+denied('v=$(cmd); if true; then echo $v; fi | wc -l');
+denied('v=$(cmd); for i in 1; do echo $v; done > f');
+allowed('v=$(cmd); echo ${v} && echo ${v:-none}');
+allowed('v=$(cmd); echo $v 2>&1; echo $v 2>/dev/null; echo $v >&2'); // stderr: still the tool output
+allowed('v=$(cmd); echo "$(date)" $v; print -r -- `date` $v');
+denied('v=$(cmd); echo $v 1>f');
+denied('v=$(cmd); echo $v >>f');
+denied('v=$(cmd); echo $v 2>>e >f');
+denied('v=$(cmd); echo $v >| f');
+// A group's output goes where its closing word sends it.
+allowed('v=$(cmd); ( echo $v ); { echo $v; }; if true; then echo $v; fi');
+allowed('for i in $(seq 3); do s=$(cmd); case $s in run|wait) sleep 1;; *) echo $s; break;; esac; done');
+allowed('v=$(cmd); while true; do echo $v; done 2>/dev/null');
+denied('v=$(cmd); ( echo $v ) | wc -l');
+denied('v=$(cmd); { { echo $v; }; } | wc -l');
+denied('v=$(cmd); case x in x) echo $v;; esac > f');
+denied('v=$(cmd); if echo $v | grep -q a; then :; fi');
 
 console.log('zsh-wordsplit-guard stored-value rules: all checks passed');

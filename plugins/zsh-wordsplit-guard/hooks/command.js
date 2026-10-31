@@ -76,18 +76,50 @@ function reassignedBefore(name, from, to) {
   return false;
 }
 
-// Whether the command from `start` to `end` hands its stdout to a pipe, a
-// redirection or an enclosing substitution.
-// shortcut: any open `(` counts, so a plain subshell `( echo $v )` is denied too; track `$(`/`<(` apart if that bites.
-function stdoutConsumed(start, end) {
-  let open = 0, ticks = 0;
-  for (const c of words.slice(0, start)) {
-    if (c === '(') open++;
-    else if (c === ')' && open) open--;
-    else if (c === '`') ticks++;
+// Whether `text`, following an argument or a group's closing word, pipes or
+// redirects stdout: `>f`, `1>f`, `>>f`, `&>f`, `| x`; not `2>f`, `2>&1`, `>&2`
+// or `||`, which leave stdout on the tool output.
+function sendsStdoutAway(text) {
+  // Up to the command's end; `&>` and `>&` are redirections, not separators.
+  const rest = /^(?:[^;&|\n)}`]|&(?=>)|(?<=>)&)*/.exec(text)[0];
+  const next = text.slice(rest.length);
+  return /(?<![\d>&])(?:1?>>?|&>>?)(?!&)/.test(rest) || (next[0] === '|' && next[1] !== '|');
+}
+
+// What opens or closes a group: substitutions, parentheses, braces, backticks,
+// and compound keywords in command position.
+const GROUP_TOKEN = /\$\(|[<>]\(|[(){}`]|(?<=(?:^|[;&|\n(){]|\b(?:then|do|else|elif))\s*)(?:if|while|until|for|select|case|fi|done|esac)\b/g;
+
+// Whether the argument `found` hands its stdout to a consumer: a pipe or
+// redirection after it, an enclosing substitution, or an enclosing group whose
+// closing word pipes or redirects.
+// shortcut: a function body counts as a group, so `f() { echo $v; }; x=$(f)` is allowed; follow calls if that bites.
+function stdoutConsumed(found) {
+  const end = found.index + found[0].length;
+  const groups = [];
+  // Pushes an opener, pops on a closer; true when it closed a group. A `)` in
+  // a `case` closes a pattern, not a group.
+  const step = (token) => {
+    const top = groups[groups.length - 1];
+    if ((token === '`' && top === '`') || (token === ')' && top !== 'case') ||
+      /^(?:\}|fi|done|esac)$/.test(token)) return groups.pop() !== undefined;
+    if (token === ')') return false;
+    groups.push(/^(?:\$\(|[<>]\(|`|case)$/.test(token) ? token : 'group');
+    return false;
+  };
+  const blank = (text) => text.replace(/\$\{[^}]*\}/g, (m) => '_'.repeat(m.length));
+  for (const m of blank(words.slice(0, found.index)).matchAll(GROUP_TOKEN)) step(m[0]);
+  if (groups.some((g) => g !== 'group' && g !== 'case')) return true;
+  const after = blank(words.slice(end));
+  if (sendsStdoutAway(after)) return true;
+  let level = groups.length;
+  for (const m of after.matchAll(GROUP_TOKEN)) {
+    if (!level) break;
+    if (!step(m[0]) || groups.length >= level) continue;
+    level = groups.length;
+    if (sendsStdoutAway(after.slice(m.index + m[0].length))) return true;
   }
-  const rest = /^[^;&|\n)`]*(\|?)(.?)/.exec(words.slice(end));
-  return open > 0 || ticks % 2 === 1 || rest[0].includes('>') || (rest[1] === '|' && rest[2] !== '|');
+  return false;
 }
 
 let hit = null;
@@ -107,14 +139,16 @@ for (const a of words.matchAll(new RegExp(ASSIGNMENT_AT + '([A-Za-z_]\\w*)=', 'g
   for (const found of words.matchAll(argument)) {
     if (reassignedBefore(name, end, found.index)) break;
     // A parameter's braces and operators are part of an argument, not command boundaries.
-    const before = words.slice(0, found.index).replace(/\$\{[^}]*\}/g, '_')
-      .split(/[;&|(){}\n`]/).pop().trim();
+    // So is a closed substitution: `echo "$(date)" $v` is still an echo.
+    let before = words.slice(0, found.index).replace(/\$\{[^}]*\}/g, '_').replace(/`[^`]*`/g, '_');
+    for (let flat; (flat = before.replace(/\$\([^()]*\)/g, '_')) !== before;) before = flat;
+    before = before.split(/[;&|(){}\n`]/).pop().trim();
     const command = (before + ' ').replace(new RegExp('^' + COMMAND_START), '').trim();
     // These contexts do not split in bash either, or parse the value again.
     if (!command || /^(?:case|for|select|eval)\b/.test(command)) continue;
     // echo/print joins its arguments with spaces: on the tool output only
     // whitespace differs, but a consumer reads other lines than in bash (#570).
-    if (/^(?:echo|print)\b/.test(command) && !stdoutConsumed(found.index, found.index + found[0].length)) continue;
+    if (/^(?:echo|print)\b/.test(command) && !stdoutConsumed(found)) continue;
     deny('zsh-wordsplit-guard: silent non-split. `' + found[0] + '` as an unquoted ' +
       'argument after assigning `' + name + '` a multi-word value or command substitution ' +
       'stays ONE argument: the Bash tool runs zsh, where parameter expansion is not word-split. ' +
