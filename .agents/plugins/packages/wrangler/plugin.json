@@ -1,6 +1,6 @@
 {
   "name": "wrangler",
-  "version": "0.0.0+catalog.e44f580f9c4f.aa796a4005d2",
+  "version": "0.0.0+catalog.1a33048817d0.1832b7e575c2",
   "description": "Run or troubleshoot Wrangler CLI commands in projects with a Wrangler configuration file — local development, Previews, deployment, and resource management; new projects use the cf CLI instead.",
   "author": {
     "name": "Cloudflare",

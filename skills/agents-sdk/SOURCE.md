@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/cloudflare/skills/tree/e44f580f9c4fa3bf268e284ae7706c7954ba31fd/skills/agents-sdk
-- **Commit**: `e44f580f9c4fa3bf268e284ae7706c7954ba31fd`
+- **Upstream**: https://github.com/cloudflare/skills/tree/1a33048817d06df12882cb881dfc754e7039954a/skills/agents-sdk
+- **Commit**: `1a33048817d06df12882cb881dfc754e7039954a`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `agents-sdk` in `.claude-plugin/marketplace.json`
