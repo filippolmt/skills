@@ -1,6 +1,6 @@
 {
   "name": "cloudflare-email-service",
-  "version": "0.0.0+catalog.1a33048817d0.7668428f2b3d",
+  "version": "0.0.0+catalog.1f2cd0a19588.a3ff43ad1f08",
   "description": "Send and receive transactional emails with Cloudflare Email Service (Email Sending + Email Routing).",
   "author": {
     "name": "Cloudflare",

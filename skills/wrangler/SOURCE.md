@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/cloudflare/skills/tree/1a33048817d06df12882cb881dfc754e7039954a/skills/wrangler
-- **Commit**: `1a33048817d06df12882cb881dfc754e7039954a`
+- **Upstream**: https://github.com/cloudflare/skills/tree/1f2cd0a19588e2c6197c91dd7c71729df1fb6156/skills/wrangler
+- **Commit**: `1f2cd0a19588e2c6197c91dd7c71729df1fb6156`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `wrangler` in `.claude-plugin/marketplace.json`
