@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/Nutlope/hallmark/tree/52328cb3129135499e4e178d4864ee90029dea2b/skills/hallmark
-- **Commit**: `52328cb3129135499e4e178d4864ee90029dea2b`
+- **Upstream**: https://github.com/Nutlope/hallmark/tree/de4999e0cd7a7a41df0b4e6903fa02fe9f1492a8/skills/hallmark
+- **Commit**: `de4999e0cd7a7a41df0b4e6903fa02fe9f1492a8`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `hallmark` in `.claude-plugin/marketplace.json`
