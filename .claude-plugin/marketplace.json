@@ -498,8 +498,8 @@
         "source": "git-subdir",
         "url": "https://github.com/Leonxlnx/taste-skill",
         "path": "skills/taste-skill",
-        "ref": "v2.1.5",
-        "sha": "12af471f627f866411b4bd785b19646d3672784c"
+        "ref": "v2.5.0",
+        "sha": "822e0b9d872e10deb931afad2c6c2bd943cf4c7b"
       },
       "description": "Anti-slop frontend skill for landing pages, portfolios, and redesigns.",
       "author": {
