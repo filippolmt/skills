@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/wshobson/agents/tree/7e2fb559cf4b824b27f1fec49fe88f7511066d26/plugins/developer-essentials/skills/git-advanced-workflows
-- **Commit**: `7e2fb559cf4b824b27f1fec49fe88f7511066d26`
+- **Upstream**: https://github.com/wshobson/agents/tree/4bde3168b43c0655c4d00ea2726e631719908a6d/plugins/developer-essentials/skills/git-advanced-workflows
+- **Commit**: `4bde3168b43c0655c4d00ea2726e631719908a6d`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `developer-essentials` in `.claude-plugin/marketplace.json`
