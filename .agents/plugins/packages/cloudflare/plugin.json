@@ -1,7 +1,7 @@
 {
   "name": "cloudflare",
-  "version": "0.0.0+catalog.5fa4b49ac8b3.17160b8e87a9",
-  "description": "Discover and choose Cloudflare products for apps, APIs, AI agents, storage, networking, and security, then find the relevant skill or documentation.",
+  "version": "0.0.0+catalog.6eb6c781aa9b.f24fb7fef3a8",
+  "description": "Discover and choose Cloudflare products for apps, APIs, AI agents, storage, networking, and security, then find the relevant skill or documentation; also triages Cloudflare error pages (52x, 1xxx, 403) between Cloudflare configuration and the origin.",
   "author": {
     "name": "Cloudflare",
     "url": "https://github.com/cloudflare"

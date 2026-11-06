@@ -1,6 +1,6 @@
 {
   "name": "durable-objects",
-  "version": "0.0.0+catalog.5fa4b49ac8b3.3cbab7d22a37",
+  "version": "0.0.0+catalog.6eb6c781aa9b.77cd7ae203e2",
   "description": "Build, debug, or review Cloudflare Durable Objects code for persistent state and coordination.",
   "author": {
     "name": "Cloudflare",

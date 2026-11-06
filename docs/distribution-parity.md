@@ -118,6 +118,9 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `gateway-workers` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `k2` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `workers-profiling` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `frameworks-on-cloudflare` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `workers-development` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `cloudflare-app-bootstrap` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `impeccable` | `agent:agents/impeccable-asset-producer.md` | — | Adapted — Uses Impeccable's upstream Codex-native TOML subagent. | Unsupported — The Claude asset producer invokes sibling plugin tools through CLAUDE_PLUGIN_ROOT; a namespaced skill conversion does not adapt those commands. Fallback: Use Impeccable's upstream Codex-native agent or the Claude plugin for asset production. |
 | `impeccable` | `agent:agents/impeccable-documenter.md` | — | Adapted — Uses Impeccable's upstream Codex-native TOML subagent. | Adapted — Converted to a deterministic namespaced skill. |
 | `impeccable` | `agent:agents/impeccable-finish-reviewer.md` | — | Adapted — Uses Impeccable's upstream Codex-native TOML subagent. | Adapted — Converted to a deterministic namespaced skill. |
