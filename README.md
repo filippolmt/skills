@@ -416,7 +416,7 @@ Snapshot of the catalog — the source of truth is
 
 | Skill | What it does |
 |---|---|
-| `taste-skill` | Anti-slop frontend skill for landing pages, portfolios, and redesigns. |
+| `taste-skill` | Anti-slop frontend skill for landing pages and company, product, shop and SaaS sites: builds, redesigns and reviews them. |
 
 ### [Leonxlnx/imagegen-skills](https://github.com/Leonxlnx/imagegen-skills) — design image generation
 
