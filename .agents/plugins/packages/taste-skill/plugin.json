@@ -1,7 +1,7 @@
 {
   "name": "taste-skill",
-  "version": "2.5.0+catalog.822e0b9d872e.4cdcf7ac04d8",
-  "description": "Anti-slop frontend skill for landing pages, portfolios, and redesigns.",
+  "version": "2.5.0+catalog.822e0b9d872e.9a6114dce2c3",
+  "description": "Anti-slop frontend skill that builds, redesigns and reviews landing pages and company, product, shop, local-business, SaaS and game sites, with a real-browser checker.",
   "author": {
     "name": "Leon Lin",
     "url": "https://github.com/Leonxlnx"
