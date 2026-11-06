@@ -211,8 +211,9 @@ For each external source repo (git-subdir or url entry) in `marketplace.json` (o
      also does this; harmless to set now.)
    - Refresh each entry's `author` from upstream, and its `description` only
      when upstream's meaning changed — a reworded upstream sentence is no reason
-     to rewrite a summary. A trigger clause that names a task the summary does
-     not cover is a meaning change: fold that task into the summary.
+     to rewrite a summary. A trigger clause that names a task, or a kind of
+     target, the summary does not cover is a meaning change: fold it into the
+     summary.
      `marketplace.json` is the source of truth, so this is what consumers see.
      After bumping, `node scripts/check-upstream-descriptions.js` lists every
      entry whose upstream description needs this review.
