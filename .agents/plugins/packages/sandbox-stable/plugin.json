@@ -1,6 +1,6 @@
 {
   "name": "sandbox-stable",
-  "version": "0.0.0+catalog.7de59bfd40b3.562659bf2865",
+  "version": "0.0.0+catalog.1820a51dda1c.cfb00ef1c93a",
   "description": "Build or maintain Cloudflare Sandbox apps on the stable @cloudflare/sandbox package. Use sandbox-next for preview apps and sandbox-migrate-to-next for stable-to-preview migrations.",
   "author": {
     "name": "Cloudflare",
