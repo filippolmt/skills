@@ -21,7 +21,8 @@ names those limitations.
 
 **Exception — whole-plugin entries.** An upstream repo shipping a cohesive plugin
 (a folder with its own `.claude-plugin/plugin.json`) whose artifacts a per-skill
-entry would **drop** — further skills, subagents, or commands — gets a **single
+entry would **drop** — further skills, subagents, or commands; hooks and mirrors
+beside a canonical `skills/` do not count (ADR-0036) — gets a **single
 `git-subdir` entry whose `path` is the plugin root**: installing it brings every
 artifact at once. See `api-scaffolding` and `shell-scripting` from
 `wshobson/agents`. When the plugin root *is* the repo root, the entry is a

@@ -12,6 +12,8 @@
 // has moved the series past it, which is also when the entry could pin it.
 //
 // Usage: node scripts/check-whole-sources.js   (exit 1 when a skill is missing)
+//        node scripts/check-whole-sources.js --classified   (offline: exit 1 when an
+//        external repo has no ADR-0014 row, since an unclassified repo is never reported)
 // Set GITHUB_TOKEN to lift the anonymous GitHub API rate limit.
 
 const fs = require('fs');
@@ -89,6 +91,22 @@ function uncatalogued({ sources, exclusions, catalog, upstream }) {
   return missing;
 }
 
+// Pure: external repos with no Source repos row. Such a repo is neither whole nor
+// curated, so a skill its upstream adds is never reported (ADR-0014).
+const unclassified = ({ sources, catalog }) =>
+  [...new Set(catalog.map(repoOf))].filter((repo) => !sources.has(repo));
+
+function checkClassified() {
+  const { sources } = parseAdr(fs.readFileSync(ADR, 'utf8'));
+  const missing = unclassified({ sources, catalog: readCatalog().plugins.filter(isExternal) });
+  if (missing.length === 0) {
+    console.log(`Every external repo has an ADR-0014 Source repos row (${sources.size} rows).`);
+    return;
+  }
+  console.log(`External repos with no ADR-0014 Source repos row — classify each as whole or curated:\n${missing.map((r) => `- \`${r}\``).join('\n')}`);
+  process.exitCode = 1;
+}
+
 async function upstreamTree(repo, sha) {
   const body = await githubApi(`repos/${repo}/git/trees/${sha}?recursive=1`);
   if (body.truncated) throw new Error(`${repo}@${sha}: tree listing truncated, cannot tell what is missing`);
@@ -131,11 +149,13 @@ async function main() {
   process.exitCode = 1;
 }
 
-if (require.main === module) {
+if (require.main === module && process.argv[2] === '--classified') {
+  checkClassified();
+} else if (require.main === module) {
   main().catch((err) => {
     console.error(err.message);
     process.exitCode = 2;
   });
 }
 
-module.exports = { parseAdr, uncatalogued };
+module.exports = { parseAdr, uncatalogued, unclassified };

@@ -52,6 +52,7 @@ run bash scripts/run-tests.sh                        # every test; CI runs this 
 run node scripts/gen-readme.js --check               # README's generated regions match the catalog
 run node scripts/gen-skills-tree.js --verify-paths   # classify artifacts and build in temp, including overlays
 run node scripts/check-renovate.js                   # Renovate regexes cover every external entry
+run node scripts/check-whole-sources.js --classified # every external repo is whole or curated in ADR-0014
 run node scripts/check-name-collisions.js            # what claude plugin validate does NOT cover
 run claude plugin validate .                         # marketplace + all local plugins
 

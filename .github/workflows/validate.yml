@@ -34,6 +34,8 @@ jobs:
         run: node scripts/gen-skills-tree.js --verify-paths
       - name: Check external entry shapes and Renovate regex coverage
         run: node scripts/check-renovate.js
+      - name: Check every external repo is classified in ADR-0014
+        run: node scripts/check-whole-sources.js --classified
       - name: Check no local command or skill name is already taken
         run: node scripts/check-name-collisions.js
       - name: Validate marketplace and plugins
