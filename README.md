@@ -505,7 +505,7 @@ Snapshot of the catalog — the source of truth is
 | `cloudflare-email-service` | Send and receive transactional emails with Cloudflare Email Service (Email Sending + Email Routing). |
 | `cloudflare-one-migrations` | Assess and plan migrations from existing VPN, SWG, or SASE platforms to Cloudflare One — policy mapping, parity gaps, and rollout. |
 | `cloudflare-one` | Guides Cloudflare One Zero Trust and SASE work across Access, Gateway, WARP, Tunnel, WAN, DLP, CASB, device posture, and identity. |
-| `cloudflare` | Discover and choose Cloudflare products for apps, APIs, AI agents, storage, networking, and security, then find the relevant skill or documentation. |
+| `cloudflare` | Discover and choose Cloudflare products for apps, APIs, AI agents, storage, networking, and security, then find the relevant skill or documentation; also triages Cloudflare error pages (52x, 1xxx, 403) between Cloudflare configuration and the origin. |
 | `durable-objects` | Build, debug, or review Cloudflare Durable Objects code for persistent state and coordination. |
 | `sandbox-migrate-to-next` | Migrate Cloudflare Sandbox apps from stable @cloudflare/sandbox to @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-next for apps already on the preview. |
 | `sandbox-next` | Build or maintain Cloudflare Sandbox apps on @cloudflare/sandbox@next (SDK 1.0 preview). Use sandbox-migrate-to-next when porting a stable app. |
@@ -520,6 +520,9 @@ Snapshot of the catalog — the source of truth is
 | `gateway-workers` | Build, debug, or review Cloudflare Workers invoked by the Forward action in Gateway HTTP policies, including the GatewayMiddleware entrypoint, Gateway types, context, and continuation. |
 | `k2` | Build and troubleshoot Cloudflare K2 or K2 Streams durable logs. |
 | `workers-profiling` | Profile or debug CPU usage and memory allocation in deployed Cloudflare Workers and Durable Objects. |
+| `frameworks-on-cloudflare` | Build, migrate, and deploy web-framework applications (Astro, SvelteKit, React Router, TanStack Start, Nuxt, Hono, SPAs) on Cloudflare Workers. |
+| `workers-development` | Run, inspect, and debug Cloudflare Workers locally with Local Explorer, and route production debugging to Workers observability. |
+| `cloudflare-app-bootstrap` | Get a Cloudflare Workers app to a working local request by connecting its bindings, secrets, and initial data, then verifying real application behavior. |
 
 ### [pbakaus/impeccable](https://github.com/pbakaus/impeccable) — frontend design fluency
 
