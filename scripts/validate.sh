@@ -54,7 +54,7 @@ run node scripts/gen-skills-tree.js --verify-paths   # classify artifacts and bu
 run node scripts/check-renovate.js                   # Renovate regexes cover every external entry
 run node scripts/check-whole-sources.js --classified # every external repo is whole or curated in ADR-0014
 run node scripts/check-name-collisions.js            # what claude plugin validate does NOT cover
-run claude plugin validate .                         # marketplace + all local plugins
+run claude plugin validate --strict .                # marketplace + all local plugins
 
 if [ "$mode" = --catalog-only ]; then
   echo '=== projection checks skipped (--catalog-only): regeneration refreshes them after merge'
