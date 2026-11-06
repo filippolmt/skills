@@ -272,5 +272,7 @@ description updates), unsupported harness outcomes, checks actually run, and, fo
 a new source repo, its licence and why it permits redistribution (ADR-0011: the
 PR is where that is judged).
 
-Then hand off to `implement:implement` with that report as its spec: it reviews
-and commits. When this run was started by `/implement`, return to it instead.
+Then commit to the feature branch, and call the Skill tool with
+`code-review:code-review` (Matt Pocock's two-axis review) on the changes since
+`main`, with the issue as its spec. When this run was started by `/implement`,
+return to it instead: it runs that same review and commit.
