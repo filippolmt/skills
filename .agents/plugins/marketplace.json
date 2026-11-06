@@ -1107,18 +1107,6 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Developer Tools"
-    },
-    {
-      "name": "worktrunk",
-      "source": {
-        "source": "local",
-        "path": "./.agents/plugins/packages/worktrunk"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
     }
   ]
 }
