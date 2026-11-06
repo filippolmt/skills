@@ -20,8 +20,7 @@
     { "repo": "tt-a1i/archify", "tagline": "architecture & workflow diagrams", "kind": "skill" },
     { "repo": "cathrynlavery/diagram-design", "tagline": "editorial diagram system", "kind": "plugin" },
     { "repo": "cloudflare/security-audit-skill", "tagline": "security audit & vulnerability review", "kind": "skill" },
-    { "repo": "AgriciDaniel/claude-seo", "tagline": "SEO analysis & AI search readiness", "kind": "plugin" },
-    { "repo": "max-sixty/worktrunk", "tagline": "git worktrees for parallel agents", "kind": "skill" }
+    { "repo": "AgriciDaniel/claude-seo", "tagline": "SEO analysis & AI search readiness", "kind": "plugin" }
   ],
   "omit": [],
   "descriptionReviewed": {
