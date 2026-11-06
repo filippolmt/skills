@@ -155,9 +155,10 @@ workflow, where stale projections are the signal to act rather than a failure. A
 `plugin.json`, a `SKILL.md` or a `commands/*.md`, and blocks the edit (exit 2) if
 either fails — the rest are yours to run.
 
-Output must be **clean** — no errors *and* no warnings. A warning (e.g. a
-`version` that diverges between `plugin.json` and a marketplace entry) is a fail
-here: fix it before committing.
+Output must be **clean** — no errors *and* no warnings. `claude plugin validate`
+runs with `--strict`, so its warnings (e.g. a `version` that diverges between
+`plugin.json` and a marketplace entry) already fail; treat a warning from any
+other check as a fail too.
 
 `claude plugin validate` compares catalog `name` values against each other and
 nothing more. A local plugin's **command** colliding with another plugin's

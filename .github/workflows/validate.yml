@@ -39,4 +39,4 @@ jobs:
       - name: Check no local command or skill name is already taken
         run: node scripts/check-name-collisions.js
       - name: Validate marketplace and plugins
-        run: claude plugin validate .
+        run: claude plugin validate --strict .
