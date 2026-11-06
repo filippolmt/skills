@@ -41,7 +41,9 @@ first sentence:
 curl -fsSL "https://raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>/SKILL.md"
 ```
 The upstream author comes from the source that owns the attribution: its plugin
-manifest first, then its licence, then the GitHub owner's profile. Preserve
+manifest first, then its licence, then the GitHub owner's profile. The manifest
+counts only when the entry's `path` is that plugin root; a standalone skill folder
+takes its licence's copyright holder. Preserve
 multiple credited authors; do not substitute the marketplace owner.
 
 If `curl` is blocked/redirected here, fetch the same URLs via any HTTP tool — the
@@ -105,7 +107,8 @@ workflow, as specified by CLAUDE.md.
 1. Parse args. If `owner/repo` missing, ask for it.
 2. Decide granularity. `path` points at a plugin root (has
    `.claude-plugin/plugin.json`) holding artifacts a per-skill entry would drop
-   — further skills, subagents, or commands → one **whole-plugin** entry at that
+   — further skills, subagents, or commands; hooks and mirrors beside a
+   canonical `skills/` do not count (ADR-0036) → one **whole-plugin** entry at that
    root — or, when the plugin root is the repo root, a **url entry**
    (`"source": "url"`, `url`, `ref`, `sha`, no `path`; git-subdir `"."`
    installs empty, ADR-0033); skip per-skill discovery,
@@ -152,6 +155,8 @@ Done when every skill the discovery in step 2 turned up is either an entry in
 `marketplace.json` or named as deliberately left out, and the repo has a row in
 ADR-0014's source table — **whole** or **curated**, asked, never guessed. A
 skill left out of a whole source goes in its exclusions table, with the reason.
+Every fact in a row's note or exclusion reason is read from the upstream file at
+the pinned `sha`.
 
 ## Update mode
 
@@ -263,5 +268,9 @@ bash scripts/validate.sh --catalog-only
 Generated `skills/`, Codex packages, pi filters, and the parity matrix intentionally
 remain stale until the post-merge regeneration workflow; `--catalog-only` skips
 their checks. Report what changed (added / removed /
-description updates), unsupported harness outcomes, and checks actually run.
-Do not commit — leave that to the user.
+description updates), unsupported harness outcomes, checks actually run, and, for
+a new source repo, its licence and why it permits redistribution (ADR-0011: the
+PR is where that is judged).
+
+Then hand off to `implement:implement` with that report as its spec: it reviews
+and commits. When this run was started by `/implement`, return to it instead.
