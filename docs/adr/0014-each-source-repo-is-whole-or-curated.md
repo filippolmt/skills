@@ -76,7 +76,7 @@ the exclusions.
 | `pbakaus/impeccable` | whole | whole-plugin entry |
 | `cathrynlavery/diagram-design` | whole | whole-plugin entry |
 | `AgriciDaniel/claude-seo` | whole | whole-plugin entry; optional extensions retain upstream's separate activation |
-| `max-sixty/worktrunk` | whole | single portable skill |
+| `max-sixty/worktrunk` | whole | `skills/` is canonical; `plugins/worktrunk/` mirrors it plus Claude-only hooks, user-installed via `wt config plugins` |
 | `Jeffallan/claude-skills` | curated | |
 | `antfu/skills` | curated | |
 | `mcollina/skills` | curated | |
