@@ -173,6 +173,9 @@ For each external source repo (git-subdir or url entry) in `marketplace.json` (o
    diverged relative to the pinned SHA. Exit 1 means review needed; exit 2 means
    incomplete: resolve the API error or truncated tree before proceeding.
    Discover skill folders at the proposed SHA, not just default-branch HEAD.
+   Settle scope with the user from this audit, not from the issue that sent you
+   here: the `whole-sources` reports are computed at the pinned `sha`, so what
+   upstream added since is invisible in them.
 2. Reconcile against the existing entries:
    - **New** upstream folder (no entry) → look the repo up in
      `docs/adr/0014-each-source-repo-is-whole-or-curated.md`. Skip a **catalog
@@ -208,8 +211,11 @@ For each external source repo (git-subdir or url entry) in `marketplace.json` (o
      also does this; harmless to set now.)
    - Refresh each entry's `author` from upstream, and its `description` only
      when upstream's meaning changed — a reworded upstream sentence is no reason
-     to rewrite a summary. `marketplace.json` is the source of truth, so this is
-     what consumers see.
+     to rewrite a summary. A trigger clause that names a task the summary does
+     not cover is a meaning change: fold that task into the summary.
+     `marketplace.json` is the source of truth, so this is what consumers see.
+     After bumping, `node scripts/check-upstream-descriptions.js` lists every
+     entry whose upstream description needs this review.
      A rewrite is checked against the upstream artifact at the pinned `sha` —
      the `SKILL.md` body, or a whole plugin's manifest and artifact list —
      before it lands, not only against upstream's description.
