@@ -6,7 +6,7 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
-const { parseAdr, uncatalogued } = require('./check-whole-sources.js');
+const { parseAdr, uncatalogued, unclassified } = require('./check-whole-sources.js');
 
 const ADR = `
 ### Source repos
@@ -82,4 +82,10 @@ test('the real ADR parses into the tables the check depends on', () => {
   assert.equal(sources.get('cloudflare/skills').kind, 'whole');
   for (const [repo, { kind }] of sources) assert.match(kind, /^(whole|curated)$/, `${repo} has kind ${kind}`);
   assert.ok(exclusions.get('mvanhorn/cli-printing-press').includes('printing-press-retro'));
+});
+
+test('unclassified names every external repo with no Source repos row, once', () => {
+  const { sources } = parseAdr(ADR);
+  const catalog = [entry('acme/whole', 'a'), entry('acme/new', 'x'), entry('acme/new', 'y'), entry('acme/curated', 'c')];
+  assert.deepStrictEqual(unclassified({ sources, catalog }), ['acme/new']);
 });
