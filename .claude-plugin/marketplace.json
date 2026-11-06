@@ -1404,21 +1404,6 @@
         "name": "AgriciDaniel",
         "url": "https://github.com/AgriciDaniel"
       }
-    },
-    {
-      "name": "worktrunk",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/max-sixty/worktrunk",
-        "path": "skills/worktrunk",
-        "ref": "v0.81.0",
-        "sha": "e42f0f6fef2fdbd98fc92e5cd6c3cbea55b65b38"
-      },
-      "description": "Guidance for Worktrunk (the `wt` CLI): git worktree management, hooks, and configuration.",
-      "author": {
-        "name": "Maximilian Roos",
-        "url": "https://github.com/max-sixty"
-      }
     }
   ]
 }

@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted; its only case, `max-sixty/worktrunk`, has left the catalog (#615): the toolbox image ships the skill matched to its bundled `wt` and wires the hooks itself
 ---
 
 # Hooks beside a canonical `skills/` keep a per-skill entry
