@@ -562,6 +562,12 @@ Snapshot of the catalog — the source of truth is
 | Plugin | What it bundles |
 |---|---|
 | `seo-toolkit` | Comprehensive SEO analysis: 26 skills and 19 agents covering technical SEO, content, schema, sitemaps, backlinks, local and international SEO, ecommerce, Google APIs, AI search, and agent readiness. |
+
+### [max-sixty/worktrunk](https://github.com/max-sixty/worktrunk) — git worktrees for parallel agents
+
+| Skill | What it does |
+|---|---|
+| `worktrunk` | Guidance for Worktrunk (the `wt` CLI): git worktree management, hooks, and configuration. |
 <!-- catalog:end -->
 
 ## External skills (auto-updated by Renovate)

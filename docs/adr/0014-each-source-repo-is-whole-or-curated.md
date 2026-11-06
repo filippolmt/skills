@@ -76,6 +76,7 @@ the exclusions.
 | `pbakaus/impeccable` | whole | whole-plugin entry |
 | `cathrynlavery/diagram-design` | whole | whole-plugin entry |
 | `AgriciDaniel/claude-seo` | whole | whole-plugin entry; optional extensions retain upstream's separate activation |
+| `max-sixty/worktrunk` | whole | single portable skill |
 | `Jeffallan/claude-skills` | curated | |
 | `antfu/skills` | curated | |
 | `mcollina/skills` | curated | |
@@ -105,6 +106,7 @@ the exclusions.
 | `Leonxlnx/taste-skill` | `taste-skill-v1`, `taste-skill-v2-experimental` | Earlier and experimental versions of `taste-skill` |
 | `Leonxlnx/taste-skill` | `redesign-skill` | Retired upstream: redesigns and reviews are part of `taste-skill` |
 | `Leonxlnx/taste-skill` | `brandkit`, `imagegen-frontend-web`, `imagegen-frontend-mobile`, `image-to-code-skill` | Stubs pointing to `Leonxlnx/imagegen-skills`, catalogued from there |
+| `max-sixty/worktrunk` | `wt-switch-create` | Drives Claude Code's `EnterWorktree` and belongs to upstream's Claude plugin; it does not work on Codex or pi |
 
 ## Considered options
 
