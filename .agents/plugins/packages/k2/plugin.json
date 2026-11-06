@@ -1,6 +1,6 @@
 {
   "name": "k2",
-  "version": "0.0.0+catalog.1820a51dda1c.5a19b280a8c0",
+  "version": "0.0.0+catalog.5fa4b49ac8b3.eacbabdb2698",
   "description": "Build and troubleshoot Cloudflare K2 or K2 Streams durable logs.",
   "author": {
     "name": "Cloudflare",
