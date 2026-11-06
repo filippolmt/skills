@@ -501,7 +501,7 @@
         "ref": "v2.5.0",
         "sha": "822e0b9d872e10deb931afad2c6c2bd943cf4c7b"
       },
-      "description": "Anti-slop frontend skill for landing pages, portfolios, and redesigns.",
+      "description": "Anti-slop frontend skill that builds, redesigns and reviews landing pages and company, product, shop, local-business, SaaS and game sites, with a real-browser checker.",
       "author": {
         "name": "Leon Lin",
         "url": "https://github.com/Leonxlnx"
