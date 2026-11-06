@@ -1,0 +1,11 @@
+{
+  "name": "workers-development",
+  "version": "0.0.0+catalog.6eb6c781aa9b.9a8329095912",
+  "description": "Run, inspect, and debug Cloudflare Workers locally with Local Explorer, and route production debugging to Workers observability.",
+  "author": {
+    "name": "Cloudflare",
+    "url": "https://github.com/cloudflare"
+  },
+  "repository": "https://github.com/cloudflare/skills",
+  "skills": "./skills/"
+}

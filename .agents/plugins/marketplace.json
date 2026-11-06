@@ -917,6 +917,42 @@
       "category": "Developer Tools"
     },
     {
+      "name": "frameworks-on-cloudflare",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/frameworks-on-cloudflare"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "workers-development",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/workers-development"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "cloudflare-app-bootstrap",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/cloudflare-app-bootstrap"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
       "name": "impeccable",
       "source": {
         "source": "local",

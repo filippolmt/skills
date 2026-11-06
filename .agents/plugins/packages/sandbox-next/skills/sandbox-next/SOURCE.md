@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/cloudflare/skills/tree/5fa4b49ac8b3ebc0e33b3a1cb759a16ef804d86b/skills/sandbox-next
-- **Commit**: `5fa4b49ac8b3ebc0e33b3a1cb759a16ef804d86b`
+- **Upstream**: https://github.com/cloudflare/skills/tree/6eb6c781aa9b6438e0c7307bd102788a75fe1a6d/skills/sandbox-next
+- **Commit**: `6eb6c781aa9b6438e0c7307bd102788a75fe1a6d`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `sandbox-next` in `.claude-plugin/marketplace.json`
