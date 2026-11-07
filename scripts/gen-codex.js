@@ -9,7 +9,7 @@ const path = require('path');
 const { readCatalog, isExternal, root } = require('./catalog.js');
 const { generate } = require('./gen-distribution.js');
 const { parseFrontmatter, treeFingerprint } = require('./gen-skills-tree.js');
-const { requireRedistributionLicence, addProvenance, convertedSkillName, copySelfContained, validateSkillName, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
+const { dropClaudeHooks, requireRedistributionLicence, addProvenance, convertedSkillName, copySelfContained, validateSkillName, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
 
 const OUTPUT = path.join(root, '.agents', 'plugins');
 const META = path.join(root, 'scripts', 'distribution-meta.json');
@@ -181,6 +181,7 @@ function writeCodexDistribution(plugins, inventory, output) {
         names.add(frontmatter.name);
         const destination = path.join(skillsRoot, frontmatter.name);
         copySelfContained(source, destination);
+        dropClaudeHooks(destination);
         addProvenance(member, catalog.get(member.name), destination, outcome.sourcePath || artifact.path,
           outcome.sourcePath ? 'Used the upstream Codex-specific Agent Skill payload.' : 'Copied Agent Skill into the Codex package projection.');
       }

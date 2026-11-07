@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { validateDistribution } = require('./distribution.js');
+const { discoverArtifacts, frontmatterHooks, validateDistribution } = require('./distribution.js');
 const { validateSkillDirectories } = require('./portable-artifacts.js');
 const { buildFromInventory } = require('./gen-skills-tree.js');
 
@@ -68,3 +68,32 @@ test('generated skill validation catches leaked Claude runtime variables in refe
   fs.writeFileSync(path.join(root, 'example/runtime.md'), command);
   assert.throws(() => validateSkillDirectories(root), /CLAUDE_PLUGIN_ROOT/);
 }));
+
+// taste-skill v2.5.1 (#620): a guarded Stop hook in the frontmatter is Claude's, not a portable dependency.
+const hooked = '---\nname: example\ndescription: Example.\nhooks:\n  Stop:\n    - hooks:\n        - type: command\n          command: \'node ${CLAUDE_PLUGIN_ROOT:+"$CLAUDE_PLUGIN_ROOT/gate.mjs"}\'\nlicense: MIT\n---\n# Body\n';
+const hookKey = 'example/hook:example/SKILL.md#Stop[0]';
+
+test('a frontmatter hook is its own artifact and stays out of pi and Codex projections', () => fixture((root) => {
+  fs.writeFileSync(path.join(root, 'example/SKILL.md'), hooked);
+  const inventory = [{ name: 'example', sourceRoot: root, repoRoot: root, artifacts: discoverArtifacts({ name: 'example' }, root) }];
+  assert.deepEqual(inventory[0].artifacts.map((a) => a.id), ['hook:example/SKILL.md#Stop[0]', 'skill:example/SKILL.md']);
+  assert.throws(() => validateDistribution(inventory), /unclassified hook artifact/);
+  const result = validateDistribution(inventory, { artifacts: { [hookKey]: { codex: unsupported, pi: unsupported } } });
+  const dest = path.join(root, 'output');
+  assert.deepEqual(buildFromInventory(dest, [{ name: 'example', source: './plugins/example' }], result), ['example']);
+  const projected = fs.readFileSync(path.join(dest, 'example/SKILL.md'), 'utf8');
+  assert.equal(projected, '---\nname: example\ndescription: Example.\nlicense: MIT\n---\n# Body\n');
+  assert.doesNotThrow(() => validateSkillDirectories(dest));
+}));
+
+test('frontmatter hooks do not excuse a Claude runtime dependency in the body', () => fixture((root) => {
+  fs.writeFileSync(path.join(root, 'example/SKILL.md'), hooked + command);
+  const inventory = [{ name: 'example', sourceRoot: root, repoRoot: root, artifacts: discoverArtifacts({ name: 'example' }, root) }];
+  assert.throws(() => validateDistribution(inventory, { artifacts: { [hookKey]: { codex: unsupported, pi: unsupported } } }), /CLAUDE_PLUGIN_ROOT/);
+}));
+
+test('frontmatter hooks in a form the reader cannot parse fail instead of leaking', () => {
+  assert.throws(() => frontmatterHooks('---\nname: x\nhooks: {Stop: []}\n---\n'), /unsupported frontmatter hooks/);
+  assert.throws(() => frontmatterHooks('---\nname: x\nhooks:\n---\n'), /no registration/);
+  assert.deepEqual(frontmatterHooks('---\nname: x\nhooks:\n  Stop:\n  - a: 1\n  - b: 2\n  PostToolUse:\n    - c: 3\n---\n').ids, ['#Stop[0]', '#Stop[1]', '#PostToolUse[0]']);
+});

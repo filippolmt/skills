@@ -1,0 +1,24 @@
+--- a/references/gate.md
++++ b/references/gate.md
+@@ -133,18 +133,9 @@ waiver, the first WARNs. `--quick` (the checker at 1440 and 390, the layout chec
+ 
+ ## As a hook
+ 
+-In Claude Code the skill's own frontmatter adds the gate as a Stop hook once the skill is invoked. The
+-command is one POSIX `sh` line (Git Bash on Windows, `sh` on macOS and Linux) that runs the first
+-`gate.mjs` it finds, in this order: `$CLAUDE_SKILL_DIR/scripts/`, `$CLAUDE_PLUGIN_ROOT/scripts/` and
+-`$CLAUDE_PLUGIN_ROOT/skills/taste-skill/scripts/` (a plugin install), each only when the variable is
+-set; then the install folders by name, `$CLAUDE_PROJECT_DIR/.claude/skills/design-taste-frontend/`,
+-`$CLAUDE_PROJECT_DIR/.agents/skills/design-taste-frontend/`, `~/.claude/skills/design-taste-frontend/`
+-and `~/.agents/skills/design-taste-frontend/` (`npx skills`, `install.sh`). When it finds none, the stop
+-is allowed with no hook error; when the folder has a `.taste-skill` it writes
+-`.taste-skill/gate-hook-missing.txt` (the time and the variables it read), and when a build is armed
+-there or one folder below it prints `tasteskill gate: gate.mjs not found (CLAUDE_PLUGIN_ROOT=...)` on
+-stderr, so a hook that never reached the gate shows in the transcript. A skill installed under another
+-folder name, other apps, or a Claude Code without skill hooks take one of these. Each runs in every
++In Claude Code the skill's own frontmatter adds the gate as a Stop hook once the skill is invoked. This
++copy is packaged for another host, which does not read that frontmatter, so register the gate with one
++of these. Each runs in every
+ session of the project and finds a build in its folder or one or two below. Where none is active it
+ exits at once, but once for a tasteskill page (a `page-type` meta) changed in the last day in the
+ folder or one below that was never armed: it says how to arm it (`.taste-skill/unarmed.json` records

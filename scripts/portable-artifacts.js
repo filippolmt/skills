@@ -1,7 +1,15 @@
 const fs = require('fs');
 const path = require('path');
-const { posix, validatePortableRuntime } = require('./distribution.js');
+const { posix, validatePortableRuntime, frontmatterHooks } = require('./distribution.js');
 const { isExternal } = require('./catalog.js');
+
+// Drop a projected skill's Claude-only frontmatter hooks (ADR-0038); true when any were dropped.
+function dropClaudeHooks(dir) {
+  const file = path.join(dir, 'SKILL.md');
+  const { ids, text } = frontmatterHooks(fs.readFileSync(file, 'utf8'), file);
+  if (ids.length) fs.writeFileSync(file, text);
+  return ids.length > 0;
+}
 
 function copySelfContained(source, destination) {
   fs.mkdirSync(destination, { recursive: true });
@@ -262,4 +270,4 @@ function writeConvertedSkill(entry, plugin, artifact, destination) {
   return name;
 }
 
-module.exports = { licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validateSkillName, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill };
+module.exports = { dropClaudeHooks, licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validateSkillName, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill };

@@ -20,7 +20,8 @@
 //     regeneration PR carrying all of it names the removal. Skipping it would drop
 //     a skill with nobody noticing — which is exactly how `sandbox-sdk` pointed at
 //     a deleted folder for months while every check stayed green (ADR-0015).
-//   - A native vendored skill is byte-identical to upstream before overlays.
+//   - A native vendored skill is byte-identical to upstream before overlays,
+//     except for Claude-only frontmatter hooks, which it drops (ADR-0038).
 //     Deterministic command/agent conversions carry explicit provenance; an
 //     upstream that moves under an overlay still FAILS rather than freezing.
 //
@@ -54,7 +55,7 @@ const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 const { readCatalog, isLocal, isExternal, entryPath, isBundle, repoOf, root, MARKETPLACE } = require('./catalog.js');
 const { discoverArtifacts, isMod, pruneDistributionMetadata } = require('./distribution.js');
-const { licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
+const { dropClaudeHooks, licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
 
 const TREE = path.join(root, 'skills');
 const OVERLAYS = path.join(root, 'overlays');
@@ -72,7 +73,7 @@ function vendorList(plugins) {
 // What lands beside every vendored copy: where it came from and under what
 // licence. Written as prose rather than JSON because its reader is a human
 // wondering why a directory they did not write is in their repo.
-function renderSource({ entry, repo, sha, dir, licence, overlay }) {
+function renderSource({ entry, repo, sha, dir, licence, overlay, claudeHooks }) {
   const lines = [
     '# Source',
     '',
@@ -84,6 +85,7 @@ function renderSource({ entry, repo, sha, dir, licence, overlay }) {
     `- **Catalog entry**: \`${entry}\` in \`.claude-plugin/marketplace.json\``,
   ];
   if (overlay) lines.push(`- **Overlay applied**: \`overlays/${overlay}\``);
+  if (claudeHooks) lines.push('- **Claude-only frontmatter dropped**: `hooks` (ADR-0038)');
   lines.push('');
   return lines.join('\n');
 }
@@ -302,6 +304,7 @@ function buildFromInventory(dest, plugins, inventory, deps = {}) {
         const patch = path.join(overlays, `${name}.patch`);
         const overlay = fs.existsSync(patch);
         if (overlay) git(out, 'apply', patch);
+        const claudeHooks = dropClaudeHooks(out);
         fs.writeFileSync(path.join(out, 'SOURCE.md'), renderSource({
           entry: entry.name,
           repo: repoOf(plugin),
@@ -309,9 +312,11 @@ function buildFromInventory(dest, plugins, inventory, deps = {}) {
           dir: path.relative(entry.repoRoot, source) || '.',
           licence: own || licence,
           overlay: overlay ? `${name}.patch` : null,
+          claudeHooks,
         }));
       } else {
         copySelfContained(source, out);
+        dropClaudeHooks(out);
         addProvenance(entry, plugin, out, path.join(plugin.source, artifact.path), 'Copied local Agent Skill into the pi package projection.');
       }
     }
@@ -381,11 +386,12 @@ function build(dest, plugins, deps = {}) {
       const patch = path.join(overlays, `${name}.patch`);
       const overlay = fs.existsSync(patch);
       if (overlay) git(out, 'apply', patch);
+      const claudeHooks = dropClaudeHooks(out);
 
       const dirRel = path.relative(repoDir, skillDir) || '.';
       fs.writeFileSync(
         path.join(out, 'SOURCE.md'),
-        renderSource({ entry: entry.name, repo, sha, dir: dirRel, licence: own || licence, overlay: overlay ? `${name}.patch` : null })
+        renderSource({ entry: entry.name, repo, sha, dir: dirRel, licence: own || licence, overlay: overlay ? `${name}.patch` : null, claudeHooks })
       );
     }
 
