@@ -2,133 +2,60 @@
 
 ## What this repo is
 
-A skill marketplace for **three harnesses**. `.claude-plugin/marketplace.json` is
-the catalog; each entry is a plugin, installed on its own (`/plugin install <name>`),
-not in bulk. **Default granularity is one skill per entry.**
+A skill marketplace for three harnesses, all projected from one catalog:
+`.claude-plugin/marketplace.json`. Each entry is a plugin installed on its own
+(`/plugin install <name>`). **Default granularity is one skill per entry.**
 
-Claude installs from that catalog, **referencing** upstream. pi consumes the
-generated tree of **vendored copies** at `skills/`, its package convention
-directory. Codex installs generated native packages from
-`.agents/plugins/marketplace.json`; each package contains real copies of its Agent
-Skills because Codex caches it independently. `.agents/skills` is deliberately
-absent so loose and plugin-bundled copies cannot collide (ADR-0021).
+- **Claude** installs from the catalog by reference: external entries name a
+  folder upstream and pin a `sha`.
+- **pi** consumes vendored copies in the generated tree at `skills/`.
+- **Codex** installs generated native packages from
+  `.agents/plugins/marketplace.json`, each holding real copies of its skills.
+  `.agents/skills` is absent so that loose copies and bundled copies cannot
+  collide (ADR-0021).
 
-The tree covers every portable skill plus deterministic command/agent conversions
-from whole-plugin and local entries. The Codex marketplace publishes every
-supported entry with its complete runtime closure; unsupported Claude-only guards
-stay out rather than becoming misleading stubs. `docs/distribution-parity.md`
-names those limitations.
+`skills/` and `.agents/` are generated: change the catalog and regenerate. A
+Claude-only guard with no portable form is left out of Codex and pi;
+`docs/distribution-parity.md` lists every such limitation.
 
-**Exception — whole-plugin entries.** An upstream repo shipping a cohesive plugin
-(a folder with its own `.claude-plugin/plugin.json`) whose artifacts a per-skill
-entry would **drop** — further skills, subagents, or commands; hooks and mirrors
-beside a canonical `skills/` do not count (ADR-0036) — gets a **single
-`git-subdir` entry whose `path` is the plugin root**: installing it brings every
-artifact at once. See `api-scaffolding` and `shell-scripting` from
-`wshobson/agents`. When the plugin root *is* the repo root, the entry is a
-**url entry** — `"source": "url"` with `url`, `ref`, `sha` and no `path` — never
-git-subdir at `"."`: Claude Code sparse-checks-out that `path` and installs only
-the repo's top-level files (`docs/adr/0033-a-repo-root-plugin-is-a-url-entry.md`);
-see `diagram-design`. `check-renovate.js` rejects a root git-subdir `path`.
+**Whole-plugin entries.** Some upstream plugins (a folder with its own
+`.claude-plugin/plugin.json`) ship further skills, subagents or commands that a
+per-skill entry would drop. Such a plugin gets a single `git-subdir` entry whose
+`path` is the plugin root (see `api-scaffolding`). Hooks and mirrors beside a
+canonical `skills/` do not count (ADR-0036). A plugin at the repo root is a
+**url entry** instead: `"source": "url"` with `url`, `ref` and `sha`, and no
+`path` (see `diagram-design`, ADR-0033).
 
-`GLOSSARY.md` is the domain glossary — the naming authority. Read it before you
-coin a name, and whenever a task says *bundle*, *projection*, *overlay*, *guard* or
-*spawn*: each is a defined term here, narrower than its
-everyday sense.
+## External entries
 
-`docs/adr/` holds the decisions and their reasoning, one file per decision
-(`NNNN-slug.md`, with a `status:`). Read the ADR a rule cites before you change
-that rule; write a new one when you settle a question the next agent would
-otherwise reopen. Guard and cross-harness projection reviews also read
-[`CODING_STANDARDS.md`](CODING_STANDARDS.md).
-
-## Adding or updating an external skill
-
-External skills are **referenced upstream** via `git-subdir`: an entry names a
-folder in somebody else's repo and pins a `sha`, and that is what Claude installs
-(a plugin that is the whole repo is a `url` entry instead, ADR-0033).
-The generated tree at `skills/` is the exception the reference does not cover —
-adding an entry therefore also **vendors a copy** of that upstream on the next
-regeneration, which is where redistribution is decided. Both branches run through
-the **`/add-external-skill`** skill, which the agent also follows when asked in
-plain words: `<owner/repo> [path] [name]` appends entries, `update` reconciles existing
-ones against upstream (skills added and removed, tag/`sha` bumps, refreshed
-descriptions). It also picks the `ref`, regenerates the README and validates.
-Copy the entry shape from any existing `git-subdir` entry, or from `seo-toolkit`
-for a url entry. Every external entry credits its upstream author explicitly; the
-marketplace owner is the publisher, not the default author ([ADR-0018](docs/adr/0018-credit-the-upstream-author.md)).
-
-`node scripts/gen-readme.js` generates **two** regions of the README from
-`marketplace.json`: the **Available skills** catalog projection, and the
-**bundle projection** — the bundle table inside *Installing skills*
-(`docs/adr/0012-the-bundle-table-lives-next-to-the-install.md`). A bundle appears
-in one and never the other; `GLOSSARY.md` is the authority on both terms. Change
-the catalog entry — plus its group in `scripts/catalog-meta.json` when the source
-repo is new — and regenerate; the generator throws on a git-subdir repo with no
-group, and `--check` compares both regions.
-
-The pi tree, bundle filter snippets, and Codex packages are projections of the
-same catalog, generated by `node scripts/gen-skills-tree.js`,
-`node scripts/gen-pi.js`, and `node scripts/gen-codex.js`.
-`scripts/distribution-meta.json` records only cross-harness facts that cannot be
-derived from that catalog: runtime edges, adaptations, unsupported dispositions
-and fallbacks. `--verify-paths` inventories every distribution artifact and fails
-when one has no Codex and pi outcome. It also builds the pi projection in a temporary
-directory, applying overlays so drift fails before merge, without comparing or
-rewriting committed projections; `docs/distribution-parity.md` is generated
-from that inventory. Generated projections are not part of
-`/add-external-skill`: CI's
-`regenerate` workflow proposes it in its own PR after the merge, so a `sha` bump
-stays a one-line diff — and that PR **merges itself** once `validate` passes
-(`docs/adr/0011-the-regeneration-pr-merges-itself.md`), so the tree is nobody's
-chore. Hand-editing `skills/` is pointless: regeneration overwrites it. A tree
-that cannot pass `validate` turns the `regenerate` run red and leaves the PR
-open — that red run is the signal, and the catalog stops advancing until it is
-dealt with. That workflow needs the **`REGEN_TOKEN`** secret: pushed with the
-default token instead, its `validate` run is parked awaiting an approval no
-workflow can give. An expired token fails the job's first step by name.
-
-An entry whose folder upstream deleted or renamed is **pruned** by that same
-regeneration: it leaves the catalog and every bundle's `dependencies` (breaking
-bump), the entry's owned distribution metadata is removed, the README is regenerated,
-and the self-merging PR names it
-(`docs/adr/0015-an-upstream-removal-is-pruned-at-regeneration.md`). A removal that
-would change a non-bundle's behaviour, break a surviving runtime dependency, or
-strip a bundle of the skill it is named after turns the run red before any catalog,
-manifest, or metadata writes.
-
-A skill upstream **added** is not catalogued by anything automatic. For a
-**whole** source (ADR-0014) the `whole-sources` workflow keeps one issue open
-listing it, until an entry or an exclusion closes it
-(`docs/adr/0024-report-uncatalogued-skills-of-whole-sources.md`). Run
-`node scripts/check-whole-sources.js` for the same list locally.
-An upstream description that changed since the catalog's text was reviewed is
-reported the same way (`docs/adr/0029-report-upstream-descriptions-changed-since-review.md`,
-`node scripts/check-upstream-descriptions.js`).
+Add or update them with `/add-external-skill`; this also applies when the
+request comes in plain words. Commit the catalog change plus the README regions
+from `node scripts/gen-readme.js`. Leave every other projection to CI's
+`regenerate` workflow. Regeneration, pruning and the upstream drift reports are
+covered in `docs/agents/external-entries.md`.
 
 ## Gotchas
 
-**The Renovate seam.** `renovate.json` matches the external entry shape (`path`
-optional, so url entries match too) with
-two `customManager` regexes, told apart by `ref` (`main`/`master` vs
-`[prefix-]vX.Y.Z`). A regex that stops matching fails **silently** — zero
-matches, no error, auto-updates simply stop. So the entry shape and both regexes
-move together, and `scripts/check-renovate.js` asserts they cover the catalog
-exactly. A `ref` of any other shape (`1.2.0`, a bare SHA) matches neither manager
-and is never updated again.
-A branch pin whose repo starts publishing tags is reported by the `whole-sources`
-workflow in its own issue (`docs/adr/0026-report-branch-pins-once-upstream-tags.md`,
-`node scripts/check-branch-pins.js`). For an update/freshness audit, run
-`node scripts/check-upstream-versions.js [owner/repo [candidate-tag]]`: it checks
-latest same-series tags or branch HEADs and preflights downgrade paths before approval.
+**The Renovate seam.** `renovate.json` matches the external entry shape with two
+`customManager` regexes, told apart by `ref`: `main`/`master` against
+`[prefix-]vX.Y.Z`. A regex that stops matching fails **silently**: there is no
+error, auto-updates just stop. Change the entry shape and both regexes together;
+`scripts/check-renovate.js` asserts that they cover the catalog. A `ref` of any
+other shape (`1.2.0`, a bare SHA) is never updated again.
 
-**Double-registered hooks.** A local plugin's `hooks/hooks.json` loads
-automatically; `manifest.hooks` (in `.claude-plugin/plugin.json`) is for
-*additional* hook files beyond that path, so pointing it at the standard one
-loads the file twice (`Duplicate hooks file detected`). A stale entry in
-`.claude/settings.local.json` pointing at a plugin's hook script does the same
-**silently**: no warning, the hook just runs twice per event. A hook firing twice
-→ check those two places first.
+**A hook firing twice.** Check two places:
+
+- `manifest.hooks` in a local plugin's `plugin.json` pointing at
+  `hooks/hooks.json`, which already loads automatically. `manifest.hooks` is
+  only for additional files.
+- A stale entry in `.claude/settings.local.json` pointing at the plugin's hook
+  script. This one gives no warning.
+
+**Names.** `name` values are unique across the marketplace, and a local
+plugin's command names and skill names are unique against each other and
+against every catalog entry. `claude plugin validate` compares only catalog
+names. A command colliding with another plugin's skill is caught by
+`scripts/check-name-collisions.js` (ADR-0004).
 
 ## Validate before committing
 
@@ -137,67 +64,50 @@ bash scripts/validate.sh --isolated       # full validation in a disposable snap
 bash scripts/validate.sh --catalog-only   # a catalog-only change: skips projection checks and smokes
 ```
 
-For which check a change needs (a change inside one local plugin, which
-generated outputs to commit), delegated distribution changes and the acceptance
-matrix, follow
-[`docs/agents/distribution-validation.md`](docs/agents/distribution-validation.md).
-For a mod's tests, typecheck and live checks, follow
-[`docs/agents/mod-testing.md`](docs/agents/mod-testing.md).
-The bare `bash scripts/validate.sh` checks already-materialized projections in place.
-
-The script is the union of what CI and regeneration enforce; neither workflow
-runs it, each keeps its own subset. Pull-request validation
-deliberately does **not** compare generated package contents: a `sha` bump makes
-the committed projections stale by design, so comparing them on a pull request
-would redden every Renovate PR. Those comparisons live in the `regenerate`
-workflow, where stale projections are the signal to act rather than a failure. A `PostToolUse` hook
-(`.claude/settings.json`) runs its last two checks on every Edit or Write to `marketplace.json`,
-`plugin.json`, a `SKILL.md` or a `commands/*.md`, and blocks the edit (exit 2) if
-either fails — the rest are yours to run.
-
-Output must be **clean** — no errors *and* no warnings. `claude plugin validate`
-runs with `--strict`, so its warnings (e.g. a `version` that diverges between
-`plugin.json` and a marketplace entry) already fail; treat a warning from any
-other check as a fail too.
-
-`claude plugin validate` compares catalog `name` values against each other and
-nothing more. A local plugin's **command** colliding with another plugin's
-**skill** is a real collision it misses — the harness resolves it to one of them
-while a hook reading the raw prompt text can act as if it were the other, which
-shipped a defect (`docs/adr/0004-rename-the-handoff-command.md`).
-`check-name-collisions.js` is what closes that gap.
+Output must be **clean**: zero errors and zero warnings, from every check.
+After a `sha` bump the committed projections are stale by design; pull-request
+validation skips them, and `regenerate` handles them. Which check a change
+needs, delegated distribution work and the acceptance matrix are in
+`docs/agents/distribution-validation.md`. A mod's tests, typecheck and live
+checks are in `docs/agents/mod-testing.md`.
 
 ## Versioning
 
-**Bump the `version` (SemVer) of the one plugin you changed**, leaving the others
-untouched. Edit it in that plugin's own `plugin.json` — the single source of
-truth; local-plugin `marketplace.json` entries carry no `version`. `fix:` →
-patch, `feat:` → minor, breaking → major, except that **below `1.0.0` a breaking
-change is a minor** — every local plugin is still pre-1.0. The bumped version is
-the release: merging the PR to `main` ships it. Skip the bump only for changes
-that leave every plugin's behaviour alone (repo docs, `renovate.json`).
+Bump the SemVer `version` of the one plugin you changed, in that plugin's own
+`plugin.json`; local-plugin catalog entries carry none. The mapping is:
+
+- `fix:` → patch;
+- `feat:` → minor;
+- breaking → major, except below `1.0.0`, where it is a minor (every local
+  plugin is still pre-1.0).
+
+Merging to `main` ships it. A change that leaves every plugin's behaviour alone
+(repo docs, `renovate.json`) takes no bump.
 
 ## Conventions
 
-- Conventional Commits (`feat:`, `fix:`, `chore:`, …).
+- Conventional Commits.
 - Work on a feature branch (`feat/...`) and open a PR to `main`; `main` takes
   merges only.
-- Before switching branches after a reported merge, fetch and verify both a clean
+- Before switching branches after a reported merge, fetch, then verify a clean
   worktree and the merged commit on `origin/main`; preserve uncommitted work.
-- `name` values are unique across the whole marketplace, and a local plugin's
-  command and skill names are unique against each other and against every
-  catalog entry.
 
 ## Agent skills
 
+### Domain docs
+
+`GLOSSARY.md` is the naming authority. Read it before coining a name, and
+whenever a task says *bundle*, *projection*, *overlay*, *guard* or *spawn*: each
+of these terms is narrower here than in everyday use. `docs/adr/` holds one
+decision per file. Read the ADR a rule cites before changing that rule, and
+write a new ADR when you settle a question the next agent would otherwise
+reopen. Guard reviews and cross-harness projection reviews also read
+`CODING_STANDARDS.md`.
+
 ### Issue tracker
 
-Issues and specs are tracked in GitHub Issues. See `docs/agents/issue-tracker.md`.
+GitHub Issues: `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-Use the five default triage labels. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context layout using `GLOSSARY.md` and `docs/adr/`. See `docs/agents/domain.md`.
+The five default labels: `docs/agents/triage-labels.md`.
