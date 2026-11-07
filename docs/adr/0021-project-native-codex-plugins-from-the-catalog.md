@@ -4,6 +4,11 @@ status: accepted
 
 # Project native Codex plugins from the catalog
 
+> **Amended by [ADR-0038](0038-skill-frontmatter-hooks-stay-in-claude.md).**
+> Source validation reads a `SKILL.md` without its Claude-only frontmatter
+> `hooks:` block, which projections drop; every other `CLAUDE_PLUGIN_ROOT` still
+> fails.
+
 Codex now supports Git-backed marketplaces and native plugins containing skills,
 MCP configuration and lifecycle hooks. The loose skills tree chosen by
 [ADR-0010](0010-vendor-a-shared-skills-tree-on-main.md) therefore no longer gives

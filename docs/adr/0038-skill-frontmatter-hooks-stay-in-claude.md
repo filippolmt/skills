@@ -4,6 +4,11 @@ status: accepted
 
 # Skill frontmatter hooks stay in Claude
 
+Amends [ADR-0021](0021-project-native-codex-plugins-from-the-catalog.md), whose
+source validation now reads a `SKILL.md` without its frontmatter hooks, and
+[ADR-0010](0010-vendor-a-shared-skills-tree-on-main.md), whose vendored copy is
+byte-identical to upstream except for that block.
+
 A `SKILL.md` frontmatter can carry a `hooks:` key: Claude Code registers those
 hooks while the skill is active. taste-skill v2.5.1 (#620) added a `Stop` hook
 there that runs its finish gate, searching for `gate.mjs` under
@@ -27,7 +32,8 @@ skill as a whole for a reference that only Claude ever executes.
   `SKILL.md` that still carries frontmatter hooks: a projection path that
   forgets the drop fails instead of leaking.
 - `frontmatterHooks` in `distribution.js` is pure (registration ids and the text
-  without the block); `dropClaudeHooks` in `portable-artifacts.js` writes it.
+  without the block). Two projection steps write it: `vendorSkill` for an
+  upstream copy, after its overlay, and `copySkill` for every other skill copy.
 - The reader is line-based, not a YAML parser: a `hooks:` it cannot read (flow
   style, no registration) fails instead of passing silently.
 - Codex gets such a hook only as `adapted`, from an upstream Codex hook file
@@ -36,8 +42,9 @@ skill as a whole for a reference that only Claude ever executes.
 
 Prose in a reference that describes the Claude hook is not a hook: it takes an
 overlay, as taste-skill's `references/gate.md` does
-(`overlays/design-taste-frontend.patch`). The overlay rewrites only the lines
-naming `CLAUDE_PLUGIN_ROOT`, so it drifts only when upstream touches them.
+(`overlays/design-taste-frontend.patch`). The overlay rewrites only the
+sentences naming `CLAUDE_PLUGIN_ROOT`, so it drifts only when upstream touches
+them.
 
 ## Considered options
 

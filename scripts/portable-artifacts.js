@@ -11,6 +11,12 @@ function dropClaudeHooks(dir) {
   return ids.length > 0;
 }
 
+// Copy a skill folder into a projection without its Claude-only frontmatter hooks.
+function copySkill(source, destination) {
+  copySelfContained(source, destination);
+  dropClaudeHooks(destination);
+}
+
 function copySelfContained(source, destination) {
   fs.mkdirSync(destination, { recursive: true });
   for (const item of fs.readdirSync(source, { withFileTypes: true })) {
@@ -272,4 +278,4 @@ function writeConvertedSkill(entry, plugin, artifact, destination) {
   return name;
 }
 
-module.exports = { dropClaudeHooks, licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validateSkillName, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill };
+module.exports = { copySkill, dropClaudeHooks, licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validateSkillName, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill };

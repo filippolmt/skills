@@ -55,7 +55,7 @@ const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 const { readCatalog, isLocal, isExternal, entryPath, isBundle, repoOf, root, MARKETPLACE } = require('./catalog.js');
 const { discoverArtifacts, isMod, pruneDistributionMetadata } = require('./distribution.js');
-const { dropClaudeHooks, licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
+const { copySkill, dropClaudeHooks, licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, parseFrontmatter, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
 
 const TREE = path.join(root, 'skills');
 const OVERLAYS = path.join(root, 'overlays');
@@ -204,10 +204,12 @@ function copyDir(src, dst) {
 
 // One vendored copy: the upstream skill folder, its licence, the overlay, then the
 // Claude-only frontmatter hooks dropped (ADR-0038), recorded in `SOURCE.md`.
-function vendorSkill({ source, out, name, overlays, entry, repo, sha, repoDir, licence }) {
+// `origin` is where the copy came from: what `SOURCE.md` names.
+function vendorSkill(source, out, name, overlays, origin) {
+  const { entry, repo, sha, repoDir, licence } = origin;
   copyDir(source, out);
-  // A skill that ships its own licence keeps it: overwriting with the repo-root
-  // one would break the byte-identity the whole design rests on.
+  // A skill that ships its own licence keeps it: overwriting the upstream's
+  // licence file with the repo-root one would misstate its terms.
   const own = licenceIn(out);
   copyAttribution(repoDir, out);
   // An overlay is a diff against the skill's own files, so it applies from
@@ -318,10 +320,9 @@ function buildFromInventory(dest, plugins, inventory, deps = {}) {
       if (isExternal(plugin)) {
         const licence = licenceIn(entry.repoRoot);
         if (!licence) throw new Error(`entry ${entry.name}: ${repoOf(plugin)} ships no licence — no licence, no right to redistribute`);
-        vendorSkill({ source, out, name, overlays, entry: entry.name, repo: repoOf(plugin), sha: plugin.source.sha, repoDir: entry.repoRoot, licence });
+        vendorSkill(source, out, name, overlays, { entry: entry.name, repo: repoOf(plugin), sha: plugin.source.sha, repoDir: entry.repoRoot, licence });
       } else {
-        copySelfContained(source, out);
-        dropClaudeHooks(out);
+        copySkill(source, out);
         addProvenance(entry, plugin, out, path.join(plugin.source, artifact.path), 'Copied local Agent Skill into the pi package projection.');
       }
     }
@@ -379,7 +380,7 @@ function build(dest, plugins, deps = {}) {
       }
       written.set(name, entry.name);
 
-      vendorSkill({ source: skillDir, out: path.join(dest, name), name, overlays, entry: entry.name, repo, sha, repoDir, licence });
+      vendorSkill(skillDir, path.join(dest, name), name, overlays, { entry: entry.name, repo, sha, repoDir, licence });
     }
 
     for (const artifact of artifacts.filter((item) => ['command', 'agent'].includes(item.kind))) {
@@ -405,7 +406,7 @@ function build(dest, plugins, deps = {}) {
         written.set(name, entry.name);
         if (dest) {
           const out = path.join(dest, name);
-          copySelfContained(source, out);
+          copySkill(source, out);
           addProvenance(portableEntry, entry, out, path.join(entry.source, artifact.path), 'Copied local Agent Skill into the pi package projection.');
         }
       } else {

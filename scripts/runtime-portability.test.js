@@ -72,10 +72,11 @@ test('generated skill validation catches leaked Claude runtime variables in refe
 // taste-skill v2.5.1 (#620): a guarded Stop hook in the frontmatter is Claude's, not a portable dependency.
 const hooked = '---\nname: example\ndescription: Example.\nhooks:\n  Stop:\n    - hooks:\n        - type: command\n          command: \'node ${CLAUDE_PLUGIN_ROOT:+"$CLAUDE_PLUGIN_ROOT/gate.mjs"}\'\nlicense: MIT\n---\n# Body\n';
 const hookKey = 'example/hook:example/SKILL.md#Stop[0]';
+const discovered = (root) => [{ name: 'example', sourceRoot: root, repoRoot: root, artifacts: discoverArtifacts({ name: 'example' }, root) }];
 
 test('a frontmatter hook is its own artifact and stays out of pi and Codex projections', () => fixture((root) => {
   fs.writeFileSync(path.join(root, 'example/SKILL.md'), hooked);
-  const inventory = [{ name: 'example', sourceRoot: root, repoRoot: root, artifacts: discoverArtifacts({ name: 'example' }, root) }];
+  const inventory = discovered(root);
   assert.deepEqual(inventory[0].artifacts.map((a) => a.id), ['hook:example/SKILL.md#Stop[0]', 'skill:example/SKILL.md']);
   assert.throws(() => validateDistribution(inventory), /unclassified hook artifact/);
   const result = validateDistribution(inventory, { artifacts: { [hookKey]: { codex: unsupported, pi: unsupported } } });
@@ -88,7 +89,7 @@ test('a frontmatter hook is its own artifact and stays out of pi and Codex proje
 
 test('frontmatter hooks do not excuse a Claude runtime dependency in the body', () => fixture((root) => {
   fs.writeFileSync(path.join(root, 'example/SKILL.md'), hooked + command);
-  const inventory = [{ name: 'example', sourceRoot: root, repoRoot: root, artifacts: discoverArtifacts({ name: 'example' }, root) }];
+  const inventory = discovered(root);
   assert.throws(() => validateDistribution(inventory, { artifacts: { [hookKey]: { codex: unsupported, pi: unsupported } } }), /CLAUDE_PLUGIN_ROOT/);
 }));
 
@@ -96,6 +97,10 @@ test('frontmatter hooks in a form the reader cannot parse fail instead of leakin
   assert.throws(() => frontmatterHooks('---\nname: x\nhooks: {Stop: []}\n---\n'), /unsupported frontmatter hooks/);
   assert.throws(() => frontmatterHooks('---\nname: x\nhooks:\n---\n'), /no registration/);
   assert.deepEqual(frontmatterHooks('---\nname: x\nhooks:\n  Stop:\n  - a: 1\n  - b: 2\n  PostToolUse:\n    - c: 3\n---\n').ids, ['#Stop[0]', '#Stop[1]', '#PostToolUse[0]']);
+  // A column-0 comment inside the block must not end it early and leave the rest behind.
+  const commented = frontmatterHooks('---\nname: x\nhooks:\n  Stop:\n# the gate\n    - command: gate\nlicense: MIT\n---\n');
+  assert.deepEqual(commented.ids, ['#Stop[0]']);
+  assert.equal(commented.withoutHooks, '---\nname: x\nlicense: MIT\n---\n');
 });
 
 test('generated validation reads the projection as is: a frontmatter hook there is a leak', () => fixture((root) => {
