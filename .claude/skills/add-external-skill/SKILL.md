@@ -10,11 +10,10 @@ Arguments: `$ARGUMENTS`
 - `<owner/repo> [path] [name]` → **add mode** (default).
 - `update` (optionally `update <owner/repo>` to scope to one repo) → **update mode**.
 
-Granularity is the CLAUDE.md rule. Default `name` to the skill folder's basename
-for a per-skill entry, or the upstream manifest's name for a whole-plugin entry.
-If Claude rejects that name as reserved, choose a descriptive catalog alias and
-report it; keep the upstream source unchanged. Validate the new catalog entry
-before regenerating the README, using the existing `claude plugin validate .`.
+Default `name` to the skill folder's basename for a per-skill entry, or the
+upstream manifest's name for a whole-plugin entry. If Claude rejects that name as
+reserved, choose a descriptive catalog alias and report it; keep the upstream
+source unchanged.
 
 ## Fetches
 
@@ -45,9 +44,6 @@ manifest first, then its licence, then the GitHub owner's profile. The manifest
 counts only when the entry's `path` is that plugin root; a standalone skill folder
 takes its licence's copyright holder. Preserve
 multiple credited authors; do not substitute the marketplace owner.
-
-If `curl` is blocked/redirected here, fetch the same URLs via any HTTP tool — the
-endpoints are identical.
 
 ## Pinning the `ref`
 
@@ -105,19 +101,14 @@ workflow, as specified by CLAUDE.md.
 ## Add mode
 
 1. Parse args. If `owner/repo` missing, ask for it.
-2. Decide granularity. `path` points at a plugin root (has
-   `.claude-plugin/plugin.json`) holding artifacts a per-skill entry would drop
-   — further skills, subagents, or commands; hooks and mirrors beside a
-   canonical `skills/` do not count (ADR-0036) → one **whole-plugin** entry at that
-   root — or, when the plugin root is the repo root, a **url entry**
-   (`"source": "url"`, `url`, `ref`, `sha`, no `path`; git-subdir `"."`
-   installs empty, ADR-0033); skip per-skill discovery,
-   take `name` from the `plugin.json`. Otherwise discover skills: `path` = a skill folder →
-   single entry; a parent folder → only folders under it (empty → stop,
-   report); omitted → all (batch).
+2. Decide granularity by CLAUDE.md's whole-plugin rule. A **whole-plugin** or
+   **url entry** skips per-skill discovery and takes `name` from the
+   `plugin.json`. Otherwise discover skills: `path` = a skill folder → single
+   entry; a parent folder → only folders under it (empty → stop, report);
+   omitted → all (batch).
 3. Pick the `ref` (see above), then fetch the SHA it resolves to — one SHA
    shared by every entry from that repo. Confirm the skill's `path` exists at
-   that SHA.
+   that SHA, then run **Check upstream Codex parity**.
 4. `name` = arg (single) or folder basename (batch). Confirm **every** name is
    free in `marketplace.json` — report collisions and ask before proceeding.
 5. For each skill, fetch its upstream `description` one-liner and author. Append
@@ -223,7 +214,8 @@ For each external source repo (git-subdir or url entry) in `marketplace.json` (o
      When a description is reviewed and kept, record the entry's pinned `sha`
      under its name in `descriptionReviewed` in `scripts/catalog-meta.json`; a
      rewrite needs no record.
-3. **Regenerate the README**, then validate.
+3. Run **Check upstream Codex parity** at each new SHA.
+4. **Regenerate the README**, then validate.
 
 Done when every external source repo in scope is accounted for — reconciled, or
 reported as already current. A repo silently skipped is one Renovate keeps
