@@ -6,7 +6,10 @@
 //
 // Local only, never in CI: the corpus is personal history. Usage:
 //   node scripts/replay-wordsplit-guard.js [--hook guard.js|expansion.js|command.js|<path>]
-//     [--filter <regex>] [--json] [<transcripts dir>]
+//     [--filter <regex>] [--base <git ref>] [--json] [<transcripts dir>]
+// --base replays each hook as it stands at that ref too, and reports only the
+// commands whose verdict or reason changed: the measurement a rule change's PR
+// reports, against `main`.
 // --json emits hits and grouped counts using SHA-256 command/reason IDs, never
 // transcript or reason text. Backticked spans are blanked before hashing reasons
 // so renamed variables group together. Text mode prints raw commands: keep it private.
@@ -16,21 +19,39 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const readline = require('readline');
-const { spawn } = require('child_process');
+const { spawn, execFileSync } = require('child_process');
 const { createHash } = require('crypto');
 
 const HOOKS = path.join(__dirname, '..', 'plugins', 'zsh-wordsplit-guard', 'hooks');
 
 function parseArgs(argv) {
-  const opts = { hooks: [], filter: null, json: false, dir: path.join(os.homedir(), '.claude', 'projects') };
+  const opts = { hooks: [], filter: null, base: null, json: false, dir: path.join(os.homedir(), '.claude', 'projects') };
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === '--hook') opts.hooks.push(path.resolve(HOOKS, argv[++i]));
+    if (argv[i] === '--hook') opts.hooks.push(hookPath(argv[++i]));
     else if (argv[i] === '--filter') opts.filter = new RegExp(argv[++i]);
+    else if (argv[i] === '--base') opts.base = argv[++i];
     else if (argv[i] === '--json') opts.json = true;
     else opts.dir = argv[i];
   }
   if (!opts.hooks.length) opts.hooks = ['guard.js', 'expansion.js', 'command.js'].map((h) => path.join(HOOKS, h));
   return opts;
+}
+
+// A hook name resolves in the plugin's hooks folder, a path from the working
+// directory; a missing one fails here, not as a hook that exits 1.
+function hookPath(arg) {
+  const found = [path.resolve(HOOKS, arg), path.resolve(arg)].find((p) => fs.existsSync(p));
+  if (!found) throw new Error('no such hook: ' + arg);
+  return found;
+}
+
+// The plugin's hooks folder as it stands at `ref`, extracted under `dir`.
+function hooksAt(ref, dir) {
+  const repo = path.join(__dirname, '..');
+  const rel = path.relative(repo, HOOKS);
+  const tar = execFileSync('git', ['-C', repo, 'archive', ref, rel], { stdio: ['ignore', 'pipe', 'pipe'] });
+  execFileSync('tar', ['-x', '-C', dir], { input: tar });
+  return path.join(dir, rel);
 }
 
 function* transcripts(dir) {
@@ -91,31 +112,53 @@ async function main() {
   const all = await commands(opts.dir, opts.filter);
   const jobs = opts.hooks.flatMap((hook) => all.map((command) => ({ hook, command })));
   const hits = [];
+  let baseDir = null;
+  let baseHooks = null;
+  if (opts.base) {
+    if (opts.hooks.some((hook) => path.dirname(hook) !== HOOKS)) throw new Error('--base takes the plugin\'s own hooks only');
+    baseDir = fs.mkdtempSync(path.join(os.tmpdir(), 'replay-base-'));
+    baseHooks = hooksAt(opts.base, baseDir);
+  }
   let next = 0;
-  await Promise.all(Array.from({ length: os.cpus().length }, async () => {
-    while (next < jobs.length) {
-      const job = jobs[next++];
-      const v = await verdict(job.hook, job.command);
-      if (v) hits.push(Object.assign({}, job, v));
-    }
-  }));
+  try {
+    await Promise.all(Array.from({ length: os.cpus().length }, async () => {
+      while (next < jobs.length) {
+        const job = jobs[next++];
+        const v = await verdict(job.hook, job.command);
+        if (!baseHooks) {
+          if (v) hits.push(Object.assign({}, job, v));
+          continue;
+        }
+        const b = await verdict(path.join(baseHooks, path.basename(job.hook)), job.command);
+        if (JSON.stringify(v) === JSON.stringify(b)) continue;
+        hits.push(Object.assign({}, job, v || { verdict: 'allow', reason: '' }, { base: b || { verdict: 'allow', reason: '' } }));
+      }
+    }));
+  } finally {
+    if (baseDir) fs.rmSync(baseDir, { recursive: true, force: true });
+  }
   if (opts.json) {
     const report = hits.map((h) => ({
       commandId: hash(h.command),
       hook: path.relative(HOOKS, h.hook),
       verdict: h.verdict,
       reasonId: hash(h.reason.replace(/`[^`]*`/g, '`…`')),
+      ...(h.base ? { base: h.base.verdict } : {}),
     })).sort((a, b) => a.hook.localeCompare(b.hook) || a.commandId.localeCompare(b.commandId));
     const groups = new Map();
     for (const hit of report) {
-      const key = JSON.stringify([hit.hook, hit.verdict, hit.reasonId]);
-      if (!groups.has(key)) groups.set(key, { hook: hit.hook, verdict: hit.verdict, reasonId: hit.reasonId, hits: 0 });
+      const key = JSON.stringify([hit.hook, hit.base, hit.verdict, hit.reasonId]);
+      if (!groups.has(key)) {
+        groups.set(key, Object.assign({ hook: hit.hook }, hit.base ? { base: hit.base } : {},
+          { verdict: hit.verdict, reasonId: hit.reasonId, hits: 0 }));
+      }
       groups.get(key).hits++;
     }
     console.log(JSON.stringify({ commands: all.length, hits: report, summary: [...groups.values()] }));
   } else {
     for (const h of hits) {
-      console.log('--- ' + h.verdict + ' (' + path.basename(h.hook) + ')\n' + h.command);
+      const was = h.base ? ', was ' + h.base.verdict : '';
+      console.log('--- ' + h.verdict + ' (' + path.basename(h.hook) + was + ')\n' + h.command);
     }
     console.log('\n' + all.length + ' unique commands replayed; ' + hits.length + ' hits.');
   }

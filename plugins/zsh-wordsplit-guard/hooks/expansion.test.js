@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // Self-check for expansion.js. Run: node expansion.test.js
+// The cases a new rule needs: CODING_STANDARDS.md § Guard rules.
 // The denied and rewritten commands fail or give a wrong result under zsh 5.9;
 // the allowed ones are the nearby forms that run as written, including the
 // correct rewrite of each denied one.
 const assert = require('assert');
-const { run, bash, denied, allowed, rewritten } = require('./testing').harness('expansion.js');
+const { run, bash, denied, allowed, rewritten, assignmentContexts } = require('./testing').harness('expansion.js');
 const rewrites = (command, want) => assert.strictEqual(rewritten(command), want);
 
 // --- equals expansion ---------------------------------------------------------
@@ -21,8 +22,7 @@ rewrites('test a == b', 'test a \\== b');
 rewrites('echo ok; echo ==', 'echo ok; echo \\==');
 rewrites('case $v in =ab) echo y;; esac', 'case $v in \\=ab) echo y;; esac'); // patterns expand it too
 rewrites('v==ls; echo $v', 'v=\\=ls; echo $v'); // an assignment value expands
-rewrites('a=1 v==ls cmd', 'a=1 v=\\=ls cmd');
-rewrites('export v==ls', 'export v=\\=ls');
+assignmentContexts((c) => rewrites(c, c.replace('v==ls', 'v=\\=ls')), 'v==ls');
 let reason = denied('x=ls; echo =$x');      // an expansion: single quotes would kill it
 assert.ok(/Escape the `=`: `\\=\$x`/.test(reason), 'names the escaped form');
 assert.ok(/\$\{commands\[name\]\}/.test(reason), 'names the command-path form');
@@ -76,6 +76,53 @@ allowed('ls *.md');                       // a plain glob is what the author wan
 allowed('cmd --x=${a[1]}');               // subscript, not a glob
 allowed('echo --x=$a[1]');                // zsh array subscript, prints --x=p
 allowed("bash -c 'grep --include=*.md x .'");
+
+// --- glob in a URL query string -------------------------------------------------
+rewrites('gh api repos/o/r/git/trees/HEAD?recursive=1 -q .tree', "gh api 'repos/o/r/git/trees/HEAD?recursive=1' -q .tree");
+rewrites('curl https://h/x?a=1', "curl 'https://h/x?a=1'");
+rewrites('echo --x=*.md a?b=1', "echo --x='*.md' 'a?b=1'");
+rewrites('curl h/x?a[]=1', "curl 'h/x?a[]=1'");          // PHP and Rails array keys
+rewrites('curl h/x?ids[0]=1', "curl 'h/x?ids[0]=1'");
+rewrites('curl h/x?a-b=1 h/y?1a=1', "curl 'h/x?a-b=1' 'h/y?1a=1'");
+rewrites('curl h/x?a=1#f', "curl 'h/x?a=1#f'");          // a fragment's `#` is literal mid-word
+rewrites('echo u=h/x?a=1', "echo 'u=h/x?a=1'");          // an argument, not an assignment
+rewrites('curl h/x?a=1 && echo ok', "curl 'h/x?a=1' && echo ok");
+rewrites('echo done h/x?a=1', "echo done 'h/x?a=1'");    // a keyword as an argument
+rewrites('x=$(curl h/x?a=1)', "x=$(curl 'h/x?a=1')");
+rewrites('echo "$(curl h/x?a=1)"', "echo \"$(curl 'h/x?a=1')\"");
+rewrites('echo `curl h/x?a=1`', "echo `curl 'h/x?a=1'`");
+rewrites('cat <<EOF\n$(curl h/x?a=1)\nEOF', "cat <<EOF\n$(curl 'h/x?a=1')\nEOF");
+reason = denied('gh api "repos/$r/pulls"?per_page=100');
+assert.ok(/per_page/.test(reason) && /`"repos\/\$r\/pulls"\\\?per_page=100`/.test(reason), 'names the escaped `?`');
+assert.ok(/`h\/x\\\?a\\\[\]=\$n`/.test(denied('n=2; curl h/x?a[]=$n')), 'escapes the `[` too');
+denied('n=2; echo x?page=$n');             // an expansion: quoting would kill it
+denied('ls ~/x?a=1');                      // quoting would stop the `~` expansion
+reason = denied('gh api repos/o/r/pulls?per_page=100&page=2');
+assert.ok(/`'repos\/o\/r\/pulls\?per_page=100&page=2'`/.test(reason), 'quotes the whole URL');
+assert.ok(/background/.test(reason), 'names the failure');
+denied('u=h/x?a=1&b=2');                   // an assignment cut short is broken in both shells
+reason = denied('curl h/x?a=1&b=$n');       // an expansion: single quotes would kill it
+assert.ok(/`h\/x\\\?a=1\\&b=\$n`/.test(reason), 'escapes the `&`, keeps the expansion');
+assert.ok(/`"h\/x"\\\?a=1\\&b=2`/.test(denied('curl "h/x"?a=1&b=2')), 'keeps the quotes as written');
+rewrites('curl x?a+b=1 y?a:b=1', "curl 'x?a+b=1' 'y?a:b=1'");
+rewrites('echo x >o?a=1', "echo x >'o?a=1'");            // a redirection target globs too
+rewrites('cat <h?a=1 >>o?b=2', "cat <'h?a=1' >>'o?b=2'");
+rewrites('echo $(date) u=h/x?a=1', "echo $(date) 'u=h/x?a=1'"); // an argument after a substitution
+
+allowed("gh api 'repos/o/r/trees/HEAD?recursive=1'");
+allowed('gh api "repos/o/r/trees/HEAD?recursive=1"');
+allowed('gh api repos/o/r/trees/HEAD\\?recursive=1');
+allowed('ls a?b');                         // a plain glob is what the author wants
+allowed('ls a?b && echo c=1');
+allowed('echo ${v/?a=/x}');                // a parameter pattern, not a word
+allowed('[[ $u == a?b=c ]]');
+allowed('(( a?b=1:2 ))');
+allowed('case $u in *?a=1) echo;; esac'); // a `case` pattern generates no file names
+// An assignment value generates no file names.
+allowed('u=https://h/x?a=1; curl $u');
+assignmentContexts(allowed, 'u=h/x?a=1');
+assignmentContexts(allowed, 'a[2]=h/x?a=1');
+allowed('cat <<<h?a=1');                   // a here-string generates no file names
 
 // --- parentheses in a parameter pattern ---------------------------------------
 reason = denied('b="see (issue tracker, domain docs)"; echo "${b/(issue tracker, domain docs)/X}"');

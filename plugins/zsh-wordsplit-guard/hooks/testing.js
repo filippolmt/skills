@@ -52,6 +52,24 @@ function harness(scriptName) {
     ]) check(command);
   };
 
+  // Every assignment case keeps its verdict wherever an assignment stands:
+  // after other assignments, a substitution or a `case` pattern, and as an
+  // argument of a declaration builtin. `check` gets each command.
+  const assignmentContexts = (check, assignment) => {
+    for (const command of [
+      assignment + ' cmd',
+      'X=1 ' + assignment + ' cmd',
+      'a[1]=x ' + assignment + ' cmd',
+      'x=$(date) ' + assignment + ' cmd',
+      'x=$(echo $(date)) ' + assignment + ' cmd',
+      'x=`date` ' + assignment + ' cmd',
+      'case y in y ) ' + assignment + ' ;; esac',
+      'if true; then ' + assignment + '; fi',
+      'f() { local ' + assignment + '; }',
+      'export ' + assignment,
+    ]) check(command);
+  };
+
   // The command a rewrite runs instead, checked to keep the rest of the input
   // (OTHER_FIELD among it) and to pass the hook itself.
   const OTHER_FIELD = { timeout: 5 };
@@ -67,7 +85,7 @@ function harness(scriptName) {
     return hso.updatedInput.command;
   };
 
-  return { run, bash, denied, allowed, rewritten, argumentContexts };
+  return { run, bash, denied, allowed, rewritten, argumentContexts, assignmentContexts };
 }
 
 module.exports = { harness };
