@@ -27,7 +27,8 @@ const hooks = { guard: harness('guard.js'), expansion: harness('expansion.js'), 
 // carries. `applied`: the hook rewrites `bash` itself, and that output is what
 // runs under zsh. `sort`: compare lines sorted, where only the order is
 // unspecified (an associative array's keys). `invalid`: bash rejects the form too, so there
-// is no output to match; the rewrite must still run under zsh. `none`: the
+// is no output to match; the rewrite must still run under zsh. `intended`: the
+// denied form is broken in bash too, so bash runs this instead. `none`: the
 // message names no zsh form, so only `named` is checked.
 const CASES = [
   // --- for rule (guard.js) ---
@@ -137,8 +138,16 @@ const CASES = [
   { hook: 'expansion', named: '"repos/$r"\\?page=2', setup: 'r=o',
     bash: 'echo "repos/$r"?page=2', zsh: 'echo "repos/$r"\\?page=2' },
   { hook: 'expansion', named: '~/x\\?a=1', bash: 'echo ~/x?a=1', zsh: 'echo ~/x\\?a=1' },
-  // The quoted URL changes what bash runs too: `&` ends the command in both.
-  { hook: 'expansion', named: "'h/x?a=1&b=2'", none: true, bash: 'echo h/x?a=1&b=2' },
+  // `&` ends the command in both shells: bash runs the URL the author meant.
+  { hook: 'expansion', named: "'h/x?a=1&b=2'", bash: 'echo h/x?a=1&b=2',
+    intended: 'echo "h/x?a=1&b=2"', zsh: "echo 'h/x?a=1&b=2'" },
+  { hook: 'expansion', named: 'h/x\\?a=1\\&b=$n', setup: 'n=2', bash: 'echo h/x?a=1&b=$n',
+    intended: 'echo "h/x?a=1&b=$n"', zsh: 'echo h/x\\?a=1\\&b=$n' },
+  { hook: 'expansion', named: '"h/x"\\?a=1\\&b=2', bash: 'echo "h/x"?a=1&b=2',
+    intended: 'echo "h/x?a=1&b=2"', zsh: 'echo "h/x"\\?a=1\\&b=2' },
+  { hook: 'expansion', allowed: true,
+    bash: 'x=$(echo d) u=h/x?a=1 printenv u; case x in x ) u=h/y?b=2 ;; esac; echo "$u"' },
+  { hook: 'expansion', applied: true, bash: 'echo x >o?a=1; cat <o?a=1; echo x?a+b=1' },
 
   // --- parentheses in a parameter pattern ---
   { hook: 'expansion', named: '`\\(`', setup: 'b="see (x, y)"',
@@ -250,7 +259,7 @@ try {
     if (c.none) continue;
     const setup = typeof c.setup === 'object' ? c.setup : { bash: c.setup, zsh: c.setup };
     const prefix = (s) => (s ? s + '\n' : '');
-    const want = shell(['bash', '--norc', '--noprofile', '-c'], prefix(setup.bash) + c.bash, cwd);
+    const want = shell(['bash', '--norc', '--noprofile', '-c'], prefix(setup.bash) + (c.intended || c.bash), cwd);
     const got = shell(['zsh', '-f', '-c'], prefix(setup.zsh) + zsh, cwd);
     const label = '`' + c.bash + '` -> `' + zsh + '`';
     if (c.invalid) {

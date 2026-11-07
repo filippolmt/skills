@@ -102,6 +102,14 @@ reason = denied('gh api repos/o/r/pulls?per_page=100&page=2');
 assert.ok(/`'repos\/o\/r\/pulls\?per_page=100&page=2'`/.test(reason), 'quotes the whole URL');
 assert.ok(/background/.test(reason), 'names the failure');
 denied('u=h/x?a=1&b=2');                   // an assignment cut short is broken in both shells
+reason = denied('curl h/x?a=1&b=$n');       // an expansion: single quotes would kill it
+assert.ok(/`h\/x\\\?a=1\\&b=\$n`/.test(reason), 'escapes the `&`, keeps the expansion');
+assert.ok(/`"h\/x"\\\?a=1\\&b=2`/.test(denied('curl "h/x"?a=1&b=2')), 'keeps the quotes as written');
+rewrites('curl x?a+b=1 y?a:b=1', "curl 'x?a+b=1' 'y?a:b=1'");
+rewrites('echo x >o?a=1', "echo x >'o?a=1'");            // a redirection target globs too
+rewrites('cat <h?a=1 >>o?b=2', "cat <'h?a=1' >>'o?b=2'");
+rewrites('echo $(date) u=h/x?a=1', "echo $(date) 'u=h/x?a=1'"); // an argument after a substitution
+rewrites('x=$(date) v==ls cmd', 'x=$(date) v=\\=ls cmd');      // still an assignment after one
 
 allowed("gh api 'repos/o/r/trees/HEAD?recursive=1'");
 allowed('gh api "repos/o/r/trees/HEAD?recursive=1"');
@@ -118,6 +126,12 @@ allowed('X=h/x?a=1 env');
 allowed('a[1]=h/x?a=1');
 allowed('export U=h/x?a=1');
 allowed('f() { local u=h/x?a=1; }');
+allowed('x=$(date) u=h/x?a=1 env');
+allowed('x=`date` u=h/x?a=1 env');
+allowed('x=$(echo $(date)) u=h/x?a=1 env');
+allowed('a[1]=x u=h/x?a=1 env');
+allowed('case $x in foo ) u=h/x?a=1 ;; esac');
+allowed('cat <<<h?a=1');                   // a here-string generates no file names
 
 // --- parentheses in a parameter pattern ---------------------------------------
 reason = denied('b="see (issue tracker, domain docs)"; echo "${b/(issue tracker, domain docs)/X}"');

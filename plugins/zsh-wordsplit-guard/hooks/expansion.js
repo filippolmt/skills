@@ -63,7 +63,8 @@ const original = (start, length) => command.slice(start, start + length);
 // (expansions), quotes and `\`, `{` (bash brace-expands `*.{md,txt}` into two
 // words), and `!`, `^`, `#`. `~` is in: after `=` in an argument neither
 // shell expands it.
-const LITERAL = /^[\w.*?[\]\/,:@%+=~-]+$/;
+const LITERAL_CHARS = '\\w.*?[\\]\\/,:@%+=~-';
+const LITERAL = new RegExp('^[' + LITERAL_CHARS + ']+$');
 // The edit putting `to` in place of the text at `start`, or null unless that
 // text is LITERAL and fully visible in the masked view (nothing quoted or
 // escaped glued inside).
@@ -81,26 +82,41 @@ const NOT_VALUE = /\$\{[^}]*\}|\$[A-Za-z_]\w*\[[^\]]*\]|\$\([^()]*\)|`[^`]*`/g;
 // expansion, quote or brace around it working, as the deny's hint.
 const valueView = (start, length) =>
   globWords.slice(start, start + length).replace(NOT_VALUE, blankRun);
-function escapeGlobs(start, length) {
+function escapeGlobs(start, length, chars = /[*?[]/) {
   const view = valueView(start, length);
   let out = '';
-  for (let i = 0; i < length; i++) out += (/[*?[]/.test(view[i]) ? '\\' : '') + command[start + i];
+  for (let i = 0; i < length; i++) out += (chars.test(view[i]) ? '\\' : '') + command[start + i];
   return out;
 }
-// A query key after `?` or `&`: PHP and Rails keys carry `[]`, others `-`.
-const QUERY = /\?[\w.[\]%-]+=/;
+// A `--name=` flag word, the flag-value rule's.
+const FLAG = '--[A-Za-z0-9][\\w-]*=';
+// A query key, after `?` or `&`: PHP and Rails keys carry `[]`.
+const QUERY_KEY = '[\\w.[\\]%+:-]+=';
+const QUERY = new RegExp('\\?' + QUERY_KEY);
 // A fragment's `#` is literal mid-word in both shells.
-const QUERY_LITERAL = /^[\w.*?[\]\/,:@%+=~#-]+$/;
-// The rest of a query that an unquoted `&` cut off at `at` (`&key=…`, not `&&`).
-const queryRest = (at) => (/^&[\w.[\]%-]+=/.test(globWords.slice(at))
-  ? /^&[^\s;|<>()`]*/.exec(command.slice(at))[0] : '');
+const QUERY_LITERAL = new RegExp('^[#' + LITERAL_CHARS + ']+$');
+// The same with the `&` a whole query holds, for the quoted form in a deny.
+const QUERY_LITERAL_AMP = new RegExp('^[#&' + LITERAL_CHARS + ']+$');
+// The length of a query's rest that an unquoted `&` cut off at `at`
+// (`&key=…`, not `&&`), or 0.
+const cutQueryLength = (at) => (new RegExp('^&' + QUERY_KEY).test(globWords.slice(at))
+  ? /^&[^\s;|<>()`]*/.exec(globWords.slice(at))[0].length : 0);
+// A word assigning a name or an array element.
+const ASSIGNMENT = /^[A-Za-z_]\w*(\[[^\]]*\])?=/;
 // Whether the word at `at` is an assignment, where zsh expands a value starting
-// with `=`: it follows only other assignments in its command, or is an argument
-// of a declaration builtin.
+// with `=` and generates no file names: it follows only other assignments in
+// its command, or is an argument of a declaration builtin. Substitutions are
+// blanked first, so the `)` left is a command boundary: a `case` pattern's or
+// a function definition's.
 function isAssignment(at) {
-  const before = words.slice(0, at).split(/[;&|(`\n]/).pop().trim().split(/\s+/)
-    .filter((w) => w && !/^(?:\{|\)|!|then|do|else|time)$/.test(w));
-  return before.every((w) => /^[A-Za-z_]\w*=/.test(w)) ||
+  let head = words.slice(0, at).replace(/`[^`\n]*`/g, blankRun);
+  for (let prev; prev !== head;) {
+    prev = head;
+    head = head.replace(/([$<>=])\(([^()]*)\)/g, (m, sigil, body) => sigil + blankRun('(' + body + ')'));
+  }
+  const before = head.split(/[;&|()\n]/).pop().trim().split(/\s+/)
+    .filter((w) => w && !/^(?:\{|!|then|do|else|time)$/.test(w));
+  return before.every((w) => ASSIGNMENT.test(w)) ||
     /^(?:export|typeset|local|declare|readonly|integer|float)$/.test(before[0]);
 }
 
@@ -149,7 +165,7 @@ const RULES = [
     // `--name=value` in word position, the value up to an operator or a
     // parenthesis that is not part of a `$(…)` or backtick substitution in it.
     view: globWords,
-    regex: /(^|[\s;&|(`])(--[A-Za-z0-9][\w-]*=)((?:\$\([^()]*\)|`[^`]*`|[^\s;&|<>()`])*)/g,
+    regex: new RegExp('(^|[\\s;&|(`])(' + FLAG + ')((?:\\$\\([^()]*\\)|`[^`]*`|[^\\s;&|<>()`])*)', 'g'),
     span: (m) => [m.index + m[1].length + m[2].length, m[3].length],
     reason(m, start, length) {
       const value = original(start, length);
@@ -162,31 +178,35 @@ const RULES = [
     rewrite: (m, start, length) => quoteEdit(start, length),
   },
   {
-    // A bare word holding a URL query string, `?key=`: no one globs on
-    // purpose in that shape. A `--name=` word is the rule above's; an
-    // assignment value generates no file names. The word stops at `(`, so each
-    // word inside a `$(…)` is a word of its own.
+    // A bare word holding a URL query string, `?key=`, or a redirection
+    // target (not a heredoc or here-string word): no one globs on purpose in
+    // that shape. A `--name=` word is the rule above's; an assignment value
+    // generates no file names. The word stops at `(`, so each word inside a
+    // `$(…)` is a word of its own.
     view: globWords,
-    regex: /(^|[\s;&|(`])(?!--[A-Za-z0-9][\w-]*=)([^\s;&|<>()`]+)/g,
+    regex: new RegExp('(^|[\\s;&|(`]|(?<!<)[<>])(?!' + FLAG + ')([^\\s;&|<>()`]+)', 'g'),
     span: (m) => [m.index + m[1].length, m[2].length],
     reason(m, start, length) {
       if (!QUERY.test(valueView(start, length))) return null;
       const word = original(start, length);
-      const rest = queryRest(start + length);
-      if (rest) {
-        const url = (word + rest).replace(/'/g, "'\\''");
-        return 'Unquoted `&` in a URL query string: `' + word + rest + '`. Both ' +
-          'shells end the command at `&` and run it in the background. Quote ' +
-          "the whole URL: `'" + url + "'`.";
+      m.cut = cutQueryLength(start + length);
+      if (m.cut) {
+        const total = length + m.cut;
+        const url = original(start, total);
+        const fix = literalEdit(start, total, (t) => "'" + t + "'", QUERY_LITERAL_AMP);
+        return 'Unquoted `&` in a URL query string: `' + url + '`. Both shells ' +
+          'end the command at `&` and run it in the background. ' + (fix
+          ? 'Quote the whole URL: `' + fix.to + '`.'
+          : 'Escape the `&` and the glob: `' + escapeGlobs(start, total, /[*?[&]/) + '`.');
       }
-      if (/^[A-Za-z_]\w*(\[[^\]]*\])?=/.test(word) && isAssignment(start)) return null;
+      if (m[1] !== '<' && m[1] !== '>' && ASSIGNMENT.test(word) && isAssignment(start)) return null;
       return 'Glob in a URL query string: `' + word + '`. zsh reads `?` and `[` as ' +
         'a glob, finds no file, and aborts with `no matches found`. Escape the ' +
         'glob: `' + escapeGlobs(start, length) + '`.';
     },
-    // Quoting a leading `~` would stop its expansion; a query split by `&`
-    // spans several words, which only the author can join.
-    rewrite: (m, start, length) => (m[2].startsWith('~') || queryRest(start + length) ? null
+    // Quoting a leading `~` would stop its expansion; a query cut by `&` is
+    // broken in bash too, and only the author can say where it ends.
+    rewrite: (m, start, length) => (m[2].startsWith('~') || m.cut ? null
       : quoteEdit(start, length, QUERY_LITERAL)),
   },
   {
