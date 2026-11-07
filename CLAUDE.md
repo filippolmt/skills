@@ -40,8 +40,7 @@ covered in `docs/agents/external-entries.md`.
 `customManager` regexes, told apart by `ref`: `main`/`master` against
 `[prefix-]vX.Y.Z`. A regex that stops matching fails **silently**: there is no
 error, auto-updates just stop. Change the entry shape and both regexes together;
-`scripts/check-renovate.js` asserts that they cover the catalog. A `ref` of any
-other shape (`1.2.0`, a bare SHA) is never updated again.
+`scripts/check-renovate.js` asserts that they cover the catalog.
 
 **A hook firing twice.** Check two places:
 
