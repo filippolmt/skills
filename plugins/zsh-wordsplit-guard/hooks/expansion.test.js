@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // Self-check for expansion.js. Run: node expansion.test.js
+// The cases a new rule needs: CODING_STANDARDS.md § Guard rules.
 // The denied and rewritten commands fail or give a wrong result under zsh 5.9;
 // the allowed ones are the nearby forms that run as written, including the
 // correct rewrite of each denied one.
 const assert = require('assert');
-const { run, bash, denied, allowed, rewritten } = require('./testing').harness('expansion.js');
+const { run, bash, denied, allowed, rewritten, assignmentContexts } = require('./testing').harness('expansion.js');
 const rewrites = (command, want) => assert.strictEqual(rewritten(command), want);
 
 // --- equals expansion ---------------------------------------------------------
@@ -21,9 +22,7 @@ rewrites('test a == b', 'test a \\== b');
 rewrites('echo ok; echo ==', 'echo ok; echo \\==');
 rewrites('case $v in =ab) echo y;; esac', 'case $v in \\=ab) echo y;; esac'); // patterns expand it too
 rewrites('v==ls; echo $v', 'v=\\=ls; echo $v'); // an assignment value expands
-rewrites('a=1 v==ls cmd', 'a=1 v=\\=ls cmd');
-rewrites('export v==ls', 'export v=\\=ls');
-rewrites('f() { local v==ls; }', 'f() { local v=\\=ls; }'); // `)` of `f()` is not a word before it
+assignmentContexts((c) => rewrites(c, c.replace('v==ls', 'v=\\=ls')), 'v==ls');
 let reason = denied('x=ls; echo =$x');      // an expansion: single quotes would kill it
 assert.ok(/Escape the `=`: `\\=\$x`/.test(reason), 'names the escaped form');
 assert.ok(/\$\{commands\[name\]\}/.test(reason), 'names the command-path form');
@@ -109,7 +108,6 @@ rewrites('curl x?a+b=1 y?a:b=1', "curl 'x?a+b=1' 'y?a:b=1'");
 rewrites('echo x >o?a=1', "echo x >'o?a=1'");            // a redirection target globs too
 rewrites('cat <h?a=1 >>o?b=2', "cat <'h?a=1' >>'o?b=2'");
 rewrites('echo $(date) u=h/x?a=1', "echo $(date) 'u=h/x?a=1'"); // an argument after a substitution
-rewrites('x=$(date) v==ls cmd', 'x=$(date) v=\\=ls cmd');      // still an assignment after one
 
 allowed("gh api 'repos/o/r/trees/HEAD?recursive=1'");
 allowed('gh api "repos/o/r/trees/HEAD?recursive=1"');
@@ -122,15 +120,8 @@ allowed('(( a?b=1:2 ))');
 allowed('case $u in *?a=1) echo;; esac'); // a `case` pattern generates no file names
 // An assignment value generates no file names.
 allowed('u=https://h/x?a=1; curl $u');
-allowed('X=h/x?a=1 env');
-allowed('a[1]=h/x?a=1');
-allowed('export U=h/x?a=1');
-allowed('f() { local u=h/x?a=1; }');
-allowed('x=$(date) u=h/x?a=1 env');
-allowed('x=`date` u=h/x?a=1 env');
-allowed('x=$(echo $(date)) u=h/x?a=1 env');
-allowed('a[1]=x u=h/x?a=1 env');
-allowed('case $x in foo ) u=h/x?a=1 ;; esac');
+assignmentContexts(allowed, 'u=h/x?a=1');
+assignmentContexts(allowed, 'a[2]=h/x?a=1');
 allowed('cat <<<h?a=1');                   // a here-string generates no file names
 
 // --- parentheses in a parameter pattern ---------------------------------------

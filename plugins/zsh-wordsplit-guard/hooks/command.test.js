@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // Self-check for command.js. Run: node command.test.js
+// The cases a new rule needs: CODING_STANDARDS.md § Guard rules.
 // The denied commands fail under zsh with `command not found`; the allowed ones
 // run as written, or read a value the rule cannot see.
 const assert = require('assert');

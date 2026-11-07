@@ -29,7 +29,9 @@ const hooks = { guard: harness('guard.js'), expansion: harness('expansion.js'), 
 // unspecified (an associative array's keys). `invalid`: bash rejects the form too, so there
 // is no output to match; the rewrite must still run under zsh. `intended`: the
 // denied form is broken in bash too, so bash runs this instead. `none`: the
-// message names no zsh form, so only `named` is checked.
+// message names no zsh form, so only `named` is checked; `why` says so, and a
+// message that does name one (`Write`, `Quote`, `Escape`, `Brace` before a
+// backticked form) fails: run it with a `zsh` case or `intended` instead.
 const CASES = [
   // --- for rule (guard.js) ---
   { hook: 'guard', named: '${=v}', setup: 'v="a b c"',
@@ -223,8 +225,10 @@ const CASES = [
   { hook: 'expansion', named: '${(%)v}', setup: 'v="plain text"',
     bash: 'echo "${v@P}"', zsh: 'echo "${(%)v}"' },
   // No zsh form to run: the message names python or sed, or that bash fails too.
-  { hook: 'expansion', named: 'python or sed', none: true, bash: 'echo ${v@a}' },
-  { hook: 'expansion', named: 'both abort', none: true, bash: 'echo ${v@x}' },
+  { hook: 'expansion', named: 'python or sed', none: true, why: 'no zsh form exists',
+    bash: 'echo ${v@a}' },
+  { hook: 'expansion', named: 'both abort', none: true, why: 'bash fails too',
+    bash: 'echo ${v@x}' },
 ];
 
 // A reason's shape: per rule line (`- …`) in a multi-rule reason, else whole,
@@ -255,6 +259,11 @@ try {
       const reason = hooks[c.hook].denied(c.bash);
       assert.ok(reason.includes(c.named), 'the deny for `' + c.bash + '` no longer names ' + c.named);
       shapes(reason).forEach((shape) => covered.add(shape));
+      if (c.none) {
+        assert.ok(c.why, '`none` without `why` for `' + c.bash + '`');
+        assert.ok(!/\b(?:Write|Quote|Escape|Brace)\b[^.`]*`/.test(reason),
+          '`none` skips a form the deny for `' + c.bash + '` names: run it instead');
+      }
     }
     if (c.none) continue;
     const setup = typeof c.setup === 'object' ? c.setup : { bash: c.setup, zsh: c.setup };

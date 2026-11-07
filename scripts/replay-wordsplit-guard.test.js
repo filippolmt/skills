@@ -6,7 +6,7 @@
 // and a line that is not JSON. A replay that silently reads nothing would report
 // "0 hits" forever, so the trap must come out as a hit.
 const assert = require('assert');
-const { spawnSync } = require('child_process');
+const { spawnSync, execFileSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -90,6 +90,36 @@ try {
   r = run(['--hook', brokenHook, '--json']);
   assert.notStrictEqual(r.status, 0, 'invalid hook output fails the replay');
   assert.ok(!r.stderr.includes('private-value'), 'invalid output stays private');
+
+  r = run(['--hook', 'missing.js']);
+  assert.notStrictEqual(r.status, 0, 'a missing hook fails the replay');
+  assert.ok(r.stderr.includes('no such hook: missing.js'), 'and names it:\n' + r.stderr);
+
+  // --base: a tree whose expansion.js allows everything stands in for an older ref.
+  const repo = path.join(__dirname, '..');
+  const index = { GIT_INDEX_FILE: path.join(dir, 'index') };
+  const git = (args, input) => execFileSync('git', ['-C', repo].concat(args),
+    { input: input, encoding: 'utf8', env: Object.assign({}, process.env, index) }).trim();
+  git(['read-tree', 'HEAD']);
+  const blob = git(['hash-object', '-w', '--stdin'], 'process.exit(0);\n');
+  git(['update-index', '--cacheinfo', '100644,' + blob + ',plugins/zsh-wordsplit-guard/hooks/expansion.js']);
+  const allowAll = git(['write-tree']);
+  r = run(['--hook', 'expansion.js', '--filter', '=====', '--base', allowAll, '--json']);
+  assert.strictEqual(r.status, 0, r.stderr);
+  const changed = JSON.parse(r.stdout);
+  assert.strictEqual(changed.hits.length, 1, 'the changed verdict is reported');
+  assert.strictEqual(changed.hits[0].verdict, 'rewrite');
+  assert.strictEqual(changed.hits[0].base, 'allow');
+  assert.strictEqual(changed.summary[0].base, 'allow');
+  r = run(['--hook', 'expansion.js', '--filter', '=====', '--base', allowAll]);
+  assert.ok(r.stdout.includes('--- rewrite (expansion.js, was allow)\necho ====='), 'text mode names the old verdict:\n' + r.stdout);
+  r = run(['--hook', 'expansion.js', '--filter', '=====', '--base', 'HEAD', '--json']);
+  assert.strictEqual(r.status, 0, r.stderr);
+  assert.deepStrictEqual(JSON.parse(r.stdout).hits, [], 'an unchanged verdict is left out');
+  r = run(['--hook', customHooks[0], '--base', 'HEAD']);
+  assert.notStrictEqual(r.status, 0, '--base takes the plugin hooks only');
+  r = run(['--hook', 'expansion.js', '--base', 'no-such-ref-xyz']);
+  assert.notStrictEqual(r.status, 0, 'a bad ref fails the replay');
 } finally {
   fs.rmSync(dir, { recursive: true, force: true });
 }

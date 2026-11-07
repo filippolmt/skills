@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // Self-check for guard.js. Run: node guard.test.js
+// The cases a new rule needs: CODING_STANDARDS.md § Guard rules.
 // Payloads mirror the real PreToolUse shape. The flagged ones are the form that
 // runs once over the whole string under zsh; the allowed ones are every nearby
 // form that is actually correct, which is where a guard this narrow earns its
