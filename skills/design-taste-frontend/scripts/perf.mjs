@@ -2,10 +2,10 @@
 /*
   taste-skill perf.mjs - a performance check for a built page. Node 22 or later (global WebSocket and fetch), no packages.
 
-    node <skill>/scripts/perf.mjs <page.html | folder | http(s) url> [--profile <own chrome dir>] [--json <file to write>] [--w 1440 --w 390] [--runs 3] [--port 5740]
+    node <skill>/scripts/perf.mjs <page.html | folder | http(s) url> [--profile <own chrome dir>] [--json <file to write>] [--w 1440 --w 390] [--runs 3] [--port 5740] [--root <dir>]
 
   A file or folder is served by a small local http server (ports 5740-5749, or the --port named and the 9 after it, text gzipped like a static host),
-  because module scripts do not load from file://. Then ONE headless Chrome on the CPU (--headless=new
+  because module scripts do not load from file://. --root serves from that folder instead (a built site whose links start at its root, /style.css). Then ONE headless Chrome on the CPU (--headless=new
   --disable-gpu --use-angle=swiftshader --enable-unsafe-swiftshader) loads the page at 1440x900 and at 390x844 over the
   Chrome DevTools Protocol, waits until the effects near the viewport are mounted, scrolls to the bottom one screen at a
   time, and measures. Chrome is closed by its own PID. No fps measurement, no soak: it only counts.
@@ -21,6 +21,9 @@
   FCP and LCP are CPU-rendered: compare pages with each other, never with field data. With WebGL on, SwiftShader runs
   the shaders on the CPU: the timing verdicts come from loads where every WebGL piece shows its still fallback, which
   is a proxy (it does not measure shader compile or link on a real GPU).
+  --profile: the Chrome profile, a folder of its own in the OS temp folder or the project's .taste-skill folder, never
+  outside the project; a relative one that leads out of the current folder (../prof) is replaced, with a warning, by
+  .taste-skill/chrome-perf.
   Exit code 1 when any check FAILs, 2 when the run timed out (partial results are printed).
 */
 import fs from 'node:fs';
@@ -32,19 +35,20 @@ import { spawn, execFileSync } from 'node:child_process';
 
 const args = process.argv.slice(2);
 const pos = [], widths = [];
-let profileArg = null, jsonOut = null, RUNS = 3, PORT0 = 5740;
+let profileArg = null, jsonOut = null, rootArg = null, RUNS = 3, PORT0 = 5740;
 const die = m => { console.error('perf: ' + m); process.exit(1); };
 const val = i => { const v = args[i + 1]; if (v == null || v.startsWith('--')) die(args[i] + ' needs a value'); return v; };
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--profile') profileArg = val(i++);
   else if (args[i] === '--json') jsonOut = val(i++);
+  else if (args[i] === '--root') rootArg = path.resolve(val(i++));
   else if (args[i] === '--w') { const w = +val(i++); if (!(w >= 200 && w <= 4000)) die('--w needs a width in px'); widths.push(w); }
   else if (args[i] === '--port') { PORT0 = parseInt(val(i++), 10); if (!(PORT0 >= 1024 && PORT0 <= 65500)) die('--port needs a port from 1024 to 65500'); }
   else if (args[i] === '--runs') RUNS = Math.max(1, Math.min(9, parseInt(val(i++), 10) || 3));
   else if (args[i].startsWith('--')) die('unknown option ' + args[i]);
   else pos.push(args[i]);
 }
-if (!pos.length) die('usage: perf.mjs <page.html | folder | url> [--profile <dir>] [--json file] [--w 1440 --w 390] [--runs 3] [--port 5740]');
+if (!pos.length) die('usage: perf.mjs <page.html | folder | url> [--profile <dir in the OS temp folder or .taste-skill>] [--json file] [--w 1440 --w 390] [--runs 3] [--port 5740] [--root <dir>]');
 if (typeof WebSocket === 'undefined' || typeof fetch === 'undefined') die('Node 22 or later is needed (global WebSocket and fetch)');
 if (!widths.length) widths.push(1440, 390);
 const target = pos[0];
@@ -358,13 +362,24 @@ let url = target, srvObj = null;
 if (!/^https?:/.test(target)) {
   const abs = path.resolve(target);
   if (!fs.existsSync(abs)) die('not found: ' + abs);
-  const isDir = fs.statSync(abs).isDirectory(), dir = isDir ? abs : path.dirname(abs);
+  const isDir = fs.statSync(abs).isDirectory(), dir = rootArg || (isDir ? abs : path.dirname(abs)), rel = path.relative(dir, abs);
+  if (rel.split(path.sep)[0] === '..' || path.isAbsolute(rel)) { console.error(`perf: the page is not inside --root ${dir}: ${abs}`); process.exit(2); }
   srvObj = await serve(dir);
-  url = `http://127.0.0.1:${srvObj.port}/` + (isDir ? '' : path.basename(abs));
+  url = `http://127.0.0.1:${srvObj.port}/` + rel.split(path.sep).map(encodeURIComponent).join('/') + (isDir && rel ? '/' : '');
 }
+// a profile stays in the OS temp folder or the project: a relative --profile that leads out of this folder (or the folder
+// itself) goes to .taste-skill/chrome-<name>
+const inProject = (p, name) => {
+  const abs = path.resolve(p), rel = path.relative(process.cwd(), abs);
+  const out = !path.isAbsolute(p) && (rel === '..' || rel.startsWith('..' + path.sep) || path.isAbsolute(rel));
+  if (rel !== '' && !out) return abs;
+  const to = path.join(process.cwd(), '.taste-skill', 'chrome-' + name);
+  console.error(`${name}: --profile ${p} ${out ? 'leads outside the project folder' : 'is the project folder itself'}; using ${to} (a profile goes in the OS temp folder or the project's .taste-skill folder)`);
+  return to;
+};
 // a fresh profile folder per run (a reused one can still be locked by the Chrome just closed); removed once Chrome has exited
 // default profile folder: --profile, else $TASTE_SKILL_TMP/chrome/perf, else a folder under the system temp dir
-const profileBase = path.resolve(profileArg || (process.env.TASTE_SKILL_TMP ? path.join(process.env.TASTE_SKILL_TMP, 'chrome', 'perf') : path.join(os.tmpdir(), 'taste-skill-perf')));
+const profileBase = path.resolve(profileArg ? inProject(profileArg, 'perf') : (process.env.TASTE_SKILL_TMP ? path.join(process.env.TASTE_SKILL_TMP, 'chrome', 'perf') : path.join(os.tmpdir(), 'taste-skill-perf')));
 fs.mkdirSync(profileBase, { recursive: true });
 for (const d of fs.readdirSync(profileBase)) if (/^run-\d+$/.test(d)) { try { fs.rmSync(path.join(profileBase, d), { recursive: true, force: true }); } catch { /* another run, or locked */ } }
 const profile = path.join(profileBase, 'run-' + process.pid);

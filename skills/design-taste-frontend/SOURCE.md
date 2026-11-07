@@ -2,7 +2,9 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/Leonxlnx/taste-skill/tree/822e0b9d872e10deb931afad2c6c2bd943cf4c7b/skills/taste-skill
-- **Commit**: `822e0b9d872e10deb931afad2c6c2bd943cf4c7b`
+- **Upstream**: https://github.com/Leonxlnx/taste-skill/tree/f6b76575f949707b4e3c37cd86cb44b0b98643e8/skills/taste-skill
+- **Commit**: `f6b76575f949707b4e3c37cd86cb44b0b98643e8`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `taste-skill` in `.claude-plugin/marketplace.json`
+- **Overlay applied**: `overlays/design-taste-frontend.patch`
+- **Claude-only frontmatter dropped**: `hooks` (ADR-0038)
