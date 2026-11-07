@@ -202,6 +202,26 @@ function copyDir(src, dst) {
   }
 }
 
+// One vendored copy: the upstream skill folder, its licence, the overlay, then the
+// Claude-only frontmatter hooks dropped (ADR-0038), recorded in `SOURCE.md`.
+function vendorSkill({ source, out, name, overlays, entry, repo, sha, repoDir, licence }) {
+  copyDir(source, out);
+  // A skill that ships its own licence keeps it: overwriting with the repo-root
+  // one would break the byte-identity the whole design rests on.
+  const own = licenceIn(out);
+  copyAttribution(repoDir, out);
+  // An overlay is a diff against the skill's own files, so it applies from
+  // inside the vendored copy — `git apply` needs no repository for that.
+  const patch = path.join(overlays, `${name}.patch`);
+  const overlay = fs.existsSync(patch);
+  if (overlay) git(out, 'apply', patch);
+  const claudeHooks = dropClaudeHooks(out);
+  fs.writeFileSync(path.join(out, 'SOURCE.md'), renderSource({
+    entry, repo, sha, dir: path.relative(repoDir, source) || '.', licence: own || licence,
+    overlay: overlay ? `${name}.patch` : null, claudeHooks,
+  }));
+}
+
 // Where an entry's `path` lands in its checkout, and whether anything is there.
 function resolveEntry(entry, fetch = checkout) {
   const repo = repoOf(entry);
@@ -298,22 +318,7 @@ function buildFromInventory(dest, plugins, inventory, deps = {}) {
       if (isExternal(plugin)) {
         const licence = licenceIn(entry.repoRoot);
         if (!licence) throw new Error(`entry ${entry.name}: ${repoOf(plugin)} ships no licence — no licence, no right to redistribute`);
-        copyDir(source, out);
-        const own = licenceIn(out);
-        copyAttribution(entry.repoRoot, out);
-        const patch = path.join(overlays, `${name}.patch`);
-        const overlay = fs.existsSync(patch);
-        if (overlay) git(out, 'apply', patch);
-        const claudeHooks = dropClaudeHooks(out);
-        fs.writeFileSync(path.join(out, 'SOURCE.md'), renderSource({
-          entry: entry.name,
-          repo: repoOf(plugin),
-          sha: plugin.source.sha,
-          dir: path.relative(entry.repoRoot, source) || '.',
-          licence: own || licence,
-          overlay: overlay ? `${name}.patch` : null,
-          claudeHooks,
-        }));
+        vendorSkill({ source, out, name, overlays, entry: entry.name, repo: repoOf(plugin), sha: plugin.source.sha, repoDir: entry.repoRoot, licence });
       } else {
         copySelfContained(source, out);
         dropClaudeHooks(out);
@@ -374,25 +379,7 @@ function build(dest, plugins, deps = {}) {
       }
       written.set(name, entry.name);
 
-      const out = path.join(dest, name);
-      copyDir(skillDir, out);
-      // A skill that ships its own licence keeps it: overwriting with the repo-root
-      // one would break the byte-identity the whole design rests on.
-      const own = licenceIn(out);
-      copyAttribution(repoDir, out);
-
-      // An overlay is a diff against the skill's own files, so it applies from
-      // inside the vendored copy — `git apply` needs no repository for that.
-      const patch = path.join(overlays, `${name}.patch`);
-      const overlay = fs.existsSync(patch);
-      if (overlay) git(out, 'apply', patch);
-      const claudeHooks = dropClaudeHooks(out);
-
-      const dirRel = path.relative(repoDir, skillDir) || '.';
-      fs.writeFileSync(
-        path.join(out, 'SOURCE.md'),
-        renderSource({ entry: entry.name, repo, sha, dir: dirRel, licence: own || licence, overlay: overlay ? `${name}.patch` : null, claudeHooks })
-      );
+      vendorSkill({ source: skillDir, out: path.join(dest, name), name, overlays, entry: entry.name, repo, sha, repoDir, licence });
     }
 
     for (const artifact of artifacts.filter((item) => ['command', 'agent'].includes(item.kind))) {

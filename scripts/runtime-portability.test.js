@@ -97,3 +97,14 @@ test('frontmatter hooks in a form the reader cannot parse fail instead of leakin
   assert.throws(() => frontmatterHooks('---\nname: x\nhooks:\n---\n'), /no registration/);
   assert.deepEqual(frontmatterHooks('---\nname: x\nhooks:\n  Stop:\n  - a: 1\n  - b: 2\n  PostToolUse:\n    - c: 3\n---\n').ids, ['#Stop[0]', '#Stop[1]', '#PostToolUse[0]']);
 });
+
+test('generated validation reads the projection as is: a frontmatter hook there is a leak', () => fixture((root) => {
+  fs.writeFileSync(path.join(root, 'example/SKILL.md'), hooked.replace('${CLAUDE_PLUGIN_ROOT:+"$CLAUDE_PLUGIN_ROOT/gate.mjs"}', 'gate.mjs'));
+  assert.throws(() => validateSkillDirectories(root), /frontmatter hooks leaked/);
+}));
+
+test('only a SKILL.md frontmatter is excused: a reference with hooks still fails on CLAUDE_PLUGIN_ROOT', () => fixture((root) => {
+  fs.writeFileSync(path.join(root, 'example/SKILL.md'), skill);
+  fs.writeFileSync(path.join(root, 'example/reference.md'), hooked);
+  assert.throws(() => validateSkillDirectories(root), /CLAUDE_PLUGIN_ROOT/);
+}));

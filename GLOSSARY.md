@@ -103,7 +103,8 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   `sha` its entry pins, beside that upstream's licence and a `SOURCE.md`. What the
   tree holds instead of a reference.
 - **Overlay** — a harness-specific edit to a vendored copy, held apart from it as a patch
-  so the copy stays identical to upstream. Named for the separation: an edit made
+  so the copy stays identical to upstream (bar the frontmatter hooks every projection
+  drops, ADR-0038). Named for the separation: an edit made
   *in* the copy is a fork, not an overlay.
 - **Overlay drift** — an overlay whose upstream has moved under it. Surfaces as the
   patch failing to apply, which is the property the form is chosen for.

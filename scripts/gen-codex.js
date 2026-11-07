@@ -181,7 +181,8 @@ function writeCodexDistribution(plugins, inventory, output) {
         names.add(frontmatter.name);
         const destination = path.join(skillsRoot, frontmatter.name);
         copySelfContained(source, destination);
-        dropClaudeHooks(destination);
+        // The projected tree copy has none left; an upstream folder still carries them.
+        if (source !== projected) dropClaudeHooks(destination);
         addProvenance(member, catalog.get(member.name), destination, outcome.sourcePath || artifact.path,
           outcome.sourcePath ? 'Used the upstream Codex-specific Agent Skill payload.' : 'Copied Agent Skill into the Codex package projection.');
       }
