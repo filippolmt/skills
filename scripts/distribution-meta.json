@@ -244,6 +244,18 @@
         "limitation": "pi packages cannot install declarative lifecycle hooks.",
         "fallback": "Run the packaged Impeccable detector manually before finishing."
       }
+    },
+    "taste-skill/hook:SKILL.md#Stop[0]": {
+      "codex": {
+        "disposition": "unsupported",
+        "limitation": "The finish gate is a Stop hook in the skill's Claude frontmatter; upstream's own Codex plugin ships the skill without a hook registration.",
+        "fallback": "Register node <skill>/scripts/gate.mjs --hook codex in .codex/hooks.json as references/gate.md shows, or run the gate before finishing."
+      },
+      "pi": {
+        "disposition": "unsupported",
+        "limitation": "pi packages cannot install declarative lifecycle hooks.",
+        "fallback": "Run node <skill>/scripts/gate.mjs before finishing."
+      }
     }
   }
 }

@@ -1,9 +1,10 @@
 # Overlays
 
 A **vendored copy** in `skills/` is byte-identical to its upstream at the
-`sha` the catalog entry pins. When a skill needs a change for pi or Codex, the
-change lives here as a patch instead of being made in the copy — an edit made
-*in* the copy is a fork, not an overlay.
+`sha` the catalog entry pins, except that a `SKILL.md` loses its Claude-only
+frontmatter `hooks:` block after the overlay (ADR-0038). When a skill needs a
+change for pi or Codex, the change lives here as a patch instead of being made
+in the copy — an edit made *in* the copy is a fork, not an overlay.
 
 - One file per skill: `<skill-name>.patch`, named after the skill's directory in
   the tree.

@@ -21,7 +21,7 @@ plugins/
   matt-pocock-bundle/              # a bundle: dependencies only, no artifacts
 skills/                            # generated: vendored copies read by pi
   tdd/
-    SKILL.md                       # byte-identical to upstream at the pinned sha
+    SKILL.md                       # upstream at the pinned sha, minus Claude-only frontmatter hooks
     LICENSE                        # the upstream's own
     SOURCE.md                      # repo, sha and licence it came from
 .agents/plugins/
@@ -343,7 +343,9 @@ refused outright.
 
 ### Overlays
 
-A vendored copy is byte-identical to its upstream at the pinned `sha`. When a
+A vendored copy is byte-identical to its upstream at the pinned `sha`, except
+that a `SKILL.md` loses its Claude-only frontmatter `hooks:` block
+([ADR-0038](docs/adr/0038-skill-frontmatter-hooks-stay-in-claude.md)). When a
 skill needs a change to work under pi or Codex, that change lives in
 `overlays/<skill>.patch` and is applied after the copy — editing the copy itself
 is a fork, not an overlay. The conventions (patch naming, what the diff is

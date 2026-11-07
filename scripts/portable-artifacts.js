@@ -1,7 +1,21 @@
 const fs = require('fs');
 const path = require('path');
-const { posix, validatePortableRuntime } = require('./distribution.js');
+const { posix, validatePortableRuntime, frontmatterHooks } = require('./distribution.js');
 const { isExternal } = require('./catalog.js');
+
+// Drop a projected skill's Claude-only frontmatter hooks (ADR-0038); true when any were dropped.
+function dropClaudeHooks(dir) {
+  const file = path.join(dir, 'SKILL.md');
+  const { ids, withoutHooks } = frontmatterHooks(fs.readFileSync(file, 'utf8'), file);
+  if (ids.length) fs.writeFileSync(file, withoutHooks);
+  return ids.length > 0;
+}
+
+// Copy a skill folder into a projection without its Claude-only frontmatter hooks.
+function copySkill(source, destination) {
+  copySelfContained(source, destination);
+  dropClaudeHooks(destination);
+}
 
 function copySelfContained(source, destination) {
   fs.mkdirSync(destination, { recursive: true });
@@ -121,6 +135,8 @@ function validateSkillDirectories(skillsRoot) {
     const file = path.join(root, 'SKILL.md');
     if (!fs.existsSync(file)) throw new Error(`${skill.name}: missing SKILL.md`);
     const text = fs.readFileSync(file, 'utf8');
+    // The generated check reads the projection as is: a hook that reached it is a leak.
+    if (frontmatterHooks(text, file).ids.length) throw new Error(`${file}: Claude-only frontmatter hooks leaked into a projection (ADR-0038)`);
     const { name } = parseFrontmatter(text);
     validateSkillName(name);
     if (name !== skill.name) throw new Error(`${skill.name}: directory does not match skill name ${name}`);
@@ -262,4 +278,4 @@ function writeConvertedSkill(entry, plugin, artifact, destination) {
   return name;
 }
 
-module.exports = { licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validateSkillName, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill };
+module.exports = { copySkill, dropClaudeHooks, licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validateSkillName, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill };

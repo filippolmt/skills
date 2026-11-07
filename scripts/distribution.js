@@ -81,6 +81,7 @@ function discoverArtifacts(entry, root) {
 
   for (const file of declaredFiles(root, manifest.skills, plugin ? ['skills'] : ['.'], (f) => path.basename(f) === 'SKILL.md', 'skills')) {
     out.push(artifact(entry, root, 'skill', file));
+    for (const id of frontmatterHooks(fs.readFileSync(file, 'utf8'), file).ids) out.push(artifact(entry, root, 'hook', file, id));
   }
   if (plugin) {
     for (const [key, kind] of [['commands', 'command'], ['agents', 'agent']]) {
@@ -234,8 +235,46 @@ function pruneDistributionMetadata(metadata, gone, inventory) {
   return pruned;
 }
 
-function validatePortableRuntime(file) {
-  if (/\$\{CLAUDE_PLUGIN_ROOT\}|\$CLAUDE_PLUGIN_ROOT\b/.test(fs.readFileSync(file, 'utf8'))) {
+// A SKILL.md frontmatter `hooks:` key is a Claude Code feature (ADR-0038): each
+// registration is inventoried as a hook artifact, and projections drop the block.
+// Pure: returns the registration ids and the text without the block; writing the
+// projection is portable-artifacts.js's job. It lives here, beside the other
+// frontmatter reader's caller, because discovery needs the ids and
+// portable-artifacts.js already requires this module (the reverse would cycle).
+// Deliberately not a YAML parser; a form it cannot read fails instead of leaking.
+function frontmatterHooks(text, label = 'SKILL.md') {
+  const fm = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
+  const lines = fm ? fm[1].split('\n') : [];
+  const start = lines.findIndex((line) => /^hooks\s*:/.test(line));
+  if (start < 0) return { ids: [], withoutHooks: text };
+  if (!/^hooks:\s*$/.test(lines[start])) throw new Error(`${label}: unsupported frontmatter hooks YAML; use a block mapping`);
+  let end = start + 1;
+  // Indented, sequence, comment and blank lines continue the block; the next top-level key ends it.
+  while (end < lines.length && (/^[ \t#-]/.test(lines[end]) || !lines[end].trim())) end++;
+  const ids = [];
+  let event = null; let eventIndent = null; let entryIndent = null; let count = 0;
+  for (const line of lines.slice(start + 1, end)) {
+    if (!line.trim() || /^\s*#/.test(line)) continue;
+    const indent = /^ */.exec(line)[0].length;
+    eventIndent ??= indent;
+    const key = /^ *([A-Za-z]+):\s*$/.exec(line);
+    if (indent === eventIndent && key) { event = key[1]; entryIndent = null; count = 0; continue; }
+    if (!event || (indent <= eventIndent && !line.trimStart().startsWith('-'))) {
+      throw new Error(`${label}: unsupported frontmatter hooks YAML; use a block mapping of events`);
+    }
+    if (line.trimStart().startsWith('-')) {
+      entryIndent ??= indent;
+      if (indent === entryIndent) ids.push(`#${event}[${count++}]`);
+    }
+  }
+  if (!ids.length) throw new Error(`${label}: frontmatter hooks declare no registration`);
+  const offset = fm.index + fm[0].indexOf(fm[1]);
+  const frontmatterWithoutHooks = [...lines.slice(0, start), ...lines.slice(end)].join('\n');
+  return { ids, withoutHooks: text.slice(0, offset) + frontmatterWithoutHooks + text.slice(offset + fm[1].length) };
+}
+
+function validatePortableRuntime(file, text = fs.readFileSync(file, 'utf8')) {
+  if (/\$\{CLAUDE_PLUGIN_ROOT\}|\$CLAUDE_PLUGIN_ROOT\b/.test(text)) {
     throw new Error(`${file}: unresolved CLAUDE_PLUGIN_ROOT runtime dependency; adapt the artifact or declare it unsupported`);
   }
 }
@@ -291,7 +330,11 @@ function validateDistribution(inventory, metadata = {}, options = {}) {
             ? path.resolve(entry.repoRoot, outcome.sourcePath)
             : path.join(entry.sourceRoot, item.path);
           // Native agent TOML has its own runtime contract; Markdown is what we project as skills.
-          if (source.endsWith('.md')) validatePortableRuntime(source);
+          if (source.endsWith('.md')) {
+            const text = fs.readFileSync(source, 'utf8');
+            // Only a skill's own frontmatter hooks are excused: projections drop them (ADR-0038).
+            validatePortableRuntime(source, item.kind === 'skill' ? frontmatterHooks(text, source).withoutHooks : text);
+          }
         }
       }
     }
@@ -341,4 +384,4 @@ function renderParity(inventory) {
   ].join('\n');
 }
 
-module.exports = { discoverArtifacts, isMod, declaredDependencies, classify, validateDistribution, pruneDistributionMetadata, validatePortableRuntime, renderParity, posix };
+module.exports = { discoverArtifacts, isMod, declaredDependencies, classify, validateDistribution, pruneDistributionMetadata, validatePortableRuntime, frontmatterHooks, renderParity, posix };

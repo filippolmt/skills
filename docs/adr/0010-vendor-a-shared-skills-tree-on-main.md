@@ -4,6 +4,10 @@ status: accepted
 
 # Vendor a skills tree on `main` for pi and Codex
 
+> **Amended by [ADR-0038](0038-skill-frontmatter-hooks-stay-in-claude.md).** A
+> vendored `SKILL.md` drops its Claude-only frontmatter `hooks:` block; the copy
+> is otherwise byte-identical to upstream.
+
 This marketplace is built on one principle: external skills are **referenced**
 upstream via `git-subdir`, never copied here. Serving a second harness breaks it —
 but not for the reason [ADR-0007](0007-vendor-a-generated-codex-catalog.md) gave.
