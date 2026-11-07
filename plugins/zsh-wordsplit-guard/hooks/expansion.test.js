@@ -23,6 +23,7 @@ rewrites('case $v in =ab) echo y;; esac', 'case $v in \\=ab) echo y;; esac'); //
 rewrites('v==ls; echo $v', 'v=\\=ls; echo $v'); // an assignment value expands
 rewrites('a=1 v==ls cmd', 'a=1 v=\\=ls cmd');
 rewrites('export v==ls', 'export v=\\=ls');
+rewrites('f() { local v==ls; }', 'f() { local v=\\=ls; }'); // `)` of `f()` is not a word before it
 let reason = denied('x=ls; echo =$x');      // an expansion: single quotes would kill it
 assert.ok(/Escape the `=`: `\\=\$x`/.test(reason), 'names the escaped form');
 assert.ok(/\$\{commands\[name\]\}/.test(reason), 'names the command-path form');
@@ -76,6 +77,47 @@ allowed('ls *.md');                       // a plain glob is what the author wan
 allowed('cmd --x=${a[1]}');               // subscript, not a glob
 allowed('echo --x=$a[1]');                // zsh array subscript, prints --x=p
 allowed("bash -c 'grep --include=*.md x .'");
+
+// --- glob in a URL query string -------------------------------------------------
+rewrites('gh api repos/o/r/git/trees/HEAD?recursive=1 -q .tree', "gh api 'repos/o/r/git/trees/HEAD?recursive=1' -q .tree");
+rewrites('curl https://h/x?a=1', "curl 'https://h/x?a=1'");
+rewrites('echo --x=*.md a?b=1', "echo --x='*.md' 'a?b=1'");
+rewrites('curl h/x?a[]=1', "curl 'h/x?a[]=1'");          // PHP and Rails array keys
+rewrites('curl h/x?ids[0]=1', "curl 'h/x?ids[0]=1'");
+rewrites('curl h/x?a-b=1 h/y?1a=1', "curl 'h/x?a-b=1' 'h/y?1a=1'");
+rewrites('curl h/x?a=1#f', "curl 'h/x?a=1#f'");          // a fragment's `#` is literal mid-word
+rewrites('echo u=h/x?a=1', "echo 'u=h/x?a=1'");          // an argument, not an assignment
+rewrites('curl h/x?a=1 && echo ok', "curl 'h/x?a=1' && echo ok");
+rewrites('echo done h/x?a=1', "echo done 'h/x?a=1'");    // a keyword as an argument
+rewrites('x=$(curl h/x?a=1)', "x=$(curl 'h/x?a=1')");
+rewrites('echo "$(curl h/x?a=1)"', "echo \"$(curl 'h/x?a=1')\"");
+rewrites('echo `curl h/x?a=1`', "echo `curl 'h/x?a=1'`");
+rewrites('cat <<EOF\n$(curl h/x?a=1)\nEOF', "cat <<EOF\n$(curl 'h/x?a=1')\nEOF");
+reason = denied('gh api "repos/$r/pulls"?per_page=100');
+assert.ok(/per_page/.test(reason) && /`"repos\/\$r\/pulls"\\\?per_page=100`/.test(reason), 'names the escaped `?`');
+assert.ok(/`h\/x\\\?a\\\[\]=\$n`/.test(denied('n=2; curl h/x?a[]=$n')), 'escapes the `[` too');
+denied('n=2; echo x?page=$n');             // an expansion: quoting would kill it
+denied('ls ~/x?a=1');                      // quoting would stop the `~` expansion
+reason = denied('gh api repos/o/r/pulls?per_page=100&page=2');
+assert.ok(/`'repos\/o\/r\/pulls\?per_page=100&page=2'`/.test(reason), 'quotes the whole URL');
+assert.ok(/background/.test(reason), 'names the failure');
+denied('u=h/x?a=1&b=2');                   // an assignment cut short is broken in both shells
+
+allowed("gh api 'repos/o/r/trees/HEAD?recursive=1'");
+allowed('gh api "repos/o/r/trees/HEAD?recursive=1"');
+allowed('gh api repos/o/r/trees/HEAD\\?recursive=1');
+allowed('ls a?b');                         // a plain glob is what the author wants
+allowed('ls a?b && echo c=1');
+allowed('echo ${v/?a=/x}');                // a parameter pattern, not a word
+allowed('[[ $u == a?b=c ]]');
+allowed('(( a?b=1:2 ))');
+allowed('case $u in *?a=1) echo;; esac'); // a `case` pattern generates no file names
+// An assignment value generates no file names.
+allowed('u=https://h/x?a=1; curl $u');
+allowed('X=h/x?a=1 env');
+allowed('a[1]=h/x?a=1');
+allowed('export U=h/x?a=1');
+allowed('f() { local u=h/x?a=1; }');
 
 // --- parentheses in a parameter pattern ---------------------------------------
 reason = denied('b="see (issue tracker, domain docs)"; echo "${b/(issue tracker, domain docs)/X}"');

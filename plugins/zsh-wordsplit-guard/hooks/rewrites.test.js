@@ -129,6 +129,17 @@ const CASES = [
   { hook: 'expansion', applied: true, bash: 'echo --x=~/*.md' },
   { hook: 'expansion', named: '`pwd`\\*', bash: 'echo --x=`pwd`*', zsh: 'echo --x=`pwd`\\*' },
 
+  // --- glob in a URL query string ---
+  { hook: 'expansion', applied: true,
+    bash: 'echo HEAD?recursive=1 https://h/x?a=1 h/x?a[]=1 h/x?a-b=1 h/x?a=1#f u=h/x?a=1' },
+  { hook: 'expansion', applied: true, bash: 'x=$(echo h/x?a=1); echo "$x"; echo "$(echo h/y?b=2)"' },
+  { hook: 'expansion', allowed: true, bash: 'u=h/x?a=1; X=h/y?b=2 printenv X; echo "$u"' },
+  { hook: 'expansion', named: '"repos/$r"\\?page=2', setup: 'r=o',
+    bash: 'echo "repos/$r"?page=2', zsh: 'echo "repos/$r"\\?page=2' },
+  { hook: 'expansion', named: '~/x\\?a=1', bash: 'echo ~/x?a=1', zsh: 'echo ~/x\\?a=1' },
+  // The quoted URL changes what bash runs too: `&` ends the command in both.
+  { hook: 'expansion', named: "'h/x?a=1&b=2'", none: true, bash: 'echo h/x?a=1&b=2' },
+
   // --- parentheses in a parameter pattern ---
   { hook: 'expansion', named: '`\\(`', setup: 'b="see (x, y)"',
     bash: 'echo "${b/(x, y)/X}"', zsh: 'echo "${b/\\(x, y\\)/X}"' },
