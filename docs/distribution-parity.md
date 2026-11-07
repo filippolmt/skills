@@ -42,6 +42,7 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `image-to-code-skill` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `imagegen-frontend-mobile` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `imagegen-frontend-web` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `taste-skill` | `hook:SKILL.md#Stop[0]` | — | Unsupported — The finish gate is a Stop hook in the skill's Claude frontmatter; upstream's own Codex plugin ships the skill without a hook registration. Fallback: Register node <skill>/scripts/gate.mjs --hook codex in .codex/hooks.json as references/gate.md shows, or run the gate before finishing. | Unsupported — pi packages cannot install declarative lifecycle hooks. Fallback: Run node <skill>/scripts/gate.mjs before finishing. |
 | `taste-skill` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `printing-press` | `skill:SKILL.md` | `printing-press-polish`, `printing-press-output-review` | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `printing-press-polish` | `skill:SKILL.md` | `printing-press-output-review` | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
