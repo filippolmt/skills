@@ -16,10 +16,6 @@ A rule added to `zsh-wordsplit-guard` is reviewed against every context its mask
 
 A mod that keeps history across sessions (`$.store`) is reviewed for the sessions it should not count: its tests cover a session that draws nowhere (`$.session.surfaces()` empty: `claude -p`, an SDK host) and a mod that never hears `session.start` (installed mid-session), and assert what was recorded, not only what was drawn.
 
-## Local plugin descriptions
-
-A local plugin's description is one text kept in three places — its `plugin.json`, its `marketplace.json` entry and the README catalog — and `gen-readme.js --check` fails when they drift. Review checks that the three agree.
-
 ## Widened or renamed terms
 
 When a change widens or renames a `GLOSSARY.md` term, review greps the old term across `scripts/`, `docs/`, `.claude/skills/` and the root docs: each occurrence is updated, or still true under the narrower meaning. Report the ones that are neither.

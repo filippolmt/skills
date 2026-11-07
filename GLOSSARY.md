@@ -44,20 +44,15 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Bundle projection** — the README's table of bundles, the other region
   `scripts/gen-readme.js` generates, spliced between the
   `<!-- bundles:start -->` / `<!-- bundles:end -->` markers. It lives under the
-  README's "Installing skills" heading, beside the install instructions rather
-  than in the catalog projection, because a reader choosing between an individual
-  skill and a suite bundle needs it at that moment. Its cells name each bundle's
+  README's "Installing skills" heading (ADR-0012). Its cells name each bundle's
   `dependencies`, not its description. Never hand-edited. Its content is
-  **disjoint** from the catalog projection's: the one derived set of bundles is
-  subtracted from that one and selected for this one
-  (`docs/adr/0012-the-bundle-table-lives-next-to-the-install.md`).
+  **disjoint** from the catalog projection's.
 - **Catalog-meta** — `scripts/catalog-meta.json`. The irreducible editorial data
   behind the **catalog projection**: ordered source repos with a display
   **tagline** and a column **kind** (`skill` → "What it does", `plugin` → "What
   it bundles"). Everything else in that projection is derived from the catalog.
-  Its **omit** list is not editorial in that sense and is empty: it once named
-  the seven bundles, which the derived set has handled since — first by
-  subtracting them, now by routing them to the bundle projection instead.
+  Its **omit** list is empty: bundles are derived and routed to the bundle
+  projection.
 
 ## Agent distribution
 
