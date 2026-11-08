@@ -1,5 +1,5 @@
 # Source
 
-- **Source**: https://github.com/cathrynlavery/diagram-design/tree/e57eda6102a19444538ebd611d39534fad65b663/commands/import-excalidraw.md
+- **Source**: https://github.com/cathrynlavery/diagram-design/tree/a928d8a421080b8d197789a16588f2d1ce06dee7/commands/import-excalidraw.md
 - **Catalog entry**: `diagram-design`
 - **Transformation**: Converted command to a deterministic namespaced Agent Skill; relative links repointed at sibling skills or the upstream file.
