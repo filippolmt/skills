@@ -1233,8 +1233,8 @@
         "source": "git-subdir",
         "url": "https://github.com/filippolmt/proximo",
         "path": "skills/proximo",
-        "ref": "v0.17.0",
-        "sha": "2db19b1f14dfc091de2e0c6e737321be9e437aa8"
+        "ref": "v0.18.0",
+        "sha": "e48789eb71733f1b956b676efd2b1d47571dc301"
       },
       "description": "Makes local Docker containers reachable at https://<name>.test with trusted HTTPS and local DNS, and shares a route with colleagues over the team's mesh. Use when exposing a container through proximo.* labels, or when diagnosing a broken one: a .test host that does not answer, a 502/503, an untrusted local certificate, a page that loads and then breaks, a request whose container output you need, a queue or worker that is not progressing, or a shared link that fails.",
       "author": {
