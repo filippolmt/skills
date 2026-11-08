@@ -1,5 +1,5 @@
 # Source
 
-- **Source**: https://github.com/wshobson/agents/tree/4bde3168b43c0655c4d00ea2726e631719908a6d/agents/terraform-specialist.md
+- **Source**: https://github.com/wshobson/agents/tree/9c61ab243def98f72da12abd41cfcf5bcd91af9d/agents/terraform-specialist.md
 - **Catalog entry**: `cicd-automation`
 - **Transformation**: Converted agent to a deterministic namespaced Agent Skill; relative links repointed at sibling skills or the upstream file.
