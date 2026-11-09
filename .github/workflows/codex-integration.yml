@@ -58,5 +58,21 @@ jobs:
           node scripts/gen-skills-tree.js
           node scripts/gen-distribution.js
           node scripts/gen-codex.js
+      # The launcher's own download retries twice and discards curl's stderr, so a
+      # transient GitHub Releases error failed the hook smoke with no cause in the log.
+      # The launcher still verifies this cached copy against engine-checksums.txt.
+      - name: Pre-fetch the impeccable engine for the hook smoke
+        run: |
+          dir=.agents/plugins/packages/impeccable/skills/impeccable/scripts
+          version=$(tr -d '[:space:]' < "$dir/VERSION")
+          asset=impeccable-linux-x64 # ubuntu-latest is x64
+          sum=$(awk -v v="$version" -v a="$asset" '$1 == v && $2 == a { print $3 }' "$dir/engine-checksums.txt")
+          test -n "$sum" || { echo "no checksum for $version $asset in $dir/engine-checksums.txt" >&2; exit 1; }
+          dest="$HOME/.impeccable/bin/$version"
+          mkdir -p "$dest"
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 -o "$dest/impeccable" \
+            "https://github.com/pbakaus/impeccable/releases/download/engine-v$version/$asset"
+          echo "$sum  $dest/impeccable" | sha256sum -c -
+          chmod +x "$dest/impeccable"
       - name: Install every generated plugin and check lifecycle in an isolated Codex home
         run: bash scripts/test-codex-marketplace.sh
