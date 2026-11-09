@@ -58,30 +58,5 @@ jobs:
           node scripts/gen-skills-tree.js
           node scripts/gen-distribution.js
           node scripts/gen-codex.js
-      # The launcher's own download retries twice and discards curl's stderr, so a
-      # transient GitHub Releases error failed the hook smoke with no cause in the log.
-      # The launcher still verifies this cached copy against engine-checksums.txt.
-      # Cache path, manifest format and URL mirror the launcher's; the closing probe
-      # fails the step if the launcher stops finding this copy.
-      - name: Pre-fetch the impeccable engine for the hook smoke
-        run: |
-          dir=.agents/plugins/packages/impeccable/skills/impeccable/scripts
-          version=$(tr -d '[:space:]' < "$dir/VERSION")
-          case "$(uname -m)" in
-            x86_64) arch=x64 ;;
-            aarch64|arm64) arch=arm64 ;;
-            *) echo "unsupported runner arch: $(uname -m)" >&2; exit 1 ;;
-          esac
-          asset=impeccable-linux-$arch
-          sum=$(awk -v v="$version" -v a="$asset" '$1 == v && $2 == a { print $3 }' "$dir/engine-checksums.txt")
-          test -n "$sum" || { echo "no checksum for $version $asset in $dir/engine-checksums.txt" >&2; exit 1; }
-          dest="$HOME/.impeccable/bin/$version"
-          mkdir -p "$dest"
-          curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 -o "$dest/impeccable" \
-            "https://github.com/pbakaus/impeccable/releases/download/engine-v$version/$asset"
-          echo "$sum  $dest/impeccable" | sha256sum -c -
-          chmod +x "$dest/impeccable"
-          # An unreachable download base: the launcher must answer from the cache.
-          IMPECCABLE_DOWNLOAD_BASE=http://127.0.0.1:9 "$dir/impeccable" engine-probe
       - name: Install every generated plugin and check lifecycle in an isolated Codex home
         run: bash scripts/test-codex-marketplace.sh
