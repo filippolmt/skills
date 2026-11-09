@@ -100,6 +100,8 @@ function runSmoke(mode = '') {
     assert.equal(spawnSync('git', ['init', '-q', root]).status, 0);
     for (const script of ['test-codex-marketplace.sh', 'test-codex-hooks.mjs', 'codex-smoke-warnings.js'])
       write('scripts/' + script, fs.readFileSync(path.join(__dirname, script)));
+    // The fake codex never runs the impeccable launcher; prefetch-impeccable-engine.test.js covers it.
+    write('scripts/prefetch-impeccable-engine.sh', 'exit 0\n');
     if (mode === 'checker-error') write('scripts/codex-smoke-warnings.js', 'throw new Error("warning checker failed");');
     write('.agents/plugins/marketplace.json', JSON.stringify({ plugins: [{ name: 'tdd' }] }));
     write('bin/codex', fakeCodex, true);
