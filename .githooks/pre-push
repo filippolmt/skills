@@ -1,0 +1,5 @@
+#!/bin/sh
+# Runs the repo test suite before every push: CI's `validate` runs the same script,
+# so a red suite is caught here instead of on the pull request.
+# Enable once per clone: git config core.hooksPath .githooks
+exec bash scripts/run-tests.sh
