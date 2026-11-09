@@ -20,6 +20,7 @@ on:
       - scripts/test-codex-hooks.mjs
       - scripts/test-codex-marketplace.sh
       - scripts/codex-smoke-warnings.js
+      - scripts/prefetch-impeccable-engine.sh
       - skills/**
   push:
     branches: [main]
@@ -41,6 +42,7 @@ on:
       - scripts/test-codex-hooks.mjs
       - scripts/test-codex-marketplace.sh
       - scripts/codex-smoke-warnings.js
+      - scripts/prefetch-impeccable-engine.sh
       - skills/**
 
 jobs:
