@@ -61,6 +61,7 @@ names. A command colliding with another plugin's skill is caught by
 ```
 bash scripts/validate.sh --isolated       # full validation in a disposable snapshot; leaves this checkout untouched
 bash scripts/validate.sh --catalog-only   # a catalog-only change: skips projection checks and smokes
+git config core.hooksPath .githooks       # once per clone: pre-push runs scripts/run-tests.sh
 ```
 
 Output must be **clean**: zero errors and zero warnings, from every check.
