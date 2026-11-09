@@ -20,6 +20,10 @@ A mod that keeps history across sessions (`$.store`) is reviewed for the session
 
 When a change widens or renames a `GLOSSARY.md` term, review greps the old term across `scripts/`, `docs/`, `.claude/skills/` and the root docs: each occurrence is updated, or still true under the narrower meaning. Report the ones that are neither.
 
+## Mirrored upstream internals
+
+A script or workflow step that reproduces an upstream artifact's internals (a cache path, a manifest format, a download URL) ends with an assertion that fails once the upstream stops matching, the way `scripts/check-renovate.js` guards the Renovate regexes. Review reports a mirror whose drift would only make the code fall back silently.
+
 ## External entry descriptions
 
 A description rewritten for an external entry is checked against the upstream artifact at the pinned `sha` — the `SKILL.md` body, or a whole plugin's manifest and artifact list — not only against upstream's own description. Review reports a claim the artifact does not support.

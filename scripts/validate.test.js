@@ -42,6 +42,7 @@ if [[ "$1" == scripts/gen-* && "$*" != *--check* && "$*" != *--verify* ]]; then
 fi
 `, 0o755);
   write('bin/claude', '#!/bin/bash\nprintf "claude\\n" >> "$TRACE"\n', 0o755);
+  write('bin/actionlint', '#!/bin/bash\nprintf "actionlint\\n" >> "$TRACE"\n', 0o755);
   write('staged.txt', 'original');
   write('unstaged.txt', 'original');
   write('deleted.txt', 'original');
@@ -136,6 +137,7 @@ test('catalog-only keeps projections untouched and does not run smokes', (t) => 
   const result = f.run(['--catalog-only']);
   assert.equal(result.status, 0, result.stderr);
   assert.doesNotMatch(result.trace, /node scripts\/gen-\S+\.js\n|smoke /);
+  assert.match(result.trace, /^actionlint$/m);
   assert.deepEqual(f.state(), before);
 });
 
