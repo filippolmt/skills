@@ -40,3 +40,6 @@ jobs:
         run: node scripts/check-name-collisions.js
       - name: Validate marketplace and plugins
         run: claude plugin validate --strict .
+      - name: Lint GitHub workflows
+        # The image bundles shellcheck, so the shell in run: steps is linted too.
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color

@@ -85,7 +85,7 @@ Merging to `main` ships it. A change that leaves every plugin's behaviour alone
 
 ## Conventions
 
-- Conventional Commits.
+- Conventional Commits; commit messages, PR titles and PR bodies in English.
 - Work on a feature branch (`feat/...`) and open a PR to `main`; `main` takes
   merges only.
 - Before switching branches after a reported merge, fetch, then verify a clean
