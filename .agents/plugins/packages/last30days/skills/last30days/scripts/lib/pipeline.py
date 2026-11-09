@@ -218,15 +218,7 @@ def _lift_stream_artifacts(bundle) -> None:
                 bundle.artifacts[key] = value
 
 
-_FAILURE_SPECIFICITY = {
-    health.AUTH_FAILED: 0,
-    health.PAYMENT_REQUIRED: 1,
-    health.RATE_LIMITED: 2,
-    health.SCHEMA_DRIFT: 3,
-    health.TIMEOUT: 4,
-    health.UNREACHABLE: 5,
-    health.ERROR: 6,
-}
+_FAILURE_SPECIFICITY = health.FAILURE_SPECIFICITY
 
 
 @dataclass
@@ -340,6 +332,10 @@ def normalize_requested_sources(sources: list[str] | None) -> list[str] | None:
         if key not in normalized:
             normalized.append(key)
     return normalized
+
+
+class NoRequestedSourceAvailable(RuntimeError):
+    """None of the sources the user asked for with --search is configured."""
 
 
 def available_sources(
@@ -2361,6 +2357,12 @@ def run(
             available = ["jobs"]
     available = [source for source in available if source not in excluded_sources]
     if not available:
+        if requested_sources:
+            raise NoRequestedSourceAvailable(
+                "None of the sources in --search can run here: "
+                + ", ".join(requested_sources)
+                + ". Run `last30days.py doctor` to see what each one needs."
+            )
         raise RuntimeError("No sources are available for this run.")
 
     planner_requested_sources = (
@@ -3056,6 +3058,16 @@ def run(
         bundle.items_by_source, topic=topic, config=config, depth=depth, mock=mock,
         elapsed=time.monotonic() - run_started, out_of_time=out_of_time_sources,
     )
+    # Fusion gates on identity too, but the footer counts and Top voices read
+    # this per-source view, so a namesake left here still reaches the report.
+    # Gated after enrichment so a backfilled transcript can supply the anchor.
+    items_by_source = {
+        source: [
+            item for item in items
+            if entity_extract.matches_person_identity(item, plan.person_identity_anchors, x_handle)
+        ]
+        for source, items in items_by_source.items()
+    }
     retained_markets = {
         source_item_key(item) for item in items_by_source.get("polymarket", [])
     }
