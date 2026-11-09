@@ -31,6 +31,8 @@ codex() {
   return "$status"
 }
 
+bash "$repo/scripts/prefetch-impeccable-engine.sh"
+
 export CODEX_HOME="$local_home"
 codex plugin marketplace add "$repo" --json |
   jq -e '.marketplaceName == "filippo-skills"' >/dev/null
