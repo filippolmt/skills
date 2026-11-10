@@ -1,6 +1,6 @@
 {
   "name": "agents-sdk",
-  "version": "0.0.0+catalog.6eb6c781aa9b.91b1a9320c39",
+  "version": "0.0.0+catalog.cbf893b95422.831b4ffd366d",
   "description": "Build, debug, or review AI agents on Cloudflare Workers with the Agents SDK (the agents package).",
   "author": {
     "name": "Cloudflare",
