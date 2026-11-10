@@ -138,6 +138,7 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `diagram-design` | `command:commands/import-drawio.md` | — | Adapted — Uses the shared draw.io import reference from upstream's native Codex package. | Adapted — Converted to a deterministic namespaced skill. |
 | `diagram-design` | `command:commands/import-excalidraw.md` | — | Adapted — Uses the shared Excalidraw import reference from upstream's native Codex package. | Adapted — Converted to a deterministic namespaced skill. |
 | `diagram-design` | `command:commands/import-mermaid.md` | — | Adapted — Uses the shared Mermaid import reference from upstream's native Codex package. | Adapted — Converted to a deterministic namespaced skill. |
+| `diagram-design` | `command:commands/import-plantuml.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
 | `diagram-design` | `command:commands/profile.md` | — | Adapted — Uses the shared profiles reference from upstream's native Codex package. | Adapted — Converted to a deterministic namespaced skill. |
 | `diagram-design` | `skill:skills/diagram-design/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `security-audit` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
