@@ -1,6 +1,6 @@
 {
   "name": "frameworks-on-cloudflare",
-  "version": "0.0.0+catalog.6eb6c781aa9b.398c92189eda",
+  "version": "0.0.0+catalog.cbf893b95422.7e308b45ffc6",
   "description": "Build, migrate, and deploy web-framework applications (Astro, SvelteKit, React Router, TanStack Start, Nuxt, Hono, SPAs) on Cloudflare Workers.",
   "author": {
     "name": "Cloudflare",
