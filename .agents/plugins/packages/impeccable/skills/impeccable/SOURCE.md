@@ -1,5 +1,5 @@
 # Source
 
-- **Source**: https://github.com/pbakaus/impeccable/tree/924bbd194d02e5e15a227e75b5901fb0d7a4ecad/.agents/skills/impeccable/SKILL.md
+- **Source**: https://github.com/pbakaus/impeccable/tree/035c8f319edd019936525a062fe99e83ca8d12c6/.agents/skills/impeccable/SKILL.md
 - **Catalog entry**: `impeccable`
 - **Transformation**: Used the upstream Codex-specific Agent Skill payload.
