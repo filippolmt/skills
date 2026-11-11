@@ -11,6 +11,12 @@
 set -euo pipefail
 shopt -s nullglob
 
+# Under .githooks/pre-push, git exports GIT_DIR and friends to point at THIS repo.
+# Fixtures inherit process.env, so their `git init`/`commit` in a temp dir landed
+# here instead: a stray commit on the pushed branch, and in a worktree
+# `core.bare=true` in the shared config. Drop every repo-locating variable.
+unset $(git rev-parse --local-env-vars)
+
 run_group() {
   local runner=$1 label=$2
   shift 2
