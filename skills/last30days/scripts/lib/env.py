@@ -1499,6 +1499,17 @@ def engine_plan_allowed(environ: Any = None) -> bool:
     source = os.environ if environ is None else environ
     return _truthy(source.get(ALLOW_ENGINE_PLAN_VAR))
 
+
+# A caller whose reader never sees the skill's instruction files (the MCP
+# `research` tool) asks for output with no Jobs Digest section.
+NO_JOBS_DIGEST_VAR = 'LAST30DAYS_NO_JOBS_DIGEST'
+
+
+def jobs_digest_disabled(environ: Any = None) -> bool:
+    """True when ``LAST30DAYS_NO_JOBS_DIGEST`` asks for a run with no jobs digest."""
+    source = os.environ if environ is None else environ
+    return _truthy(source.get(NO_JOBS_DIGEST_VAR))
+
 # Public routing definitions for the doctor/backend-descriptor layer
 # (lib/backends.py). These are aliases for knowledge this module already
 # owns — the declared X chain order and the pin/floor env var names — so
@@ -1930,6 +1941,11 @@ def _parse_exclude_sources(config: dict[str, Any]) -> set[str]:
     """Parse EXCLUDE_SOURCES config value into a set of lowercase source names."""
     raw = config.get('EXCLUDE_SOURCES') or ''
     return {s.strip().lower() for s in raw.split(',') if s.strip()}
+
+
+def exclude_sources(config: dict[str, Any]) -> set[str]:
+    """Public view of the parsed EXCLUDE_SOURCES set."""
+    return _parse_exclude_sources(config)
 
 
 def include_sources(config: dict[str, Any]) -> set[str]:
