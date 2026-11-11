@@ -93,12 +93,12 @@ test('unclassified names every external repo with no Source repos row, once', ()
 
 test('unreviewed reports curated skills past the baseline: new or moved, not catalogued, excluded or seen', () => {
   const { sources, exclusions } = parseAdr(ADR);
-  const upstream = new Map([['acme/curated', {
+  const trees = new Map([['acme/curated', {
     pinned: tree(['skills/picked', 'skills/new', 'skills/declined', 'skills/seen', 'skills/moved', 'tests/fixture']),
     baseline: tree(['skills/picked', 'skills/seen', 'skills/in-progress/moved']),
   }]]);
   const catalog = [entry('acme/curated', 'skills/picked')];
-  assert.deepEqual(unreviewed({ sources, exclusions, catalog, upstream }), [
+  assert.deepEqual(unreviewed({ sources, exclusions, catalog, trees }), [
     { repo: 'acme/curated', path: 'skills/new' },
     { repo: 'acme/curated', path: 'skills/moved' },
   ]);
@@ -106,16 +106,16 @@ test('unreviewed reports curated skills past the baseline: new or moved, not cat
 
 test('unreviewed skips a curated source of whole-plugin entries only', () => {
   const sources = new Map([['acme/plugins', { kind: 'curated' }]]);
-  const upstream = new Map([['acme/plugins', { pinned: tree(['p/skills/new'], ['p']), baseline: tree([]) }]]);
+  const trees = new Map([['acme/plugins', { pinned: tree(['p/skills/new'], ['p']), baseline: tree([]) }]]);
   const catalog = [entry('acme/plugins', 'p')];
-  assert.deepEqual(unreviewed({ sources, exclusions: new Map(), catalog, upstream }), []);
+  assert.deepEqual(unreviewed({ sources, exclusions: new Map(), catalog, trees }), []);
 });
 
 test('baselineMismatches names a curated source with no baseline and a baseline with no curated source', () => {
   const { sources } = parseAdr(ADR);
   assert.deepEqual(baselineMismatches({ sources, baselines: { 'acme/curated': 'abc' } }), []);
   assert.deepEqual(baselineMismatches({ sources, baselines: { 'acme/whole': 'abc' } }), [
-    '`acme/curated`: curated source with no curation baseline',
+    '`acme/curated`: curated source with no `curationBaseline` in scripts/catalog-meta.json',
     '`acme/whole`: curation baseline for a repo that is not a curated source',
   ]);
 });

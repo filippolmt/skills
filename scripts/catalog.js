@@ -73,4 +73,7 @@ function readCatalog() {
   return { text, plugins: JSON.parse(text).plugins || [] };
 }
 
-module.exports = { readCatalog, isLocal, isGitSubdir, isUrl, isExternal, isRepoRoot, entryPath, isBundle, repoOf, root, MARKETPLACE };
+// The editorial and review metadata beside the catalog (README groups, review records).
+const readCatalogMeta = () => JSON.parse(fs.readFileSync(path.join(root, 'scripts', 'catalog-meta.json'), 'utf8'));
+
+module.exports = { readCatalog, readCatalogMeta, isLocal, isGitSubdir, isUrl, isExternal, isRepoRoot, entryPath, isBundle, repoOf, root, MARKETPLACE };
