@@ -1,7 +1,7 @@
 {
   "name": "matt-pocock-bundle",
-  "description": "Install the core Matt Pocock workflows used together (wayfinder, grill-with-docs, diagnosing-bugs, writing-for-agents, implement, improve-codebase-architecture, code-review, and retro) with their runtime dependencies. Bundles them as dependencies.",
-  "version": "0.3.0",
+  "description": "Install the core Matt Pocock workflows used together (wayfinder, grill-with-docs, diagnosing-bugs, writing-for-agents, implement, implement-spec, improve-codebase-architecture, code-review, and retro) with their runtime dependencies. Bundles them as dependencies.",
+  "version": "0.4.0",
   "author": {
     "name": "Matt Pocock",
     "url": "https://github.com/mattpocock"
@@ -12,6 +12,7 @@
     "diagnosing-bugs",
     "writing-for-agents",
     "implement",
+    "implement-spec",
     "improve-codebase-architecture",
     "code-review",
     "retro",

@@ -12,7 +12,7 @@ several separate installs and left users choosing among overlapping bundles.
 
 Use one `matt-pocock-bundle` for the core workflows: `wayfinder`,
 `grill-with-docs`, `diagnosing-bugs`, `writing-for-agents`, `implement`,
-`improve-codebase-architecture`, `code-review`, and `retro`.
+`implement-spec`, `improve-codebase-architecture`, `code-review`, and `retro`.
 
 The bundle installs their complete runtime dependency closure, including
 `agent-report-guard` for workflows that spawn sub-agents. Remove the six targeted

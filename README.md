@@ -147,16 +147,16 @@ cure along with the skill.
 
 **A fan-out skill loses its sub-agents' reports.** Skills that spawn sibling
 sub-agents and then read what they report — `code-review`, `research`,
-`codebase-design`, `improve-codebase-architecture`, `printing-press`,
-`wayfinder`, `impeccable` — stall when those sub-agents are spawned with a
-`name`: a named agent becomes a mailbox teammate that notifies idle without a
-report body, so the parent waits, and then has to chase the report with
-`SendMessage`. The local `agent-report-guard` plugin drops the name, so they
-report back on their own.
+`codebase-design`, `improve-codebase-architecture`, `implement-spec`,
+`printing-press`, `wayfinder`, `impeccable` — stall when those sub-agents are
+spawned with a `name`: a named agent becomes a mailbox teammate that notifies
+idle without a report body, so the parent waits, and then has to chase the
+report with `SendMessage`. The local `agent-report-guard` plugin drops the
+name, so they report back on their own.
 
 **A skill invokes sibling skills at runtime.** `grill-with-docs` calls `grilling`
-and `domain-modeling`, `implement` calls `tdd` and `code-review`,
-`printing-press` calls three siblings. Install the skill by itself and those calls
+and `domain-modeling`, `implement` and `implement-spec` call `tdd` and
+`code-review`, `printing-press` calls three siblings. Install the skill by itself and those calls
 find nothing — no error, just a skill quietly doing less than it says.
 
 For the core Matt Pocock workflows, install the consolidated bundle; individual
@@ -170,7 +170,7 @@ skills remain available when you want a smaller setup:
 | Bundle | What it installs with it |
 |---|---|
 | `printing-press-bundle` | `printing-press`, `printing-press-polish`, `printing-press-score`, `printing-press-output-review`, `printing-press-reprint`, `agent-report-guard` |
-| `matt-pocock-bundle` | `wayfinder`, `grill-with-docs`, `diagnosing-bugs`, `writing-for-agents`, `implement`, `improve-codebase-architecture`, `code-review`, `retro`, `grilling`, `domain-modeling`, `prototype`, `research`, `setup-matt-pocock-skills`, `tdd`, `codebase-design`, `agent-report-guard` |
+| `matt-pocock-bundle` | `wayfinder`, `grill-with-docs`, `diagnosing-bugs`, `writing-for-agents`, `implement`, `implement-spec`, `improve-codebase-architecture`, `code-review`, `retro`, `grilling`, `domain-modeling`, `prototype`, `research`, `setup-matt-pocock-skills`, `tdd`, `codebase-design`, `agent-report-guard` |
 <!-- bundles:end -->
 
 That table is generated from each bundle's own `dependencies`
@@ -393,6 +393,8 @@ Snapshot of the catalog — the source of truth is
 | `to-tickets` | Break a plan, spec, or the current conversation into a set of tracer-bullet tickets, each declaring its blocking edges, published to the configured tracker — edges as text in one file per ticket locally, or native blocking links on a real tracker. |
 | `to-spec` | Turn the current conversation into a spec and publish it to the project issue tracker — no interview, just synthesis of what you've already discussed. |
 | `implement` | Implement a piece of work based on a spec or set of tickets. |
+| `implement-spec` | Run a spec's whole ticket graph through parallel subagents on one integration branch, starting from the output of to-spec and to-tickets. |
+| `pr` | Write a PR body that is fast to review: a visual summary, before/after evidence, and merge danger. |
 | `prototype` | Build a throwaway prototype to answer a design question. |
 | `research` | Investigate a question against high-trust primary sources and capture the findings as a Markdown file in the repo. |
 | `domain-modeling` | Build and sharpen a project's domain model. |

@@ -64,7 +64,7 @@ the exclusions.
 
 | Repo | Kind | Notes |
 | --- | --- | --- |
-| `mattpocock/skills` | curated | Workflow routers and thin prompt macros are reviewed before admission; `skills/in-progress/` is unreleased work ([ADR-0017](0017-curate-the-matt-pocock-source.md)) |
+| `mattpocock/skills` | curated | Workflow routers and thin prompt macros are reviewed before admission ([ADR-0017](0017-curate-the-matt-pocock-source.md)) |
 | `Leonxlnx/taste-skill` | curated | Only the production skill, `taste-skill` |
 | `Leonxlnx/imagegen-skills` | whole | The image-generation skills that moved out of `Leonxlnx/taste-skill` |
 | `Nutlope/hallmark` | whole | single skill |
@@ -94,6 +94,7 @@ the exclusions.
 | `mattpocock/skills` | `migrate-to-shoehorn` | Tied to one TypeScript test library |
 | `mattpocock/skills` | `resolving-merge-conflicts` | Upstream has scheduled its removal |
 | `mattpocock/skills` | `scaffold-exercises` | Tied to the author's course format |
+| `mattpocock/skills` | `skills/in-progress/*` | Unreleased upstream: not listed in its `.claude-plugin/plugin.json` |
 | `mattpocock/skills` | `wait-what` | Thin rephrasing prompt rather than a reusable workflow |
 | `mvanhorn/cli-printing-press` | `printing-press-publish`, `printing-press-amend`, `printing-press-import` | Bound to the third-party public library `mvanhorn/printing-press-library` |
 | `mvanhorn/cli-printing-press` | `printing-press-retro` | Files findings for the Press's maintainers |
