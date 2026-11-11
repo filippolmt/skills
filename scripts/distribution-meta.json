@@ -98,6 +98,18 @@
         "detail": "Will be converted to a deterministic namespaced skill."
       }
     },
+    "diagram-design/command:commands/import-plantuml.md": {
+      "codex": {
+        "disposition": "adapted",
+        "detail": "Uses the shared PlantUML import reference from upstream's native Codex package.",
+        "sourcePath": "skills/diagram-design/references/import-plantuml.md",
+        "evidencePath": "scripts/test-verify-docs-sync.py"
+      },
+      "pi": {
+        "disposition": "adapted",
+        "detail": "Will be converted to a deterministic namespaced skill."
+      }
+    },
     "diagram-design/command:commands/profile.md": {
       "codex": {
         "disposition": "adapted",
