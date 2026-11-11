@@ -18,7 +18,7 @@ shopt -s nullglob
 unset $(git rev-parse --local-env-vars)
 
 run_group() {
-  local runner=$1 label=$2
+  local runner=$1 label=$2 out status
   shift 2
   local tests=("$@")
   if [ ${#tests[@]} -eq 0 ]; then
@@ -26,8 +26,21 @@ run_group() {
     exit 1
   fi
   for t in "${tests[@]}"; do
-    echo "--- $t"
-    "$runner" "$t"
+    if [ -n "${CI:-}" ]; then
+      echo "--- $t"
+      "$runner" "$t"
+      continue
+    fi
+    # Locally (pre-push, validate.sh) a passing file is one line, so an agent's
+    # context gets the failure, not hundreds of passing assertions.
+    if out=$("$runner" "$t" 2>&1); then
+      echo "ok $t"
+    else
+      status=$?
+      echo "FAIL $t"
+      printf '%s\n' "$out"
+      exit "$status"
+    fi
   done
 }
 

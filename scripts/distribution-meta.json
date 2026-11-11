@@ -9,6 +9,7 @@
     "printing-press-polish": ["printing-press-output-review"],
     "printing-press-reprint": ["printing-press"],
     "retro": ["writing-for-agents"],
+    "tdd": ["codebase-design"],
     "triage": ["grilling", "domain-modeling"],
     "wayfinder": ["grilling", "domain-modeling", "research", "prototype"]
   },

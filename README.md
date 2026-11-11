@@ -155,9 +155,10 @@ report with `SendMessage`. The local `agent-report-guard` plugin drops the
 name, so they report back on their own.
 
 **A skill invokes sibling skills at runtime.** `grill-with-docs` calls `grilling`
-and `domain-modeling`, `implement` and `implement-spec` call `tdd` and
-`code-review`, `printing-press` calls three siblings. Install the skill by itself and those calls
-find nothing — no error, just a skill quietly doing less than it says.
+and `domain-modeling`, for example; the Runtime dependencies column of
+[`docs/distribution-parity.md`](docs/distribution-parity.md) lists every such
+call. Install the skill by itself and those calls find nothing — no error, just
+a skill quietly doing less than it says.
 
 For the core Matt Pocock workflows, install the consolidated bundle; individual
 skills remain available when you want a smaller setup:
