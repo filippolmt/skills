@@ -66,7 +66,7 @@
     {
       "name": "matt-pocock-bundle",
       "source": "./plugins/matt-pocock-bundle",
-      "description": "Install the core Matt Pocock workflows used together (wayfinder, grill-with-docs, diagnosing-bugs, writing-for-agents, implement, improve-codebase-architecture, code-review, and retro) with their runtime dependencies. Bundles them as dependencies.",
+      "description": "Install the core Matt Pocock workflows used together (wayfinder, grill-with-docs, diagnosing-bugs, writing-for-agents, implement, implement-spec, improve-codebase-architecture, code-review, and retro) with their runtime dependencies. Bundles them as dependencies.",
       "author": {
         "name": "Matt Pocock",
         "url": "https://github.com/mattpocock"
@@ -217,6 +217,36 @@
         "sha": "d1478fcb140db0b93c0c8df17bcfd311844749d0"
       },
       "description": "Implement a piece of work based on a spec or set of tickets.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
+    },
+    {
+      "name": "implement-spec",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/implement-spec",
+        "ref": "v1.3.2",
+        "sha": "d1478fcb140db0b93c0c8df17bcfd311844749d0"
+      },
+      "description": "Implement the result of /to-spec and /to-tickets in code, running the ticket graph through parallel subagents on one integration branch.",
+      "author": {
+        "name": "Matt Pocock",
+        "url": "https://github.com/mattpocock"
+      }
+    },
+    {
+      "name": "pr",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/mattpocock/skills",
+        "path": "skills/engineering/pr",
+        "ref": "v1.3.2",
+        "sha": "d1478fcb140db0b93c0c8df17bcfd311844749d0"
+      },
+      "description": "Write a PR body that is fast to review: a visual summary, before/after evidence, and merge danger.",
       "author": {
         "name": "Matt Pocock",
         "url": "https://github.com/mattpocock"

@@ -3,6 +3,7 @@
     "grill-me": ["grilling"],
     "grill-with-docs": ["grilling", "domain-modeling"],
     "implement": ["tdd", "code-review"],
+    "implement-spec": ["tdd", "code-review"],
     "improve-codebase-architecture": ["codebase-design", "grilling", "domain-modeling"],
     "printing-press": ["printing-press-polish", "printing-press-output-review"],
     "printing-press-polish": ["printing-press-output-review"],
