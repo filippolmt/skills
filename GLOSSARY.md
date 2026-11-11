@@ -27,7 +27,12 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   each repo). One still missing is reported by the `whole-sources` workflow
   (ADR-0024).
 - **Curated source** — an external entry's source repo whose skills are picked by hand: a
-  new upstream skill is reported, never added.
+  new upstream skill is reported, never added. A skill seen and not picked needs
+  no record; moving the **curation baseline** past it is the decision.
+- **Curation baseline** — the upstream sha up to which a human has looked through
+  a curated source's skills. A skill present at the pinned sha and absent, at the
+  same path, at the baseline is new and reported. NOT the reviewed sha of an
+  entry's description (ADR-0029).
 - **Catalog exclusion** — an upstream skill deliberately left without an entry,
   listed with its reason in ADR-0014. Neither added nor reported by
   `/add-external-skill update` or `scripts/check-whole-sources.js`.

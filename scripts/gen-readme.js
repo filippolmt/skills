@@ -4,6 +4,7 @@
 // The catalog is a PROJECTION of two source-of-truth inputs:
 //   - .claude-plugin/marketplace.json     — the plugin entries (names, descriptions, URLs)
 //   - scripts/catalog-meta.json           — editorial ordering + per-repo taglines + omissions
+//                                           (its review records belong to the drift checks)
 // The rendered markdown is spliced into README.md between the markers
 //   <!-- catalog:start -->  …  <!-- catalog:end -->
 // Every description is rendered VERBATIM from marketplace.json — the JSON is the

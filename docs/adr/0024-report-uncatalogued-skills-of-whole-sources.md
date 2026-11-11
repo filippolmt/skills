@@ -48,7 +48,9 @@ moved the series past it, which is when an entry could pin it.
 - **Cover curated sources too.** By ADR-0014 a curated source reports new skills
   without adding them, but without a record of what was already declined the
   report would relist `Jeffallan/claude-skills`'s sixty unpicked skills every
-  week. Left to `/add-external-skill update`.
+  week. Left to `/add-external-skill update`. Amended by
+  [ADR-0039](0039-report-curated-skills-past-a-curation-baseline.md), which adds
+  that record as a per-repo curation baseline.
 
 ## Consequences
 

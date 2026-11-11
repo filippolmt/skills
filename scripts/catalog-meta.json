@@ -1,5 +1,5 @@
 {
-  "_comment": "Editorial metadata for the README 'Available skills' catalog, consumed by gen-readme.js. Ordered list of source repos with a display tagline and column kind. Everything else (skill names, descriptions, URLs) is derived from marketplace.json; bundles omit themselves, since a local plugin shipping no artifacts of its own is what a bundle IS. Add a group entry here when you reference a skill from a new repo. 'omit' is for an entry a human decides to hide for a reason no rule can derive — it is empty on purpose. 'descriptionReviewed' maps an entry name to the upstream sha a review kept its description at, read by check-upstream-descriptions.js (ADR-0029).",
+  "_comment": "Editorial metadata for the README 'Available skills' catalog, consumed by gen-readme.js. Ordered list of source repos with a display tagline and column kind. Everything else (skill names, descriptions, URLs) is derived from marketplace.json; bundles omit themselves, since a local plugin shipping no artifacts of its own is what a bundle IS. Add a group entry here when you reference a skill from a new repo. 'omit' is for an entry a human decides to hide for a reason no rule can derive — it is empty on purpose. 'descriptionReviewed' maps an entry name to the upstream sha a review kept its description at, read by check-upstream-descriptions.js (ADR-0029). 'curationBaseline' maps each curated source repo to the upstream sha a human last looked through its skills at, read by check-whole-sources.js --curated (ADR-0039).",
   "groups": [
     { "repo": "mattpocock/skills", "tagline": "engineering & productivity", "kind": "skill" },
     { "repo": "Nutlope/hallmark", "tagline": "anti-AI-slop interface design", "kind": "skill" },
@@ -37,5 +37,17 @@
     "to-spec": "24fe0ef7737efae15c87225755e9f6f5965e4888",
     "triage": "24fe0ef7737efae15c87225755e9f6f5965e4888",
     "workers-best-practices": "86505e44f87d801aa1864a3c4109e9a8ae5c409f"
+  },
+  "curationBaseline": {
+    "antfu/skills": "d524ed287eef22757297827ce42e3cad88abd20c",
+    "filippolmt/proximo": "1449a8f537d114a2e4fd30d1d5b57c1e7246ff5b",
+    "hashicorp/agent-skills": "146815e19decbb28252eebcf4125054e0a8783f1",
+    "Jeffallan/claude-skills": "36f3fe8052da7c57083783268c6ea3265d075265",
+    "Leonxlnx/taste-skill": "f6b76575f949707b4e3c37cd86cb44b0b98643e8",
+    "mattpocock/skills": "d1478fcb140db0b93c0c8df17bcfd311844749d0",
+    "mcollina/skills": "c75d70dbfbe991d8cec42aeda0b64ff14fbb9ac7",
+    "nextlevelbuilder/ui-ux-pro-max-skill": "a38d04c3d5c298c851dbe5e6ee1965ee3de42cb5",
+    "tt-a1i/archify": "208acba8d412335185b2056fedf54b3405df43fb",
+    "wshobson/agents": "9c61ab243def98f72da12abd41cfcf5bcd91af9d"
   }
 }

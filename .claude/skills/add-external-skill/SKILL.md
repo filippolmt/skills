@@ -148,6 +148,8 @@ workflow, as specified by CLAUDE.md.
 Done when every skill the discovery in step 2 turned up is either an entry in
 `marketplace.json` or named as deliberately left out, and the repo has a row in
 ADR-0014's source table — **whole** or **curated**, asked, never guessed. A
+curated source also gets a `curationBaseline` in `scripts/catalog-meta.json`, set
+to its pinned `sha`; `validate` fails without it. A
 skill left out of a whole source goes in its exclusions table, with the reason.
 Every fact in a row's note or exclusion reason is read from the upstream file at
 the pinned `sha`.
@@ -174,9 +176,12 @@ For each external source repo (git-subdir or url entry) in `marketplace.json` (o
    - **New** upstream folder (no entry) → look the repo up in
      `docs/adr/0014-each-source-repo-is-whole-or-curated.md`. Skip a **catalog
      exclusion** and a harness mirror or fixture silently. On a **whole source**,
-     add an entry (as in add mode). On a **curated source**, list it and **ask**;
-     one declined goes in the exclusions table so it is not asked again. A repo
-     with no row → ask which kind it is and add the row.
+     add an entry (as in add mode). On a **curated source**, list only what is
+     absent, at the same path, at the repo's `curationBaseline` in
+     `scripts/catalog-meta.json`, and **ask**. Once the user has picked, set the
+     baseline to the `sha` the entries now pin: that records every unpicked skill
+     as seen (ADR-0039). An exclusion row is only for a refusal worth a reason. A
+     repo with no row → ask which kind it is and add the row.
    - **Removed** upstream (a git-subdir entry whose `path` no longer has
      `SKILL.md`, or a url entry whose repo is gone) → list
      it, **ask to confirm**, then delete the entry (see **Removing an entry**).

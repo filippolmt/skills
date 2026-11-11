@@ -15,9 +15,7 @@
 // Usage: node scripts/check-upstream-descriptions.js   (exit 1 when a description needs review)
 
 const { execFileSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-const { readCatalog, isExternal, entryPath, repoOf, root } = require('./catalog.js');
+const { readCatalog, readCatalogMeta, isExternal, entryPath, repoOf, root } = require('./catalog.js');
 
 const CATALOG = '.claude-plugin/marketplace.json';
 const BOT = /\[bot\]$/;
@@ -123,7 +121,7 @@ function history() {
 }
 
 async function main() {
-  const meta = JSON.parse(fs.readFileSync(path.join(root, 'scripts', 'catalog-meta.json'), 'utf8'));
+  const meta = readCatalogMeta();
   const entries = await findings(readCatalog().plugins, reviewedShas(history(), meta.descriptionReviewed || {}),
     upstreamDescription);
   if (!entries.length) return console.log('Every catalog description matches the upstream it was reviewed against.');
