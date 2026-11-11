@@ -21,7 +21,7 @@
 //        node scripts/check-whole-sources.js --classified   (offline: exit 1 when an
 //        external repo has no ADR-0014 row, since an unclassified repo is never reported,
 //        or when a curated source and the curation baselines disagree)
-// Set GITHUB_TOKEN to lift the anonymous GitHub API rate limit.
+// Set GITHUB_TOKEN, or log in with gh, to lift the anonymous GitHub API rate limit.
 
 const fs = require('fs');
 const path = require('path');
@@ -222,4 +222,4 @@ if (require.main === module && process.argv[2] === '--classified') {
   });
 }
 
-module.exports = { parseAdr, uncatalogued, unreviewed, unclassified, baselineMismatches };
+module.exports = { parseAdr, uncatalogued, unreviewed, unclassified, baselineMismatches, upstreamTree, pinnedTree };
