@@ -102,7 +102,7 @@ of these terms is narrower here than in everyday use. `docs/adr/` holds one
 decision per file. Read the ADR a rule cites before changing that rule, and
 write a new ADR when you settle a question the next agent would otherwise
 reopen. Guard reviews and cross-harness projection reviews also read
-`CODING_STANDARDS.md`.
+`CODING_STANDARDS.md`. Single-context: `docs/agents/domain.md`.
 
 ### Issue tracker
 
