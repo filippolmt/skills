@@ -13,7 +13,7 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `settings-validator` | `skill:skills/settings-validator/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `work-eta` | `hooks-module:hooks/register.tsx` | — | Unsupported — Function-hook modules run only inside Claude Code's engine. Fallback: Install the plugin in Claude Code; no equivalent exists. | Unsupported — Function-hook modules run only inside Claude Code's engine. Fallback: Install the plugin in Claude Code; no equivalent exists. |
 | `printing-press-bundle` | `bundle:dependencies` | `printing-press`, `printing-press-polish`, `printing-press-score`, `printing-press-output-review`, `printing-press-reprint`, `agent-report-guard` | Adapted — Materialised as a self-contained plugin runtime closure. | Adapted — Published as a generated package-filter snippet. |
-| `matt-pocock-bundle` | `bundle:dependencies` | `wayfinder`, `grill-with-docs`, `diagnosing-bugs`, `writing-for-agents`, `implement`, `improve-codebase-architecture`, `code-review`, `retro`, `grilling`, `domain-modeling`, `prototype`, `research`, `setup-matt-pocock-skills`, `tdd`, `codebase-design`, `agent-report-guard` | Adapted — Materialised as a self-contained plugin runtime closure. | Adapted — Published as a generated package-filter snippet. |
+| `matt-pocock-bundle` | `bundle:dependencies` | `wayfinder`, `grill-with-docs`, `diagnosing-bugs`, `writing-for-agents`, `implement`, `implement-spec`, `improve-codebase-architecture`, `code-review`, `retro`, `grilling`, `domain-modeling`, `prototype`, `research`, `setup-matt-pocock-skills`, `tdd`, `codebase-design`, `agent-report-guard` | Adapted — Materialised as a self-contained plugin runtime closure. | Adapted — Published as a generated package-filter snippet. |
 | `diagnosing-bugs` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `grill-with-docs` | `skill:SKILL.md` | `grilling`, `domain-modeling` | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `triage` | `skill:SKILL.md` | `grilling`, `domain-modeling` | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
@@ -24,6 +24,8 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `to-tickets` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `to-spec` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `implement` | `skill:SKILL.md` | `tdd`, `code-review` | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `implement-spec` | `skill:SKILL.md` | `tdd`, `code-review` | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `pr` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `prototype` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `research` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `domain-modeling` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |

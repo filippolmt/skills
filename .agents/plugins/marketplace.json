@@ -185,6 +185,30 @@
       "category": "Developer Tools"
     },
     {
+      "name": "implement-spec",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/implement-spec"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "pr",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/pr"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
       "name": "prototype",
       "source": {
         "source": "local",

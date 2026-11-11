@@ -39,6 +39,7 @@ pi installs this repository as one package. These filters enable each Claude bun
         "+skills/grill-with-docs",
         "+skills/grilling",
         "+skills/implement",
+        "+skills/implement-spec",
         "+skills/improve-codebase-architecture",
         "+skills/prototype",
         "+skills/research",

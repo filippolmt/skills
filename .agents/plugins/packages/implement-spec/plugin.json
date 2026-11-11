@@ -1,0 +1,11 @@
+{
+  "name": "implement-spec",
+  "version": "1.3.2+catalog.d1478fcb140d.bbd265fdc5d6",
+  "description": "Run a spec's whole ticket graph through parallel subagents on one integration branch, starting from the output of to-spec and to-tickets.",
+  "author": {
+    "name": "Matt Pocock",
+    "url": "https://github.com/mattpocock"
+  },
+  "repository": "https://github.com/mattpocock/skills",
+  "skills": "./skills/"
+}

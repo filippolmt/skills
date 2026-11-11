@@ -1,0 +1,11 @@
+{
+  "name": "pr",
+  "version": "1.3.2+catalog.d1478fcb140d.e497728f2f15",
+  "description": "Write a PR body that is fast to review: a visual summary, before/after evidence, and merge danger.",
+  "author": {
+    "name": "Matt Pocock and Dex Horthy",
+    "url": "https://github.com/mattpocock/skills"
+  },
+  "repository": "https://github.com/mattpocock/skills",
+  "skills": "./skills/"
+}
