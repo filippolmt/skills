@@ -597,7 +597,7 @@ node scripts/check-upstream-versions.js hashicorp/agent-skills v1.0.0
 The optional repo/tag scopes the read-only audit and preflights absent paths and
 possible relocations before a downgrade decision. Exit 1 means updates or tag
 candidates need review; exit 2 means the audit could not complete. Set
-`GITHUB_TOKEN` for authenticated API limits. This checks catalog pins, not installed
+`GITHUB_TOKEN`, or log in with `gh`, for authenticated API limits. This checks catalog pins, not installed
 copies, and does not replace Renovate.
 
 The fastest way to add one is the `/add-external-skill` skill, which automates

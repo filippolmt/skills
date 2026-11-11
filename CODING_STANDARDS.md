@@ -27,3 +27,7 @@ A script or workflow step that reproduces an upstream artifact's internals (a ca
 ## External entry descriptions
 
 A description rewritten for an external entry is checked against the upstream artifact at the pinned `sha` — the `SKILL.md` body, or a whole plugin's manifest and artifact list — not only against upstream's own description. Review reports a claim the artifact does not support.
+
+## Validate check comments
+
+A change to what a check run by `scripts/validate.sh` covers updates its comment there and the copy in README's command list. Review reports either one left describing the old coverage.

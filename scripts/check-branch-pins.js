@@ -12,7 +12,7 @@
 // it downgrades, and the next release will be ahead of the pin.
 //
 // Usage: node scripts/check-branch-pins.js   (exit 1 when a pin should move to a tag)
-// Set GITHUB_TOKEN to lift the anonymous GitHub API rate limit.
+// Set GITHUB_TOKEN, or log in with gh, to lift the anonymous GitHub API rate limit.
 
 const fs = require('fs');
 const path = require('path');
