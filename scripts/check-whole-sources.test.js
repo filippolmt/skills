@@ -111,10 +111,14 @@ test('unreviewed skips a curated source of whole-plugin entries only', () => {
   assert.deepEqual(unreviewed({ sources, exclusions: new Map(), catalog, trees }), []);
 });
 
-test('baselineMismatches names a curated source with no baseline and a baseline with no curated source', () => {
+test('baselineMismatches names a curated source with no baseline or no entry, and a baseline with no curated source', () => {
   const { sources } = parseAdr(ADR);
-  assert.deepEqual(baselineMismatches({ sources, baselines: { 'acme/curated': 'abc' } }), []);
-  assert.deepEqual(baselineMismatches({ sources, baselines: { 'acme/whole': 'abc' } }), [
+  const catalog = [entry('acme/curated', 'skills/picked')];
+  assert.deepEqual(baselineMismatches({ sources, baselines: { 'acme/curated': 'abc' }, catalog }), []);
+  assert.deepEqual(baselineMismatches({ sources, baselines: { 'acme/curated': 'abc' }, catalog: [] }), [
+    '`acme/curated`: curated source with no catalog entry — remove its ADR-0014 row and its curation baseline',
+  ]);
+  assert.deepEqual(baselineMismatches({ sources, baselines: { 'acme/whole': 'abc' }, catalog }), [
     '`acme/curated`: curated source with no `curationBaseline` in scripts/catalog-meta.json',
     '`acme/whole`: curation baseline for a repo that is not a curated source',
   ]);

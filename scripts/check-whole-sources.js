@@ -119,11 +119,13 @@ function unreviewed({ sources, exclusions, catalog, trees }) {
   return missing;
 }
 
-// Pure: every curated source needs a curation baseline, and every baseline belongs to
-// a curated source — a stale key would silently stop meaning anything.
-function baselineMismatches({ sources, baselines }) {
+// Pure: every curated source needs a curation baseline and an entry, and every baseline
+// belongs to a curated source — a stale key or row would silently stop meaning anything.
+function baselineMismatches({ sources, baselines, catalog }) {
   const curated = sourcesOfKind(sources, 'curated');
   return [
+    ...curated.filter((repo) => entriesOf(catalog, repo).length === 0)
+      .map((repo) => `\`${repo}\`: curated source with no catalog entry — remove its ADR-0014 row and its curation baseline`),
     ...curated.filter((repo) => !baselines[repo]).map((repo) => `\`${repo}\`: ${NO_BASELINE}`),
     ...Object.keys(baselines).filter((repo) => !curated.includes(repo))
       .map((repo) => `\`${repo}\`: curation baseline for a repo that is not a curated source`),
@@ -150,13 +152,13 @@ function report(clean, heading, lines, hint) {
 function checkClassified() {
   const { sources, catalog } = readInputs();
   const missing = unclassified({ sources, catalog });
-  const mismatches = baselineMismatches({ sources, baselines: readCatalogMeta().curationBaseline || {} });
+  const mismatches = baselineMismatches({ sources, baselines: readCatalogMeta().curationBaseline || {}, catalog });
   if (missing.length === 0 && mismatches.length === 0) {
     console.log(`Every external repo has an ADR-0014 Source repos row (${sources.size} rows), every curated source a curation baseline.`);
     return;
   }
   if (missing.length) console.log(`External repos with no ADR-0014 Source repos row — classify each as whole or curated:\n${missing.map((r) => `- \`${r}\``).join('\n')}`);
-  if (mismatches.length) console.log(`curationBaseline in scripts/catalog-meta.json disagrees with ADR-0014 (ADR-0039):\n${mismatches.map((m) => `- ${m}`).join('\n')}`);
+  if (mismatches.length) console.log(`Curated sources and curation baselines disagree (ADR-0039):\n${mismatches.map((m) => `- ${m}`).join('\n')}`);
   process.exitCode = 1;
 }
 
