@@ -231,7 +231,7 @@
         "ref": "v1.3.2",
         "sha": "d1478fcb140db0b93c0c8df17bcfd311844749d0"
       },
-      "description": "Implement the result of /to-spec and /to-tickets in code, running the ticket graph through parallel subagents on one integration branch.",
+      "description": "Run a spec's whole ticket graph through parallel subagents on one integration branch, starting from the output of to-spec and to-tickets.",
       "author": {
         "name": "Matt Pocock",
         "url": "https://github.com/mattpocock"
@@ -248,8 +248,8 @@
       },
       "description": "Write a PR body that is fast to review: a visual summary, before/after evidence, and merge danger.",
       "author": {
-        "name": "Matt Pocock",
-        "url": "https://github.com/mattpocock"
+        "name": "Matt Pocock and Dex Horthy",
+        "url": "https://github.com/mattpocock/skills"
       }
     },
     {
