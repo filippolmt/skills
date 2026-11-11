@@ -158,10 +158,13 @@ Hence a real identity on the push, which is where this started.
   catalog stops advancing until someone deals with it, which is the intended
   behaviour for a tree that must not land — and the red run is what says so.
 - **The merge is performed with `REGEN_TOKEN`, a real identity, so it *does*
-  trigger workflows.** Every push to `main` starts `regenerate`, so one extra run
-  follows every regeneration and stops at "tree already current"; `validate` also
-  re-runs on `main`. A wasted minute per bump,
-  and the price of not pushing as the bot.
+  trigger workflows.** `validate` re-runs on `main`. `regenerate` would too, and
+  used to: the merge's push started a replacement run that cancelled the merging
+  run in its last second (16 of 40 runs read `cancelled` after a successful merge),
+  then stopped at "tree already current". A push whose head commit is
+  `chore: regenerate skills tree` now neither cancels the group nor runs the job.
+  The test is the commit title, so a human commit with that title also skips one
+  regeneration; the next push or a manual dispatch catches up.
 - **An open regeneration PR does not heal itself.** A PR left open by an earlier
   failure waits for the next `regenerate` run — triggered by the next
   push to `main`, or by `gh workflow run regenerate.yml`.
