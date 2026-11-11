@@ -157,6 +157,10 @@ _expected_miss_statuses: ContextVar[frozenset[int]] = ContextVar(
     "last30days_http_expected_miss_statuses",
     default=frozenset(),
 )
+_expected_no_host: ContextVar[Optional[list["HTTPError"]]] = ContextVar(
+    "last30days_http_expected_no_host",
+    default=None,
+)
 
 _FIXTURE_FORMAT = "last30days-http-fixture/v1"
 _FIXTURE_SECRET_KEYS = frozenset(
@@ -476,6 +480,10 @@ def _fixture_replay(request_data: dict[str, Any]) -> Any:
             body=error.get("body"),
             outcome_state=error.get("outcome_state"),
         )
+        # Callers branch on this (a dead careers host is not asked for its
+        # second page), so a replay without it makes requests the live run
+        # never recorded.
+        recorded_error.no_host = bool(error.get("no_host"))
         _raise(recorded_error)
     return response.get("value")
 
@@ -514,6 +522,8 @@ def _fixture_record(
                     redactions=redactions,
                 )
             }
+            if error.no_host:
+                response["error"]["no_host"] = True
         state["exchanges"].append({"request": request_data, "response": response})
 
 
@@ -610,6 +620,9 @@ class HTTPError(Exception):
         super().__init__(message)
         self.status_code = status_code
         self.body = body
+        # True when no host answered: the name did not resolve or the
+        # connection was refused. See ``expected_no_host``.
+        self.no_host = False
         self.outcome_state = outcome_state or classify_failure(
             status_code=status_code,
             message=message,
@@ -675,6 +688,30 @@ def expected_misses(*status_codes: int):
         _expected_miss_statuses.reset(token)
 
 
+@contextmanager
+def expected_no_host():
+    """Exclude "there is no such host" failures from captured run failures.
+
+    For a caller that tries a host it only guessed: a name that does not
+    resolve, or a connection the host refuses, means nothing is there, not
+    that a source is down. Yields the failures left out, so the caller can
+    stop asking that host. Timeouts and HTTP errors are still recorded.
+    """
+    dropped: list[HTTPError] = []
+    token = _expected_no_host.set(dropped)
+    try:
+        yield dropped
+    finally:
+        _expected_no_host.reset(token)
+
+
+def _is_no_host(error: BaseException) -> bool:
+    """A name that did not resolve or a refused connection, bare or wrapped
+    in a ``URLError``."""
+    reason = getattr(error, "reason", error)
+    return isinstance(reason, (socket.gaierror, ConnectionRefusedError))
+
+
 def submit_with_context(executor, func, /, *args, **kwargs) -> Future:
     """Submit a worker with the caller's failure-capture context."""
     context = copy_context()
@@ -683,6 +720,10 @@ def submit_with_context(executor, func, /, *args, **kwargs) -> Future:
 
 def _record_failure(error: HTTPError) -> None:
     if error.status_code in _expected_miss_statuses.get():
+        return
+    no_host = _expected_no_host.get()
+    if no_host is not None and error.no_host:
+        no_host.append(error)
         return
     sink = _failure_sink.get()
     if sink is not None:
@@ -783,6 +824,7 @@ def request(
     owned_get: bool = False,
     on_retry: Callable[[], None] | None = None,
     bypass_proxy: bool = False,
+    retry_dns: bool = True,
 ) -> Union[Dict[str, Any], str]:
     """Make an HTTP request and return JSON response.
 
@@ -803,6 +845,9 @@ def request(
             its deadline. Requires deadline_monotonic; other methods are refused.
         on_retry: Called before each transport attempt after the first.
         bypass_proxy: Use a direct connection for this request and its redirects.
+        retry_dns: Widen the retry budget to MIN_DNS_RETRIES when the name does
+            not resolve. Off for a host the caller only guessed, where a name
+            that does not resolve is the answer.
 
     Returns:
         Parsed JSON response as dict, or raw text string if raw=True.
@@ -1056,6 +1101,7 @@ def request(
                 f"URL Error: {e.reason}",
                 outcome_state=health.TIMEOUT if wrapped_timeout else health.UNREACHABLE,
             )
+            last_error.no_host = _is_no_host(e)
             if _is_dns_failure(e):
                 # DNS resolution failures are transient; expand the retry budget
                 # to MIN_DNS_RETRIES if the caller passed fewer, and use
@@ -1063,7 +1109,7 @@ def request(
                 # default. Counts DNS attempts separately so other URLError
                 # causes don't bypass the regular retry budget.
                 dns_attempts += 1
-                if effective_retries < MIN_DNS_RETRIES:
+                if retry_dns and effective_retries < MIN_DNS_RETRIES:
                     log_request(
                         f"DNS resolution failed; expanding retry budget from "
                         f"{effective_retries} to {MIN_DNS_RETRIES}"
@@ -1102,6 +1148,7 @@ def request(
                 f"Connection error: {type(e).__name__}: {e}",
                 outcome_state=state,
             )
+            last_error.no_host = _is_no_host(e)
             if attempt < retries - 1:
                 # Socket errors respect the caller's original retry budget.
                 if not sleep_before_retry(RETRY_DELAY * (attempt + 1)):
@@ -1146,6 +1193,8 @@ def get_text(
     retries: int = 2,
     accept: str = "*/*",
     headers: Optional[Dict[str, str]] = None,
+    deadline_monotonic: float | None = None,
+    retry_dns: bool = True,
 ) -> Optional[str]:
     """Fetch a URL and return decoded text, or None on any failure.
 
@@ -1160,6 +1209,8 @@ def get_text(
         retries: Number of retries on failure (kept low — these tiers fail fast)
         accept: Accept header value (e.g. "text/html")
         headers: Optional extra headers merged over the defaults
+        deadline_monotonic: Optional absolute monotonic deadline for the call
+        retry_dns: See ``request``
 
     Returns:
         Decoded response body as text, or None on failure.
@@ -1171,9 +1222,16 @@ def get_text(
     }
     if headers:
         merged.update(headers)
+    # Passed only when set, so the plain call stays what it always was.
+    bounds: Dict[str, Any] = {}
+    if deadline_monotonic is not None:
+        bounds["deadline_monotonic"] = deadline_monotonic
+    if not retry_dns:
+        bounds["retry_dns"] = False
     try:
         return request(
-            "GET", url, headers=merged, timeout=timeout, retries=retries, raw=True
+            "GET", url, headers=merged, timeout=timeout, retries=retries, raw=True,
+            **bounds,
         )
     except HTTPError as e:
         log(f"get_text failed ({e}): {url}")
