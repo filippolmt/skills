@@ -42,8 +42,10 @@ curl -fsSL "https://raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>/SKILL.
 The upstream author comes from the source that owns the attribution: its plugin
 manifest first, then its licence, then the GitHub owner's profile. The manifest
 counts only when the entry's `path` is that plugin root; a standalone skill folder
-takes its licence's copyright holder. Preserve
-multiple credited authors; do not substitute the marketplace owner.
+takes its licence's copyright holder, plus every author the skill itself credits
+for its content (`metadata.credits`, a `CREDITS.md`): `pr` is "Matt Pocock and
+Dex Horthy". Preserve multiple credited authors; do not substitute the
+marketplace owner.
 
 ## Pinning the `ref`
 
@@ -86,7 +88,8 @@ For every discovered Claude artifact:
 Check runtime closure, not just file presence: a skill calling a plugin-root
 launcher needs its scripts, shared data, dependencies, and harness-specific path
 resolution. The inventory and generated-skill validators reject unresolved
-`CLAUDE_PLUGIN_ROOT` references. Use a proven upstream adaptation where available;
+`CLAUDE_PLUGIN_ROOT` references, and a sibling skill loaded with the Skill tool
+but missing from `runtimeDependencies`. Use a proven upstream adaptation where available;
 otherwise record the exact unsupported limitation and fallback. When an entire
 entry requires an unavailable runtime, `unsupportedEntries` in
 `scripts/distribution-meta.json` supplies both harness outcomes; artifact-specific

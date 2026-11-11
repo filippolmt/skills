@@ -113,3 +113,12 @@ test('only a SKILL.md frontmatter is excused: a reference with hooks still fails
   fs.writeFileSync(path.join(root, 'example/reference.md'), hooked);
   assert.throws(() => validateSkillDirectories(root), /CLAUDE_PLUGIN_ROOT/);
 }));
+
+test('a sibling skill loaded with the Skill tool must be a runtime dependency', () => fixture((root, inventory) => {
+  const body = skill + 'Call the Skill tool with `tdd`, then the Skill tool for "grilling" and "example". Use `other-tool` freely.\n';
+  fs.writeFileSync(path.join(root, 'example/SKILL.md'), body);
+  const siblings = ['tdd', 'grilling', 'other-tool'].map((name) => ({ name, artifacts: [{ kind: 'skill', id: `skill:${name}` }] }));
+  const all = [...inventory, ...siblings];
+  assert.throws(() => validateDistribution(all), /example\/skill:example\/SKILL\.md: calls tdd, grilling with the Skill tool/);
+  assert.doesNotThrow(() => validateDistribution(all, { runtimeDependencies: { example: ['tdd', 'grilling'] } }));
+}));

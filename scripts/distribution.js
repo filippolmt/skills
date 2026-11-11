@@ -279,6 +279,18 @@ function validatePortableRuntime(file, text = fs.readFileSync(file, 'utf8')) {
   }
 }
 
+// Catalog names a skill body tells the agent to load with the Skill tool, e.g.
+// 'Skill tool with `tdd`' or 'Call the Skill tool twice, for "grilling" and
+// "domain-modeling"'. Without a runtime dependency edge, the Codex and pi
+// projections ship the skill without its siblings and nothing fails.
+function skillToolCalls(text, names) {
+  const called = new Set();
+  for (const [sentence] of text.matchAll(/Skill tool[^.\n]*/g)) {
+    for (const [, name] of sentence.matchAll(/[`"]([a-z0-9-]+)[`"]/g)) if (names.has(name)) called.add(name);
+  }
+  return [...called];
+}
+
 function validateDistribution(inventory, metadata = {}, options = {}) {
   validateMetadata(metadata);
   const absent = new Set(options.absentEntries || []);
@@ -336,6 +348,18 @@ function validateDistribution(inventory, metadata = {}, options = {}) {
             validatePortableRuntime(source, item.kind === 'skill' ? frontmatterHooks(text, source).withoutHooks : text);
           }
         }
+      }
+    }
+  }
+
+  for (const entry of result) {
+    if (!entry.sourceRoot) continue;
+    for (const item of entry.artifacts.filter((artifact) => artifact.kind === 'skill')) {
+      const text = fs.readFileSync(path.join(entry.sourceRoot, item.path), 'utf8');
+      const missing = skillToolCalls(text, entries)
+        .filter((name) => name !== entry.name && !entry.runtimeDependencies.includes(name));
+      if (missing.length) {
+        throw new Error(`${entry.name}/${item.id}: calls ${missing.join(', ')} with the Skill tool; declare it in runtimeDependencies (scripts/distribution-meta.json)`);
       }
     }
   }
