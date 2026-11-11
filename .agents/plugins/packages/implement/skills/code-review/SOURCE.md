@@ -6,3 +6,4 @@ Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree
 - **Commit**: `d1478fcb140db0b93c0c8df17bcfd311844749d0`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `code-review` in `.claude-plugin/marketplace.json`
+- **Overlay applied**: `overlays/code-review.patch`

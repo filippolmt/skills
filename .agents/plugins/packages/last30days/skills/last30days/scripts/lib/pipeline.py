@@ -2110,6 +2110,9 @@ def diagnose(
         "has_github": bool(config.get("GITHUB_TOKEN") or which("gh")),
         "brightdata_installed": brightdata_status["brightdata_installed"],
         "brightdata_authenticated": brightdata_status["brightdata_authenticated"],
+        # Fresh browser session or a cached company record: the host resolves
+        # a --trustpilot-domain only then. Local reads; never opens a browser.
+        "trustpilot_can_run": trustpilot.can_run_now(config)["can_run"],
         # safe=True (doctor/--diagnose/--preflight) must stay network-free:
         # answer X availability from local evidence only. x_pending is
         # precomputed by diagnose() to avoid double evaluation.
@@ -2360,12 +2363,20 @@ def run(
         or (not requested_sources and auto_company_jobs)
     ) and "jobs" not in available:
         available.append("jobs")
+    # A host plan about a company gets the jobs lane whether or not the plan
+    # names it: the lane is free and bounded, and a host that forgets one
+    # word must not cost the run a working board. Quick runs keep the
+    # sanitizer's two-source budget, as for the installed lanes below.
+    company_signal = str(config.get("_company_signal") or "")
     if (
         host_plan
         and not requested_sources
         and "jobs" not in available
         and "jobs" not in excluded_sources
-        and _external_plan_names_source(external_plan, "jobs")
+        and (
+            _external_plan_names_source(external_plan, "jobs")
+            or (company_signal and depth != "quick")
+        )
     ):
         available.append("jobs")
     if hiring_signals_mode:
@@ -2407,9 +2418,15 @@ def run(
             external_plan, topic, available, planner_requested_sources, depth,
             honor_plan_sources=True,
         )
-        # Quick runs keep the sanitizer's two-source budget.
-        if depth != "quick":
-            _ensure_unplanned_lanes_in_host_plan(plan, available)
+        # Quick runs keep the sanitizer's two-source budget, plus any paid
+        # lane this run asked for.
+        _ensure_unplanned_lanes_in_host_plan(
+            plan, available,
+            asked=_paid_lanes_asked_for(planner_requested_sources, config),
+            installed=depth != "quick",
+        )
+        if depth != "quick" and not hiring_signals_mode:
+            _ensure_company_jobs_in_host_plan(plan, available, company_signal)
         plan_source = "external"
     else:
         _check_research(config)
@@ -2557,11 +2574,12 @@ def run(
     # the LAW 7 degraded-run and Step 0.55 pre-research banners do not apply -
     # they would contradict the documented jobs-scoped flow. Suppress them.
     bundle.artifacts["hiring_signals_mode"] = hiring_signals_mode
-    # Record the resolved Amazon keyword whenever the lane is active, so the
+    # Record the resolved Amazon keyword whenever the lane is planned, so the
     # footer can name it on an empty result. A search that matched nothing
     # still spent a credit, and the fix is almost always the keyword -- a
-    # suppressed line means nobody ever learns it was wrong.
-    if "amazon" in (available or []):
+    # suppressed line means nobody ever learns it was wrong. A lane that is
+    # available but in no subquery never searched, so it names no keyword.
+    if any("amazon" in subquery.sources for subquery in plan.subqueries):
         bundle.artifacts["amazon_query"] = (
             str(config.get("_amazon_query") or "").strip() or topic
         )
@@ -3846,7 +3864,7 @@ def _jobs_lane_budget(config: dict[str, Any]) -> jobs.LaneBudget:
 
 
 def _host_companies(company: dict[str, Any]) -> list[str]:
-    """The companies the host named with ``--ticker``, in the order given."""
+    """The companies the host named (``--company``, then ``--ticker``), in order."""
     names = [str(name) for name in company.get("host_companies") or [] if name]
     single = str(company.get("host_company") or "")
     if single and single not in names:
@@ -3868,7 +3886,7 @@ def _search_jobs_lane(
     A person's name searches the company they lead, starting from its
     official site. When the lookup named no company and the topic has no
     board of its own (a person, searched by name), each company the host
-    named with ``--ticker`` is tried in order and the first one with a board
+    named with ``--company`` or ``--ticker`` is tried in order and the first one with a board
     is used. Those come with no official site, so a board gives a digest only
     when it names that company itself. Every company tried draws on one
     budget, and a board that is not the topic's own says whose it is under
@@ -3881,6 +3899,40 @@ def _search_jobs_lane(
     name = str(company.get("company") or topic)
     hosts = [] if company.get("company") else _host_companies(company)
     tries = 1 + len(hosts)
+    site = str(company.get("company_site") or company.get("topic_site") or "")
+    # The official site the resolver returned for a company the host named.
+    host_sites = {
+        str(key): str(value)
+        for key, value in (company.get("host_company_sites") or {}).items() if value
+    }
+
+    def named(found: dict) -> dict:
+        # A board that is not the topic's own says whose it is.
+        of = str(found.get("company") or name)
+        if not jobs._same_company(of, topic):
+            found["board_of"] = of
+        return found
+
+    # The board the host found by web search is read first. One that is the
+    # company's ends the lane; any other is kept only if the lane finds no
+    # board itself.
+    held: tuple[list[dict], dict] | None = None
+    board_url = str(config.get("_jobs_board") or "").strip()
+    if board_url:
+        with http.tee_failures() as failures:
+            host_items, host_artifact = jobs.search_board_url(
+                board_url, [name, *hosts], date_range, config,
+                site=site, sites=host_sites,
+                explicit=bool(config.get("_hiring_signals_mode")), budget=budget,
+                # Until the board is known to be the company's it has one
+                # share of the budget, like each company still to be tried.
+                discovery_seconds=budget.remaining() / (1 + tries),
+            )
+        if _is_jobs_board("jobs", host_artifact):
+            if host_artifact.get("owned"):
+                budget.settled = True
+                return host_items, named(host_artifact)
+            held = (host_items, host_artifact)
 
     def search(target: str, left: int, **where: Any) -> tuple[list[dict], dict]:
         return jobs.search_jobs(
@@ -3902,7 +3954,7 @@ def _search_jobs_lane(
             name,
             tries,
             web_backend=web_backend,
-            site=str(company.get("company_site") or company.get("topic_site") or ""),
+            site=site,
         )
         if _is_jobs_board("jobs", artifact):
             if not jobs._same_company(name, topic):
@@ -3911,6 +3963,7 @@ def _search_jobs_lane(
             for index, host_company in enumerate(hosts):
                 host_items, host_artifact = search(
                     host_company, tries - 1 - index, web_backend="none",
+                    **({"site": host_sites[host_company]} if host_company in host_sites else {}),
                 )
                 if _is_jobs_board("jobs", host_artifact):
                     host_artifact["board_of"] = host_company
@@ -3921,6 +3974,12 @@ def _search_jobs_lane(
                 for key in ("_source_outcome", "_source_out_of_time"):
                     if key in host_artifact and not items:
                         artifact = {**artifact, key: host_artifact[key]}
+    if held and not _is_jobs_board("jobs", artifact):
+        items, artifact = held[0], named(held[1])
+        # A board tied to no company here is shown under the name it states.
+        stated = str(artifact.get("board_company") or "")
+        if stated and not jobs._same_company(stated, topic):
+            artifact["board_of"] = stated
     if not items and not _is_jobs_board("jobs", artifact) and not (
         budget.stopped_at or budget.spent() or budget.unanswered
     ):
@@ -4085,7 +4144,8 @@ def _ensure_devto_in_plan(plan: schema.QueryPlan, available: list[str]) -> None:
 # in (INCLUDE_SOURCES, --search, a targeting flag). A host plan that names none
 # of them in any subquery almost always means the host planner never knew to
 # list them, not that it chose to skip them, so they ride the primary subquery.
-# Paid lanes with their own host decision step (amazon, meta_ads) stay out;
+# Paid lanes with their own host decision step (amazon, meta_ads) stay out
+# unless this run asked for them (HOST_PLAN_PAID_LANES below);
 # EXCLUDE_SOURCES and --search already filter ``available``.
 HOST_PLAN_BACKFILL_SOURCES = (
     "digg",
@@ -4102,17 +4162,51 @@ HOST_PLAN_BACKFILL_SOURCES = (
 )
 
 
+# Paid lanes the host requests per run outside the plan (runbook Step 0.5e /
+# 0.5f): source -> (config key of its targeting flag, log label). They join a
+# host plan only when this run asked: the source is in --search, or its
+# targeting flag is set. INCLUDE_SOURCES alone makes the lane available but
+# leaves the per-topic decision with the host.
+HOST_PLAN_PAID_LANES = {
+    "amazon": ("_amazon_query", "Amazon"),
+    "meta_ads": ("_meta_ads_page", "Meta Ads"),
+}
+
+
+def _paid_lanes_asked_for(
+    requested_sources: list[str] | None,
+    config: dict[str, Any] | None,
+) -> list[str]:
+    requested = requested_sources or []
+    return [
+        source for source, (flag_key, _label) in HOST_PLAN_PAID_LANES.items()
+        if source in requested or str((config or {}).get(flag_key) or "").strip()
+    ]
+
+
 def _ensure_unplanned_lanes_in_host_plan(
     plan: schema.QueryPlan,
     available: list[str],
+    *,
+    asked: list[str] | tuple[str, ...] = (),
+    installed: bool = True,
 ) -> None:
     if not plan.subqueries:
         return
     planned = {source for subquery in plan.subqueries for source in subquery.sources}
+    candidates = (*(HOST_PLAN_BACKFILL_SOURCES if installed else ()), *asked)
     missing = [
-        source for source in HOST_PLAN_BACKFILL_SOURCES
+        source for source in candidates
         if source in available and source not in planned
     ]
+    for source, (_flag_key, label) in HOST_PLAN_PAID_LANES.items():
+        if source in available and source not in planned and source not in missing:
+            log.source_log(
+                label,
+                "available but not requested for this run; not run "
+                f"(add {source} to --search to run it).",
+                tty_only=False,
+            )
     if not missing:
         return
     plan.subqueries[0].sources.extend(missing)
@@ -4121,9 +4215,40 @@ def _ensure_unplanned_lanes_in_host_plan(
     plan.source_weights = planner._normalize_weights(plan.source_weights)
     log.source_log(
         "Planner",
-        "Added installed/opted-in sources absent from every --plan subquery to "
+        "Added installed/opted-in/requested sources absent from every --plan subquery to "
         f"{plan.subqueries[0].label}: {', '.join(missing)} "
         "(set EXCLUDE_SOURCES to skip them).",
+        tty_only=False,
+    )
+
+
+def _ensure_company_jobs_in_host_plan(
+    plan: schema.QueryPlan,
+    available: list[str],
+    company_signal: str,
+) -> None:
+    """Give the jobs lane the primary subquery of a host plan about a company.
+
+    ``company_signal`` says what makes the run about a company (the official
+    site, a host ticker or company, the company the topic resolved to); with
+    none the plan is left as it is, so a musician or a concept gets no jobs
+    lane. ``available`` already leaves jobs out under EXCLUDE_SOURCES or a
+    ``--search`` list without it.
+    """
+    if not company_signal or "jobs" not in available or not plan.subqueries:
+        return
+    if "drill-mode" in plan.notes:
+        return
+    if any("jobs" in subquery.sources for subquery in plan.subqueries):
+        return
+    plan.subqueries[0].sources.append("jobs")
+    plan.source_weights.setdefault("jobs", 1.0)
+    plan.source_weights = planner._normalize_weights(plan.source_weights)
+    log.source_log(
+        "Planner",
+        f"Added jobs to {plan.subqueries[0].label}: the run is about a company "
+        f"({company_signal}) and no --plan subquery names it "
+        "(set EXCLUDE_SOURCES=jobs to skip it).",
         tty_only=False,
     )
 
@@ -6762,7 +6887,7 @@ def _retrieve_stream_impl(
             artifact = dict(artifact) if artifact else {}
             artifact["_source_outcome"] = {
                 "state": schema.PARTIAL,
-                "detail": review_status,
+                "detail": amazon.outcome_detail(review_status),
                 "attempted": True,
             }
 
