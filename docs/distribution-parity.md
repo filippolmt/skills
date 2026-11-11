@@ -20,7 +20,7 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `wayfinder` | `skill:SKILL.md` | `grilling`, `domain-modeling`, `research`, `prototype` | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `improve-codebase-architecture` | `skill:SKILL.md` | `codebase-design`, `grilling`, `domain-modeling` | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `setup-matt-pocock-skills` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
-| `tdd` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `tdd` | `skill:SKILL.md` | `codebase-design` | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `to-tickets` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `to-spec` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `implement` | `skill:SKILL.md` | `tdd`, `code-review` | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
