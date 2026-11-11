@@ -283,12 +283,26 @@ function validatePortableRuntime(file, text = fs.readFileSync(file, 'utf8')) {
 // 'Skill tool with `tdd`' or 'Call the Skill tool twice, for "grilling" and
 // "domain-modeling"'. Without a runtime dependency edge, the Codex and pi
 // projections ship the skill without its siblings and nothing fails.
+// A sentence ends at a full stop, a blank line or the start of a list item.
+// shortcut: a negated sentence ("do not use the Skill tool with `x`") is skipped
+// whole, so a conditional call phrased with "not" is missed; parse clauses if one appears.
 function skillToolCalls(text, names) {
   const called = new Set();
-  for (const [sentence] of text.matchAll(/Skill tool[^.\n]*/g)) {
+  for (const sentence of text.split(/(?<=\.)\s+|\n\s*\n|\n(?=\s*(?:[-*]|\d+\.)\s)/)) {
+    if (!/Skill tool/.test(sentence) || /\b(not|never)\b|n't\b/i.test(sentence)) continue;
     for (const [, name] of sentence.matchAll(/[`"]([a-z0-9-]+)[`"]/g)) if (names.has(name)) called.add(name);
   }
   return [...called];
+}
+
+// A skill's own Markdown beside SKILL.md: its folder's top level and `references/`.
+// Not a recursive walk, which from a repo-root skill would read every sibling skill.
+function markdownBeside(skillFile) {
+  const dir = path.dirname(skillFile);
+  const refs = path.join(dir, 'references');
+  const top = fs.readdirSync(dir).map((file) => path.join(dir, file));
+  const nested = fs.existsSync(refs) ? fs.readdirSync(refs, { recursive: true }).map((file) => path.join(refs, file)) : [];
+  return [...top, ...nested].filter((file) => file.endsWith('.md') && file !== skillFile && fs.statSync(file).isFile());
 }
 
 function validateDistribution(inventory, metadata = {}, options = {}) {
@@ -326,6 +340,7 @@ function validateDistribution(inventory, metadata = {}, options = {}) {
   });
 
   for (const entry of result) {
+    const calls = new Map();
     for (const item of entry.artifacts) {
       for (const [harness, outcome] of Object.entries(item.dispositions)) {
         for (const [field, label] of [['sourcePath', 'adaptation source'], ['evidencePath', 'adaptation evidence']]) {
@@ -346,21 +361,20 @@ function validateDistribution(inventory, metadata = {}, options = {}) {
             const text = fs.readFileSync(source, 'utf8');
             // Only a skill's own frontmatter hooks are excused: projections drop them (ADR-0038).
             validatePortableRuntime(source, item.kind === 'skill' ? frontmatterHooks(text, source).withoutHooks : text);
+            // A projected artifact shipped without a sibling it loads does less than it says, silently.
+            const files = item.kind === 'skill' ? [[source, text], ...markdownBeside(source).map((file) => [file, fs.readFileSync(file, 'utf8')])] : [[source, text]];
+            for (const [, body] of files) {
+              for (const name of skillToolCalls(body, entries)) {
+                if (name !== entry.name && !entry.runtimeDependencies.includes(name)) calls.set(name, item.id);
+              }
+            }
           }
         }
       }
     }
-  }
-
-  for (const entry of result) {
-    if (!entry.sourceRoot) continue;
-    for (const item of entry.artifacts.filter((artifact) => artifact.kind === 'skill')) {
-      const text = fs.readFileSync(path.join(entry.sourceRoot, item.path), 'utf8');
-      const missing = skillToolCalls(text, entries)
-        .filter((name) => name !== entry.name && !entry.runtimeDependencies.includes(name));
-      if (missing.length) {
-        throw new Error(`${entry.name}/${item.id}: calls ${missing.join(', ')} with the Skill tool; declare it in runtimeDependencies (scripts/distribution-meta.json)`);
-      }
+    if (calls.size) {
+      const list = [...calls].map(([name, id]) => `${name} (${id})`).join(', ');
+      throw new Error(`${entry.name}: loads ${list} with the Skill tool; declare it in runtimeDependencies (scripts/distribution-meta.json)`);
     }
   }
 

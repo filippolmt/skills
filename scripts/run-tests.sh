@@ -18,7 +18,7 @@ shopt -s nullglob
 unset $(git rev-parse --local-env-vars)
 
 run_group() {
-  local runner=$1 label=$2
+  local runner=$1 label=$2 out status
   shift 2
   local tests=("$@")
   if [ ${#tests[@]} -eq 0 ]; then
@@ -37,7 +37,7 @@ run_group() {
       echo "ok $t"
     else
       status=$?
-      echo "--- $t (failed)"
+      echo "FAIL $t"
       printf '%s\n' "$out"
       exit "$status"
     fi

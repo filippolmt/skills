@@ -89,8 +89,8 @@ Check runtime closure, not just file presence: a skill calling a plugin-root
 launcher needs its scripts, shared data, dependencies, and harness-specific path
 resolution. The inventory and generated-skill validators reject unresolved
 `CLAUDE_PLUGIN_ROOT` references, and a sibling skill loaded with the Skill tool
-but missing from `runtimeDependencies`. Use a proven upstream adaptation where available;
-otherwise record the exact unsupported limitation and fallback. When an entire
+but missing from `runtimeDependencies`. Use a proven upstream adaptation where
+available; otherwise record the exact unsupported limitation and fallback. When an entire
 entry requires an unavailable runtime, `unsupportedEntries` in
 `scripts/distribution-meta.json` supplies both harness outcomes; artifact-specific
 records take precedence.

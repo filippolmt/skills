@@ -114,11 +114,34 @@ test('only a SKILL.md frontmatter is excused: a reference with hooks still fails
   assert.throws(() => validateSkillDirectories(root), /CLAUDE_PLUGIN_ROOT/);
 }));
 
+const siblings = ['tdd', 'grilling', 'review', 'other-tool'].map((name) => ({ name, artifacts: [{ kind: 'skill', id: `skill:${name}` }] }));
+const withBody = (root, inventory, body) => {
+  fs.writeFileSync(path.join(root, 'example/SKILL.md'), skill + body);
+  return [...inventory, ...siblings];
+};
+
 test('a sibling skill loaded with the Skill tool must be a runtime dependency', () => fixture((root, inventory) => {
-  const body = skill + 'Call the Skill tool with `tdd`, then the Skill tool for "grilling" and "example". Use `other-tool` freely.\n';
-  fs.writeFileSync(path.join(root, 'example/SKILL.md'), body);
-  const siblings = ['tdd', 'grilling', 'other-tool'].map((name) => ({ name, artifacts: [{ kind: 'skill', id: `skill:${name}` }] }));
-  const all = [...inventory, ...siblings];
-  assert.throws(() => validateDistribution(all), /example\/skill:example\/SKILL\.md: calls tdd, grilling with the Skill tool/);
+  const all = withBody(root, inventory, 'Call the Skill tool with `tdd`.\nLoad "grilling" and "example" through the Skill tool.\nUse `other-tool` freely.\n');
+  assert.throws(() => validateDistribution(all), /example: loads tdd \(skill:example\/SKILL\.md\), grilling \(skill:example\/SKILL\.md\) with the Skill tool/);
   assert.doesNotThrow(() => validateDistribution(all, { runtimeDependencies: { example: ['tdd', 'grilling'] } }));
+  const [example, ...rest] = all;
+  assert.doesNotThrow(() => validateDistribution([{ ...example, declaredDependencies: ['tdd', 'grilling'] }, ...rest]));
+}));
+
+test('a negated Skill-tool sentence is not a call, and list items are separate sentences', () => fixture((root, inventory) => {
+  const all = withBody(root, inventory, 'Do not use the Skill tool with `tdd` here.\n- run the tests\n- the Skill tool is not needed for `grilling`\n');
+  assert.doesNotThrow(() => validateDistribution(all));
+}));
+
+test('a call in a skill reference counts; an unsupported or adapted-away artifact does not', () => fixture((root, inventory) => {
+  const all = withBody(root, inventory, 'See references.\n');
+  fs.mkdirSync(path.join(root, 'example/references'));
+  fs.writeFileSync(path.join(root, 'example/references/flow.md'), 'Then call the Skill tool with `review`.\n');
+  assert.throws(() => validateDistribution(all), /example: loads review/);
+  assert.doesNotThrow(() => validateDistribution(all, { artifacts: { 'example/skill:example/SKILL.md': { codex: unsupported, pi: unsupported } } }));
+  fs.mkdirSync(path.join(root, 'native'));
+  fs.writeFileSync(path.join(root, 'native/SKILL.md'), skill + 'Run the packaged script.\n');
+  fs.writeFileSync(path.join(root, 'proof.js'), '// upstream test\n');
+  const adapted = { disposition: 'adapted', detail: 'Native upstream variant.', sourcePath: 'native/SKILL.md', evidencePath: 'proof.js' };
+  assert.doesNotThrow(() => validateDistribution(all, { artifacts: { 'example/skill:example/SKILL.md': { codex: adapted, pi: adapted } } }));
 }));
