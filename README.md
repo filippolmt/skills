@@ -542,7 +542,7 @@ Snapshot of the catalog — the source of truth is
 
 | Skill | What it does |
 |---|---|
-| `proximo` | Makes local Docker containers reachable at https://<name>.test with trusted HTTPS and local DNS, and shares a route with colleagues over the team's mesh. Use when bringing up a project's containers, giving a service a local hostname through proximo.* labels, or calling and testing a containerized service, and when diagnosing a broken one: a .test host that does not resolve or answer, a 502/503, an untrusted local certificate, a page that loads and then breaks, a request whose container output you need, a queue or worker that is not progressing, a container that cannot reach a VPN or tunnelled address the host reaches, or a shared link that fails. |
+| `proximo` | Makes local Docker containers reachable at https://<name>.test with trusted HTTPS and local DNS, and shares a route with colleagues over the team's mesh. Use when bringing up a project's containers, exposing a container or giving a service a local hostname through proximo.* labels, or calling and testing a containerized service, and when diagnosing a broken one: a .test host that does not resolve or answer, a 502/503, an untrusted local certificate, a page that loads and then breaks, a request whose container output you need, a queue or worker that is not progressing, a container that cannot reach a VPN or tunnelled address the host reaches, or a shared link that fails. |
 
 ### [tt-a1i/archify](https://github.com/tt-a1i/archify) — architecture & workflow diagrams
 
