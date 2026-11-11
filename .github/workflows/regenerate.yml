@@ -44,12 +44,20 @@ on:
 permissions:
   contents: read
 
+# The push of our own squash merge must not cancel the run that made it: that run is
+# in its last second, and the cancel turned every merged regeneration `cancelled`.
+# It waits instead, and its job is skipped below.
 concurrency:
   group: regenerate-skills-tree
-  cancel-in-progress: true
+  cancel-in-progress: "${{ !startsWith(github.event.head_commit.message, 'chore: regenerate skills tree') }}"
 
 jobs:
   tree:
+    # That merge IS the projection of its parent, already validated on the PR: a run
+    # here only ever reached "tree already current". `validate` still runs on main.
+    # A missed case heals on the next push or with `gh workflow run regenerate.yml`
+    # (no head_commit, so it runs).
+    if: "${{ !startsWith(github.event.head_commit.message, 'chore: regenerate skills tree') }}"
     runs-on: ubuntu-latest
     steps:
       # First, so a missing or expired secret is one clear line instead of a
