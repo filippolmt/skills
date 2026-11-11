@@ -11,9 +11,16 @@
 // Reads the pinned `sha`, not upstream HEAD: a new skill shows up here once Renovate
 // has moved the series past it, which is also when the entry could pin it.
 //
+// With --curated it reports the curated sources instead (ADR-0039): a skill present
+// at the pinned `sha` and absent, at the same path, at the repo's curation baseline
+// is one no human has looked at yet.
+//
 // Usage: node scripts/check-whole-sources.js   (exit 1 when a skill is missing)
+//        node scripts/check-whole-sources.js --curated   (exit 1 when a curated
+//        source ships a skill past its curation baseline)
 //        node scripts/check-whole-sources.js --classified   (offline: exit 1 when an
-//        external repo has no ADR-0014 row, since an unclassified repo is never reported)
+//        external repo has no ADR-0014 row, since an unclassified repo is never reported,
+//        or when a curated source and the curation baselines disagree)
 // Set GITHUB_TOKEN to lift the anonymous GitHub API rate limit.
 
 const fs = require('fs');
@@ -22,6 +29,8 @@ const { readCatalog, isExternal, entryPath, repoOf, root } = require('./catalog.
 const { githubApi } = require('./github.js');
 
 const ADR = path.join(root, 'docs', 'adr', '0014-each-source-repo-is-whole-or-curated.md');
+const META = path.join(root, 'scripts', 'catalog-meta.json');
+const readBaselines = () => JSON.parse(fs.readFileSync(META, 'utf8')).curationBaseline || {};
 
 // Both ADR tables are rows of backticked cells; the section heading tells them apart.
 function parseAdr(text) {
@@ -60,7 +69,8 @@ const globToRegExp = (glob) => new RegExp(`^${glob.split('*').map((s) => s.repla
 const excluded = (dir, patterns) => patterns.some((p) =>
   p.includes('/') ? globToRegExp(p).test(dir) : path.posix.basename(dir) === p);
 
-const wholeSources = (sources) => [...sources].filter(([, { kind }]) => kind === 'whole').map(([repo]) => repo);
+const sourcesOfKind = (sources, kind) => [...sources].filter(([, s]) => s.kind === kind).map(([repo]) => repo);
+const wholeSources = (sources) => sourcesOfKind(sources, 'whole');
 const entriesOf = (catalog, repo) => catalog.filter((e) => repoOf(e) === repo);
 const within = (dir, pluginRoot) => pluginRoot === '.' || dir === pluginRoot || dir.startsWith(`${pluginRoot}/`);
 
@@ -78,17 +88,48 @@ function uncatalogued({ sources, exclusions, catalog, upstream }) {
       missing.push({ repo, path: null });
       continue;
     }
-    const { skills, plugins } = upstream.get(repo);
-    const pluginRoots = entries.map(entryPath).filter((p) => plugins.has(p));
-    if (pluginRoots.length === entries.length) continue;
-    const have = new Set(entries.map(entryPath));
-    for (const dir of skills) {
-      if (have.has(dir) || pluginRoots.some((pluginRoot) => within(dir, pluginRoot))) continue;
-      if (!isSkillOfRepo(dir, skills) || excluded(dir, exclusions.get(repo) || [])) continue;
-      missing.push({ repo, path: dir });
+    for (const dir of unentered(repo, entries, upstream.get(repo), exclusions)) missing.push({ repo, path: dir });
+  }
+  return missing;
+}
+
+// Skill folders of one repo's tree with neither an entry nor an exclusion; none when
+// every entry is a whole-plugin entry, since there the unit is the plugin.
+function unentered(repo, entries, { skills, plugins }, exclusions) {
+  const pluginRoots = entries.map(entryPath).filter((p) => plugins.has(p));
+  if (pluginRoots.length === entries.length) return [];
+  const have = new Set(entries.map(entryPath));
+  return skills.filter((dir) => !have.has(dir)
+    && !pluginRoots.some((pluginRoot) => within(dir, pluginRoot))
+    && isSkillOfRepo(dir, skills) && !excluded(dir, exclusions.get(repo) || []));
+}
+
+// Pure: for each curated source, the skill folders `unentered` finds at the pinned sha
+// that are absent, at the same path, at its curation baseline (ADR-0039). A move
+// counts as new: leaving `in-progress/` is when a skill becomes pickable.
+function unreviewed({ sources, exclusions, catalog, upstream }) {
+  const missing = [];
+  for (const repo of sourcesOfKind(sources, 'curated')) {
+    const entries = entriesOf(catalog, repo);
+    if (entries.length === 0) continue;
+    const { pinned, baseline } = upstream.get(repo);
+    const seen = new Set(baseline.skills);
+    for (const dir of unentered(repo, entries, pinned, exclusions)) {
+      if (!seen.has(dir)) missing.push({ repo, path: dir });
     }
   }
   return missing;
+}
+
+// Pure: every curated source needs a curation baseline, and every baseline belongs to
+// a curated source — a stale key would silently stop meaning anything.
+function baselineMismatches({ sources, baselines }) {
+  const curated = sourcesOfKind(sources, 'curated');
+  return [
+    ...curated.filter((repo) => !baselines[repo]).map((repo) => `\`${repo}\`: curated source with no curation baseline`),
+    ...Object.keys(baselines).filter((repo) => !curated.includes(repo))
+      .map((repo) => `\`${repo}\`: curation baseline for a repo that is not a curated source`),
+  ];
 }
 
 // Pure: external repos with no Source repos row. Such a repo is neither whole nor
@@ -99,11 +140,13 @@ const unclassified = ({ sources, catalog }) =>
 function checkClassified() {
   const { sources } = parseAdr(fs.readFileSync(ADR, 'utf8'));
   const missing = unclassified({ sources, catalog: readCatalog().plugins.filter(isExternal) });
-  if (missing.length === 0) {
-    console.log(`Every external repo has an ADR-0014 Source repos row (${sources.size} rows).`);
+  const mismatches = baselineMismatches({ sources, baselines: readBaselines() });
+  if (missing.length === 0 && mismatches.length === 0) {
+    console.log(`Every external repo has an ADR-0014 Source repos row (${sources.size} rows), every curated source a curation baseline.`);
     return;
   }
-  console.log(`External repos with no ADR-0014 Source repos row — classify each as whole or curated:\n${missing.map((r) => `- \`${r}\``).join('\n')}`);
+  if (missing.length) console.log(`External repos with no ADR-0014 Source repos row — classify each as whole or curated:\n${missing.map((r) => `- \`${r}\``).join('\n')}`);
+  if (mismatches.length) console.log(`curationBaseline in scripts/catalog-meta.json disagrees with ADR-0014 (ADR-0039):\n${mismatches.map((m) => `- ${m}`).join('\n')}`);
   process.exitCode = 1;
 }
 
@@ -116,24 +159,47 @@ async function upstreamTree(repo, sha) {
   return { skills: dirsOf('SKILL.md'), plugins: new Set(dirsOf('.claude-plugin/plugin.json')) };
 }
 
+// Entries of one repo normally share a sha; if a bump left them apart, read each and
+// take the union, so nothing pinned by any entry goes unseen.
+// shortcut: a skill deleted between the two shas is still reported until every entry
+// reaches the newer one; per-entry trees if that ever proves noisy.
+async function pinnedTree(catalog, repo) {
+  const merged = { skills: [], plugins: new Set() };
+  for (const sha of new Set(entriesOf(catalog, repo).map((e) => e.source.sha))) {
+    const { skills, plugins } = await upstreamTree(repo, sha);
+    merged.skills = [...new Set([...merged.skills, ...skills])];
+    for (const p of plugins) merged.plugins.add(p);
+  }
+  return merged;
+}
+
+async function checkCurated() {
+  const { sources, exclusions } = parseAdr(fs.readFileSync(ADR, 'utf8'));
+  const catalog = readCatalog().plugins.filter(isExternal);
+  const baselines = readBaselines();
+  const upstream = new Map();
+  for (const repo of sourcesOfKind(sources, 'curated')) {
+    if (entriesOf(catalog, repo).length === 0) continue;
+    // --classified guards this offline; here a missing baseline is a failure to look.
+    if (!baselines[repo]) throw new Error(`${repo}: curated source with no curationBaseline in scripts/catalog-meta.json`);
+    upstream.set(repo, { pinned: await pinnedTree(catalog, repo), baseline: await upstreamTree(repo, baselines[repo]) });
+  }
+  const missing = unreviewed({ sources, exclusions, catalog, upstream });
+  if (missing.length === 0) {
+    console.log(`No skill of ${upstream.size} curated sources is past its curation baseline.`);
+    return;
+  }
+  console.log('Curated sources ship skills past their curation baseline (ADR-0039):');
+  for (const m of missing) console.log(`- \`${m.repo}\`: \`${m.path}\``);
+  console.log('\nPick them with `/add-external-skill update <owner/repo>`, which moves the baseline; to decline, move the repo\'s `curationBaseline` in scripts/catalog-meta.json to its pinned sha, or list a reasoned exclusion in ADR-0014.');
+  process.exitCode = 1;
+}
+
 async function main() {
   const { sources, exclusions } = parseAdr(fs.readFileSync(ADR, 'utf8'));
   const catalog = readCatalog().plugins.filter(isExternal);
   const upstream = new Map();
-  for (const repo of wholeSources(sources)) {
-    // Entries of one repo normally share a sha; if a bump left them apart, read each
-    // and take the union, so nothing pinned by any entry goes unseen.
-    // shortcut: a skill deleted between the two shas is still reported until every
-    // entry reaches the newer one; per-entry trees if that ever proves noisy.
-    const shas = new Set(entriesOf(catalog, repo).map((e) => e.source.sha));
-    const merged = { skills: [], plugins: new Set() };
-    for (const sha of shas) {
-      const { skills, plugins } = await upstreamTree(repo, sha);
-      merged.skills = [...new Set([...merged.skills, ...skills])];
-      for (const p of plugins) merged.plugins.add(p);
-    }
-    upstream.set(repo, merged);
-  }
+  for (const repo of wholeSources(sources)) upstream.set(repo, await pinnedTree(catalog, repo));
   const missing = uncatalogued({ sources, exclusions, catalog, upstream });
   if (missing.length === 0) {
     console.log(`Every skill of ${upstream.size} whole sources is catalogued or excluded.`);
@@ -152,10 +218,10 @@ async function main() {
 if (require.main === module && process.argv[2] === '--classified') {
   checkClassified();
 } else if (require.main === module) {
-  main().catch((err) => {
+  (process.argv[2] === '--curated' ? checkCurated() : main()).catch((err) => {
     console.error(err.message);
     process.exitCode = 2;
   });
 }
 
-module.exports = { parseAdr, uncatalogued, unclassified };
+module.exports = { parseAdr, uncatalogued, unreviewed, unclassified, baselineMismatches };

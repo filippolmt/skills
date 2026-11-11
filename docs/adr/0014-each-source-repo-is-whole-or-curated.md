@@ -43,7 +43,8 @@ kinds, and the kind decides what happens to a skill upstream adds:
 - **Whole source** — every skill the repo ships is catalogued. A new upstream
   skill gets an entry, unless it is a **catalog exclusion** listed below.
 - **Curated source** — only skills picked by hand are catalogued. A new upstream
-  skill is **reported, never added**; a human decides.
+  skill is **reported, never added**; a human decides (reported by
+  `check-whole-sources.js --curated`, ADR-0039).
 
 A **catalog exclusion** is an upstream skill deliberately left without an entry,
 with its reason. Update mode neither adds nor reports one.
@@ -58,7 +59,9 @@ is the plugin, not the skills inside it.
 
 The two tables below are maintained, not frozen: `/add-external-skill` classifies
 a new source repo here when it adds one, and a skill declined later is appended to
-the exclusions.
+the exclusions. For a curated source an exclusion is optional: moving its curation
+baseline past a skill already records the decision
+([ADR-0039](0039-report-curated-skills-past-a-curation-baseline.md)).
 
 ### Source repos
 

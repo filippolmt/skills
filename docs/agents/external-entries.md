@@ -32,11 +32,13 @@ upstream deleted or renamed; both terms are defined in `GLOSSARY.md`.
 
 ## Upstream drift reports
 
-The `whole-sources` workflow keeps one issue open per finding until an entry or
-an exclusion resolves it. Each report has a local equivalent:
+The `whole-sources` workflow keeps one issue open per report until an entry, an
+exclusion or a moved curation baseline resolves every finding in it. Each report
+has a local equivalent:
 
 | Finding | Script | ADR |
 | --- | --- | --- |
 | A skill added upstream in a **whole** source (ADR-0014) | `node scripts/check-whole-sources.js` | 0024 |
+| A skill added upstream in a **curated** source past its curation baseline | `node scripts/check-whole-sources.js --curated` | 0039 |
 | An upstream description that changed since review | `node scripts/check-upstream-descriptions.js` | 0029 |
 | A branch pin whose repo now publishes tags | `node scripts/check-branch-pins.js` | 0026 |

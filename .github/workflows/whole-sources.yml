@@ -7,6 +7,9 @@ name: whole-sources
 # catalogued or excluded (ADR-0024). It opens an issue, not a PR: an entry needs a
 # description and sometimes an exclusion decision, which are not a generator's.
 #
+# Curated sources get their own issue (ADR-0039): skills upstream added past each
+# repo's curation baseline, which a human picks or declines.
+#
 # The same issue-keeping runs for branch pins whose repo now publishes release
 # tags (ADR-0026), and for entries whose upstream description changed since the
 # catalog's text was reviewed (ADR-0029): one matrix leg per report, each with its
@@ -49,6 +52,12 @@ jobs:
             prefix: Whole sources ship skills
             source: at the pinned `sha` of each entry (ADR-0024)
             resolved: Every skill of the whole sources is now catalogued or excluded.
+          - script: scripts/check-whole-sources.js
+            args: --curated
+            title: Curated sources ship unreviewed skills
+            prefix: Curated sources ship skills
+            source: between each curated source's curation baseline and pinned `sha` (ADR-0039)
+            resolved: Every skill of the curated sources is now within its curation baseline.
           - script: scripts/check-branch-pins.js
             title: Branch-pinned repos publish release tags
             prefix: Branch-pinned repos publish release tags
@@ -72,6 +81,7 @@ jobs:
           # Read by the script for the API and by gh for the issue.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SCRIPT: ${{ matrix.script }}
+          ARGS: ${{ matrix.args }}
           TITLE: ${{ matrix.title }}
           # A finding's report starts with this line; see the exit-1 guard below.
           PREFIX: ${{ matrix.prefix }}
@@ -82,7 +92,9 @@ jobs:
           # Actions runs bash with -e, so a bare `report="$(...)"` would end the step
           # on exit 1 — the one status this job exists to act on.
           status=0
-          report="$(node "$SCRIPT")" || status=$?
+          # ARGS is unquoted on purpose: empty for most legs, one flag otherwise.
+          # shellcheck disable=SC2086
+          report="$(node "$SCRIPT" $ARGS)" || status=$?
           echo "$report"
           # 2 is a failure to look (API error, truncated tree): fail loudly, touch no issue.
           # Node also exits 1 when the script cannot even load, so a 1 counts as a
