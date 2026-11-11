@@ -542,7 +542,7 @@ Snapshot of the catalog — the source of truth is
 
 | Skill | What it does |
 |---|---|
-| `proximo` | Makes local Docker containers reachable at https://<name>.test with trusted HTTPS and local DNS, and shares a route with colleagues over the team's mesh. Use when exposing a container through proximo.* labels, or when diagnosing a broken one: a .test host that does not answer, a 502/503, an untrusted local certificate, a page that loads and then breaks, a request whose container output you need, a queue or worker that is not progressing, or a shared link that fails. |
+| `proximo` | Makes local Docker containers reachable at https://<name>.test with trusted HTTPS and local DNS, and shares a route with colleagues over the team's mesh. Use when bringing up a project's containers, giving a service a local hostname through proximo.* labels, or calling and testing a containerized service, and when diagnosing a broken one: a .test host that does not resolve or answer, a 502/503, an untrusted local certificate, a page that loads and then breaks, a request whose container output you need, a queue or worker that is not progressing, a container that cannot reach a VPN or tunnelled address the host reaches, or a shared link that fails. |
 
 ### [tt-a1i/archify](https://github.com/tt-a1i/archify) — architecture & workflow diagrams
 
@@ -554,7 +554,7 @@ Snapshot of the catalog — the source of truth is
 
 | Plugin | What it bundles |
 |---|---|
-| `diagram-design` | An opinionated editorial diagram system, drawn to one house style and branded from your own tokens: architecture, flowchart, sequence, state, ER, timeline, swimlane, quadrant, radar, Gantt, heatmap, waterfall, Sankey, fishbone, Wardley map, kanban, journey and blueprint diagrams as self-contained HTML/SVG/PNG. Bundles the diagram-design skill plus the doctor, export-diagram, import-drawio, import-excalidraw, import-mermaid and profile commands — redraw .drawio, Excalidraw or Mermaid sources at a chosen size and detail, onboard brand tokens from a website, add semantic patterns, callouts, accessible motion or sketchy styling. |
+| `diagram-design` | An opinionated editorial diagram system, drawn to one house style and branded from your own tokens: architecture, flowchart, sequence, state, ER, timeline, swimlane, quadrant, radar, Gantt, heatmap, waterfall, Sankey, fishbone, Wardley map, kanban, journey and blueprint diagrams as self-contained HTML/SVG/PNG. Bundles the diagram-design skill plus the doctor, export-diagram, import-drawio, import-excalidraw, import-mermaid, import-plantuml and profile commands — redraw .drawio, Excalidraw, Mermaid or PlantUML sources at a chosen size and detail, onboard brand tokens from a website, add semantic patterns, callouts, accessible motion or sketchy styling. |
 
 ### [cloudflare/security-audit-skill](https://github.com/cloudflare/security-audit-skill) — security audit & vulnerability review
 
