@@ -38,9 +38,9 @@ human has picked. Renovate never moves it: a bump past a new skill is what makes
 the report appear.
 
 `--classified`, offline in `validate`, fails on a curated source with no baseline
-or no catalog entry, and on a baseline whose repo is not a curated source. `wshobson/agents` has one
-too, although the online check skips it: offline there is no telling a
-whole-plugin source apart.
+or no catalog entry, and on a baseline whose repo is not a curated source.
+`wshobson/agents` has a baseline too, although the online check skips it: offline
+there is no telling a whole-plugin source apart.
 
 The baselines were seeded at each repo's pinned `sha` on 2026-11-11.
 
