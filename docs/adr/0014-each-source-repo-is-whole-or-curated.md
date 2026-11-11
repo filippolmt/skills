@@ -61,7 +61,9 @@ The two tables below are maintained, not frozen: `/add-external-skill` classifie
 a new source repo here when it adds one, and a skill declined later is appended to
 the exclusions. For a curated source an exclusion is optional: moving its curation
 baseline past a skill already records the decision
-([ADR-0039](0039-report-curated-skills-past-a-curation-baseline.md)).
+([ADR-0039](0039-report-curated-skills-past-a-curation-baseline.md)). An exclusion
+that matches no skill at the pinned `sha` is removed: upstream deleted the skill,
+and a stale row would silently exclude a later skill reusing its name.
 
 ### Source repos
 
@@ -95,7 +97,6 @@ baseline past a skill already records the decision
 | `mattpocock/skills` | `ask-matt` | Routes across the author's whole suite, but this catalog installs skills individually |
 | `mattpocock/skills` | `git-guardrails-claude-code` | Configures Claude Code only; it is not portable across the three harnesses this catalog serves |
 | `mattpocock/skills` | `migrate-to-shoehorn` | Tied to one TypeScript test library |
-| `mattpocock/skills` | `resolving-merge-conflicts` | Upstream has scheduled its removal |
 | `mattpocock/skills` | `scaffold-exercises` | Tied to the author's course format |
 | `mattpocock/skills` | `skills/in-progress/*` | Unreleased upstream: not listed in its `.claude-plugin/plugin.json` |
 | `mattpocock/skills` | `wait-what` | Thin rephrasing prompt rather than a reusable workflow |
@@ -104,11 +105,7 @@ baseline past a skill already records the decision
 | `filippolmt/proximo` | `.claude/skills/*` | Skills for developing proximo, not for using it |
 | `tt-a1i/archify` | `archify-review` | For archify's maintainers: triages its issues and links its `REVIEWING.md` by relative path |
 | `hashicorp/agent-skills` | `azure-verified-modules`, `refactor-module`, `terraform-policy`, `terraform-search-import`, `terraform-stacks`, `terraform-style-guide`, `terraform-test` | For writing Terraform configuration, not providers; `terraform-skill` already covers that ground |
-| `hashicorp/agent-skills` | `plugins/packer/skills/*` | Packer image building, outside the provider-development pick |
-| `Leonxlnx/taste-skill` | `soft-skill`, `minimalist-skill`, `brutalist-skill`, `gpt-tasteskill`, `stitch-skill` | "Classic" skills upstream keeps only for projects that depend on them; superseded by `taste-skill` v2 |
-| `Leonxlnx/taste-skill` | `taste-skill-v1`, `taste-skill-v2-experimental` | Earlier and experimental versions of `taste-skill` |
-| `Leonxlnx/taste-skill` | `redesign-skill` | Retired upstream: redesigns and reviews are part of `taste-skill` |
-| `Leonxlnx/taste-skill` | `brandkit`, `imagegen-frontend-web`, `imagegen-frontend-mobile`, `image-to-code-skill` | Stubs pointing to `Leonxlnx/imagegen-skills`, catalogued from there |
+| `hashicorp/agent-skills` | `packer/*/skills/*` | Packer image building, outside the provider-development pick |
 
 ## Considered options
 

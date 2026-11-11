@@ -187,6 +187,9 @@ For each external source repo (git-subdir or url entry) in `marketplace.json` (o
      it, **ask to confirm**, then delete the entry (see **Removing an entry**).
      Left alone, regeneration prunes it anyway once Renovate moves its `sha`
      (ADR-0015); doing it here just gets there first.
+   - **Stale exclusion** (an ADR-0014 exclusion that matches no skill folder at
+     the new `sha`) → remove the row in the same change; the reason stays in git
+     history (ADR-0014).
    - **Branch-pinned repo that now tags** → choose a tag series explicitly when
      several exist. Before proposing a behind/diverged candidate, run the scoped
      audit with that tag. It compares pinned and candidate trees for absent
