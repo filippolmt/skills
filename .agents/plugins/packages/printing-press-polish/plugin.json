@@ -1,6 +1,6 @@
 {
   "name": "printing-press-polish",
-  "version": "4.35.4+catalog.7bf298bff3bb.d93a34cf69dc",
+  "version": "4.35.5+catalog.9c872738608f.58ca780e85c6",
   "description": "Polish a generated CLI to pass verification and become publish-ready: runs diagnostics (dogfood, verify, scorecard, go vet, gosec), auto-fixes issues, and reports the before/after delta.",
   "author": {
     "name": "Matt Van Horn and Trevin Chow",
