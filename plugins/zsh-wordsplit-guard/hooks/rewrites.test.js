@@ -229,6 +229,12 @@ const CASES = [
     bash: 'echo ${v@a}' },
   { hook: 'expansion', named: 'both abort', none: true, why: 'bash fails too',
     bash: 'echo ${v@x}' },
+  // --- special parameter clobber (expansion.js) ---
+  { hook: 'expansion', named: '`file_path`',
+    bash: 'while read pid path br; do echo "$path"; ls >/dev/null && echo ok; done <<< "1 x b"',
+    zsh: 'while read pid file_path br; do echo "$file_path"; ls >/dev/null && echo ok; done <<< "1 x b"' },
+  { hook: 'expansion', named: '`rc`',
+    bash: 'for status in 0 1; do echo "$status"; done', zsh: 'for rc in 0 1; do echo "$rc"; done' },
 ];
 
 // A reason's shape: per rule line (`- …`) in a multi-rule reason, else whole,

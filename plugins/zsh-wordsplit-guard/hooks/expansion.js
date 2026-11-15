@@ -109,15 +109,19 @@ const ASSIGNMENT = /^[A-Za-z_]\w*(\[[^\]]*\])?=/;
 // blanked first, so the `)` left is a command boundary: a `case` pattern's or
 // a function definition's.
 function isAssignment(at) {
+  const before = wordsBefore(at);
+  return before.every((w) => ASSIGNMENT.test(w)) || DECLARATION.test(before[0]);
+}
+const DECLARATION = /^(?:export|typeset|local|declare|readonly|integer|float)$/;
+// The words of its command before `at`, keywords left out.
+function wordsBefore(at) {
   let head = words.slice(0, at).replace(/`[^`\n]*`/g, blankRun);
   for (let prev; prev !== head;) {
     prev = head;
     head = head.replace(/([$<>=])\(([^()]*)\)/g, (m, sigil, body) => sigil + blankRun('(' + body + ')'));
   }
-  const before = head.split(/[;&|()\n]/).pop().trim().split(/\s+/)
+  return head.split(/[;&|()\n]/).pop().trim().split(/\s+/)
     .filter((w) => w && !/^(?:\{|!|then|do|else|time)$/.test(w));
-  return before.every((w) => ASSIGNMENT.test(w)) ||
-    /^(?:export|typeset|local|declare|readonly|integer|float)$/.test(before[0]);
 }
 
 // What a parameter pattern holds, from `from` up to the `/` that starts the
@@ -148,8 +152,56 @@ function braceForm(at) {
     : /^\$\{[^}\s]*/.exec(command.slice(at))[0] + '}';
 }
 
+// zsh's lowercase special parameters a bash habit assigns (ADR-0042).
+const SPECIAL = {
+  path: '`path` is tied to `PATH` in zsh: assigning it replaces the command search ' +
+    'path, and every later command fails with `command not found`. Use another name ' +
+    '(`p`, `file_path`); to change the search path on purpose, write `path+=(…)` or ' +
+    '`path=(/x $path)`.',
+  status: '`status` is read-only in zsh (it mirrors `$?`): assigning it aborts the ' +
+    'command with `read-only variable: status`. Use another name (`rc`, `state`).',
+};
+// Whether the assignment value starting at `from` reads the search path itself,
+// a deliberate edit of it: `path=(/x $path)`, `path=(${(s.:.)PATH})`.
+function readsSearchPath(from) {
+  let end = from;
+  if (words[from] === '(') {
+    for (let depth = 0; end < words.length; end++) {
+      if (words[end] === '(') depth++;
+      else if (words[end] === ')' && --depth === 0) break;
+    }
+  } else while (end < words.length && !/[\s;&|<>)]/.test(words[end])) end++;
+  return /\$(?:\{[^}]*)?\b(?:path|PATH)\b/.test(patterns.slice(from, end));
+}
+
 // Each rule scans one view and turns a match into a reason, or null to pass it.
 const RULES = [
+  {
+    // A special parameter as an assignment word, a `for`/`select` variable, a
+    // `read` name, a declaration or `printf -v` target. `path+=…`, `path[1]=…`
+    // and a value reading the search path are zsh written on purpose.
+    view: words,
+    regex: /(?<=^|[\s;&|(`])(path|status)(?:(\+?)=|(?=[\s;&|)]|$))/g,
+    reason(m) {
+      const name = m[1];
+      if (m[0].endsWith('=')) {
+        if (!isAssignment(m.index) || m[2]) return null;
+        return name === 'path' && readsSearchPath(m.index + m[0].length) ? null : SPECIAL[name];
+      }
+      const before = wordsBefore(m.index);
+      while (/^(?:while|until|if|elif|builtin|command)$/.test(before[0]) ||
+        ASSIGNMENT.test(before[0] || '')) before.shift();
+      const [head] = before;
+      const last = before[before.length - 1] || '';
+      if (/[<>]$/.test(last)) return null; // a redirection target
+      if (/^(?:for|select)$/.test(head) && !before.includes('in')) return SPECIAL[name];
+      if (head === 'read') return SPECIAL[name];
+      if (/^(?:printf|print)$/.test(head) && last === '-v') return SPECIAL[name];
+      // A bare `local status` assigns nothing; a bare `local path` empties PATH.
+      if (DECLARATION.test(head) && name === 'path') return SPECIAL[name];
+      return null;
+    },
+  },
   {
     // Unbraced parameters accept history modifiers even inside double quotes.
     view: patterns,
@@ -356,7 +408,7 @@ for (const rule of RULES) {
 
 if (reasons.length) {
   // The edits are dropped: the retry gets them again.
-  deny('zsh-wordsplit-guard: the Bash tool runs zsh, which expands this ' +
+  deny('zsh-wordsplit-guard: the Bash tool runs zsh, which runs this ' +
     'differently from bash.\n' + reasons.map((r) => '- ' + r).join('\n'));
 } else if (edits.length) {
   let rewritten = command;
