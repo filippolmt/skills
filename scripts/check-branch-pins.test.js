@@ -7,7 +7,7 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
-const { releaseTagPattern, branchPins, latestTags, describe } = require('./check-branch-pins.js');
+const { releaseTagPattern, allowedTag, branchPins, latestTags, describe } = require('./check-branch-pins.js');
 
 const pattern = releaseTagPattern(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'renovate.json'), 'utf8')));
 const entry = (repo, ref, sha) => ({ name: `${repo}-${sha}`, source: { source: 'git-subdir', url: `https://github.com/${repo}`, path: 'x', ref, sha } });
@@ -41,4 +41,15 @@ test('a tag at or past the pin, or diverged, is a finding; one behind is a note'
   assert.match(at({ status: 'ahead', ahead_by: 3 }).line, /3 commits ahead/);
   assert.equal(at({ status: 'diverged' }).finding, true);
   assert.deepEqual(at({ status: 'behind', behind_by: 7 }), { finding: false, line: '- `acme/a`: pinned at `abcdef0`, `v1.0.0` is 7 commits behind — switching would downgrade' });
+});
+
+test('allowedTag drops the tags a packageRule excludes, for that repo only', () => {
+  const allow = { packageRules: [{ matchPackageNames: ['o/r'], allowedVersions: '!/^v0\\.180\\.0$/' }] };
+  assert.deepEqual(['v0.180.0', 'v0.1.24'].filter(allowedTag(allow, 'o/r')), ['v0.1.24']);
+  assert.deepEqual(['v0.180.0'].filter(allowedTag(allow, 'o/other')), ['v0.180.0']);
+  const only = { packageRules: [{ matchPackageNames: ['o/r'], allowedVersions: '/^v1\\./' }] };
+  assert.deepEqual(['v1.2.0', 'v2.0.0'].filter(allowedTag(only, 'o/r')), ['v1.2.0']);
+  // A range would be skipped silently and the excluded tags would come back.
+  assert.throws(() => allowedTag({ packageRules: [{ matchPackageNames: ['o/r'], allowedVersions: '<2.0.0' }] }, 'o/r'),
+    /not a \/regex\//);
 });

@@ -7,7 +7,8 @@
 // lockstep, matching silently drops to zero and auto-updates stop with no error.
 // This asserts the regex matches EXACTLY the external entries — run in CI. It also
 // rejects the two entry shapes that do not install what they say: a git-subdir
-// `path` at the repo root, and a url entry carrying a `path`.
+// `path` at the repo root, and a url entry carrying a `path`; and a packageRule
+// naming a package no entry pins, which Renovate drops silently (ADR-0040).
 //
 // Usage: node scripts/check-renovate.js   (exit 1 on mismatch)
 
@@ -90,22 +91,6 @@ function entryShapeError(plugins) {
   return errors.length ? errors.join('\n') : null;
 }
 
-// Pure: a predicate keeping the tags Renovate may propose for `repo`, from the
-// `allowedVersions` of every packageRule naming it, so the freshness audit agrees
-// with Renovate (ADR-0040). Only the `/re/` and `!/re/` forms are read: any other
-// form throws rather than be skipped, since skipping would bring the excluded tags back.
-function allowedTag(renovate, repo) {
-  const tests = (renovate.packageRules || [])
-    .filter((r) => r.allowedVersions && (r.matchPackageNames || []).includes(repo))
-    .map((r) => {
-      const m = /^(!?)\/(.+)\/$/.exec(r.allowedVersions);
-      if (!m) throw new Error(`renovate.json: allowedVersions for ${repo} is not a /regex/ the audit can honour`);
-      const re = new RegExp(m[2]);
-      return (tag) => re.test(tag) !== (m[1] === '!');
-    });
-  return (tag) => tests.every((t) => t(tag));
-}
-
 // Pure: the message naming every packageRule package that no external entry pins,
 // or null. A source renamed in marketplace.json leaves its rule matching nothing,
 // and Renovate then drops the rule without a word (ADR-0040). Both package-name
@@ -120,7 +105,7 @@ function orphanRuleError(catalog, renovate) {
     : null;
 }
 
-module.exports = { coverageError, entryShapeError, allowedTag, orphanRuleError };
+module.exports = { coverageError, entryShapeError, orphanRuleError };
 
 if (require.main === module) {
   const catalog = readCatalog();

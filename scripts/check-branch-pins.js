@@ -26,6 +26,22 @@ function releaseTagPattern(renovate) {
   return new RegExp(manager.versioningTemplate.replace(/^regex:/, ''));
 }
 
+// Pure: a predicate keeping the tags Renovate may propose for `repo`, from the
+// `allowedVersions` of every packageRule naming it, so the freshness audit agrees
+// with Renovate (ADR-0040). Only the `/re/` and `!/re/` forms are read: any other
+// form throws rather than be skipped, since skipping would bring the excluded tags back.
+function allowedTag(renovate, repo) {
+  const tests = (renovate.packageRules || [])
+    .filter((r) => r.allowedVersions && (r.matchPackageNames || []).includes(repo))
+    .map((r) => {
+      const m = /^(!?)\/(.+)\/$/.exec(r.allowedVersions);
+      if (!m) throw new Error(`renovate.json: allowedVersions for ${repo} is not a /regex/ the audit can honour`);
+      const re = new RegExp(m[2]);
+      return (tag) => re.test(tag) !== (m[1] === '!');
+    });
+  return (tag) => tests.every((t) => t(tag));
+}
+
 // Pure: repo -> the shas its branch-pinned entries hold (normally one).
 function branchPins(catalog) {
   const pins = new Map();
@@ -73,11 +89,12 @@ async function tagNames(repo) {
 }
 
 async function main() {
-  const pattern = releaseTagPattern(JSON.parse(fs.readFileSync(path.join(root, 'renovate.json'), 'utf8')));
+  const renovate = JSON.parse(fs.readFileSync(path.join(root, 'renovate.json'), 'utf8'));
+  const pattern = releaseTagPattern(renovate);
   const findings = [];
   const notes = [];
   for (const [repo, shas] of branchPins(readCatalog().plugins)) {
-    for (const tag of latestTags(await tagNames(repo), pattern)) {
+    for (const tag of latestTags((await tagNames(repo)).filter(allowedTag(renovate, repo)), pattern)) {
       for (const sha of shas) {
         const { finding, line } = describe(repo, sha, tag, await githubApi(`repos/${repo}/compare/${sha}...${tag}`));
         (finding ? findings : notes).push(line);
@@ -100,4 +117,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { releaseTagPattern, branchPins, latestTags, describe, tagNames };
+module.exports = { releaseTagPattern, allowedTag, branchPins, latestTags, describe, tagNames };
