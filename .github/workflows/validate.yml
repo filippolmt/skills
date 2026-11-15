@@ -32,6 +32,17 @@ jobs:
         # is named here, not failed: the PR has to merge for regeneration to prune it
         # (ADR-0015). A missing sha or a failed clone still fails.
         run: node scripts/gen-skills-tree.js --verify-paths
+      - name: Refuse a pinned sha moved off its history
+        # The step above lets a vanished path through for regeneration to prune; a
+        # sha behind, diverged or unrelated would prune what upstream never removed
+        # (ADR-0041). Only a pull request has a base to compare against.
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --depth=1 origin "$BASE_REF"
+          node scripts/check-sha-history.js FETCH_HEAD
       - name: Check external entry shapes and Renovate regex coverage
         run: node scripts/check-renovate.js
       - name: Check every external repo is classified in ADR-0014
