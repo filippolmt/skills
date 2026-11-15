@@ -423,7 +423,10 @@ function describe(outcome) {
     .replace('Will be published as', 'Published as');
   return detail ? `${title} — ${detail}` : title;
 }
-const cell = (text) => String(text).replaceAll('|', '\\|').replaceAll('\n', ' ');
+// A backslash right before a pipe is doubled: escaping only the pipe would turn
+// `\|` into `\\|`, an escaped backslash and a bare pipe that splits the cell.
+const cell = (text) => String(text).replace(/\\+(?=\|)/g, (run) => run.replaceAll('\\', '\\\\'))
+  .replaceAll('|', '\\|').replaceAll('\n', ' ');
 
 function renderParity(inventory) {
   const rows = [];

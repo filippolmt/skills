@@ -198,6 +198,15 @@ test('an unsupported outcome can take its fallback from a module', () => {
     /not both/);
 });
 
+test('a parity cell keeps a literal backslash before a pipe inside the cell', () => {
+  const outcome = { disposition: 'unsupported', limitation: 'No.', fallback: 'split on a \\| b, then c | d' };
+  const inventory = [{ name: 'x', runtimeDependencies: [], artifacts: [{ id: 'hook:h', dispositions: { codex: outcome, pi: outcome } }] }];
+  const row = renderParity(inventory).split('\n').find((line) => line.startsWith('| `x`'));
+  // GFM: `\\` is a backslash and `\|` a pipe, so the row keeps its five cells.
+  assert.ok(row.includes('a \\\\\\| b, then c \\| d'), row);
+  assert.strictEqual(row.replace(/\\./g, '').split('|').length - 2, 5);
+});
+
 test('validation rejects orphan metadata and unresolved runtime edges', () => {
   const inventory = [{ name: 'one', artifacts: [{ entry: 'one', id: 'skill:SKILL.md', kind: 'skill' }] }];
   assert.throws(() => validateDistribution(inventory, { artifacts: { 'gone/hook:x': {} } }), /orphaned artifact metadata/);
