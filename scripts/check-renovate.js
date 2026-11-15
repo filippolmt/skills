@@ -7,13 +7,14 @@
 // lockstep, matching silently drops to zero and auto-updates stop with no error.
 // This asserts the regex matches EXACTLY the external entries — run in CI. It also
 // rejects the two entry shapes that do not install what they say: a git-subdir
-// `path` at the repo root, and a url entry carrying a `path`.
+// `path` at the repo root, and a url entry carrying a `path`; and a packageRule
+// naming a package no entry pins, which Renovate drops silently (ADR-0040).
 //
 // Usage: node scripts/check-renovate.js   (exit 1 on mismatch)
 
 const fs = require('fs');
 const path = require('path');
-const { readCatalog, isGitSubdir, isUrl, isExternal, isRepoRoot, root } = require('./catalog.js');
+const { readCatalog, isGitSubdir, isUrl, isExternal, isRepoRoot, repoOf, root } = require('./catalog.js');
 
 // Pure: the message this guard exists to print, or null when the regexes cover the
 // catalog exactly. Split from the file reading because the guard's own failure mode
@@ -90,14 +91,29 @@ function entryShapeError(plugins) {
   return errors.length ? errors.join('\n') : null;
 }
 
-module.exports = { coverageError, entryShapeError };
+// Pure: the message naming every packageRule package that no external entry pins,
+// or null. A source renamed in marketplace.json leaves its rule matching nothing,
+// and Renovate then drops the rule without a word (ADR-0040). Both package-name
+// forms count: `owner/repo` (github-tags) and the repo URL (git-refs).
+function orphanRuleError(catalog, renovate) {
+  const repos = new Set(catalog.plugins.filter(isExternal).map(repoOf).filter(Boolean)
+    .flatMap((r) => [r, `https://github.com/${r}`]));
+  const orphans = (renovate.packageRules || []).flatMap((r) => r.matchPackageNames || []).filter((n) => !repos.has(n));
+  return orphans.length
+    ? `renovate.json: packageRules name ${orphans.join(', ')}, which no external entry pins. ` +
+      'Renovate ignores such a rule silently: update matchPackageNames together with the entry.'
+    : null;
+}
+
+module.exports = { coverageError, entryShapeError, orphanRuleError };
 
 if (require.main === module) {
   const catalog = readCatalog();
   const renovate = JSON.parse(fs.readFileSync(path.join(root, 'renovate.json'), 'utf8'));
 
   // Both checks run: a shape error must not hide a coverage error until the next run.
-  const errors = [entryShapeError(catalog.plugins), coverageError(catalog, renovate)].filter(Boolean);
+  const errors = [entryShapeError(catalog.plugins), coverageError(catalog, renovate),
+    orphanRuleError(catalog, renovate)].filter(Boolean);
   if (errors.length) {
     console.error(errors.join('\n'));
     process.exit(1);

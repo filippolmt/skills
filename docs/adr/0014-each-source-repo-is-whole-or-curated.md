@@ -89,6 +89,7 @@ and a stale row would silently exclude a later skill reusing its name.
 | `filippolmt/proximo` | curated | |
 | `tt-a1i/archify` | curated | |
 | `hashicorp/agent-skills` | curated | Only Terraform provider development; Terraform-usage and Packer skills not picked |
+| `microsoft/playwright-cli` | whole | single skill |
 
 ### Catalog exclusions
 

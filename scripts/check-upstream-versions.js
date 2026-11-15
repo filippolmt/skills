@@ -6,9 +6,10 @@ const fs = require('fs');
 const path = require('path');
 const { readCatalog, isExternal, repoOf, entryPath, root } = require('./catalog.js');
 const { githubApi } = require('./github.js');
-const { releaseTagPattern, latestTags, tagNames } = require('./check-branch-pins.js');
+const { releaseTagPattern, allowedTag, latestTags, tagNames } = require('./check-branch-pins.js');
 
-const pattern = releaseTagPattern(JSON.parse(fs.readFileSync(path.join(root, 'renovate.json'), 'utf8')));
+const renovateJson = JSON.parse(fs.readFileSync(path.join(root, 'renovate.json'), 'utf8'));
+const pattern = releaseTagPattern(renovateJson);
 
 // Match folder names as well as catalog aliases; these are possible moves, not
 // proof that a same-named skill has the same behavior.
@@ -28,7 +29,7 @@ function missingPaths(entries, tree) {
 
 // Public seam: offline callers supply API and tag readers; errors reject the
 // entire audit so a partial report can never look like a successful check.
-async function audit(catalog, { repo, tag, api = githubApi, tags = tagNames } = {}) {
+async function audit(catalog, { repo, tag, api = githubApi, tags = tagNames, renovate = renovateJson } = {}) {
   if (tag && (!repo || !pattern.test(tag))) throw new Error('A candidate needs owner/repo and a Renovate-compatible release tag');
   const entries = catalog.filter(isExternal).filter((e) => !repo || repoOf(e) === repo);
   if (repo && !entries.length) throw new Error(`No external entries for ${repo}`);
@@ -37,7 +38,7 @@ async function audit(catalog, { repo, tag, api = githubApi, tags = tagNames } = 
   let attention = false;
   for (const source of repos) {
     const own = entries.filter((e) => repoOf(e) === source);
-    const latest = latestTags(await tags(source), pattern);
+    const latest = latestTags((await tags(source)).filter(allowedTag(renovate, source)), pattern);
     const cache = new Map();
     const resolve = async (ref) => {
       if (!cache.has(ref)) {

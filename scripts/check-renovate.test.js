@@ -6,7 +6,7 @@
 // trees that FAIL — running it against the live repo (as CI does) only ever shows
 // the passing shape, which is the one case that proves nothing.
 const assert = require('assert');
-const { coverageError, entryShapeError } = require('./check-renovate.js');
+const { coverageError, entryShapeError, orphanRuleError } = require('./check-renovate.js');
 
 // Two git-subdir entries pinned the two ways renovate.json splits on — a branch
 // `ref` and a tag `ref` — a url entry (a plugin that is its whole repo, ADR-0033),
@@ -86,5 +86,13 @@ assert.match(err, /ignores `path`/, 'and why it is wrong');
 const localOnly = { text: '{"plugins":[{"name":"x","source":"./plugins/x"}]}', plugins: [{ name: 'x', source: './plugins/x' }] };
 assert.strictEqual(coverageError(localOnly, managers(BRANCH, TAG)), null,
   'no external entries => zero matches is the right answer');
+
+// --- a packageRule whose package no entry pins: Renovate drops it silently, so a
+// renamed source would lose its tag exclusion. Both package-name forms are pins ---
+const rules = (...names) => ({ packageRules: [{ matchPackageNames: names }, { automerge: true }] });
+assert.strictEqual(orphanRuleError(CATALOG, rules('o/r', 'https://github.com/o/whole')), null,
+  'owner/repo and repo-URL names of pinned sources are not orphans');
+assert.match(orphanRuleError(CATALOG, rules('o/r', 'o/gone')), /o\/gone/, 'the orphan is named');
+assert.doesNotMatch(orphanRuleError(CATALOG, rules('o/r', 'o/gone')), /o\/r,/, 'and only the orphan');
 
 console.log('ok');

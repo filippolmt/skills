@@ -173,3 +173,11 @@ test('CLI invalid arguments exit 2 without a success report', () => {
   assert.equal(result.stdout, '');
   assert.match(result.stderr, /Audit incomplete: Usage:/);
 });
+
+test('the latest tag skips tags excluded by a packageRule allowedVersions', async () => {
+  const { api } = fake({ commits: { 'v0.1.24': 'pinned' } });
+  const renovate = { packageRules: [{ matchPackageNames: ['acme/skills'], allowedVersions: '!/^v0\\.180\\.0$/' }] };
+  const result = await audit([entry('one', 'v0.1.24')], { api, renovate, tags: async () => ['v0.180.0', 'v0.1.24'] });
+  assert.equal(result.attention, false);
+  assert.match(text(result), /current.*latest same-series tag v0\.1\.24@pinned/);
+});
