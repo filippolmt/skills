@@ -67,7 +67,8 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Harness disposition** — one artifact's outcome for one harness: **native** when
   it travels unchanged, **adapted** when it keeps its user-facing outcome through a
   harness-specific representation, or **unsupported** with an exact limitation and
-  fallback. A manual workaround is unsupported with a fallback, not parity.
+  fallback, the fallback either written out or read from a module beside the
+  code it describes. A manual workaround is unsupported with a fallback, not parity.
 - **Runtime closure** — the transitive set of skills and adaptations an installable
   workflow needs to work in a fresh session. It is declared where it cannot be
   derived; it is not guessed from prose.

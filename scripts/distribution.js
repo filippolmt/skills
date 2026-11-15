@@ -15,10 +15,25 @@ const MANIFEST_METADATA = new Set([
 const MODULE_SUFFIXES = new Set(['.ts', '.tsx', '.jsx', '.js', '.mjs', '.cjs', '.mts', '.cts']);
 const STATUSES = new Set(['native', 'adapted', 'unsupported']);
 const METADATA_FIELDS = new Set(['runtimeDependencies', 'artifacts', 'presentationOverrides', 'unsupportedEntries']);
-const OUTCOME_FIELDS = new Set(['disposition', 'detail', 'limitation', 'fallback', 'sourcePath', 'evidencePath']);
+const OUTCOME_FIELDS = new Set(['disposition', 'detail', 'limitation', 'fallback', 'fallbackFrom', 'sourcePath', 'evidencePath']);
 const PRESENTATION_FIELDS = new Set(['displayName', 'description']);
 const posix = (p) => p.split(path.sep).join('/');
 const inside = (root, target) => target.startsWith(`${root}${path.sep}`);
+
+const REPO = path.join(__dirname, '..');
+
+// An unsupported outcome's fallback: its own text, or the `fallback` string a
+// repository module exports (`fallbackFrom`), so a rule list kept beside the
+// code it describes reaches the parity doc on regeneration (#710).
+function fallbackOf(outcome, key = 'outcome') {
+  if (!outcome.fallbackFrom) return outcome.fallback;
+  const file = path.resolve(REPO, outcome.fallbackFrom);
+  if (!inside(REPO, file) || !fs.existsSync(file)) throw new Error(`${key}: fallbackFrom ${outcome.fallbackFrom} is not a repository file`);
+  // `require` runs the module: point only at one without side effects on load.
+  const text = require(file).fallback;
+  if (typeof text !== 'string' || !text) throw new Error(`${key}: fallbackFrom ${outcome.fallbackFrom} exports no fallback string`);
+  return text;
+}
 
 function filesUnder(dir, accept) {
   if (!fs.existsSync(dir)) return [];
@@ -172,7 +187,7 @@ function classify(item, metadata, mod) {
     const outcome = decision[harness];
     if (!outcome || !STATUSES.has(outcome.disposition)) throw new Error(`${key}: requires one Codex and one pi disposition`);
     if (outcome.disposition === 'adapted' && !outcome.detail) throw new Error(`${key}: adapted ${harness} disposition requires detail`);
-    if (outcome.disposition === 'unsupported' && (!outcome.limitation || !outcome.fallback)) {
+    if (outcome.disposition === 'unsupported' && (!outcome.limitation || !(outcome.fallback || outcome.fallbackFrom))) {
       throw new Error(`${key}: unsupported ${harness} disposition requires limitation and fallback`);
     }
   }
@@ -198,6 +213,13 @@ function validateMetadata(metadata) {
       if (!outcome || typeof outcome !== 'object' || Array.isArray(outcome)) throw new Error(`${key}: ${harness} outcome must be an object`);
       for (const field of Object.keys(outcome)) {
         if (!OUTCOME_FIELDS.has(field)) throw new Error(`${key}: unknown ${harness} outcome field: ${field}`);
+      }
+      if (outcome.fallbackFrom !== undefined) {
+        if (typeof outcome.fallbackFrom !== 'string' || !/\.c?js$/.test(outcome.fallbackFrom)) {
+          throw new Error(`${key}: ${harness} fallbackFrom must be the path of a .js module`);
+        }
+        if (outcome.fallback) throw new Error(`${key}: ${harness} outcome takes fallback or fallbackFrom, not both`);
+        fallbackOf(outcome, key);
       }
       for (const field of ['sourcePath', 'evidencePath']) {
         if (outcome[field] !== undefined && typeof outcome[field] !== 'string') throw new Error(`${key}: ${harness} ${field} must be a string`);
@@ -395,7 +417,7 @@ function validateDistribution(inventory, metadata = {}, options = {}) {
 
 function describe(outcome) {
   const title = outcome.disposition[0].toUpperCase() + outcome.disposition.slice(1);
-  if (outcome.disposition === 'unsupported') return `${title} — ${outcome.limitation} Fallback: ${outcome.fallback}`;
+  if (outcome.disposition === 'unsupported') return `${title} — ${outcome.limitation} Fallback: ${fallbackOf(outcome)}`;
   const detail = outcome.detail
     ?.replace('Will be converted to', 'Converted to')
     .replace('Will be published as', 'Published as');

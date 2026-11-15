@@ -218,7 +218,7 @@
       "pi": {
         "disposition": "unsupported",
         "limitation": "pi packages cannot install declarative lifecycle hooks.",
-        "fallback": "Under zsh, use splitting expansions such as ${=var}, ${(f)var}, or an array, also for a command stored in a variable, quote words starting with =, glob flag values and parenthesised parameter patterns, write zsh's ${(P)name} and ${(qq)v}-style flags in place of bash's ${!name} and ${v@Q}, escape a path glob that matches nothing, brace ${name}: before a history modifier, and name variables other than path and status."
+        "fallbackFrom": "plugins/zsh-wordsplit-guard/hooks/families.js"
       }
     },
     "zsh-wordsplit-guard/hook:hooks/hooks.json#SessionStart[0]": {
