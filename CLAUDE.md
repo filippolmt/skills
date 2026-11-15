@@ -83,6 +83,8 @@ Bump the SemVer `version` of the one plugin you changed, in that plugin's own
 
 Merging to `main` ships it. A change that leaves every plugin's behaviour alone
 (repo docs, `renovate.json`) takes no bump.
+The `version` pins installed copies: a change without a bump never reaches
+users, so a batched release is one bump on the last PR to `main`.
 
 ## Conventions
 

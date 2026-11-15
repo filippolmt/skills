@@ -60,6 +60,7 @@ run actionlint                                       # workflow syntax and the s
 
 if [ "$mode" = --catalog-only ]; then
   echo '=== projection checks skipped (--catalog-only): regeneration refreshes them after merge'
+  echo '=== validate.sh: every check passed'
   exit 0
 fi
 if [ "$mode" = --isolated ]; then
@@ -75,3 +76,4 @@ run node scripts/gen-pi.js --check                   # pi bundle filters match r
 run node scripts/gen-codex.js --check                # native Codex packages match the inventory
 run bash scripts/test-pi-package.sh                  # pi 1.0.4 package/filter smoke
 run bash scripts/test-codex-marketplace.sh           # Codex 0.160.1 lifecycle/hook smoke
+echo '=== validate.sh: every check passed'
