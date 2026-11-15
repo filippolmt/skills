@@ -72,6 +72,8 @@ codex plugin add tdd@filippo-skills --json |
   jq -e '.pluginId == "tdd@filippo-skills"' >/dev/null
 # Codex gives the upgrade's git clone a fixed 30s, which a slow link can miss (#438).
 # Only that timeout is retried, after a pause; any other failure fails at once.
+# A timeout on the last attempt exits 75 (EX_TEMPFAIL), so validate.sh can tell
+# the network from a broken package.
 attempts=3
 upgrade_err="$smoke_home/upgrade-stderr"
 for attempt in $(seq "$attempts"); do
@@ -80,10 +82,13 @@ for attempt in $(seq "$attempts"); do
     cat "$upgrade_err" >&2
     break
   fi
-  if [ -e "$smoke_home/warning" ] || [ "$attempt" -eq "$attempts" ] || ! grep -q 'timed out' - "$upgrade_err" <<<"$upgrade"; then
+  timed_out=0
+  grep -q 'timed out' - "$upgrade_err" <<<"$upgrade" && [ ! -e "$smoke_home/warning" ] && timed_out=1
+  if [ "$timed_out" -eq 0 ] || [ "$attempt" -eq "$attempts" ]; then
     printf '%s\n' "$upgrade" >&2
     cat "$upgrade_err" >&2
     printf 'marketplace upgrade failed (attempt %s/%s)\n' "$attempt" "$attempts" >&2
+    [ "$timed_out" -eq 1 ] && exit 75
     exit 1
   fi
   printf 'marketplace upgrade timed out cloning, retrying (%s/%s)\n' "$attempt" "$attempts" >&2

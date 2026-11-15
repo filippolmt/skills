@@ -75,5 +75,13 @@ run node scripts/gen-distribution.js --check         # parity matrix matches the
 run node scripts/gen-pi.js --check                   # pi bundle filters match runtime closures
 run node scripts/gen-codex.js --check                # native Codex packages match the inventory
 run bash scripts/test-pi-package.sh                  # pi 1.0.4 package/filter smoke
-run bash scripts/test-codex-marketplace.sh           # Codex 0.160.1 lifecycle/hook smoke
+# Codex 0.160.1 lifecycle/hook smoke; 75 is its clone timeout on a slow link (#438).
+echo '=== bash scripts/test-codex-marketplace.sh'
+codex_smoke=0
+bash scripts/test-codex-marketplace.sh || codex_smoke=$?
+if [ "$codex_smoke" -eq 75 ]; then
+  echo '=== validate.sh: every check passed except the network-bound Codex upgrade (#438); CI runs it'
+  exit 75
+fi
+[ "$codex_smoke" -eq 0 ] || exit "$codex_smoke"
 echo '=== validate.sh: every check passed'
