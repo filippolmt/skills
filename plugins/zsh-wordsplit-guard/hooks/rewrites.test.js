@@ -232,6 +232,9 @@ const CASES = [
   // --- path glob with no match (expansion.js, asked in this test's cwd) ---
   { hook: 'nomatch', applied: true, bash: 'cat a.md *.zz 2>&1; echo "rc=$?"' },
   { hook: 'nomatch', applied: true, bash: 'for f in *.zz; do echo "<$f>"; done' },
+  // Its edges: a glob that matches, and one after a command that creates the match.
+  { hook: 'nomatch', allowed: true, bash: 'cat a.md *.md' },
+  { hook: 'nomatch', allowed: true, bash: 'touch b.yy; ls *.yy; rm b.yy' },
   // --- special parameter clobber (expansion.js) ---
   { hook: 'expansion', named: '`file_path`',
     bash: 'while read pid path br; do echo "$path"; ls >/dev/null && echo ok; done <<< "1 x b"',

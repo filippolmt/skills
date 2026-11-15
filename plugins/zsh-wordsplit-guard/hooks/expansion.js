@@ -205,23 +205,32 @@ function assignsBareName(name, at) {
 }
 
 // An unquoted literal word with a glob in the call's first command: one zsh
-// can match against the cwd before anything in the call has run. A word with
-// `=` is the flag-value, query and equals rules'.
-const FIRST_COMMAND = globWords.search(/[;&|\n]/) === -1 ? globWords.length : globWords.search(/[;&|\n]/);
-const PATH_GLOB = /(?<=^|[\s(`])[^\s;&|<>()`=]*[*?[][^\s;&|<>()`=]*(?=$|[\s;&|<>)`])/g;
+// can match against the cwd before anything in the call has run. The command
+// ends at `;`, `|`, a newline or a `&` that is not part of a redirection
+// (`2>&1`, `&>`). A word with `=` is the flag-value, query and equals rules';
+// a here-string word and a `case` word generate no file names. A leading `~`
+// is a home directory; `~-`, `~+` and `~1` name the hook's directory stack,
+// not the call's.
+const FIRST_END = globWords.search(/[;|\n]|(?<![<>])&(?!>)/);
+const FIRST_COMMAND = FIRST_END === -1 ? globWords.length : FIRST_END;
+const PATH_GLOB = /(?<=^|[\s(`]|(?<!<)[<>])[^\s;&|<>()`=]*[*?[][^\s;&|<>()`=]*(?=$|[\s;&|<>)`])/g;
+const LITERAL_PATH = /^(?:~(?![-+\d]))?[\w.*?[\]\/,:@%+-]+$/;
 // The starts of the path globs that match nothing, asked of zsh itself in the
-// call's cwd: `${~p}` globs the word without running any `$(…)` in it. No
-// answer (no zsh, a missing cwd, a timeout) leaves every word alone.
-const NO_MATCH = new Set();
+// call's cwd: `${~p}` globs the word without running any `$(…)` in it, and
+// `always` answers -1 for a word zsh fails on (`~nosuchuser/*`) without a
+// subshell, so the timeout's kill stops every search. No answer (no zsh, a
+// missing cwd, a timeout) leaves every word alone.
+const NO_MATCH_STARTS = new Set();
 const candidates = [...globWords.slice(0, FIRST_COMMAND).matchAll(PATH_GLOB)]
-  .filter((m) => literalEdit(m.index, m[0].length, (t) => t, /^~?[\w.*?[\]\/,:@%+-]+$/));
+  .filter((m) => !/(?:\bcase|<<<)\s*$/.test(globWords.slice(0, m.index)) &&
+    literalEdit(m.index, m[0].length, (t) => t, LITERAL_PATH));
 if (candidates.length) {
   const r = spawnSync('zsh', ['-f', '-c',
-    // A subshell per word: one zsh fails on (`~nosuchuser/*`) answers -1 alone.
-    'cd -- "$1" || exit 3; shift; for p; do ( a=( ${~p}(N) ); print -r -- $#a ) 2>/dev/null || print -- -1; done', 'zsh',
+    'cd -- "$1" || exit 3; shift; for p; do { a=( ${~p}(N) ); print -r -- $#a } ' +
+    'always { (( TRY_BLOCK_ERROR )) && print -- -1; TRY_BLOCK_ERROR=0 }; done', 'zsh',
     input.cwd].concat(candidates.map((m) => m[0])), { encoding: 'utf8', timeout: 2000 });
   const counts = r.status === 0 ? r.stdout.split('\n') : [];
-  candidates.forEach((m, i) => { if (counts[i] === '0') NO_MATCH.add(m.index); });
+  candidates.forEach((m, i) => { if (counts[i] === '0') NO_MATCH_STARTS.add(m.index); });
 }
 
 // Each rule scans one view and turns a match into a reason, or null to pass it.
@@ -231,13 +240,13 @@ const RULES = [
     view: globWords,
     regex: PATH_GLOB,
     reason(m) {
-      if (!NO_MATCH.has(m.index)) return null;
+      if (!NO_MATCH_STARTS.has(m.index)) return null;
       return 'Glob that matches nothing: `' + m[0] + '`. zsh aborts the whole command ' +
         'line with `no matches found`; bash passes the word on. Escape the glob: `' +
         escapeGlobs(m.index, m[0].length) + '`.';
     },
     rewrite: (m) => literalEdit(m.index, m[0].length, () => escapeGlobs(m.index, m[0].length),
-      /^~?[\w.*?[\]\/,:@%+-]+$/),
+      LITERAL_PATH),
   },
   {
     // A special parameter as an assignment word or a bare name its command

@@ -18,14 +18,18 @@ only `a.txt`:
 
 ## The line
 
-A word in the call's **first command** (before any `;`, `&`, `|` or newline),
-unquoted and literal (word characters and `.,:@%+/-`, a leading `~`), holding
-`*`, `?` or `[`, is matched by zsh itself in the payload's `cwd`. One that
-matches nothing is rewritten with each glob character escaped: bash's reading,
-`~` still expanded. A word with `=` belongs to the flag-value, query and equals
-rules; a `case` pattern and `[[ … ]]` generate no file names. A `for` list in
-the first command counts: bash iterates once over the literal word, and so
-does the rewrite.
+A word in the call's **first command** (up to a `;`, `|`, newline or a `&`
+that is not part of a redirection such as `2>&1` or `&>`), unquoted and
+literal (word characters, `.,:@%+/-`, the glob characters `*?[]`, and a
+leading `~` naming a home directory), holding `*`, `?` or `[`, is matched by
+zsh itself in the payload's `cwd`. One that matches nothing is rewritten with
+each glob character escaped: bash's reading, `~` still expanded. A redirection
+target counts (`ls >*.zz`: bash creates the literal file). Left alone: a word
+with `=`, which belongs to the flag-value, query and equals rules; a `case`
+word, a `case` pattern, a here-string word and `[[ … ]]`, which generate no
+file names; `~-`, `~+` and `~1`, which name the hook's directory stack, not
+the call's. A `for` list in the first command counts: bash iterates once over
+the literal word, and so does the rewrite.
 
 - **Escape, not `(N)`**, which the issue proposed: the null glob drops the
   word, so `ls *.md(N)` lists the whole directory and a lone `grep x *.md(N)`
@@ -36,8 +40,10 @@ does the rewrite.
 - **zsh decides the match**: `zsh -f` runs `a=( ${~p}(N) )` per word in the
   cwd. `${~p}` globs the parameter's value and expands its `~` without running
   a `$(…)` in it. Node's `fs.globSync` differs from zsh on dotfiles, `**` and
-  bracket classes. No answer (no zsh, a missing cwd, a 2-second timeout) leaves
-  every word alone.
+  bracket classes. A word zsh fails on (`~nosuchuser/*`, `a[b`) answers alone
+  through an `always` block rather than a subshell, so the timeout's kill
+  stops every search: a `/**/*` cannot outlive the hook. No answer (no zsh, a
+  missing cwd, a 2-second timeout) leaves every word alone.
 
 A rewrite keeps the meaning, so there is no opt-out (ADR-0022).
 
@@ -51,4 +57,4 @@ A rewrite keeps the meaning, so there is no opt-out (ADR-0022).
   bash's.
 - `scripts/replay-wordsplit-guard.js` passes each command's recorded cwd, so
   this rule's replay hits reflect the disk as it is now, not when the command
-  ran: 48 rewrites over 60,250 commands at the time of writing.
+  ran, and a command recorded in several directories is judged in the first.

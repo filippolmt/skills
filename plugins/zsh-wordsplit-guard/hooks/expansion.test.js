@@ -356,6 +356,17 @@ assert.strictEqual(escapedIn('for f in *.zz; do echo $f; done'), 'for f in \\*.z
 assert.strictEqual(escapedIn('find . -name *.zz'), 'find . -name \\*.zz');
 assert.strictEqual(escapedIn('grep --include=*.zz x .'), "grep --include='*.zz' x ."); // the flag-value rule's
 assert.strictEqual(escapedIn('ls ~no-such-user-zz/* *.zz'), 'ls ~no-such-user-zz/* \\*.zz'); // one word zsh fails on
+assert.strictEqual(escapedIn('ls 2>&1 *.zz'), 'ls 2>&1 \\*.zz');       // `&` of a redirection ends no command
+assert.strictEqual(escapedIn('ls &>/dev/null *.zz'), 'ls &>/dev/null \\*.zz');
+assert.strictEqual(escapedIn('ls >*.zz'), 'ls >\\*.zz');               // bash creates the literal file
+assert.strictEqual(escapedIn('echo $(ls *.zz)'), 'echo $(ls \\*.zz)');
+assert.strictEqual(escapedIn('echo "$(ls *.zz)"'), 'echo "$(ls \\*.zz)"');
+inDir.allowed('cat <<< *.zz');            // a here-string word generates no file names
+inDir.allowed('cat <<EOF\n*.zz\nEOF');
+inDir.allowed('cat <<EOF\n$(ls *.zz)\nEOF'); // the body is past the first command
+inDir.allowed('ls ~-/*.zz ~+/*.zz ~1/*.zz'); // directory-stack forms: the hook's shell is not the call's
+inDir.allowed('case *.zz in x) ;; esac'); // a case word generates no file names
+assignmentContexts((c) => inDir.allowed(c), 'x=*.zz');
 inDir.allowed('ls *.md');                 // matches: the author's glob
 inDir.allowed('ls [ab].md');
 inDir.allowed('touch b.zz; ls *.zz');     // a later command: earlier ones may create files
