@@ -107,7 +107,6 @@ and a stale row would silently exclude a later skill reusing its name.
 | `tt-a1i/archify` | `archify-review` | For archify's maintainers: triages its issues and links its `REVIEWING.md` by relative path |
 | `hashicorp/agent-skills` | `azure-verified-modules`, `refactor-module`, `terraform-policy`, `terraform-search-import`, `terraform-stacks`, `terraform-style-guide`, `terraform-test` | For writing Terraform configuration, not providers; `terraform-skill` already covers that ground |
 | `hashicorp/agent-skills` | `packer/*/skills/*` | Packer image building, outside the provider-development pick |
-| `microsoft/playwright-cli` | `.claude/skills/*` | Skills for developing playwright-cli (release and dependency roll), not for using it |
 
 ## Considered options
 

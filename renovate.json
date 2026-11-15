@@ -63,7 +63,7 @@
       "automergeStrategy": "squash"
     },
     {
-      "description": "microsoft/playwright-cli keeps 2020 tags from a retired project (v0.4.3 to v0.180.0) that hold no skill and outrank the current v0.1.x series.",
+      "description": "microsoft/playwright-cli keeps 2020 tags from a retired project (v0.4.3 to v0.180.0) that hold no skill and outrank the current v0.1.x series (ADR-0040).",
       "matchManagers": [
         "custom.regex"
       ],

@@ -13,7 +13,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { readCatalog, isGitSubdir, isUrl, isExternal, isRepoRoot, root } = require('./catalog.js');
+const { readCatalog, isGitSubdir, isUrl, isExternal, isRepoRoot, repoOf, root } = require('./catalog.js');
 
 // Pure: the message this guard exists to print, or null when the regexes cover the
 // catalog exactly. Split from the file reading because the guard's own failure mode
@@ -90,14 +90,45 @@ function entryShapeError(plugins) {
   return errors.length ? errors.join('\n') : null;
 }
 
-module.exports = { coverageError, entryShapeError };
+// Pure: a predicate keeping the tags Renovate may propose for `repo`, from the
+// `allowedVersions` of every packageRule naming it, so the freshness audit agrees
+// with Renovate (ADR-0040). Only the `/re/` and `!/re/` forms are read: any other
+// form throws rather than be skipped, since skipping would bring the excluded tags back.
+function allowedTag(renovate, repo) {
+  const tests = (renovate.packageRules || [])
+    .filter((r) => r.allowedVersions && (r.matchPackageNames || []).includes(repo))
+    .map((r) => {
+      const m = /^(!?)\/(.+)\/$/.exec(r.allowedVersions);
+      if (!m) throw new Error(`renovate.json: allowedVersions for ${repo} is not a /regex/ the audit can honour`);
+      const re = new RegExp(m[2]);
+      return (tag) => re.test(tag) !== (m[1] === '!');
+    });
+  return (tag) => tests.every((t) => t(tag));
+}
+
+// Pure: the message naming every packageRule package that no external entry pins,
+// or null. A source renamed in marketplace.json leaves its rule matching nothing,
+// and Renovate then drops the rule without a word (ADR-0040). Both package-name
+// forms count: `owner/repo` (github-tags) and the repo URL (git-refs).
+function orphanRuleError(catalog, renovate) {
+  const repos = new Set(catalog.plugins.filter(isExternal).map(repoOf).filter(Boolean)
+    .flatMap((r) => [r, `https://github.com/${r}`]));
+  const orphans = (renovate.packageRules || []).flatMap((r) => r.matchPackageNames || []).filter((n) => !repos.has(n));
+  return orphans.length
+    ? `renovate.json: packageRules name ${orphans.join(', ')}, which no external entry pins. ` +
+      'Renovate ignores such a rule silently: update matchPackageNames together with the entry.'
+    : null;
+}
+
+module.exports = { coverageError, entryShapeError, allowedTag, orphanRuleError };
 
 if (require.main === module) {
   const catalog = readCatalog();
   const renovate = JSON.parse(fs.readFileSync(path.join(root, 'renovate.json'), 'utf8'));
 
   // Both checks run: a shape error must not hide a coverage error until the next run.
-  const errors = [entryShapeError(catalog.plugins), coverageError(catalog, renovate)].filter(Boolean);
+  const errors = [entryShapeError(catalog.plugins), coverageError(catalog, renovate),
+    orphanRuleError(catalog, renovate)].filter(Boolean);
   if (errors.length) {
     console.error(errors.join('\n'));
     process.exit(1);

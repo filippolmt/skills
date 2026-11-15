@@ -7,8 +7,10 @@ const path = require('path');
 const { readCatalog, isExternal, repoOf, entryPath, root } = require('./catalog.js');
 const { githubApi } = require('./github.js');
 const { releaseTagPattern, latestTags, tagNames } = require('./check-branch-pins.js');
+const { allowedTag } = require('./check-renovate.js');
 
-const pattern = releaseTagPattern(JSON.parse(fs.readFileSync(path.join(root, 'renovate.json'), 'utf8')));
+const renovate = JSON.parse(fs.readFileSync(path.join(root, 'renovate.json'), 'utf8'));
+const pattern = releaseTagPattern(renovate);
 
 // Match folder names as well as catalog aliases; these are possible moves, not
 // proof that a same-named skill has the same behavior.
@@ -37,7 +39,7 @@ async function audit(catalog, { repo, tag, api = githubApi, tags = tagNames } = 
   let attention = false;
   for (const source of repos) {
     const own = entries.filter((e) => repoOf(e) === source);
-    const latest = latestTags(await tags(source), pattern);
+    const latest = latestTags((await tags(source)).filter(allowedTag(renovate, source)), pattern);
     const cache = new Map();
     const resolve = async (ref) => {
       if (!cache.has(ref)) {

@@ -6,7 +6,7 @@
 // trees that FAIL — running it against the live repo (as CI does) only ever shows
 // the passing shape, which is the one case that proves nothing.
 const assert = require('assert');
-const { coverageError, entryShapeError } = require('./check-renovate.js');
+const { coverageError, entryShapeError, allowedTag, orphanRuleError } = require('./check-renovate.js');
 
 // Two git-subdir entries pinned the two ways renovate.json splits on — a branch
 // `ref` and a tag `ref` — a url entry (a plugin that is its whole repo, ADR-0033),
@@ -86,5 +86,22 @@ assert.match(err, /ignores `path`/, 'and why it is wrong');
 const localOnly = { text: '{"plugins":[{"name":"x","source":"./plugins/x"}]}', plugins: [{ name: 'x', source: './plugins/x' }] };
 assert.strictEqual(coverageError(localOnly, managers(BRANCH, TAG)), null,
   'no external entries => zero matches is the right answer');
+
+// --- a packageRule whose package no entry pins: Renovate drops it silently, so a
+// renamed source would lose its tag exclusion. Both package-name forms are pins ---
+const rules = (...names) => ({ packageRules: [{ matchPackageNames: names }, { automerge: true }] });
+assert.strictEqual(orphanRuleError(CATALOG, rules('o/r', 'https://github.com/o/whole')), null,
+  'owner/repo and repo-URL names of pinned sources are not orphans');
+assert.match(orphanRuleError(CATALOG, rules('o/r', 'o/gone')), /o\/gone/, 'the orphan is named');
+assert.doesNotMatch(orphanRuleError(CATALOG, rules('o/r', 'o/gone')), /o\/r,/, 'and only the orphan');
+
+// --- allowedVersions: the audit must drop the tags Renovate drops, for that repo only ---
+const allow = { packageRules: [{ matchPackageNames: ['o/r'], allowedVersions: '!/^v0\\.180\\.0$/' }] };
+assert.deepStrictEqual(['v0.180.0', 'v0.1.24'].filter(allowedTag(allow, 'o/r')), ['v0.1.24'], 'negated regex excludes');
+assert.deepStrictEqual(['v0.180.0'].filter(allowedTag(allow, 'o/other')), ['v0.180.0'], 'other repos untouched');
+const only = { packageRules: [{ matchPackageNames: ['o/r'], allowedVersions: '/^v1\\./' }] };
+assert.deepStrictEqual(['v1.2.0', 'v2.0.0'].filter(allowedTag(only, 'o/r')), ['v1.2.0'], 'plain regex keeps');
+assert.throws(() => allowedTag({ packageRules: [{ matchPackageNames: ['o/r'], allowedVersions: '<2.0.0' }] }, 'o/r'),
+  /not a \/regex\//, 'a range is refused, not silently skipped');
 
 console.log('ok');
