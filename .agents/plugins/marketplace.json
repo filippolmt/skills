@@ -1131,6 +1131,18 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Developer Tools"
+    },
+    {
+      "name": "playwright-cli",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/playwright-cli"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
     }
   ]
 }
