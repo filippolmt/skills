@@ -4,6 +4,10 @@ status: accepted
 
 # An upstream removal is pruned at regeneration
 
+Amended by [ADR-0041](0041-refuse-a-pinned-sha-moved-off-its-history.md): a path
+that vanishes because the `sha` moved behind, diverged or onto an unrelated
+history fails `validate` instead of being pruned.
+
 When an upstream deletes or renames a skill folder, Renovate still bumps the entry's
 `sha` — it cannot see folders. Under [ADR-0010](0010-vendor-a-shared-skills-tree-on-main.md)
 that bump failed `validate` on `gen-skills-tree.js --verify-paths` and stayed red

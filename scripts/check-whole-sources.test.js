@@ -6,7 +6,7 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
-const { parseAdr, uncatalogued, unreviewed, unclassified, baselineMismatches } = require('./check-whole-sources.js');
+const { parseAdr, uncatalogued, unreviewed, unclassified, baselineMismatches, inertExclusions } = require('./check-whole-sources.js');
 
 const ADR = `
 ### Source repos
@@ -122,4 +122,16 @@ test('baselineMismatches names a curated source with no baseline or no entry, an
     '`acme/curated`: curated source with no `curationBaseline` in scripts/catalog-meta.json',
     '`acme/whole`: curation baseline for a repo that is not a curated source',
   ]);
+});
+
+test('inertExclusions names a row that excludes no reported skill', () => {
+  const exclusions = new Map([['o/r', ['.claude/skills/*', 'gone', 'kept', 'tests-only']], ['o/no-tree', ['x']]]);
+  const skills = ['skills/kept', 'skills/main', '.claude/skills/dev', 'tests/fixtures/tests-only'];
+  assert.deepStrictEqual(inertExclusions(exclusions, new Map([['o/r', skills]])), [
+    { repo: 'o/r', pattern: '.claude/skills/*' },
+    { repo: 'o/r', pattern: 'gone' },
+    { repo: 'o/r', pattern: 'tests-only' },
+  ]);
+  // Without a canonical skills/, .claude/skills is a skill of the repo and the row bites.
+  assert.deepStrictEqual(inertExclusions(new Map([['o/r', ['.claude/skills/*']]]), new Map([['o/r', ['.claude/skills/dev']]])), []);
 });

@@ -25,10 +25,16 @@ Skill folders in a repo:
 curl -fsSL "https://api.github.com/repos/<owner>/<repo>/git/trees/HEAD?recursive=1" \
   | jq -r '.tree[] | select(.path | endswith("/SKILL.md")) | .path | sub("/SKILL.md$";"")'
 ```
-Latest tags (does this repo publish semver tags?):
+Latest release and its tags. The tags listing is ordered by version, so a retired
+series with higher numbers hides the current one: read the release first, and
+confirm the entry's path exists at the tag you pick.
 ```bash
-curl -fsSL "https://api.github.com/repos/<owner>/<repo>/tags?per_page=5" | jq -r '.[].name'
+curl -fsSL "https://api.github.com/repos/<owner>/<repo>/releases/latest" | jq -r '.tag_name+" "+.published_at'
+curl -fsSL "https://api.github.com/repos/<owner>/<repo>/tags?per_page=100" | jq -r '.[].name'
 ```
+`releases/latest` answers 404 on a repo that publishes no release: read the tags
+alone then. When a tag above the release lacks the path, exclude those exact tags
+with `allowedVersions` (ADR-0040).
 The SHA a `ref` resolves to — `HEAD` for a branch pin, the tag name for a tag pin:
 ```bash
 curl -fsSL "https://api.github.com/repos/<owner>/<repo>/commits/<ref>" \

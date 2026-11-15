@@ -29,6 +29,11 @@ copied. Untracked nested repositories are rejected rather than recursively copie
 ignore or move them before validating. The original checkout and index stay
 untouched; the temporary worktree is removed on success or failure. Keep the source checkout unchanged while it snapshots.
 
+The generators read upstream through a shallow clone per pinned `(repo, sha)`,
+cached under `$TMPDIR/skills-tree`. The first run on a fresh temp dir clones every
+pinned repo and takes minutes; launch it in the background. Later runs reuse the
+cache and take seconds.
+
 `bash scripts/validate.sh --catalog-only` remains the lighter in-place catalog
 check. Of the generated outputs, only the README's regions belong in the feature
 commit (`node scripts/gen-readme.js`), since pull-request CI checks them; leave

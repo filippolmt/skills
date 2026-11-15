@@ -14,16 +14,18 @@ function githubToken() {
   return token;
 }
 
-// GET a GitHub REST API path as JSON. A non-2xx status throws with the path, so
-// callers exit 2 on it; an exhausted rate limit says so instead of a bare 403.
+// GET a GitHub REST API path as JSON. A non-2xx status throws with the path and
+// `status`, so callers exit 2 on it or branch on the code; an exhausted rate limit says so instead of a bare 403.
 async function githubApi(apiPath) {
   const headers = { Accept: 'application/vnd.github+json' };
   if (githubToken()) headers.Authorization = `Bearer ${githubToken()}`;
   const res = await fetch(`https://api.github.com/${apiPath}`, { headers });
   if (!res.ok) {
     const limited = (res.status === 403 || res.status === 429) && res.headers.get('x-ratelimit-remaining') === '0';
-    throw new Error(`${apiPath}: GitHub API ${res.status}${limited
+    const err = new Error(`${apiPath}: GitHub API ${res.status}${limited
       ? ' (rate limit exhausted: set GITHUB_TOKEN, or log in with `gh auth login`)' : ''}`);
+    err.status = res.status;
+    throw err;
   }
   return res.json();
 }
