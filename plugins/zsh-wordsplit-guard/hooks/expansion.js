@@ -18,6 +18,9 @@
 //      The same holds for a bare word with a URL query string (`HEAD?a=1`),
 //      the one bare-word shape no one globs on purpose; an assignment value
 //      generates no file names and is left alone.
+//      And for a path glob in the call's first command that matches nothing
+//      in its cwd, asked of zsh before the call runs: a deliberate glob, but
+//      bash would pass the word on where zsh aborts the line.
 //   3. Parentheses in a `${v/pat/repl}` pattern. They are a glob group in zsh and
 //      literal in bash, so `${b/(x, y)/X}` on "see (x, y)" gives "see (X)": a
 //      wrong result, no error.
@@ -46,7 +49,9 @@
 // docs/adr/0030-the-wordsplit-guard-flags-parameter-transformations.md; the rewrite:
 // docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md; the URL query:
 // docs/adr/0037-the-wordsplit-guard-rewrites-a-url-query-string.md; the clobber:
-// docs/adr/0042-the-wordsplit-guard-flags-a-special-parameter-clobber.md.
+// docs/adr/0042-the-wordsplit-guard-flags-a-special-parameter-clobber.md; the
+// unmatched path glob: docs/adr/0043-the-wordsplit-guard-escapes-a-path-glob-that-matches-nothing.md.
+const { spawnSync } = require('child_process');
 const { readBashInput, deny, rewrite, maskedViews, maskNonSplitting } = require('./scan');
 
 const input = readBashInput();
@@ -199,8 +204,40 @@ function assignsBareName(name, at) {
     (DECLARATION.test(head) && name === 'path');
 }
 
+// An unquoted literal word with a glob in the call's first command: one zsh
+// can match against the cwd before anything in the call has run. A word with
+// `=` is the flag-value, query and equals rules'.
+const FIRST_COMMAND = globWords.search(/[;&|\n]/) === -1 ? globWords.length : globWords.search(/[;&|\n]/);
+const PATH_GLOB = /(?<=^|[\s(`])[^\s;&|<>()`=]*[*?[][^\s;&|<>()`=]*(?=$|[\s;&|<>)`])/g;
+// The starts of the path globs that match nothing, asked of zsh itself in the
+// call's cwd: `${~p}` globs the word without running any `$(…)` in it. No
+// answer (no zsh, a missing cwd, a timeout) leaves every word alone.
+const NO_MATCH = new Set();
+const candidates = [...globWords.slice(0, FIRST_COMMAND).matchAll(PATH_GLOB)]
+  .filter((m) => literalEdit(m.index, m[0].length, (t) => t, /^~?[\w.*?[\]\/,:@%+-]+$/));
+if (candidates.length) {
+  const r = spawnSync('zsh', ['-f', '-c',
+    'cd -- "$1" || exit 3; shift; for p; do a=( ${~p}(N) ); print -r -- $#a; done', 'zsh',
+    input.cwd].concat(candidates.map((m) => m[0])), { encoding: 'utf8', timeout: 2000 });
+  const counts = r.status === 0 ? r.stdout.split('\n') : [];
+  candidates.forEach((m, i) => { if (counts[i] === '0') NO_MATCH.add(m.index); });
+}
+
 // Each rule scans one view and turns a match into a reason, or null to pass it.
 const RULES = [
+  {
+    // A path glob in the first command that matches nothing (ADR-0043).
+    view: globWords,
+    regex: PATH_GLOB,
+    reason(m) {
+      if (!NO_MATCH.has(m.index)) return null;
+      return 'Glob that matches nothing: `' + m[0] + '`. zsh aborts the whole command ' +
+        'line with `no matches found`; bash passes the word on. Escape the glob: `' +
+        escapeGlobs(m.index, m[0].length) + '`.';
+    },
+    rewrite: (m) => literalEdit(m.index, m[0].length, () => escapeGlobs(m.index, m[0].length),
+      /^~?[\w.*?[\]\/,:@%+-]+$/),
+  },
   {
     // A special parameter as an assignment word or a bare name its command
     // assigns, including zsh's `read "path?prompt"`. `path+=…`, `path[1]=…` and

@@ -3,14 +3,16 @@
 const fs = require('fs');
 
 // The Bash command of a PreToolUse payload, or null for anything else.
-// `toolInput` is the whole input, which a rewrite returns with only `command` changed.
+// `toolInput` is the whole input, which a rewrite returns with only `command` changed;
+// `cwd` is where the command will run.
 function readBashInput() {
   let input = {};
   try { input = JSON.parse(fs.readFileSync(0, 'utf8')) || {}; } catch (e) { /* no stdin */ }
   const toolInput = input.tool_input || {};
   const command = String(toolInput.command || '');
   if (input.tool_name !== 'Bash' || !command) return null;
-  return { command: command, description: String(toolInput.description || ''), toolInput: toolInput };
+  return { command: command, description: String(toolInput.description || ''), toolInput: toolInput,
+    cwd: String(input.cwd || process.cwd()) };
 }
 
 function deny(reason) {
