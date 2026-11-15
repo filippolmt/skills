@@ -332,5 +332,11 @@ allowed('[[ $x == path ]]');
 allowed('case path in a) ;; esac');
 allowed('echo done path');
 allowed('echo "status?"');
+denied('while getopts ab path; do :; done');
+denied('getopts ab status');
+allowed('getopts ab opt path');            // an argument after the name
+// A clobber expands nothing: its header says so, unless an expansion joins it.
+assert.ok(/which reads this differently/.test(denied('read a path')), 'clobber header');
+assert.ok(/which expands this differently/.test(denied('read a path; echo ${!t}')), 'mixed header');
 
 console.log('zsh-wordsplit-guard expansion rules: all checks passed');

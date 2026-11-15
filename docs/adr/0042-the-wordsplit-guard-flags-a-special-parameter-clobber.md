@@ -26,10 +26,12 @@ found". The issue proposed eight names. Measured in zsh 5.9 (`zsh -f`):
 `expansion.js` denies `path` and `status` when a command assigns them: an
 assignment word (including a prefix assignment and a declaration builtin's
 argument), a `for` or `select` variable, a `read` name (zsh's prompt form
-`read "path?p> "` too), a `printf -v` target or its zsh twin `print -v`, and a
+`read "path?p> "` too), a `getopts` name, a `printf -v` target or its zsh twin
+`print -v`, and a
 bare `local path` / `typeset path`, which empties the search path. A
 precommand modifier (`builtin`, `command`, `noglob`, `exec`, `nohup`) changes
-nothing. A bare declaration of `status` passes: it assigns nothing.
+nothing. A bare declaration of `status` passes: it assigns nothing. `vared`
+is left alone: without a terminal it fails before assigning.
 
 Left alone: `path+=(…)`, `path[1]=…`, and an array value that reads the search
 path itself (`path=(/x $path)`, `local path=(${(s.:.)PATH})`): zsh written on
@@ -59,8 +61,9 @@ always exists and keeps the intent, so it is the opt-out, as in ADR-0022.
 
 - The rule is an `expansion.js` rule though nothing is expanded: the script
   already parses assignments (`isAssignment`), and a fourth process for one
-  rule costs more than the separation. Its reason is listed under the
-  script's shared deny header, which still says zsh "expands" the command.
+  rule costs more than the separation. The script's deny header says zsh
+  "reads" the command differently when every reason is a clobber, and
+  "expands" it otherwise, so the other rules' messages are unchanged.
 - The keywords that may open a command (`while`, `until`, `if`, `elif`) are
   now skipped by the word scan both rules share, so an assignment after them
   counts as one for the equals-expansion rule too.

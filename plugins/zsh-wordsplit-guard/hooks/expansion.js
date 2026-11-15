@@ -182,7 +182,8 @@ function readsSearchPath(from) {
   return /\$(?:\{(?:\([^)]*\))?)?(?:path|PATH)\b/.test(patterns.slice(from, end));
 }
 // Whether the bare name at `at` is assigned by its command: a `for`/`select`
-// variable, a `read` name, a `printf -v` target, or a declared `path`.
+// variable, a `read` or `getopts` name, a `printf -v` target, or a declared
+// `path`.
 function assignsBareName(name, at) {
   const before = wordsBefore(at);
   // Precommand modifiers run the command after them.
@@ -192,6 +193,7 @@ function assignsBareName(name, at) {
   if (/[<>]$/.test(before[before.length - 1] || '')) return false; // a redirection target
   return (/^(?:for|select)$/.test(head) && !before.includes('in')) ||
     head === 'read' ||
+    (head === 'getopts' && before.length === 2) ||
     (/^(?:printf|print)$/.test(head) && before.length === 2 && before[1] === '-v') ||
     // A bare `local status` assigns nothing; a bare `local path` empties PATH.
     (DECLARATION.test(head) && name === 'path');
@@ -205,6 +207,7 @@ const RULES = [
     // an array value reading the search path are zsh written on purpose. The
     // view keeps double-quoted text for the prompt form; any other match there
     // is ignored.
+    clobber: true,
     view: patterns,
     regex: /(?<=^|[\s;&|(`])(?:"(path|status)\?|(path|status)(?:(\+?)=|(?=[\s;&|)?]|$)))/g,
     reason(m) {
@@ -409,6 +412,7 @@ const RULES = [
 // Every rewritable hit is collected; the first hit a rule cannot rewrite denies.
 const reasons = [];
 const edits = [];
+let expands = false;
 for (const rule of RULES) {
   for (const m of rule.view.matchAll(rule.regex)) {
     const span = rule.span ? rule.span(m) : [];
@@ -417,13 +421,15 @@ for (const rule of RULES) {
     const edit = rule.rewrite && rule.rewrite(m, ...span);
     if (edit) { edits.push(edit); continue; }
     reasons.push(reason);
+    expands = expands || !rule.clobber;
     break;
   }
 }
 
 if (reasons.length) {
   // The edits are dropped: the retry gets them again.
-  deny('zsh-wordsplit-guard: the Bash tool runs zsh, which expands this ' +
+  // A clobber alone expands nothing.
+  deny('zsh-wordsplit-guard: the Bash tool runs zsh, which ' + (expands ? 'expands' : 'reads') + ' this ' +
     'differently from bash.\n' + reasons.map((r) => '- ' + r).join('\n'));
 } else if (edits.length) {
   let rewritten = command;
