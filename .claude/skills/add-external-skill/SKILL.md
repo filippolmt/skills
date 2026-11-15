@@ -32,8 +32,9 @@ confirm the entry's path exists at the tag you pick.
 curl -fsSL "https://api.github.com/repos/<owner>/<repo>/releases/latest" | jq -r '.tag_name+" "+.published_at'
 curl -fsSL "https://api.github.com/repos/<owner>/<repo>/tags?per_page=100" | jq -r '.[].name'
 ```
-When a higher tag than the release lacks the path, exclude its series with
-`allowedVersions` (ADR-0040).
+`releases/latest` answers 404 on a repo that publishes no release: read the tags
+alone then. When a tag above the release lacks the path, exclude those exact tags
+with `allowedVersions` (ADR-0040).
 The SHA a `ref` resolves to — `HEAD` for a branch pin, the tag name for a tag pin:
 ```bash
 curl -fsSL "https://api.github.com/repos/<owner>/<repo>/commits/<ref>" \

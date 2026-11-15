@@ -11,9 +11,9 @@ name: whole-sources
 # repo's curation baseline, which a human picks or declines.
 #
 # The same issue-keeping runs for branch pins whose repo now publishes release
-# tags (ADR-0026), and for entries whose upstream description changed since the
-# catalog's text was reviewed (ADR-0029): one matrix leg per report, each with its
-# own issue.
+# tags (ADR-0026), for entries whose upstream description changed since the
+# catalog's text was reviewed (ADR-0029), and for ADR-0014 exclusions that exclude
+# nothing (ADR-0014): one matrix leg per report, each with its own issue.
 
 on:
   schedule:
@@ -58,6 +58,12 @@ jobs:
             prefix: Curated sources ship skills
             source: between each curated source's curation baseline and pinned `sha` (ADR-0039)
             resolved: Every skill of the curated sources is now within its curation baseline.
+          - script: scripts/check-whole-sources.js
+            args: --exclusions
+            title: ADR-0014 exclusions exclude nothing
+            prefix: ADR-0014 exclusions exclude nothing
+            source: at the pinned `sha` of each excluding source (ADR-0014)
+            resolved: Every ADR-0014 exclusion now excludes a skill.
           - script: scripts/check-branch-pins.js
             title: Branch-pinned repos publish release tags
             prefix: Branch-pinned repos publish release tags

@@ -15,12 +15,14 @@
 // at the pinned `sha` and absent, at the same path, at the repo's curation baseline
 // is one no human has looked at yet.
 //
-// Both modes also report an ADR-0014 exclusion that matches no skill the check
-// would otherwise report: a row that excludes nothing, waiting to hide a later skill.
+// With --exclusions it reports an ADR-0014 exclusion that matches no skill the
+// other modes would report: a row that excludes nothing, waiting to hide a later skill.
 //
 // Usage: node scripts/check-whole-sources.js   (exit 1 when a skill is missing)
 //        node scripts/check-whole-sources.js --curated   (exit 1 when a curated
 //        source ships a skill past its curation baseline)
+//        node scripts/check-whole-sources.js --exclusions   (exit 1 when an
+//        ADR-0014 exclusion matches no reported skill at the pinned sha)
 //        node scripts/check-whole-sources.js --classified   (offline: exit 1 when an
 //        external repo has no ADR-0014 row, since an unclassified repo is never reported,
 //        or when a curated source and the curation baselines disagree)
@@ -132,8 +134,6 @@ function inertExclusions(exclusions, skillsOf) {
     .filter((p) => !skills.some((dir) => isSkillOfRepo(dir, skills) && excluded(dir, [p])))
     .map((pattern) => ({ repo, pattern })));
 }
-const inertLine = ({ repo, pattern }) =>
-  `- \`${repo}\`: exclusion \`${pattern}\` matches no skill of the repo — remove its ADR-0014 row`;
 
 // Pure: every curated source needs a curation baseline and an entry, and every baseline
 // belongs to a curated source — a stale key or row would silently stop meaning anything.
@@ -213,8 +213,7 @@ async function checkCurated() {
   }
   report(`No skill of ${trees.size} curated sources is past its curation baseline.`,
     'Curated sources ship skills past their curation baseline (ADR-0039):',
-    [...unreviewed({ sources, exclusions, catalog, trees }).map((m) => `- \`${m.repo}\`: \`${m.path}\``),
-      ...inertExclusions(exclusions, new Map([...trees].map(([repo, t]) => [repo, t.pinned.skills]))).map(inertLine)],
+    unreviewed({ sources, exclusions, catalog, trees }).map((m) => `- \`${m.repo}\`: \`${m.path}\``),
     'Pick them with `/add-external-skill update <owner/repo>`, which moves the baseline; to decline, move the repo\'s `curationBaseline` in scripts/catalog-meta.json to its pinned sha, or list a reasoned exclusion in ADR-0014.');
 }
 
@@ -224,17 +223,30 @@ async function checkWhole() {
   for (const repo of sourcesOfKind(sources, 'whole')) upstream.set(repo, await pinnedTree(catalog, repo));
   report(`Every skill of ${upstream.size} whole sources is catalogued or excluded.`,
     'Whole sources ship skills with no catalog entry and no ADR-0014 exclusion:',
-    [...uncatalogued({ sources, exclusions, catalog, upstream }).map((m) => (m.path === null
+    uncatalogued({ sources, exclusions, catalog, upstream }).map((m) => (m.path === null
       ? `- \`${m.repo}\`: no catalog entry at all — add one, or reclassify the repo in ADR-0014`
       : `- \`${m.repo}\`: \`${m.path}\``)),
-      ...inertExclusions(exclusions, new Map([...upstream].map(([repo, t]) => [repo, t.skills]))).map(inertLine)],
     'Add them with `/add-external-skill update <owner/repo>`, or list them as exclusions in ADR-0014.');
 }
 
+// Every excluding repo with an entry, whole or curated, read at its pinned sha.
+async function checkExclusions() {
+  const { exclusions, catalog } = readInputs();
+  const skillsOf = new Map();
+  for (const repo of exclusions.keys()) {
+    if (entriesOf(catalog, repo).length) skillsOf.set(repo, (await pinnedTree(catalog, repo)).skills);
+  }
+  report(`Every ADR-0014 exclusion of ${skillsOf.size} sources excludes a skill.`,
+    'ADR-0014 exclusions exclude nothing:',
+    inertExclusions(exclusions, skillsOf).map((m) => `- \`${m.repo}\`: \`${m.pattern}\``),
+    'Remove each row from ADR-0014\'s Catalog exclusions. A mirror, a fixture or a `.claude/skills` beside `skills/` is never reported, so it needs no row; a skill upstream removed needs none either.');
+}
+
+const modes = { '--curated': checkCurated, '--exclusions': checkExclusions };
 if (require.main === module && process.argv[2] === '--classified') {
   checkClassified();
 } else if (require.main === module) {
-  (process.argv[2] === '--curated' ? checkCurated() : checkWhole()).catch((err) => {
+  (modes[process.argv[2]] || checkWhole)().catch((err) => {
     console.error(err.message);
     process.exitCode = 2;
   });

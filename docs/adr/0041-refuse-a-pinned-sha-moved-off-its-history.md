@@ -23,13 +23,15 @@ external entry whose `sha` changed in the same repo, it asks GitHub to compare
 
 - `ahead` or `identical` passes;
 - `behind` or `diverged` fails;
-- a 404 means the two shas share no merge base, and it reports that as
-  `unrelated`. A `sha` that is missing outright is already caught by
-  `--verify-paths`.
+- a 404 means there is no history from the pin, and it reports that as
+  `unrelated`. GitHub answers 404 both when the shas share no merge base and when
+  a `sha` does not exist; `--verify-paths` names a missing `sha` too.
 
 `validate` runs it on pull requests against the fetched base branch. `validate` is
 a required check, so a failure stops the automerge, and a human then decides with
-`/add-external-skill update`. New and removed entries have no move to check.
+`/add-external-skill update`. New and removed entries have no move to check. An
+entry now pinned in another repo has no history to compare either: the script
+names it in a note, for whoever made that edit to check by hand.
 
 ## Considered options
 

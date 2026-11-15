@@ -40,5 +40,6 @@ has a local equivalent:
 | --- | --- | --- |
 | A skill added upstream in a **whole** source (ADR-0014) | `node scripts/check-whole-sources.js` | 0024 |
 | A skill added upstream in a **curated** source past its curation baseline | `node scripts/check-whole-sources.js --curated` | 0039 |
+| An ADR-0014 exclusion that excludes nothing | `node scripts/check-whole-sources.js --exclusions` | 0014 |
 | An upstream description that changed since review | `node scripts/check-upstream-descriptions.js` | 0029 |
 | A branch pin whose repo now publishes tags | `node scripts/check-branch-pins.js` | 0026 |
