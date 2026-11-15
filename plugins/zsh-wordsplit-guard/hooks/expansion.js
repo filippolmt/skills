@@ -30,6 +30,12 @@
 //   5. `${v@Q}` and the rest of bash's parameter transformations. zsh has no
 //      `@` operator, so every `${…@…}` aborts with `bad substitution`.
 //
+// And one trap that expands nothing, a special parameter clobber:
+//
+//   6. Assigning `path`, tied to `PATH`, so every later command fails with
+//      `command not found`, or the read-only `status`, with bash habits:
+//      `while read id path br`, `for path in …`, `local status=1`.
+//
 // Rules 1 and 2 rewrite instead of denying when the word is plain literal text,
 // so the call runs with no round trip: the rewrite gives bash's reading of it
 // whenever bash's own glob matches no file. A word holding an expansion, a
@@ -39,7 +45,8 @@
 // docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md,
 // docs/adr/0030-the-wordsplit-guard-flags-parameter-transformations.md; the rewrite:
 // docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md; the URL query:
-// docs/adr/0037-the-wordsplit-guard-rewrites-a-url-query-string.md.
+// docs/adr/0037-the-wordsplit-guard-rewrites-a-url-query-string.md; the clobber:
+// docs/adr/0042-the-wordsplit-guard-flags-a-special-parameter-clobber.md.
 const { readBashInput, deny, rewrite, maskedViews, maskNonSplitting } = require('./scan');
 
 const input = readBashInput();
@@ -121,7 +128,7 @@ function wordsBefore(at) {
     head = head.replace(/([$<>=])\(([^()]*)\)/g, (m, sigil, body) => sigil + blankRun('(' + body + ')'));
   }
   return head.split(/[;&|()\n]/).pop().trim().split(/\s+/)
-    .filter((w) => w && !/^(?:\{|!|then|do|else|time)$/.test(w));
+    .filter((w) => w && !/^(?:\{|!|then|do|else|time|while|until|if|elif)$/.test(w));
 }
 
 // What a parameter pattern holds, from `from` up to the `/` that starts the
@@ -152,8 +159,9 @@ function braceForm(at) {
     : /^\$\{[^}\s]*/.exec(command.slice(at))[0] + '}';
 }
 
-// zsh's lowercase special parameters a bash habit assigns (ADR-0042).
-const SPECIAL = {
+// Deny reasons for zsh's lowercase special parameters a bash habit assigns
+// (ADR-0042).
+const CLOBBER_REASON = {
   path: '`path` is tied to `PATH` in zsh: assigning it replaces the command search ' +
     'path, and every later command fails with `command not found`. Use another name ' +
     '(`p`, `file_path`); to change the search path on purpose, write `path+=(…)` or ' +
@@ -161,45 +169,52 @@ const SPECIAL = {
   status: '`status` is read-only in zsh (it mirrors `$?`): assigning it aborts the ' +
     'command with `read-only variable: status`. Use another name (`rc`, `state`).',
 };
-// Whether the assignment value starting at `from` reads the search path itself,
-// a deliberate edit of it: `path=(/x $path)`, `path=(${(s.:.)PATH})`.
+// Whether the value starting at `from` is an array reading the search path, a
+// deliberate edit of it: `path=(/x $path)`, `path=(${(s.:.)PATH})`. A scalar
+// value joins the array into one entry, so `path=$path` breaks it too.
 function readsSearchPath(from) {
+  if (words[from] !== '(') return false;
   let end = from;
-  if (words[from] === '(') {
-    for (let depth = 0; end < words.length; end++) {
-      if (words[end] === '(') depth++;
-      else if (words[end] === ')' && --depth === 0) break;
-    }
-  } else while (end < words.length && !/[\s;&|<>)]/.test(words[end])) end++;
-  return /\$(?:\{[^}]*)?\b(?:path|PATH)\b/.test(patterns.slice(from, end));
+  for (let depth = 0; end < words.length; end++) {
+    if (words[end] === '(') depth++;
+    else if (words[end] === ')' && --depth === 0) break;
+  }
+  return /\$(?:\{(?:\([^)]*\))?)?(?:path|PATH)\b/.test(patterns.slice(from, end));
+}
+// Whether the bare name at `at` is assigned by its command: a `for`/`select`
+// variable, a `read` name, a `printf -v` target, or a declared `path`.
+function assignsBareName(name, at) {
+  const before = wordsBefore(at);
+  // Precommand modifiers run the command after them.
+  while (/^(?:builtin|command|noglob|exec|nohup)$/.test(before[0]) ||
+    ASSIGNMENT.test(before[0] || '')) before.shift();
+  const [head] = before;
+  if (/[<>]$/.test(before[before.length - 1] || '')) return false; // a redirection target
+  return (/^(?:for|select)$/.test(head) && !before.includes('in')) ||
+    head === 'read' ||
+    (/^(?:printf|print)$/.test(head) && before.length === 2 && before[1] === '-v') ||
+    // A bare `local status` assigns nothing; a bare `local path` empties PATH.
+    (DECLARATION.test(head) && name === 'path');
 }
 
 // Each rule scans one view and turns a match into a reason, or null to pass it.
 const RULES = [
   {
-    // A special parameter as an assignment word, a `for`/`select` variable, a
-    // `read` name, a declaration or `printf -v` target. `path+=…`, `path[1]=…`
-    // and a value reading the search path are zsh written on purpose.
-    view: words,
-    regex: /(?<=^|[\s;&|(`])(path|status)(?:(\+?)=|(?=[\s;&|)]|$))/g,
+    // A special parameter as an assignment word or a bare name its command
+    // assigns, including zsh's `read "path?prompt"`. `path+=…`, `path[1]=…` and
+    // an array value reading the search path are zsh written on purpose. The
+    // view keeps double-quoted text for the prompt form; any other match there
+    // is ignored.
+    view: patterns,
+    regex: /(?<=^|[\s;&|(`])(?:"(path|status)\?|(path|status)(?:(\+?)=|(?=[\s;&|)?]|$)))/g,
     reason(m) {
-      const name = m[1];
-      if (m[0].endsWith('=')) {
-        if (!isAssignment(m.index) || m[2]) return null;
-        return name === 'path' && readsSearchPath(m.index + m[0].length) ? null : SPECIAL[name];
-      }
-      const before = wordsBefore(m.index);
-      while (/^(?:while|until|if|elif|builtin|command)$/.test(before[0]) ||
-        ASSIGNMENT.test(before[0] || '')) before.shift();
-      const [head] = before;
-      const last = before[before.length - 1] || '';
-      if (/[<>]$/.test(last)) return null; // a redirection target
-      if (/^(?:for|select)$/.test(head) && !before.includes('in')) return SPECIAL[name];
-      if (head === 'read') return SPECIAL[name];
-      if (/^(?:printf|print)$/.test(head) && last === '-v') return SPECIAL[name];
-      // A bare `local status` assigns nothing; a bare `local path` empties PATH.
-      if (DECLARATION.test(head) && name === 'path') return SPECIAL[name];
-      return null;
+      if (m[1]) return assignsBareName(m[1], m.index) ? CLOBBER_REASON[m[1]] : null;
+      const name = m[2];
+      if (words.slice(m.index, m.index + name.length) !== name) return null; // quoted text
+      const clobbers = m[0].endsWith('=')
+        ? isAssignment(m.index) && !m[3] && !(name === 'path' && readsSearchPath(m.index + m[0].length))
+        : assignsBareName(name, m.index);
+      return clobbers ? CLOBBER_REASON[name] : null;
     },
   },
   {
@@ -408,7 +423,7 @@ for (const rule of RULES) {
 
 if (reasons.length) {
   // The edits are dropped: the retry gets them again.
-  deny('zsh-wordsplit-guard: the Bash tool runs zsh, which runs this ' +
+  deny('zsh-wordsplit-guard: the Bash tool runs zsh, which expands this ' +
     'differently from bash.\n' + reasons.map((r) => '- ' + r).join('\n'));
 } else if (edits.length) {
   let rewritten = command;

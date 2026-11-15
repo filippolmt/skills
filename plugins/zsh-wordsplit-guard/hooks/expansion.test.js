@@ -23,6 +23,7 @@ rewrites('echo ok; echo ==', 'echo ok; echo \\==');
 rewrites('case $v in =ab) echo y;; esac', 'case $v in \\=ab) echo y;; esac'); // patterns expand it too
 rewrites('v==ls; echo $v', 'v=\\=ls; echo $v'); // an assignment value expands
 assignmentContexts((c) => rewrites(c, c.replace('v==ls', 'v=\\=ls')), 'v==ls');
+rewrites('while v==ls; do break; done', 'while v=\\=ls; do break; done'); // a keyword opens the command
 let reason = denied('x=ls; echo =$x');      // an expansion: single quotes would kill it
 assert.ok(/Escape the `=`: `\\=\$x`/.test(reason), 'names the escaped form');
 assert.ok(/\$\{commands\[name\]\}/.test(reason), 'names the command-path form');
@@ -315,5 +316,21 @@ allowed('echo "read a path"');
 allowed("echo 'for path in a'");
 allowed("cat <<'EOF'\nfor path in a\nEOF");
 allowed('PATH=/x:$PATH ls');
+// Only an array value keeps the search path: a scalar joins it into one entry.
+denied('path=$path; ls');
+denied('path=x$PATH');
+denied('f() { local path=$PATH; ls; }');
+denied('path=(${foo:-path})');            // a default value, not the search path
+allowed('f() { local path=(/x $path); }');
+denied('read "path?p> "');                 // zsh's prompt form
+denied('read path?p');
+denied('noglob read path');
+denied('exec read path');
+denied('nohup read path');
+allowed('printf %s -v path');              // `-v` after the format is data
+allowed('[[ $x == path ]]');
+allowed('case path in a) ;; esac');
+allowed('echo done path');
+allowed('echo "status?"');
 
 console.log('zsh-wordsplit-guard expansion rules: all checks passed');

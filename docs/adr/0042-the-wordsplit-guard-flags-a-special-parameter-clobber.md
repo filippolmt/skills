@@ -25,15 +25,20 @@ found". The issue proposed eight names. Measured in zsh 5.9 (`zsh -f`):
 
 `expansion.js` denies `path` and `status` when a command assigns them: an
 assignment word (including a prefix assignment and a declaration builtin's
-argument), a `for` or `select` variable, a `read` name, a `printf -v` or
-`print -v` target, and a bare `local path` / `typeset path`, which empties the
-search path. A bare declaration of `status` passes: it assigns nothing.
+argument), a `for` or `select` variable, a `read` name (zsh's prompt form
+`read "path?p> "` too), a `printf -v` target or its zsh twin `print -v`, and a
+bare `local path` / `typeset path`, which empties the search path. A
+precommand modifier (`builtin`, `command`, `noglob`, `exec`, `nohup`) changes
+nothing. A bare declaration of `status` passes: it assigns nothing.
 
-Left alone: `path+=(…)`, `path[1]=…`, and a `path` value that reads the search
-path itself (`path=(/x $path)`, `${(s.:.)PATH}`): zsh written on purpose. The
-exemption covers only an assignment's value: `for path in $path` still
-reassigns the name. A name that only contains the word (`file_path`) and a read
-(`echo $path`) never match.
+Left alone: `path+=(…)`, `path[1]=…`, and an array value that reads the search
+path itself (`path=(/x $path)`, `local path=(${(s.:.)PATH})`): zsh written on
+purpose. A scalar value is no such edit even when it reads the search path:
+`path=$path` and `local path=$PATH` join the array into one entry and break it
+the same way. The exemption covers only an assignment's value: `for path in
+$path` still reassigns the name. A name that only contains the word
+(`file_path`), a read (`echo $path`), quoted text and `printf %s -v path`
+(where `-v` is data) never match.
 
 ## Why two names
 
@@ -54,7 +59,11 @@ always exists and keeps the intent, so it is the opt-out, as in ADR-0022.
 
 - The rule is an `expansion.js` rule though nothing is expanded: the script
   already parses assignments (`isAssignment`), and a fourth process for one
-  rule costs more than the separation. The shared deny header now says zsh
-  "runs" the command differently instead of "expands" it.
-- `bash -c "read path"` in double quotes is scanned as zsh and denied, a false
-  positive; single quotes and a quoted heredoc are invisible to the scan.
+  rule costs more than the separation. Its reason is listed under the
+  script's shared deny header, which still says zsh "expands" the command.
+- The keywords that may open a command (`while`, `until`, `if`, `elif`) are
+  now skipped by the word scan both rules share, so an assignment after them
+  counts as one for the equals-expansion rule too.
+- Text the scan masks stays invisible: `bash -c "read path"` and `bash -c
+  'read path'` pass, which is right for bash; `zsh -c "read path"` passes
+  too, a false negative.
