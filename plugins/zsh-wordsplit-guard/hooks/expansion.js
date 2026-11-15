@@ -217,7 +217,8 @@ const candidates = [...globWords.slice(0, FIRST_COMMAND).matchAll(PATH_GLOB)]
   .filter((m) => literalEdit(m.index, m[0].length, (t) => t, /^~?[\w.*?[\]\/,:@%+-]+$/));
 if (candidates.length) {
   const r = spawnSync('zsh', ['-f', '-c',
-    'cd -- "$1" || exit 3; shift; for p; do a=( ${~p}(N) ); print -r -- $#a; done', 'zsh',
+    // A subshell per word: one zsh fails on (`~nosuchuser/*`) answers -1 alone.
+    'cd -- "$1" || exit 3; shift; for p; do ( a=( ${~p}(N) ); print -r -- $#a ) 2>/dev/null || print -- -1; done', 'zsh',
     input.cwd].concat(candidates.map((m) => m[0])), { encoding: 'utf8', timeout: 2000 });
   const counts = r.status === 0 ? r.stdout.split('\n') : [];
   candidates.forEach((m, i) => { if (counts[i] === '0') NO_MATCH.add(m.index); });

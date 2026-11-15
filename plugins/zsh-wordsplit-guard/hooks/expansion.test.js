@@ -355,6 +355,7 @@ assert.strictEqual(escapedIn('grep zsh ~/no-such-dir-zz/*.md'), 'grep zsh ~/no-s
 assert.strictEqual(escapedIn('for f in *.zz; do echo $f; done'), 'for f in \\*.zz; do echo $f; done');
 assert.strictEqual(escapedIn('find . -name *.zz'), 'find . -name \\*.zz');
 assert.strictEqual(escapedIn('grep --include=*.zz x .'), "grep --include='*.zz' x ."); // the flag-value rule's
+assert.strictEqual(escapedIn('ls ~no-such-user-zz/* *.zz'), 'ls ~no-such-user-zz/* \\*.zz'); // one word zsh fails on
 inDir.allowed('ls *.md');                 // matches: the author's glob
 inDir.allowed('ls [ab].md');
 inDir.allowed('touch b.zz; ls *.zz');     // a later command: earlier ones may create files
