@@ -5,7 +5,9 @@ const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-function harness(scriptName) {
+// `cwd` is the payload's: a missing directory by default, where the no-match
+// glob rule gets no answer from zsh and stays silent.
+function harness(scriptName, { cwd = path.join(__dirname, 'no-such-dir') } = {}) {
   const script = path.join(__dirname, scriptName);
 
   function run(payload, env) {
@@ -20,6 +22,7 @@ function harness(scriptName) {
 
   const bash = (command, extra) => ({
     hook_event_name: 'PreToolUse',
+    cwd: cwd,
     tool_name: 'Bash',
     tool_input: Object.assign({ command: command, description: 'Run it' }, extra),
   });

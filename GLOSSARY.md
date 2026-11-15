@@ -206,7 +206,8 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   function, an array (`"${DC[@]}"`) or `${=DC}` — see
   `docs/adr/0031-the-wordsplit-guard-flags-a-stored-command.md`.
 - **Expansion trap** — a form zsh runs differently from bash: a word bash takes
-  literally and zsh expands (a leading `=`, a glob in a `--flag=value` word,
+  literally and zsh expands (a leading `=`, a glob in a `--flag=value` word or
+  a path glob that matches nothing,
   parentheses in a `${var/pattern/…}` pattern), or bash syntax zsh lacks
   (`${!…}`, `${v@Q}`), or an unbraced history modifier (`$N:refs/x`). The wordsplit guard's second rule set, beside the **special parameter clobber** it also catches; each deny names
   the zsh rewrite, so it carries no opt-out, and a literal word whose fix is
@@ -215,7 +216,8 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   `docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md`,
   `docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md` and
   `docs/adr/0030-the-wordsplit-guard-flags-parameter-transformations.md` and
-  `docs/adr/0032-the-wordsplit-guard-flags-stored-arguments-and-history-modifiers.md`.
+  `docs/adr/0032-the-wordsplit-guard-flags-stored-arguments-and-history-modifiers.md` and
+  `docs/adr/0043-the-wordsplit-guard-escapes-a-path-glob-that-matches-nothing.md`.
 - **Special parameter clobber** — an assignment, written with bash habits, to
   a lowercase name zsh reserves: `path`, tied to `PATH`, so every later command
   fails with `command not found`, or `status`, which is read-only. Not an

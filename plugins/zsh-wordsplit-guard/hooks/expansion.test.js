@@ -5,6 +5,9 @@
 // the allowed ones are the nearby forms that run as written, including the
 // correct rewrite of each denied one.
 const assert = require('assert');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const { run, bash, denied, allowed, rewritten, assignmentContexts } = require('./testing').harness('expansion.js');
 const rewrites = (command, want) => assert.strictEqual(rewritten(command), want);
 
@@ -338,5 +341,44 @@ allowed('getopts ab opt path');            // an argument after the name
 // A clobber expands nothing: its header says so, unless an expansion joins it.
 assert.ok(/which reads this differently/.test(denied('read a path')), 'clobber header');
 assert.ok(/which expands this differently/.test(denied('read a path; echo ${!t}')), 'mixed header');
+
+// --- path glob with no match ------------------------------------------------------
+// zsh's nomatch aborts the whole command line; bash passes the word on. The hook
+// asks zsh in the call's cwd and escapes a glob that matches nothing (ADR-0043).
+const globDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zsh-nomatch-'));
+fs.writeFileSync(path.join(globDir, 'a.md'), '');
+const inDir = require('./testing').harness('expansion.js', { cwd: globDir });
+const escapedIn = (command) => inDir.rewritten(command);
+assert.strictEqual(escapedIn('grep -n x a.md *.zz'), 'grep -n x a.md \\*.zz');
+assert.strictEqual(escapedIn('cat a.md *.zz ?.yy'), 'cat a.md \\*.zz \\?.yy');
+assert.strictEqual(escapedIn('grep zsh ~/no-such-dir-zz/*.md'), 'grep zsh ~/no-such-dir-zz/\\*.md'); // `~` still expands
+assert.strictEqual(escapedIn('for f in *.zz; do echo $f; done'), 'for f in \\*.zz; do echo $f; done');
+assert.strictEqual(escapedIn('find . -name *.zz'), 'find . -name \\*.zz');
+assert.strictEqual(escapedIn('grep --include=*.zz x .'), "grep --include='*.zz' x ."); // the flag-value rule's
+assert.strictEqual(escapedIn('ls ~no-such-user-zz/* *.zz'), 'ls ~no-such-user-zz/* \\*.zz'); // one word zsh fails on
+assert.strictEqual(escapedIn('ls 2>&1 *.zz'), 'ls 2>&1 \\*.zz');       // `&` of a redirection ends no command
+assert.strictEqual(escapedIn('ls &>/dev/null *.zz'), 'ls &>/dev/null \\*.zz');
+assert.strictEqual(escapedIn('ls >*.zz'), 'ls >\\*.zz');               // bash creates the literal file
+assert.strictEqual(escapedIn('echo $(ls *.zz)'), 'echo $(ls \\*.zz)');
+assert.strictEqual(escapedIn('echo "$(ls *.zz)"'), 'echo "$(ls \\*.zz)"');
+inDir.allowed('cat <<< *.zz');            // a here-string word generates no file names
+inDir.allowed('cat <<EOF\n*.zz\nEOF');
+inDir.allowed('cat <<EOF\n$(ls *.zz)\nEOF'); // the body is past the first command
+inDir.allowed('ls ~-/*.zz ~+/*.zz ~1/*.zz'); // directory-stack forms: the hook's shell is not the call's
+inDir.allowed('case *.zz in x) ;; esac'); // a case word generates no file names
+assignmentContexts((c) => inDir.allowed(c), 'x=*.zz');
+inDir.allowed('ls *.md');                 // matches: the author's glob
+inDir.allowed('ls [ab].md');
+inDir.allowed('touch b.zz; ls *.zz');     // a later command: earlier ones may create files
+inDir.allowed('cd /tmp && ls *.zz');
+inDir.allowed('true | ls *.zz');
+inDir.allowed("ls '*.zz' \"*.zz\" \\*.zz");
+inDir.allowed('ls $D/*.zz');              // not literal: zsh would have to expand it
+inDir.allowed('ls *.zz(N)');              // zsh's own null glob
+inDir.allowed('[[ x == *.zz ]]');
+inDir.allowed('case x in *.zz) ;; esac');
+inDir.allowed('a[1]=x cmd');
+allowed('ls *.zz');                       // no cwd to ask in: left alone
+fs.rmSync(globDir, { recursive: true, force: true });
 
 console.log('zsh-wordsplit-guard expansion rules: all checks passed');
