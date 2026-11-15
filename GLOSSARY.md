@@ -218,6 +218,11 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   `docs/adr/0030-the-wordsplit-guard-flags-parameter-transformations.md` and
   `docs/adr/0032-the-wordsplit-guard-flags-stored-arguments-and-history-modifiers.md` and
   `docs/adr/0043-the-wordsplit-guard-escapes-a-path-glob-that-matches-nothing.md`.
+- **Rule family** — a group of wordsplit-guard rules that share one fix the
+  agent can write up front: split, glob, equals, modifier, pattern,
+  bash-only, special. The unit of the summary the guard gives at session
+  start; every rule belongs to one. See
+  `docs/adr/0044-the-wordsplit-guard-states-its-rule-families-at-session-start.md`.
 - **Special parameter clobber** — an assignment, written with bash habits, to
   a lowercase name zsh reserves: `path`, tied to `PATH`, so every later command
   fails with `command not found`, or `status`, which is read-only. Not an

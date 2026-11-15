@@ -177,7 +177,7 @@ if (itemHit) {
     '`for ' + name + ' in a b; do cmd "$' + name + '" arg; done`\n' +
     '  - several loop variables, one per word of an item (zsh only): ' +
     '`for ' + name + ' arg in a x b y; do cmd "$' + name + '" "$arg"; done`\n' +
-    NOSPLIT_OPT_OUT_HINT);
+    NOSPLIT_OPT_OUT_HINT, ['split']);
   process.exit(0);
 }
 
@@ -193,4 +193,4 @@ deny(
   '  - `arr=(...)` then `for x in "${arr[@]}"` — for values you build yourself\n' +
   '  - a literal list, or `$(cmd)` directly, which does split in zsh\n' +
   'Keep the split at the call site: `setopt shwordsplit` would change every ' +
-  'later expansion in that shell. ' + NOSPLIT_OPT_OUT_HINT);
+  'later expansion in that shell. ' + NOSPLIT_OPT_OUT_HINT, ['split']);

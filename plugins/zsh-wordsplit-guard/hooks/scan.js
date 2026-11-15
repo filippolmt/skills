@@ -15,7 +15,15 @@ function readBashInput() {
     cwd: String(input.cwd || process.cwd()) };
 }
 
-function deny(reason) {
+// `families`: the rule families (families.js) behind a verdict. Logged under
+// ZSH_GUARD_FAMILIES for rewrites.test.js, which ties every rule to its line
+// in the session summary.
+function logFamilies(families) {
+  if (process.env.ZSH_GUARD_FAMILIES) fs.appendFileSync(process.env.ZSH_GUARD_FAMILIES, JSON.stringify(families || []) + '\n');
+}
+
+function deny(reason, families) {
+  logFamilies(families);
   process.stdout.write(JSON.stringify({
     hookSpecificOutput: {
       hookEventName: 'PreToolUse',
@@ -29,7 +37,8 @@ function deny(reason) {
 // permission flow, and permission rules are evaluated against the rewritten
 // command. Measured on 2.1.302 — the docs only describe it beside `"allow"` or
 // `"ask"`. `additionalContext` tells the model what actually ran.
-function rewrite(toolInput, command, context) {
+function rewrite(toolInput, command, context, families) {
+  logFamilies(families);
   process.stdout.write(JSON.stringify({
     hookSpecificOutput: {
       hookEventName: 'PreToolUse',
