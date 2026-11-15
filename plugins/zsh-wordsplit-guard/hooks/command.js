@@ -154,7 +154,7 @@ for (const a of words.matchAll(new RegExp(ASSIGNMENT_AT + '([A-Za-z_]\\w*)=', 'g
       'stays ONE argument: the Bash tool runs zsh, where parameter expansion is not word-split. ' +
       'Use `${(f)' + name + '}` for one argument per line (preserving spaces), `${=' + name +
       '}` to split on IFS, or build an array `' + name + '=(...)` and pass `"${' + name +
-      '[@]}"`. Quote `"$' + name + '"` if one argument is intended. ' + NOSPLIT_OPT_OUT_HINT);
+      '[@]}"`. Quote `"$' + name + '"` if one argument is intended. ' + NOSPLIT_OPT_OUT_HINT, ['split']);
     process.exit(0);
   }
   if (!multiWord || !/^["']/.test(value)) continue;
@@ -186,4 +186,4 @@ deny(
   '  - a function: `' + fn + '() { ' + hintWords + ' "$@"; }`, then `' + fn + ' …`\n' +
   '  - an array: `' + name + '=(' + hintWords + ')`, then `"${' + name + '[@]}" …`\n' +
   '  - `${=' + name + '} …` — split on IFS\n' +
-  NOSPLIT_OPT_OUT_HINT);
+  NOSPLIT_OPT_OUT_HINT, ['split']);

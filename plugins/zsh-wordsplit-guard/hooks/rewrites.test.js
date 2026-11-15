@@ -20,6 +20,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { harness } = require('./testing');
+const { FAMILIES } = require('./families');
 
 const hooks = { guard: harness('guard.js'), expansion: harness('expansion.js'), command: harness('command.js') };
 
@@ -295,9 +296,10 @@ try {
   }
 
   const log = path.join(cwd, 'reasons.jsonl');
+  const familyLog = path.join(cwd, 'families.jsonl');
   for (const suite of ['guard.test.js', 'expansion.test.js', 'command.test.js']) {
     const r = spawnSync(process.execPath, [path.join(__dirname, suite)],
-      { encoding: 'utf8', env: Object.assign({}, process.env, { ZSH_GUARD_REASONS: log }) });
+      { encoding: 'utf8', env: Object.assign({}, process.env, { ZSH_GUARD_REASONS: log, ZSH_GUARD_FAMILIES: familyLog }) });
     assert.strictEqual(r.status, 0, suite + ' failed: ' + r.stderr);
   }
   const missing = new Set();
@@ -306,6 +308,17 @@ try {
   }
   assert.ok(!missing.size, 'deny shapes with no rewrite case:\n' +
     [...missing].map((shape) => '  ' + shape.slice(0, 160)).join('\n'));
+
+  // Every verdict names its rule families, and every family has a verdict: the
+  // session summary (families.js) cannot miss a rule or keep a dead line.
+  const used = new Set();
+  for (const line of fs.readFileSync(familyLog, 'utf8').split('\n').filter(Boolean)) {
+    const families = JSON.parse(line);
+    assert.ok(families.length && families.every((f) => FAMILIES[f]),
+      'a verdict without a known family: ' + line);
+    families.forEach((f) => used.add(f));
+  }
+  assert.deepStrictEqual([...used].sort(), Object.keys(FAMILIES).sort(), 'families with no verdict');
 } finally {
   fs.rmSync(cwd, { recursive: true, force: true });
 }
