@@ -49,7 +49,7 @@ run() {
 }
 
 run bash scripts/run-tests.sh                        # every test; CI runs this same script
-run node scripts/gen-readme.js --check               # README's generated regions match the catalog
+run node scripts/gen-readme.js --check               # README's generated regions match the catalog; local descriptions ≤ 500 chars
 run node scripts/gen-skills-tree.js --verify-paths   # classify artifacts and build in temp, including overlays
 run node scripts/check-renovate.js                   # Renovate regexes cover every external entry; no orphan packageRules
 run node scripts/check-sha-history.js origin/main    # no pinned sha moved behind, diverged or onto another history

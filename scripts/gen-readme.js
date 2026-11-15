@@ -138,6 +138,17 @@ if (require.main === module) {
     process.exit(1);
   }
 
+  // The description is the one line next to the plugin in `/plugin`; per-rule
+  // detail belongs in the ADRs (CODING_STANDARDS.md § Plugin descriptions).
+  const MAX_DESCRIPTION = 500;
+  const verbose = catalog.plugins.filter(isLocal).filter((e) => e.description.length > MAX_DESCRIPTION);
+  if (verbose.length) {
+    for (const e of verbose) {
+      console.error(`description of \`${e.name}\` is ${e.description.length} characters; the limit is ${MAX_DESCRIPTION}.`);
+    }
+    process.exit(1);
+  }
+
   // One derived set drives both regions: subtracted from the catalog projection,
   // selected for the bundle projection. Resolved here rather than inside the
   // renderers, which stay pure functions of their inputs.
