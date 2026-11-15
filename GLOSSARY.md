@@ -208,7 +208,7 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Expansion trap** — a form zsh runs differently from bash: a word bash takes
   literally and zsh expands (a leading `=`, a glob in a `--flag=value` word,
   parentheses in a `${var/pattern/…}` pattern), or bash syntax zsh lacks
-  (`${!…}`, `${v@Q}`), or an unbraced history modifier (`$N:refs/x`). The wordsplit guard's second rule set; each deny names
+  (`${!…}`, `${v@Q}`), or an unbraced history modifier (`$N:refs/x`). The wordsplit guard's second rule set, beside the **special parameter clobber** it also catches; each deny names
   the zsh rewrite, so it carries no opt-out, and a literal word whose fix is
   only an escape or quotes is rewritten by the guard itself — see
   `docs/adr/0022-the-wordsplit-guard-also-flags-zsh-expansions.md`,
@@ -216,3 +216,9 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   `docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md` and
   `docs/adr/0030-the-wordsplit-guard-flags-parameter-transformations.md` and
   `docs/adr/0032-the-wordsplit-guard-flags-stored-arguments-and-history-modifiers.md`.
+- **Special parameter clobber** — an assignment, written with bash habits, to
+  a lowercase name zsh reserves: `path`, tied to `PATH`, so every later command
+  fails with `command not found`, or `status`, which is read-only. Not an
+  **expansion trap**: no word expands differently, the name itself is taken. A
+  deliberate change of the search path (`path+=(…)`, `path=(/x $path)`) is not
+  one — see `docs/adr/0042-the-wordsplit-guard-flags-a-special-parameter-clobber.md`.

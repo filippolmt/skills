@@ -23,6 +23,7 @@ rewrites('echo ok; echo ==', 'echo ok; echo \\==');
 rewrites('case $v in =ab) echo y;; esac', 'case $v in \\=ab) echo y;; esac'); // patterns expand it too
 rewrites('v==ls; echo $v', 'v=\\=ls; echo $v'); // an assignment value expands
 assignmentContexts((c) => rewrites(c, c.replace('v==ls', 'v=\\=ls')), 'v==ls');
+rewrites('while v==ls; do break; done', 'while v=\\=ls; do break; done'); // a keyword opens the command
 let reason = denied('x=ls; echo =$x');      // an expansion: single quotes would kill it
 assert.ok(/Escape the `=`: `\\=\$x`/.test(reason), 'names the escaped form');
 assert.ok(/\$\{commands\[name\]\}/.test(reason), 'names the command-path form');
@@ -270,5 +271,72 @@ allowed('cmd "\\$N:refs/x"');
 allowed('cmd ok # $N:refs/x');
 allowed("cat <<'EOF'\n$N:refs/x\nEOF");
 denied('cmd "$N:refs/x"', { description: '[nosplit]' });
+
+// --- special parameter clobber ---------------------------------------------------
+// `path` is tied to `PATH`: assigning it makes every later command `command
+// not found`. `status` is read-only. Measured in zsh 5.9 (ADR-0042).
+reason = denied('while read pid path br; do glab api x; done < projects.txt');
+assert.ok(/`path` is tied to `PATH`/.test(reason), 'names the tie');
+denied('read a path b');
+denied('for path in a b; do ls $path; done');
+denied('for path (a b); do ls; done');
+denied('select path in a b; do ls; done');
+denied('IFS=: read -r a path <<< "1:2"');
+denied('echo x | read -A path');
+denied('printf -v path %s x');
+denied('path=x');
+denied('path=/nonexistent ls');            // a prefix assignment hides ls too
+denied('f() { local path; ls; }');          // a bare `local path` empties PATH
+denied('local -a path');
+assignmentContexts((c) => denied(c), 'path=x');
+denied('echo "$(read a path)"');
+denied('cat <<EOF\n$(for path in a; do :; done)\nEOF');
+denied('if true; then for path in a; do :; done; fi');
+reason = denied('local status=1');
+assert.ok(/`status` is read-only in zsh/.test(reason), 'names read-only');
+denied('for status in a; do :; done');
+denied('echo a | read status');
+denied('status=0');
+
+allowed('path+=(/x)');
+allowed('path=(/x $path)');
+allowed('path=(/x "${path[@]}")');
+allowed('path=(/x ${(s.:.)PATH})');
+allowed('path[1]=/x');
+allowed('echo $path ${path} ${#path} "$path"');
+allowed('file_path=x; path_list=y; my_status=1');
+allowed('local status');                  // assigns nothing; `status=…` after it is denied
+allowed('typeset status');
+allowed('cd path; ls path/to; git add -- path');
+allowed('echo path=x status=1');           // arguments, not assignments
+allowed('read a < path');
+allowed('read -r a <<< path');
+allowed('for p in path status; do :; done');
+allowed('echo "read a path"');
+allowed("echo 'for path in a'");
+allowed("cat <<'EOF'\nfor path in a\nEOF");
+allowed('PATH=/x:$PATH ls');
+// Only an array value keeps the search path: a scalar joins it into one entry.
+denied('path=$path; ls');
+denied('path=x$PATH');
+denied('f() { local path=$PATH; ls; }');
+denied('path=(${foo:-path})');            // a default value, not the search path
+allowed('f() { local path=(/x $path); }');
+denied('read "path?p> "');                 // zsh's prompt form
+denied('read path?p');
+denied('noglob read path');
+denied('exec read path');
+denied('nohup read path');
+allowed('printf %s -v path');              // `-v` after the format is data
+allowed('[[ $x == path ]]');
+allowed('case path in a) ;; esac');
+allowed('echo done path');
+allowed('echo "status?"');
+denied('while getopts ab path; do :; done');
+denied('getopts ab status');
+allowed('getopts ab opt path');            // an argument after the name
+// A clobber expands nothing: its header says so, unless an expansion joins it.
+assert.ok(/which reads this differently/.test(denied('read a path')), 'clobber header');
+assert.ok(/which expands this differently/.test(denied('read a path; echo ${!t}')), 'mixed header');
 
 console.log('zsh-wordsplit-guard expansion rules: all checks passed');

@@ -30,6 +30,12 @@
 //   5. `${v@Q}` and the rest of bash's parameter transformations. zsh has no
 //      `@` operator, so every `${…@…}` aborts with `bad substitution`.
 //
+// And one trap that expands nothing, a special parameter clobber:
+//
+//   6. Assigning `path`, tied to `PATH`, so every later command fails with
+//      `command not found`, or the read-only `status`, with bash habits:
+//      `while read id path br`, `for path in …`, `local status=1`.
+//
 // Rules 1 and 2 rewrite instead of denying when the word is plain literal text,
 // so the call runs with no round trip: the rewrite gives bash's reading of it
 // whenever bash's own glob matches no file. A word holding an expansion, a
@@ -39,7 +45,8 @@
 // docs/adr/0023-the-wordsplit-guard-flags-indirect-expansion.md,
 // docs/adr/0030-the-wordsplit-guard-flags-parameter-transformations.md; the rewrite:
 // docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md; the URL query:
-// docs/adr/0037-the-wordsplit-guard-rewrites-a-url-query-string.md.
+// docs/adr/0037-the-wordsplit-guard-rewrites-a-url-query-string.md; the clobber:
+// docs/adr/0042-the-wordsplit-guard-flags-a-special-parameter-clobber.md.
 const { readBashInput, deny, rewrite, maskedViews, maskNonSplitting } = require('./scan');
 
 const input = readBashInput();
@@ -109,15 +116,19 @@ const ASSIGNMENT = /^[A-Za-z_]\w*(\[[^\]]*\])?=/;
 // blanked first, so the `)` left is a command boundary: a `case` pattern's or
 // a function definition's.
 function isAssignment(at) {
+  const before = wordsBefore(at);
+  return before.every((w) => ASSIGNMENT.test(w)) || DECLARATION.test(before[0]);
+}
+const DECLARATION = /^(?:export|typeset|local|declare|readonly|integer|float)$/;
+// The words of its command before `at`, keywords left out.
+function wordsBefore(at) {
   let head = words.slice(0, at).replace(/`[^`\n]*`/g, blankRun);
   for (let prev; prev !== head;) {
     prev = head;
     head = head.replace(/([$<>=])\(([^()]*)\)/g, (m, sigil, body) => sigil + blankRun('(' + body + ')'));
   }
-  const before = head.split(/[;&|()\n]/).pop().trim().split(/\s+/)
-    .filter((w) => w && !/^(?:\{|!|then|do|else|time)$/.test(w));
-  return before.every((w) => ASSIGNMENT.test(w)) ||
-    /^(?:export|typeset|local|declare|readonly|integer|float)$/.test(before[0]);
+  return head.split(/[;&|()\n]/).pop().trim().split(/\s+/)
+    .filter((w) => w && !/^(?:\{|!|then|do|else|time|while|until|if|elif)$/.test(w));
 }
 
 // What a parameter pattern holds, from `from` up to the `/` that starts the
@@ -148,8 +159,67 @@ function braceForm(at) {
     : /^\$\{[^}\s]*/.exec(command.slice(at))[0] + '}';
 }
 
+// Deny reasons for zsh's lowercase special parameters a bash habit assigns
+// (ADR-0042).
+const CLOBBER_REASON = {
+  path: '`path` is tied to `PATH` in zsh: assigning it replaces the command search ' +
+    'path, and every later command fails with `command not found`. Use another name ' +
+    '(`p`, `file_path`); to change the search path on purpose, write `path+=(…)` or ' +
+    '`path=(/x $path)`.',
+  status: '`status` is read-only in zsh (it mirrors `$?`): assigning it aborts the ' +
+    'command with `read-only variable: status`. Use another name (`rc`, `state`).',
+};
+// Whether the value starting at `from` is an array reading the search path, a
+// deliberate edit of it: `path=(/x $path)`, `path=(${(s.:.)PATH})`. A scalar
+// value joins the array into one entry, so `path=$path` breaks it too.
+function readsSearchPath(from) {
+  if (words[from] !== '(') return false;
+  let end = from;
+  for (let depth = 0; end < words.length; end++) {
+    if (words[end] === '(') depth++;
+    else if (words[end] === ')' && --depth === 0) break;
+  }
+  return /\$(?:\{(?:\([^)]*\))?)?(?:path|PATH)\b/.test(patterns.slice(from, end));
+}
+// Whether the bare name at `at` is assigned by its command: a `for`/`select`
+// variable, a `read` or `getopts` name, a `printf -v` target, or a declared
+// `path`.
+function assignsBareName(name, at) {
+  const before = wordsBefore(at);
+  // Precommand modifiers run the command after them.
+  while (/^(?:builtin|command|noglob|exec|nohup)$/.test(before[0]) ||
+    ASSIGNMENT.test(before[0] || '')) before.shift();
+  const [head] = before;
+  if (/[<>]$/.test(before[before.length - 1] || '')) return false; // a redirection target
+  return (/^(?:for|select)$/.test(head) && !before.includes('in')) ||
+    head === 'read' ||
+    (head === 'getopts' && before.length === 2) ||
+    (/^(?:printf|print)$/.test(head) && before.length === 2 && before[1] === '-v') ||
+    // A bare `local status` assigns nothing; a bare `local path` empties PATH.
+    (DECLARATION.test(head) && name === 'path');
+}
+
 // Each rule scans one view and turns a match into a reason, or null to pass it.
 const RULES = [
+  {
+    // A special parameter as an assignment word or a bare name its command
+    // assigns, including zsh's `read "path?prompt"`. `path+=…`, `path[1]=…` and
+    // an array value reading the search path are zsh written on purpose. The
+    // view keeps double-quoted text for the prompt form; any other match there
+    // is ignored.
+    clobber: true,
+    view: patterns,
+    regex: /(?<=^|[\s;&|(`])(?:"(path|status)\?|(path|status)(?:(\+?)=|(?=[\s;&|)?]|$)))/g,
+    reason(m) {
+      if (m[1]) return assignsBareName(m[1], m.index) ? CLOBBER_REASON[m[1]] : null;
+      const name = m[2];
+      if (words.slice(m.index, m.index + name.length) !== name) return null; // quoted text
+      const clobbers = m[0].endsWith('=')
+        ? isAssignment(m.index) && !m[3] && !(name === 'path' && readsSearchPath(m.index + m[0].length))
+        : assignsBareName(name, m.index);
+      return clobbers ? CLOBBER_REASON[name] : null;
+    },
+  },
   {
     // Unbraced parameters accept history modifiers even inside double quotes.
     view: patterns,
@@ -342,6 +412,7 @@ const RULES = [
 // Every rewritable hit is collected; the first hit a rule cannot rewrite denies.
 const reasons = [];
 const edits = [];
+let expands = false;
 for (const rule of RULES) {
   for (const m of rule.view.matchAll(rule.regex)) {
     const span = rule.span ? rule.span(m) : [];
@@ -350,13 +421,15 @@ for (const rule of RULES) {
     const edit = rule.rewrite && rule.rewrite(m, ...span);
     if (edit) { edits.push(edit); continue; }
     reasons.push(reason);
+    expands = expands || !rule.clobber;
     break;
   }
 }
 
 if (reasons.length) {
   // The edits are dropped: the retry gets them again.
-  deny('zsh-wordsplit-guard: the Bash tool runs zsh, which expands this ' +
+  // A clobber alone expands nothing.
+  deny('zsh-wordsplit-guard: the Bash tool runs zsh, which ' + (expands ? 'expands' : 'reads') + ' this ' +
     'differently from bash.\n' + reasons.map((r) => '- ' + r).join('\n'));
 } else if (edits.length) {
   let rewritten = command;
