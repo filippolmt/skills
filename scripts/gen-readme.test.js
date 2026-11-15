@@ -91,3 +91,13 @@ test('a bundle with no dependencies renders an empty cell, it does not throw', (
   assert.match(md, /\| `hollow-bundle` \|  \|/);
   assert.match(md, /\| `empty-bundle` \|  \|/);
 });
+
+// A JSON tool (`jq`, JSON.stringify) rewriting the file spreads every group over five
+// lines; one line per group keeps a new source a one-line diff.
+test('catalog-meta.json keeps one line per group', () => {
+  const text = require('fs').readFileSync(require('path').join(__dirname, 'catalog-meta.json'), 'utf8');
+  const { groups } = JSON.parse(text);
+  const lines = text.split('\n').filter((l) => /^ {4}\{ "repo": ".+" \},?$/.test(l));
+  assert.strictEqual(lines.length, groups.length,
+    'every group in scripts/catalog-meta.json sits on its own line; insert new ones as text, not through a JSON rewrite');
+});

@@ -15,6 +15,9 @@
 // at the pinned `sha` and absent, at the same path, at the repo's curation baseline
 // is one no human has looked at yet.
 //
+// Both modes also report an ADR-0014 exclusion that matches no skill the check
+// would otherwise report: a row that excludes nothing, waiting to hide a later skill.
+//
 // Usage: node scripts/check-whole-sources.js   (exit 1 when a skill is missing)
 //        node scripts/check-whole-sources.js --curated   (exit 1 when a curated
 //        source ships a skill past its curation baseline)
@@ -119,6 +122,19 @@ function unreviewed({ sources, exclusions, catalog, trees }) {
   return missing;
 }
 
+// Pure: exclusion patterns that match no folder `isSkillOfRepo` keeps in the repo's
+// pinned tree. Such a row excludes nothing: it names a mirror, a fixture or a
+// `.claude/skills` beside `skills/`, which are never reported anyway, or a skill
+// upstream has since removed. Left in place, it would silently drop a later skill
+// that reuses the name (ADR-0014). `skillsOf` maps a repo to its pinned skill folders.
+function inertExclusions(exclusions, skillsOf) {
+  return [...skillsOf].flatMap(([repo, skills]) => (exclusions.get(repo) || [])
+    .filter((p) => !skills.some((dir) => isSkillOfRepo(dir, skills) && excluded(dir, [p])))
+    .map((pattern) => ({ repo, pattern })));
+}
+const inertLine = ({ repo, pattern }) =>
+  `- \`${repo}\`: exclusion \`${pattern}\` matches no skill of the repo — remove its ADR-0014 row`;
+
 // Pure: every curated source needs a curation baseline and an entry, and every baseline
 // belongs to a curated source — a stale key or row would silently stop meaning anything.
 function baselineMismatches({ sources, baselines, catalog }) {
@@ -197,7 +213,8 @@ async function checkCurated() {
   }
   report(`No skill of ${trees.size} curated sources is past its curation baseline.`,
     'Curated sources ship skills past their curation baseline (ADR-0039):',
-    unreviewed({ sources, exclusions, catalog, trees }).map((m) => `- \`${m.repo}\`: \`${m.path}\``),
+    [...unreviewed({ sources, exclusions, catalog, trees }).map((m) => `- \`${m.repo}\`: \`${m.path}\``),
+      ...inertExclusions(exclusions, new Map([...trees].map(([repo, t]) => [repo, t.pinned.skills]))).map(inertLine)],
     'Pick them with `/add-external-skill update <owner/repo>`, which moves the baseline; to decline, move the repo\'s `curationBaseline` in scripts/catalog-meta.json to its pinned sha, or list a reasoned exclusion in ADR-0014.');
 }
 
@@ -207,9 +224,10 @@ async function checkWhole() {
   for (const repo of sourcesOfKind(sources, 'whole')) upstream.set(repo, await pinnedTree(catalog, repo));
   report(`Every skill of ${upstream.size} whole sources is catalogued or excluded.`,
     'Whole sources ship skills with no catalog entry and no ADR-0014 exclusion:',
-    uncatalogued({ sources, exclusions, catalog, upstream }).map((m) => (m.path === null
+    [...uncatalogued({ sources, exclusions, catalog, upstream }).map((m) => (m.path === null
       ? `- \`${m.repo}\`: no catalog entry at all — add one, or reclassify the repo in ADR-0014`
       : `- \`${m.repo}\`: \`${m.path}\``)),
+      ...inertExclusions(exclusions, new Map([...upstream].map(([repo, t]) => [repo, t.skills]))).map(inertLine)],
     'Add them with `/add-external-skill update <owner/repo>`, or list them as exclusions in ADR-0014.');
 }
 
@@ -222,4 +240,4 @@ if (require.main === module && process.argv[2] === '--classified') {
   });
 }
 
-module.exports = { parseAdr, uncatalogued, unreviewed, unclassified, baselineMismatches, upstreamTree, pinnedTree };
+module.exports = { parseAdr, uncatalogued, unreviewed, unclassified, baselineMismatches, inertExclusions, upstreamTree, pinnedTree };
