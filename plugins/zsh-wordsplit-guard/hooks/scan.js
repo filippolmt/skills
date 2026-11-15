@@ -3,17 +3,31 @@
 const fs = require('fs');
 
 // The Bash command of a PreToolUse payload, or null for anything else.
-// `toolInput` is the whole input, which a rewrite returns with only `command` changed.
+// `toolInput` is the whole input, which a rewrite returns with only `command` changed;
+// `cwd` is where the command will run.
+// The hook's JSON payload, or {} when stdin holds none.
+function readPayload() {
+  try { return JSON.parse(fs.readFileSync(0, 'utf8')) || {}; } catch (e) { return {}; }
+}
+
 function readBashInput() {
-  let input = {};
-  try { input = JSON.parse(fs.readFileSync(0, 'utf8')) || {}; } catch (e) { /* no stdin */ }
+  const input = readPayload();
   const toolInput = input.tool_input || {};
   const command = String(toolInput.command || '');
   if (input.tool_name !== 'Bash' || !command) return null;
-  return { command: command, description: String(toolInput.description || ''), toolInput: toolInput };
+  return { command: command, description: String(toolInput.description || ''), toolInput: toolInput,
+    cwd: String(input.cwd || process.cwd()) };
 }
 
-function deny(reason) {
+// `families`: the rule families (families.js) behind a verdict. Logged under
+// ZSH_GUARD_FAMILIES for rewrites.test.js, which ties every rule to its line
+// in the session summary.
+function logFamilies(families) {
+  if (process.env.ZSH_GUARD_FAMILIES) fs.appendFileSync(process.env.ZSH_GUARD_FAMILIES, JSON.stringify(families || []) + '\n');
+}
+
+function deny(reason, families) {
+  logFamilies(families);
   process.stdout.write(JSON.stringify({
     hookSpecificOutput: {
       hookEventName: 'PreToolUse',
@@ -27,7 +41,8 @@ function deny(reason) {
 // permission flow, and permission rules are evaluated against the rewritten
 // command. Measured on 2.1.302 — the docs only describe it beside `"allow"` or
 // `"ask"`. `additionalContext` tells the model what actually ran.
-function rewrite(toolInput, command, context) {
+function rewrite(toolInput, command, context, families) {
+  logFamilies(families);
   process.stdout.write(JSON.stringify({
     hookSpecificOutput: {
       hookEventName: 'PreToolUse',
@@ -160,4 +175,4 @@ function noSplitOptedOut(input) {
 const NOSPLIT_OPT_OUT_HINT = 'Deliberate non-split: [nosplit] in the description, or ' +
   'ALLOW_ZSH_NOSPLIT=1 for the session.';
 
-module.exports = { readBashInput, deny, rewrite, maskedViews, maskNonSplitting, noSplitOptedOut, NOSPLIT_OPT_OUT_HINT };
+module.exports = { readPayload, readBashInput, deny, rewrite, maskedViews, maskNonSplitting, noSplitOptedOut, NOSPLIT_OPT_OUT_HINT };

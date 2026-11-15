@@ -4,13 +4,15 @@ status: accepted
 
 # The wordsplit guard also flags three zsh expansions, with no opt-out
 
-> **Amended by [ADR-0025](0025-the-wordsplit-guard-rewrites-literal-words.md)
-> and [ADR-0037](0037-the-wordsplit-guard-rewrites-a-url-query-string.md).** A
+> **Amended by [ADR-0025](0025-the-wordsplit-guard-rewrites-literal-words.md),
+> [ADR-0037](0037-the-wordsplit-guard-rewrites-a-url-query-string.md)
+> and [ADR-0043](0043-the-wordsplit-guard-escapes-a-path-glob-that-matches-nothing.md).** A
 > flag-value glob or a leading `=` on a literal word is now rewritten by the hook
 > instead of denied. ADR-0025 also moves three lines below: `case` patterns, an
 > assignment value starting with `=`, and where a flag value ends.
 > ADR-0037 rewrites or denies a bare word holding a URL query string
 > (`HEAD?recursive=1`), which the glob line below leaves alone.
+> ADR-0043 escapes a path glob in the call's first command that matches nothing.
 
 One session on 2026-10-08 lost three commands to zsh, each one a word that bash
 would have taken literally. Measured in zsh 5.9 with default options:

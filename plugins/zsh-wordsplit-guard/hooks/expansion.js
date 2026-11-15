@@ -18,6 +18,9 @@
 //      The same holds for a bare word with a URL query string (`HEAD?a=1`),
 //      the one bare-word shape no one globs on purpose; an assignment value
 //      generates no file names and is left alone.
+//      And for a path glob in the call's first command that matches nothing
+//      in its cwd, asked of zsh before the call runs: a deliberate glob, but
+//      bash would pass the word on where zsh aborts the line.
 //   3. Parentheses in a `${v/pat/repl}` pattern. They are a glob group in zsh and
 //      literal in bash, so `${b/(x, y)/X}` on "see (x, y)" gives "see (X)": a
 //      wrong result, no error.
@@ -46,8 +49,11 @@
 // docs/adr/0030-the-wordsplit-guard-flags-parameter-transformations.md; the rewrite:
 // docs/adr/0025-the-wordsplit-guard-rewrites-literal-words.md; the URL query:
 // docs/adr/0037-the-wordsplit-guard-rewrites-a-url-query-string.md; the clobber:
-// docs/adr/0042-the-wordsplit-guard-flags-a-special-parameter-clobber.md.
+// docs/adr/0042-the-wordsplit-guard-flags-a-special-parameter-clobber.md; the
+// unmatched path glob: docs/adr/0043-the-wordsplit-guard-escapes-a-path-glob-that-matches-nothing.md.
+const { spawnSync } = require('child_process');
 const { readBashInput, deny, rewrite, maskedViews, maskNonSplitting } = require('./scan');
+const { FAMILIES, EXPAND_NOTHING } = require('./families');
 
 const input = readBashInput();
 if (!input) process.exit(0);
@@ -199,15 +205,58 @@ function assignsBareName(name, at) {
     (DECLARATION.test(head) && name === 'path');
 }
 
+// An unquoted literal word with a glob in the call's first command: one zsh
+// can match against the cwd before anything in the call has run. The command
+// ends at `;`, `|`, a newline or a `&` that is not part of a redirection
+// (`2>&1`, `&>`). A word with `=` is the flag-value, query and equals rules';
+// a here-string word and a `case` word generate no file names. A leading `~`
+// is a home directory; `~-`, `~+` and `~1` name the hook's directory stack,
+// not the call's.
+const FIRST_END = globWords.search(/[;|\n]|(?<![<>])&(?!>)/);
+const FIRST_COMMAND = FIRST_END === -1 ? globWords.length : FIRST_END;
+const PATH_GLOB = /(?<=^|[\s(`]|(?<!<)[<>])[^\s;&|<>()`=]*[*?[][^\s;&|<>()`=]*(?=$|[\s;&|<>)`])/g;
+const LITERAL_PATH = /^(?:~(?![-+\d]))?[\w.*?[\]\/,:@%+-]+$/;
+// The starts of the path globs that match nothing, asked of zsh itself in the
+// call's cwd: `${~p}` globs the word without running any `$(…)` in it, and
+// `always` answers -1 for a word zsh fails on (`~nosuchuser/*`) without a
+// subshell, so the timeout's kill stops every search. No answer (no zsh, a
+// missing cwd, a timeout) leaves every word alone.
+const NO_MATCH_STARTS = new Set();
+const candidates = [...globWords.slice(0, FIRST_COMMAND).matchAll(PATH_GLOB)]
+  .filter((m) => !/(?:\bcase|<<<)\s*$/.test(globWords.slice(0, m.index)) &&
+    literalEdit(m.index, m[0].length, (t) => t, LITERAL_PATH));
+if (candidates.length) {
+  const r = spawnSync('zsh', ['-f', '-c',
+    'cd -- "$1" || exit 3; shift; for p; do { a=( ${~p}(N) ); print -r -- $#a } ' +
+    'always { (( TRY_BLOCK_ERROR )) && print -- -1; TRY_BLOCK_ERROR=0 }; done', 'zsh',
+    input.cwd].concat(candidates.map((m) => m[0])), { encoding: 'utf8', timeout: 2000 });
+  const counts = r.status === 0 ? r.stdout.split('\n') : [];
+  candidates.forEach((m, i) => { if (counts[i] === '0') NO_MATCH_STARTS.add(m.index); });
+}
+
 // Each rule scans one view and turns a match into a reason, or null to pass it.
 const RULES = [
   {
+    family: 'glob',
+    // A path glob in the first command that matches nothing (ADR-0043).
+    view: globWords,
+    regex: PATH_GLOB,
+    reason(m) {
+      if (!NO_MATCH_STARTS.has(m.index)) return null;
+      return 'Glob that matches nothing: `' + m[0] + '`. zsh aborts the whole command ' +
+        'line with `no matches found`; bash passes the word on. Escape the glob: `' +
+        escapeGlobs(m.index, m[0].length) + '`.';
+    },
+    rewrite: (m) => literalEdit(m.index, m[0].length, () => escapeGlobs(m.index, m[0].length),
+      LITERAL_PATH),
+  },
+  {
+    family: 'special',
     // A special parameter as an assignment word or a bare name its command
     // assigns, including zsh's `read "path?prompt"`. `path+=…`, `path[1]=…` and
     // an array value reading the search path are zsh written on purpose. The
     // view keeps double-quoted text for the prompt form; any other match there
     // is ignored.
-    clobber: true,
     view: patterns,
     regex: /(?<=^|[\s;&|(`])(?:"(path|status)\?|(path|status)(?:(\+?)=|(?=[\s;&|)?]|$)))/g,
     reason(m) {
@@ -221,6 +270,7 @@ const RULES = [
     },
   },
   {
+    family: 'modifier',
     // Unbraced parameters accept history modifiers even inside double quotes.
     view: patterns,
     regex: /(?<!\$)\$([A-Za-z_]\w*):[fgw]*[aAcehlpqQrstux&]/g,
@@ -232,6 +282,7 @@ const RULES = [
     },
   },
   {
+    family: 'glob',
     // `--name=value` in word position, the value up to an operator or a
     // parenthesis that is not part of a `$(…)` or backtick substitution in it.
     view: globWords,
@@ -248,6 +299,7 @@ const RULES = [
     rewrite: (m, start, length) => quoteEdit(start, length),
   },
   {
+    family: 'glob',
     // A bare word holding a URL query string, `?key=`, or a redirection
     // target (not a heredoc or here-string word): no one globs on purpose in
     // that shape. A `--name=` word is the rule above's; an assignment value
@@ -280,6 +332,7 @@ const RULES = [
       : quoteEdit(start, length, QUERY_LITERAL)),
   },
   {
+    family: 'equals',
     // A word starting with `=` and something after it, or an assignment value
     // starting with `=` (`NAME=` in group 2). The word stops at a parenthesis:
     // the `)` closing a `$(…)` around it is not part of it, and `=(cmd)`, zsh
@@ -304,6 +357,7 @@ const RULES = [
       : literalEdit(start, length, (text) => '\\' + text)),
   },
   {
+    family: 'pattern',
     // A pattern-taking modifier on a named parameter: `${v/`, `${v//`, `${v:/`,
     // `${v#`, `${v##`, `${v%`, `${v%%`. `${#v}`, `${=v}` and `${(f)v}` start
     // differently.
@@ -324,6 +378,7 @@ const RULES = [
     },
   },
   {
+    family: 'bashonly',
     // bash's `${!…}`: indirection, name and key lists, last argument. `${!}`,
     // `${!-x}` and `${!:-x}` are `$!` in both shells.
     view: patterns,
@@ -363,6 +418,7 @@ const RULES = [
     },
   },
   {
+    family: 'bashonly',
     // bash's `${v@Q}` family on a name, a positional or `@`/`*`, with an
     // optional subscript. zsh has no `@` operator: every form aborts.
     view: patterns,
@@ -409,28 +465,34 @@ const RULES = [
   },
 ];
 
+// A rule without a known family would ship without its session-summary line,
+// even when no test triggers it (ADR-0044).
+for (const rule of RULES) {
+  if (!FAMILIES[rule.family]) throw new Error('expansion.js: a rule without a known family: ' + rule.regex);
+}
+
 // Every rewritable hit is collected; the first hit a rule cannot rewrite denies.
 const reasons = [];
 const edits = [];
-let expands = false;
+const reasonFamilies = new Set();
+const editFamilies = new Set();
 for (const rule of RULES) {
   for (const m of rule.view.matchAll(rule.regex)) {
     const span = rule.span ? rule.span(m) : [];
     const reason = rule.reason(m, ...span);
     if (!reason) continue;
     const edit = rule.rewrite && rule.rewrite(m, ...span);
-    if (edit) { edits.push(edit); continue; }
+    if (edit) { edits.push(edit); editFamilies.add(rule.family); continue; }
     reasons.push(reason);
-    expands = expands || !rule.clobber;
+    reasonFamilies.add(rule.family);
     break;
   }
 }
 
 if (reasons.length) {
   // The edits are dropped: the retry gets them again.
-  // A clobber alone expands nothing.
-  deny('zsh-wordsplit-guard: the Bash tool runs zsh, which ' + (expands ? 'expands' : 'reads') + ' this ' +
-    'differently from bash.\n' + reasons.map((r) => '- ' + r).join('\n'));
+  deny('zsh-wordsplit-guard: the Bash tool runs zsh, which ' + ([...reasonFamilies].every((f) => EXPAND_NOTHING.has(f)) ? 'reads' : 'expands') + ' this ' +
+    'differently from bash.\n' + reasons.map((r) => '- ' + r).join('\n'), [...reasonFamilies]);
 } else if (edits.length) {
   let rewritten = command;
   for (const e of edits.sort((a, b) => b.start - a.start)) {
@@ -439,5 +501,5 @@ if (reasons.length) {
   rewrite(input.toolInput, rewritten, 'zsh-wordsplit-guard rewrote ' +
     edits.reverse().map((e) => '`' + e.from + '` as `' + e.to + '`').join(', ') +
     ': the Bash tool runs zsh, which would otherwise expand them. The command ' +
-    'ran with that quoting; write it yourself next time.');
+    'ran with that quoting; write it yourself next time.', [...editFamilies]);
 }

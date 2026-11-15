@@ -63,8 +63,10 @@ function* transcripts(dir) {
 }
 
 // Line by line: a transcript can outgrow the longest string node will build.
+// Each command with the cwd of its first occurrence: the no-match glob rule asks
+// the disk there, as it stands now, not as it stood when the command ran.
 async function commands(dir, filter) {
-  const seen = new Set();
+  const seen = new Map();
   for (const file of transcripts(dir)) {
     const lines = readline.createInterface({ input: fs.createReadStream(file), crlfDelay: Infinity });
     for await (const line of lines) {
@@ -74,15 +76,18 @@ async function commands(dir, filter) {
       const content = entry.message && Array.isArray(entry.message.content) ? entry.message.content : [];
       for (const c of content) {
         const command = c.type === 'tool_use' && c.name === 'Bash' && c.input && c.input.command;
-        if (typeof command === 'string' && command && (!filter || filter.test(command))) seen.add(command);
+        if (typeof command === 'string' && command && (!filter || filter.test(command)) && !seen.has(command)) {
+          // No recorded cwd: a missing one, so the answer cannot depend on where the replay runs.
+          seen.set(command, entry.cwd || path.join(os.tmpdir(), 'replay-no-cwd', 'missing'));
+        }
       }
     }
   }
-  return [...seen];
+  return [...seen].map(([command, cwd]) => ({ command, cwd }));
 }
 
 // The verdict and its reason, or null for a command the hook leaves alone.
-function verdict(hook, command) {
+function verdict(hook, command, cwd) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [hook], { env: Object.assign({}, process.env, { ALLOW_ZSH_NOSPLIT: '' }) });
     let out = '';
@@ -101,7 +106,7 @@ function verdict(hook, command) {
         reason: String(hso.permissionDecisionReason || hso.additionalContext || ''),
       });
     });
-    child.stdin.end(JSON.stringify({ tool_name: 'Bash', tool_input: { command: command, description: 'replay' } }));
+    child.stdin.end(JSON.stringify({ tool_name: 'Bash', cwd: cwd, tool_input: { command: command, description: 'replay' } }));
   });
 }
 
@@ -110,7 +115,7 @@ const hash = (text) => createHash('sha256').update(text).digest('hex');
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
   const all = await commands(opts.dir, opts.filter);
-  const jobs = opts.hooks.flatMap((hook) => all.map((command) => ({ hook, command })));
+  const jobs = opts.hooks.flatMap((hook) => all.map(({ command, cwd }) => ({ hook, command, cwd })));
   const hits = [];
   let baseDir = null;
   let baseHooks = null;
@@ -124,12 +129,12 @@ async function main() {
     await Promise.all(Array.from({ length: os.cpus().length }, async () => {
       while (next < jobs.length) {
         const job = jobs[next++];
-        const v = await verdict(job.hook, job.command);
+        const v = await verdict(job.hook, job.command, job.cwd);
         if (!baseHooks) {
           if (v) hits.push(Object.assign({}, job, v));
           continue;
         }
-        const b = await verdict(path.join(baseHooks, path.basename(job.hook)), job.command);
+        const b = await verdict(path.join(baseHooks, path.basename(job.hook)), job.command, job.cwd);
         if (JSON.stringify(v) === JSON.stringify(b)) continue;
         hits.push(Object.assign({}, job, v || { verdict: 'allow', reason: '' }, { base: b || { verdict: 'allow', reason: '' } }));
       }
