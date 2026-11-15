@@ -50,7 +50,10 @@ A rewrite keeps the meaning, so there is no opt-out (ADR-0022).
 ## Consequences
 
 - The hook now reads the payload's `cwd`, falling back to its own working
-  directory. The test harness passes a missing directory by default, so the
+  directory. The hooks reference states that this field follows Claude: it is
+  the new directory after a `cd` in an earlier call, and the worktree root
+  after Claude enters a worktree, so the match is asked where the command
+  will run. The test harness passes a missing directory by default, so the
   rule stays silent unless a test gives it a fixture.
 - `zsh -f` ignores the user's options: with `nullglob` or `nonomatch` set in
   their shell, zsh would not abort, and the rewrite turns their reading into
