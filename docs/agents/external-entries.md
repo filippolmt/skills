@@ -16,7 +16,7 @@ One catalog, `.claude-plugin/marketplace.json`, feeds every projection:
 
 `scripts/distribution-meta.json` holds only the cross-harness facts the catalog
 cannot express: runtime edges, adaptations, unsupported dispositions and
-fallbacks. `node scripts/gen-skills-tree.js --verify-paths` fails on any distribution artifact with no Codex and
+fallbacks, or a `fallbackFrom` path to a module that exports one. `node scripts/gen-skills-tree.js --verify-paths` fails on any distribution artifact with no Codex and
 pi outcome. It builds the pi projection, overlays included, in a temporary
 directory, and generates `docs/distribution-parity.md` from that inventory.
 

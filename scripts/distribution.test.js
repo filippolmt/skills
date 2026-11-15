@@ -169,6 +169,44 @@ test('portable artifacts have derived dispositions while hooks require an explic
   assert.throws(() => classify({ entry: 'guard', id: 'hook:x', kind: 'hook' }, {}), /unclassified/);
 });
 
+test('an unsupported outcome can take its fallback from a module', () => {
+  const key = 'zsh-wordsplit-guard/hook:hooks/hooks.json#PreToolUse[0]';
+  const from = 'plugins/zsh-wordsplit-guard/hooks/families.js';
+  const outcome = (pi) => ({ codex: { disposition: 'unsupported', limitation: 'No.', fallback: 'None.' }, pi });
+  const item = { entry: 'zsh-wordsplit-guard', id: 'hook:hooks/hooks.json#PreToolUse[0]', kind: 'hook' };
+  const inventory = [{ name: 'zsh-wordsplit-guard', runtimeDependencies: [],
+    artifacts: [{ ...item, dispositions: outcome({ disposition: 'unsupported', limitation: 'No hooks.', fallbackFrom: from }) }] }];
+  const pi = renderParity(inventory).split('\n').find((line) => line.includes('PreToolUse')).split(' | ')[4];
+  // Every family line, as families.js states it: a new family reaches pi on regeneration.
+  for (const line of Object.values(require('../plugins/zsh-wordsplit-guard/hooks/families.js').FAMILIES)) {
+    assert.ok(pi.includes(line.replace(/\|/g, '\\|')), 'pi fallback lacks: ' + line);
+  }
+  const meta = (pi) => ({ artifacts: { [key]: outcome(pi) } });
+  assert.doesNotThrow(() => classify(item, meta({ disposition: 'unsupported', limitation: 'No hooks.', fallbackFrom: from })));
+  assert.throws(() => validateDistribution([], meta({ disposition: 'unsupported', limitation: 'No hooks.', fallbackFrom: 'plugins/missing.js' })),
+    /fallbackFrom/);
+  const noExport = path.relative(path.join(__dirname, '..'), path.join(fs.mkdtempSync(path.join(__dirname, '.fallback-')), 'none.js'));
+  fs.writeFileSync(path.join(__dirname, '..', noExport), 'module.exports = {};\n');
+  assert.throws(() => validateDistribution([], meta({ disposition: 'unsupported', limitation: 'No hooks.', fallbackFrom: noExport })),
+    /exports no fallback string/);
+  fs.rmSync(path.dirname(path.join(__dirname, '..', noExport)), { recursive: true, force: true });
+  assert.throws(() => validateDistribution([], meta({ disposition: 'unsupported', limitation: 'No hooks.', fallbackFrom: 'README.md' })),
+    /path of a \.js module/);
+  assert.throws(() => validateDistribution([], meta({ disposition: 'unsupported', limitation: 'No hooks.', fallbackFrom: 7 })),
+    /path of a \.js module/);
+  assert.throws(() => validateDistribution([], meta({ disposition: 'unsupported', limitation: 'No hooks.', fallback: 'x', fallbackFrom: from })),
+    /not both/);
+});
+
+test('a parity cell keeps a literal backslash before a pipe inside the cell', () => {
+  const outcome = { disposition: 'unsupported', limitation: 'No.', fallback: 'split on a \\| b, then c | d' };
+  const inventory = [{ name: 'x', runtimeDependencies: [], artifacts: [{ id: 'hook:h', dispositions: { codex: outcome, pi: outcome } }] }];
+  const row = renderParity(inventory).split('\n').find((line) => line.startsWith('| `x`'));
+  // GFM: `\\` is a backslash and `\|` a pipe, so the row keeps its five cells.
+  assert.ok(row.includes('a \\\\\\| b, then c \\| d'), row);
+  assert.strictEqual(row.replace(/\\./g, '').split('|').length - 2, 5);
+});
+
 test('validation rejects orphan metadata and unresolved runtime edges', () => {
   const inventory = [{ name: 'one', artifacts: [{ entry: 'one', id: 'skill:SKILL.md', kind: 'skill' }] }];
   assert.throws(() => validateDistribution(inventory, { artifacts: { 'gone/hook:x': {} } }), /orphaned artifact metadata/);

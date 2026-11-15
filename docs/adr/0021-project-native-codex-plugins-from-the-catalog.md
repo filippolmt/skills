@@ -28,7 +28,8 @@ historical and superseded.
 `.claude-plugin/marketplace.json` can introduce or remove an entry. A minimal
 `scripts/distribution-meta.json` records only facts that cannot be derived:
 runtime dependency edges, adaptations, unsupported dispositions, fallbacks and
-presentation overrides. Metadata cannot create entries or artifacts. Orphaned
+presentation overrides. A fallback kept beside the code it describes is named
+by path instead (`fallbackFrom`, ADR-0044) and read from that module. Metadata cannot create entries or artifacts. Orphaned
 metadata, an unclassified artifact, or a generated package without a catalog
 entry is an error.
 

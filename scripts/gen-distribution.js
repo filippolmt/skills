@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Inventory and validate cross-harness artifacts. The parity document is a
-// projection; distribution-meta.json contains only non-derivable decisions.
+// projection; distribution-meta.json contains only non-derivable decisions, plus
+// `fallbackFrom` paths to fallback text kept beside the code it describes.
 const fs = require('fs');
 const path = require('path');
 const { readCatalog, isLocal, root } = require('./catalog.js');

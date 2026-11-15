@@ -47,6 +47,8 @@ turns both checks red.
   `special`), and "expands" otherwise (ADR-0042).
 - The summary stays at 104 words, under the test's limit of 120, which leaves
   room for one more family.
-- Codex and pi do not run the plugin. The pi fallback text in
-  `scripts/distribution-meta.json` restates the rules by hand, and the two new
-  hooks point to it. Generating it from `families.js` is #710.
+- Codex and pi do not run the plugin. The pi fallback of its `PreToolUse`
+  hook is generated from `families.js`: the outcome names the module in
+  `fallbackFrom` instead of holding the text, so a new family reaches
+  `docs/distribution-parity.md` on regeneration (#710). The two new hooks'
+  fallbacks point to it.

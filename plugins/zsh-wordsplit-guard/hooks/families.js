@@ -22,4 +22,8 @@ const summary = () => 'The Bash tool runs zsh; zsh-wordsplit-guard rewrites or d
   'these bash habits:\n' +
   Object.values(FAMILIES).map((line) => '- ' + line).join('\n');
 
-module.exports = { FAMILIES, EXPAND_NOTHING, summary };
+// The same lines as the pi fallback in docs/distribution-parity.md, where the
+// guard cannot run (scripts/distribution-meta.json: fallbackFrom).
+const fallback = Object.values(FAMILIES).join(' ');
+
+module.exports = { FAMILIES, EXPAND_NOTHING, summary, fallback };
