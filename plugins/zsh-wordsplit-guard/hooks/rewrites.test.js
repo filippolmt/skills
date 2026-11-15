@@ -231,11 +231,20 @@ const CASES = [
   { hook: 'expansion', named: 'both abort', none: true, why: 'bash fails too',
     bash: 'echo ${v@x}' },
   // --- path glob with no match (expansion.js, asked in this test's cwd) ---
-  { hook: 'nomatch', applied: true, bash: 'cat a.md *.zz 2>&1; echo "rc=$?"' },
-  { hook: 'nomatch', applied: true, bash: 'for f in *.zz; do echo "<$f>"; done' },
+  { hook: 'expansionInCwd', applied: true, bash: 'cat a.md *.zz 2>&1; echo "rc=$?"' },
+  { hook: 'expansionInCwd', applied: true, bash: 'for f in *.zz; do echo "<$f>"; done' },
   // Its edges: a glob that matches, and one after a command that creates the match.
-  { hook: 'nomatch', allowed: true, bash: 'cat a.md *.md' },
-  { hook: 'nomatch', allowed: true, bash: 'touch b.yy; ls *.yy; rm b.yy' },
+  { hook: 'expansionInCwd', allowed: true, bash: 'cat a.md *.md' },
+  { hook: 'expansionInCwd', allowed: true, bash: 'touch b.yy; ls *.yy; rm b.yy' },
+  // Each exemption beside the nearest form the rule does rewrite.
+  { hook: 'expansionInCwd', allowed: true, bash: 'cat <<< *.zz' },
+  { hook: 'expansionInCwd', applied: true, bash: 'echo x >*.zz; ls; rm \\*.zz' },
+  { hook: 'expansionInCwd', allowed: true, bash: 'case *.zz in x) echo y;; *) echo n;; esac' },
+  { hook: 'expansionInCwd', applied: true, bash: 'echo done *.zz' },
+  { hook: 'expansionInCwd', applied: true, bash: 'echo ~/no-such-zz/*.zz' },
+  // `~-/*.zz` has no case here: the hook leaves it alone because it cannot see
+  // the call's directory stack, and zsh still aborts where bash prints the word.
+  // A `--include=*.zz` word is the flag-value rule's, whose cases are above.
   // --- special parameter clobber (expansion.js) ---
   { hook: 'expansion', named: '`file_path`',
     bash: 'while read pid path br; do echo "$path"; ls >/dev/null && echo ok; done <<< "1 x b"',
@@ -257,7 +266,7 @@ function shell(argv, script, cwd) {
 
 const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'zsh-rewrites-'));
 fs.writeFileSync(path.join(cwd, 'a.md'), '');
-hooks.nomatch = harness('expansion.js', { cwd: cwd });
+hooks.expansionInCwd = harness('expansion.js', { cwd: cwd });
 const lines = (out, sort) => (sort ? out.split('\n').sort().join('\n') : out);
 
 try {

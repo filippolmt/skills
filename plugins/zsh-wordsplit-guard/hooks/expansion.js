@@ -53,6 +53,7 @@
 // unmatched path glob: docs/adr/0043-the-wordsplit-guard-escapes-a-path-glob-that-matches-nothing.md.
 const { spawnSync } = require('child_process');
 const { readBashInput, deny, rewrite, maskedViews, maskNonSplitting } = require('./scan');
+const { FAMILIES, EXPAND_NOTHING } = require('./families');
 
 const input = readBashInput();
 if (!input) process.exit(0);
@@ -464,6 +465,12 @@ const RULES = [
   },
 ];
 
+// A rule without a known family would ship without its session-summary line,
+// even when no test triggers it (ADR-0044).
+for (const rule of RULES) {
+  if (!FAMILIES[rule.family]) throw new Error('expansion.js: a rule without a known family: ' + rule.regex);
+}
+
 // Every rewritable hit is collected; the first hit a rule cannot rewrite denies.
 const reasons = [];
 const edits = [];
@@ -484,8 +491,7 @@ for (const rule of RULES) {
 
 if (reasons.length) {
   // The edits are dropped: the retry gets them again.
-  // A clobber alone expands nothing.
-  deny('zsh-wordsplit-guard: the Bash tool runs zsh, which ' + ([...reasonFamilies].some((f) => f !== 'special') ? 'expands' : 'reads') + ' this ' +
+  deny('zsh-wordsplit-guard: the Bash tool runs zsh, which ' + ([...reasonFamilies].every((f) => EXPAND_NOTHING.has(f)) ? 'reads' : 'expands') + ' this ' +
     'differently from bash.\n' + reasons.map((r) => '- ' + r).join('\n'), [...reasonFamilies]);
 } else if (edits.length) {
   let rewritten = command;

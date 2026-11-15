@@ -16,7 +16,7 @@ the same forms (#700). `hooks/session.js` now gives a short summary as
   the session's context. `resume` and `fork` are left out, because the
   transcript already holds the text.
 - **What:** one line per **rule family**, not per rule. That is seven lines
-  under 120 words, against thirteen rules, and the text rides every session
+  in about 100 words, against thirteen rules, and the text rides every session
   and subagent.
 - **No `$SHELL` check.** The whole plugin assumes the Bash tool runs zsh
   (ADR-0022). The summary assumes the same.
@@ -35,14 +35,18 @@ instead:
   known family, which is a new rule without a line, and on a family no verdict
   uses, which is a dead line.
 
-The messages themselves are unchanged. A mutation that drops one rule's family
-turns the test red.
+`expansion.js` also checks at load that every `RULES` entry names a known
+family, so a rule no test triggers still cannot ship without its line. The
+messages themselves are unchanged. A mutation that drops one rule's family
+turns both checks red.
 
 ## Consequences
 
 - The deny header no longer depends on a per-rule flag. It says "reads"
-  when every reason belongs to the `special` family, and "expands" otherwise
-  (ADR-0042).
+  when every reason belongs to a family in `EXPAND_NOTHING` (today only
+  `special`), and "expands" otherwise (ADR-0042).
+- The summary stays at 104 words, under the test's limit of 120, which leaves
+  room for one more family.
 - Codex and pi do not run the plugin. The pi fallback text in
-  `scripts/distribution-meta.json` restates the rules by hand and is not
-  generated from `families.js`.
+  `scripts/distribution-meta.json` restates the rules by hand, and the two new
+  hooks point to it. Generating it from `families.js` is #710.

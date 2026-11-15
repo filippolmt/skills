@@ -5,9 +5,13 @@ const fs = require('fs');
 // The Bash command of a PreToolUse payload, or null for anything else.
 // `toolInput` is the whole input, which a rewrite returns with only `command` changed;
 // `cwd` is where the command will run.
+// The hook's JSON payload, or {} when stdin holds none.
+function readPayload() {
+  try { return JSON.parse(fs.readFileSync(0, 'utf8')) || {}; } catch (e) { return {}; }
+}
+
 function readBashInput() {
-  let input = {};
-  try { input = JSON.parse(fs.readFileSync(0, 'utf8')) || {}; } catch (e) { /* no stdin */ }
+  const input = readPayload();
   const toolInput = input.tool_input || {};
   const command = String(toolInput.command || '');
   if (input.tool_name !== 'Bash' || !command) return null;
@@ -171,4 +175,4 @@ function noSplitOptedOut(input) {
 const NOSPLIT_OPT_OUT_HINT = 'Deliberate non-split: [nosplit] in the description, or ' +
   'ALLOW_ZSH_NOSPLIT=1 for the session.';
 
-module.exports = { readBashInput, deny, rewrite, maskedViews, maskNonSplitting, noSplitOptedOut, NOSPLIT_OPT_OUT_HINT };
+module.exports = { readPayload, readBashInput, deny, rewrite, maskedViews, maskNonSplitting, noSplitOptedOut, NOSPLIT_OPT_OUT_HINT };

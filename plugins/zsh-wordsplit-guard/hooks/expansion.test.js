@@ -348,19 +348,19 @@ assert.ok(/which expands this differently/.test(denied('read a path; echo ${!t}'
 const globDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zsh-nomatch-'));
 fs.writeFileSync(path.join(globDir, 'a.md'), '');
 const inDir = require('./testing').harness('expansion.js', { cwd: globDir });
-const escapedIn = (command) => inDir.rewritten(command);
-assert.strictEqual(escapedIn('grep -n x a.md *.zz'), 'grep -n x a.md \\*.zz');
-assert.strictEqual(escapedIn('cat a.md *.zz ?.yy'), 'cat a.md \\*.zz \\?.yy');
-assert.strictEqual(escapedIn('grep zsh ~/no-such-dir-zz/*.md'), 'grep zsh ~/no-such-dir-zz/\\*.md'); // `~` still expands
-assert.strictEqual(escapedIn('for f in *.zz; do echo $f; done'), 'for f in \\*.zz; do echo $f; done');
-assert.strictEqual(escapedIn('find . -name *.zz'), 'find . -name \\*.zz');
-assert.strictEqual(escapedIn('grep --include=*.zz x .'), "grep --include='*.zz' x ."); // the flag-value rule's
-assert.strictEqual(escapedIn('ls ~no-such-user-zz/* *.zz'), 'ls ~no-such-user-zz/* \\*.zz'); // one word zsh fails on
-assert.strictEqual(escapedIn('ls 2>&1 *.zz'), 'ls 2>&1 \\*.zz');       // `&` of a redirection ends no command
-assert.strictEqual(escapedIn('ls &>/dev/null *.zz'), 'ls &>/dev/null \\*.zz');
-assert.strictEqual(escapedIn('ls >*.zz'), 'ls >\\*.zz');               // bash creates the literal file
-assert.strictEqual(escapedIn('echo $(ls *.zz)'), 'echo $(ls \\*.zz)');
-assert.strictEqual(escapedIn('echo "$(ls *.zz)"'), 'echo "$(ls \\*.zz)"');
+assert.strictEqual(inDir.rewritten('grep -n x a.md *.zz'), 'grep -n x a.md \\*.zz');
+assert.strictEqual(inDir.rewritten('cat a.md *.zz ?.yy'), 'cat a.md \\*.zz \\?.yy');
+assert.strictEqual(inDir.rewritten('grep zsh ~/no-such-dir-zz/*.md'), 'grep zsh ~/no-such-dir-zz/\\*.md'); // `~` still expands
+assert.strictEqual(inDir.rewritten('for f in *.zz; do echo $f; done'), 'for f in \\*.zz; do echo $f; done');
+assert.strictEqual(inDir.rewritten('find . -name *.zz'), 'find . -name \\*.zz');
+assert.strictEqual(inDir.rewritten('echo done *.zz'), 'echo done \\*.zz'); // a keyword as an argument
+assert.strictEqual(inDir.rewritten('grep --include=*.zz x .'), "grep --include='*.zz' x ."); // the flag-value rule's
+assert.strictEqual(inDir.rewritten('ls ~no-such-user-zz/* *.zz'), 'ls ~no-such-user-zz/* \\*.zz'); // one word zsh fails on
+assert.strictEqual(inDir.rewritten('ls 2>&1 *.zz'), 'ls 2>&1 \\*.zz');       // `&` of a redirection ends no command
+assert.strictEqual(inDir.rewritten('ls &>/dev/null *.zz'), 'ls &>/dev/null \\*.zz');
+assert.strictEqual(inDir.rewritten('ls >*.zz'), 'ls >\\*.zz');               // bash creates the literal file
+assert.strictEqual(inDir.rewritten('echo $(ls *.zz)'), 'echo $(ls \\*.zz)');
+assert.strictEqual(inDir.rewritten('echo "$(ls *.zz)"'), 'echo "$(ls \\*.zz)"');
 inDir.allowed('cat <<< *.zz');            // a here-string word generates no file names
 inDir.allowed('cat <<EOF\n*.zz\nEOF');
 inDir.allowed('cat <<EOF\n$(ls *.zz)\nEOF'); // the body is past the first command
