@@ -570,6 +570,12 @@ Snapshot of the catalog — the source of truth is
 | Plugin | What it bundles |
 |---|---|
 | `seo-toolkit` | Comprehensive SEO analysis: 26 skills and 19 agents covering technical SEO, content, schema, sitemaps, backlinks, local and international SEO, ecommerce, Google APIs, AI search, and agent readiness. |
+
+### [microsoft/playwright-cli](https://github.com/microsoft/playwright-cli) — browser automation
+
+| Skill | What it does |
+|---|---|
+| `playwright-cli` | Automate browser interactions, test web pages and work with Playwright tests through the playwright-cli command. |
 <!-- catalog:end -->
 
 ## External skills (auto-updated by Renovate)

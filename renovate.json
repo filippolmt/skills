@@ -61,6 +61,19 @@
       "automerge": true,
       "automergeType": "pr",
       "automergeStrategy": "squash"
+    },
+    {
+      "description": "microsoft/playwright-cli keeps 2020 tags from a retired project (v0.4.3 to v0.180.0) that hold no skill and outrank the current v0.1.x series.",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchDatasources": [
+        "github-tags"
+      ],
+      "matchPackageNames": [
+        "microsoft/playwright-cli"
+      ],
+      "allowedVersions": "!/^v0\\.(4\\.[34]|5\\.[0-2]|15[0-2]\\.0|16[12]\\.0|162\\.1|17[01]\\.0|180\\.0)$/"
     }
   ]
 }
