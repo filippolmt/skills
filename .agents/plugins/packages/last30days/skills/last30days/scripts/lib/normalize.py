@@ -29,7 +29,11 @@ def filter_by_date_range(
                 filtered.append(item)
             continue
         if item.published_at < from_date or item.published_at > to_date:
-            continue
+            # A Reddit comment-search hit stays when the comment it matched is
+            # in the window, even on an older thread (the thread date is kept).
+            matched = str((item.metadata or {}).get("matched_comment_date") or "")
+            if not (matched and from_date <= matched <= to_date):
+                continue
         filtered.append(item)
     return filtered
 
@@ -354,6 +358,23 @@ def _normalize_reddit(
         metadata={
             "top_comments": top_comments,
             "comment_insights": item.get("comment_insights") or [],
+            # Where the score and the comments came from (reddit_refs labels),
+            # so a merge keeps the live score and render can say "score pending".
+            **{
+                key: item[key]
+                for key in ("engagement_source", "comments_source")
+                if item.get(key)
+            },
+            # The comment a logged-in comment search matched: its date keeps
+            # an older thread in the window, and render labels it.
+            **(
+                {
+                    "matched_comment_date": item["matched_comment"]["date"],
+                    "matched_comment_url": item["matched_comment"].get("url") or "",
+                }
+                if isinstance(item.get("matched_comment"), dict) and item["matched_comment"].get("date")
+                else {}
+            ),
         },
     )
 
@@ -396,8 +417,12 @@ def _normalize_jobs(
     title = str(item.get("title") or "").strip()
     department = str(item.get("department") or "").strip()
     location = str(item.get("location") or "").strip()
+    # The body keeps the reader's paragraph breaks (``description_blocks``) so
+    # Hiring Signals can split company text from role text even when an HTML
+    # paragraph has no ending punctuation; the snippet stays the flat text.
+    blocks = str(item.get("description_blocks") or "").strip()
     body = "\n".join(
-        part for part in [title, department, location, description] if part
+        part for part in [title, department, location, blocks or description] if part
     )
     provider = str(item.get("provider") or "").strip()
     return _source_item(
