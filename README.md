@@ -731,7 +731,9 @@ success or failure. The bare command instead checks already-materialized outputs
 in place. See [distribution validation](docs/agents/distribution-validation.md)
 for delegated work and its acceptance matrix.
 
-Output must be clean — warnings count as failures. Path-filtered pi and Codex
+Output must be clean — warnings count as failures. Exit 75 means every check
+passed except the Codex upgrade smoke's git clone, which timed out on a slow
+link (#438); CI runs that smoke on the pull request. Path-filtered pi and Codex
 integration workflows separately materialize the current revision in their
 workspaces before running package smoke tests. Committed projection comparisons
 remain in the post-merge `regenerate` workflow because a catalog-only SHA bump

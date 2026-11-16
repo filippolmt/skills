@@ -47,8 +47,9 @@ try {
   assert.strictEqual(report.hits.length, 2);
   assert.strictEqual(report.summary.length, 1, 'renamed variables share a normalized reason');
   assert.deepStrictEqual(report.summary[0], {
-    hook: 'guard.js', verdict: 'deny', reasonId: report.hits[0].reasonId, hits: 2,
+    hook: 'guard.js', verdict: 'deny', families: ['split'], reasonId: report.hits[0].reasonId, hits: 2,
   });
+  assert.deepStrictEqual(report.hits[0].families, ['split'], 'each hit names its rule families');
   assert.strictEqual(new Set(report.hits.map((hit) => hit.commandId)).size, 2);
   for (const hit of report.hits) {
     assert.match(hit.commandId, /^[a-f0-9]{64}$/);
@@ -65,6 +66,7 @@ try {
   r = run(['--hook', 'expansion.js', '--filter', '=====', '--json']);
   assert.strictEqual(r.status, 0, r.stderr);
   assert.strictEqual(JSON.parse(r.stdout).hits[0].verdict, 'rewrite');
+  assert.deepStrictEqual(JSON.parse(r.stdout).summary[0].families, ['equals'], 'a rewrite names its family too');
 
   const customHooks = ['hook-a', 'hook-b'].map((name) => {
     const file = path.join(dir, name, 'guard.js');

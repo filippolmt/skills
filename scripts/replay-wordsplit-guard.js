@@ -10,7 +10,8 @@
 // --base replays each hook as it stands at that ref too, and reports only the
 // commands whose verdict or reason changed: the measurement a rule change's PR
 // reports, against `main`.
-// --json emits hits and grouped counts using SHA-256 command/reason IDs, never
+// --json emits hits and grouped counts with each verdict's rule families and
+// SHA-256 command/reason IDs, never
 // transcript or reason text. Backticked spans are blanked before hashing reasons
 // so renamed variables group together. Text mode prints raw commands: keep it private.
 // The default dir is ~/.claude/projects; --filter narrows the commands replayed
@@ -86,10 +87,18 @@ async function commands(dir, filter) {
   return [...seen].map(([command, cwd]) => ({ command, cwd }));
 }
 
-// The verdict and its reason, or null for a command the hook leaves alone.
+// The verdict, its reason and its rule families, or null for a command the
+// hook leaves alone. The hook appends the families to ZSH_GUARD_FAMILIES, a
+// file per call under FAMILY_DIR: ids such as `glob`, never transcript text.
+const FAMILY_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'replay-families-'));
+process.on('exit', () => fs.rmSync(FAMILY_DIR, { recursive: true, force: true }));
+let calls = 0;
 function verdict(hook, command, cwd) {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [hook], { env: Object.assign({}, process.env, { ALLOW_ZSH_NOSPLIT: '' }) });
+    const familyLog = path.join(FAMILY_DIR, String(calls++));
+    const child = spawn(process.execPath, [hook], {
+      env: Object.assign({}, process.env, { ALLOW_ZSH_NOSPLIT: '', ZSH_GUARD_FAMILIES: familyLog }),
+    });
     let out = '';
     child.stdout.on('data', (d) => { out += d; });
     // Discard diagnostics: a hook can print the private command or its values.
@@ -104,10 +113,20 @@ function verdict(hook, command, cwd) {
       resolve(!hso ? null : {
         verdict: hso.permissionDecision === 'deny' ? 'deny' : 'rewrite',
         reason: String(hso.permissionDecisionReason || hso.additionalContext || ''),
+        families: familiesIn(familyLog),
       });
     });
     child.stdin.end(JSON.stringify({ tool_name: 'Bash', cwd: cwd, tool_input: { command: command, description: 'replay' } }));
   });
+}
+
+// The families a call logged, then its log removed. A hook from before
+// families (`--base`) logs none.
+function familiesIn(file) {
+  if (!fs.existsSync(file)) return [];
+  const lines = fs.readFileSync(file, 'utf8').trim().split('\n');
+  fs.rmSync(file);
+  return JSON.parse(lines.pop());
 }
 
 const hash = (text) => createHash('sha256').update(text).digest('hex');
@@ -147,15 +166,16 @@ async function main() {
       commandId: hash(h.command),
       hook: path.relative(HOOKS, h.hook),
       verdict: h.verdict,
+      families: h.families,
       reasonId: hash(h.reason.replace(/`[^`]*`/g, '`…`')),
       ...(h.base ? { base: h.base.verdict } : {}),
     })).sort((a, b) => a.hook.localeCompare(b.hook) || a.commandId.localeCompare(b.commandId));
     const groups = new Map();
     for (const hit of report) {
-      const key = JSON.stringify([hit.hook, hit.base, hit.verdict, hit.reasonId]);
+      const key = JSON.stringify([hit.hook, hit.base, hit.verdict, hit.families, hit.reasonId]);
       if (!groups.has(key)) {
         groups.set(key, Object.assign({ hook: hit.hook }, hit.base ? { base: hit.base } : {},
-          { verdict: hit.verdict, reasonId: hit.reasonId, hits: 0 }));
+          { verdict: hit.verdict, families: hit.families, reasonId: hit.reasonId, hits: 0 }));
       }
       groups.get(key).hits++;
     }
