@@ -18,7 +18,7 @@ from typing import Any, Dict, Optional, Tuple
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from . import brightdata
+from . import brightdata, health
 from .private_files import write_private_text
 
 logger = logging.getLogger(__name__)
@@ -91,7 +91,9 @@ def run_auto_setup(config: Dict[str, Any], *, allow_browser_cookies: bool = Fals
           ytdlp_installed: bool
           ytdlp_action: already_installed | installed | install_failed | no_homebrew
           digg_installed: bool (True when the engine can resolve digg-pp-cli on PATH)
-          digg_action: already_installed | installed | installed_off_path | install_failed | no_npx
+          digg_action: already_installed | installed | upgraded | installed_off_path | install_failed | no_npx
+              (install_failed / no_npx with digg_installed True: an older CLI on
+              PATH could not be upgraded and is still the one in use)
           env_written: bool (always False here — caller writes config separately)
           ytdlp_stderr: present when ytdlp_action is install_failed
           digg_stderr: present when digg_action is install_failed
@@ -129,6 +131,9 @@ def run_auto_setup(config: Dict[str, Any], *, allow_browser_cookies: bool = Fals
         browsers = cookie_extraction_browsers(cookie_config)
 
         for source_name, spec in COOKIE_DOMAINS.items():
+            if spec.get("consent_key"):
+                # The Reddit login has its own consent: setup --reddit-session.
+                continue
             domain = spec["domain"]
             cookie_names = spec["cookies"]
 
@@ -221,10 +226,9 @@ def run_auto_setup(config: Dict[str, Any], *, allow_browser_cookies: bool = Fals
 # Printing Press package and build the Go binary over the network.
 DIGG_INSTALL_TIMEOUT = 300
 DIGG_CLI_BIN = "digg-pp-cli"
-# Pin the catalog installer; matches printing-press-library npm 0.1.16 default
-# ($HOME/.local/bin on macOS/Linux).
-PRINTING_PRESS_NPM = "@mvanhorn/printing-press-library@0.1.16"
-DIGG_INSTALL_CMD = f"npx -y {PRINTING_PRESS_NPM} install digg --cli-only"
+# The pinned catalog installer lives in health so setup and doctor share it.
+PRINTING_PRESS_NPM = health.PRINTING_PRESS_NPM
+DIGG_INSTALL_CMD = health.helper_upgrade_cmd("digg")
 
 
 def _digg_bin_candidate_paths() -> list[Path]:
@@ -238,8 +242,6 @@ def _digg_bin_candidate_paths() -> list[Path]:
     ``shutil.which`` resolves on PATH — probing these dirs is for setup
     verification and honest off-PATH messaging, not engine activation.
     """
-    from . import health
-
     win_dir = health.windows_printing_press_bin_dir()
     candidates: list[Path] = []
     for directory in health.installer_bin_dirs():
@@ -324,6 +326,36 @@ def _run_npx_install(slug: str) -> Tuple[str, str]:
     return "", (proc.stderr or "")
 
 
+def _upgrade_helper(slug: str, bin_name: str) -> Tuple[bool, str, str, str]:
+    """Re-run the catalog install over a helper on PATH that is too old.
+
+    The older binary stays on PATH whatever happens, so ``engine_active``
+    stays True on failure. Returns ``(engine_active, action, stderr, "")``
+    with ``action`` one of: upgraded | install_failed | no_npx. ``upgraded``
+    is claimed only when the helper PATH resolves afterwards reads at or above
+    its minimum; an older copy earlier on PATH would otherwise still answer.
+    """
+    action, stderr = _run_npx_install(slug)
+    if action:
+        return True, action, stderr, ""
+    resolved = shutil.which(bin_name)
+    if resolved is None:
+        stderr_msg = stderr or f"upgrade completed but {bin_name} was not found"
+        logger.warning("npx upgrade %s failed verification: %s", slug, stderr_msg)
+        return False, "install_failed", stderr_msg, ""
+    outdated = health.helper_outdated(bin_name, resolved)
+    if outdated is not False:
+        stderr_msg = (
+            f"upgrade completed but {resolved} is still older than the engine "
+            "needs; an older copy may sit earlier on PATH"
+            if outdated
+            else f"upgrade completed but the version of {resolved} could not be read"
+        )
+        logger.warning("npx upgrade %s: %s", slug, stderr_msg)
+        return True, "install_failed", stderr_msg, ""
+    return True, "upgraded", "", ""
+
+
 def _install_digg_cli() -> Tuple[bool, str, str, str]:
     """Best-effort install of the digg-pp-cli binary.
 
@@ -335,12 +367,19 @@ def _install_digg_cli() -> Tuple[bool, str, str, str]:
     Returns ``(engine_active, action, stderr, off_path_binary)`` where
     ``engine_active`` is True only when ``shutil.which`` resolves the binary
     (matching ``pipeline.available_sources()``). ``action`` is one of:
-      already_installed | installed | installed_off_path | install_failed | no_npx
-    ``stderr`` is populated on ``install_failed``. ``off_path_binary`` is set
-    when the binary exists on disk but is not PATH-visible to this process.
+      already_installed | installed | upgraded | installed_off_path |
+      install_failed | no_npx
+    ``upgraded`` means a binary on PATH older than
+    ``health.MIN_HELPER_VERSIONS`` allows was replaced; when that upgrade
+    fails (``install_failed``/``no_npx``) the older binary is still on PATH,
+    so ``engine_active`` stays True. ``stderr`` is populated on
+    ``install_failed``. ``off_path_binary`` is set when the binary exists on
+    disk but is not PATH-visible to this process.
     """
     on_path = _digg_on_path()
     if on_path:
+        if health.helper_outdated(DIGG_CLI_BIN, on_path):
+            return _upgrade_helper("digg", DIGG_CLI_BIN)
         return True, "already_installed", "", ""
     off_path = _digg_off_path_binary()
     if off_path:
@@ -488,11 +527,13 @@ def _install_pp_cli(slug: str, bin_name: str) -> Tuple[bool, str, str, str]:
     Slug-parameterized mirror of ``_install_digg_cli``: never raises, degrades
     to recommend-only when the installer is unavailable. Returns
     ``(engine_active, action, stderr, off_path_binary)`` with the same action
-    taxonomy: already_installed | installed | installed_off_path |
+    taxonomy: already_installed | installed | upgraded | installed_off_path |
     install_failed | no_npx.
     """
     on_path = shutil.which(bin_name)
     if on_path:
+        if health.helper_outdated(bin_name, on_path):
+            return _upgrade_helper(slug, bin_name)
         return True, "already_installed", "", ""
     off_path = _pp_off_path_binary(bin_name)
     if off_path:
@@ -842,8 +883,21 @@ def get_setup_status_text(results: Dict[str, Any]) -> str:
                 "directory to PATH and restart your agent session/gateway for "
                 "Digg to activate"
             )
+    elif digg_action == "upgraded":
+        lines.append("  - Upgraded Digg CLI to a release the engine can call (Digg stories active)")
+    elif digg_action == "install_failed" and results.get("digg_installed"):
+        # The older CLI is still on PATH; its searches fail until upgraded.
+        lines.append(
+            "  - Digg CLI upgrade failed; the older Digg CLI is still in use and "
+            f"its searches fail — run `{DIGG_INSTALL_CMD}` manually"
+        )
     elif digg_action == "install_failed":
         lines.append(f"  - Digg CLI install failed — run `{DIGG_INSTALL_CMD}` manually")
+    elif digg_action == "no_npx" and results.get("digg_installed"):
+        lines.append(
+            "  - Digg CLI is older than the engine can call. Install Node/npx, "
+            f"then upgrade it: {DIGG_INSTALL_CMD}"
+        )
     elif digg_action == "no_npx":
         lines.append(
             "  - Digg CLI not installed (free, optional). Install Node/npx, then: "
@@ -859,10 +913,25 @@ def get_setup_status_text(results: Dict[str, Any]) -> str:
     pp_slug = {key: slug for key, slug, _bin in PP_DEFAULT_SOURCES}
     for source_key, entry in sorted(pp_sources.items()):
         name = pp_name.get(source_key, source_key.title())
-        install_cmd = f"npx -y {PRINTING_PRESS_NPM} install {pp_slug.get(source_key, source_key)} --cli-only"
+        install_cmd = health.helper_upgrade_cmd(pp_slug.get(source_key, source_key))
         action = entry.get("action", "")
+        # install_failed / no_npx with the helper still on PATH: an older
+        # copy that could not be upgraded.
+        stale = bool(entry.get("installed"))
         if action == "installed":
             lines.append(f"  - Installed {name} CLI ({name} source now active)")
+        elif action == "upgraded":
+            lines.append(f"  - Upgraded {name} CLI to a release the engine can call ({name} active)")
+        elif action == "install_failed" and stale:
+            lines.append(
+                f"  - {name} CLI upgrade failed; the older {name} CLI is still in "
+                f"use — run `{install_cmd}` manually"
+            )
+        elif action == "no_npx" and stale:
+            lines.append(
+                f"  - {name} CLI is older than the engine can call. Install "
+                f"Node/npx, then upgrade it: `{install_cmd}`"
+            )
         elif action == "already_installed":
             lines.append(f"  - {name} CLI already installed ({name} active)")
         elif action == "installed_off_path":
@@ -1518,3 +1587,74 @@ def run_github_auth(timeout: int = 300) -> Dict[str, Any]:
     tokens.
     """
     return run_full_device_auth(timeout=timeout)
+
+
+# ---------------------------------------------------------------------------
+# Opt-in logged-in Reddit session (setup --reddit-session / --no-reddit-session)
+# ---------------------------------------------------------------------------
+
+REDDIT_SESSION_NOTE = (
+    "With a Reddit login, research reads Reddit as your own account (search, "
+    "comment search, communities, threads; never posts, votes, your feed, inbox "
+    "or saved items). Automated use of a logged-in account may breach Reddit's "
+    "terms and puts that account at risk."
+)
+
+
+def _reddit_scan_order(config: Dict[str, Any]) -> list[str]:
+    from . import env as _env
+
+    recorded = str(config.get(_env.REDDIT_FROM_BROWSER_VAR) or "").strip().lower()
+    order = [recorded] if recorded in _env.COOKIE_BROWSER_NAMES else []
+    return order + [b for b in _env.REDDIT_SETUP_BROWSERS if b not in order]
+
+
+def run_reddit_session_setup(
+    config: Dict[str, Any],
+    env_path: Path,
+    *,
+    consent: bool,
+    reader: Optional[Any] = None,
+) -> Dict[str, Any]:
+    """Record the user's Reddit-session answer and, on yes, find the login.
+
+    The answer itself is the consent, so this is the one place that reads the
+    reddit.com cookie outside a research run, and only on a yes. It reads
+    browsers in order (the recorded one, then Chrome, then the rest), stops at
+    the first with a ``reddit_session`` cookie, records that browser as
+    ``REDDIT_FROM_BROWSER`` and never prints or saves the cookie.
+    ``FROM_BROWSER=off`` and a Grok Bot host read nothing; a
+    ``BROWSER_CONSENT=false`` saved for X does not block this explicit yes. Either answer writes ``REDDIT_SESSION_OFFERED=true``
+    so a returning user is asked once.
+    """
+    from . import env as _env
+
+    host = str(config.get(_env.X_HOST_VAR) or os.environ.get(_env.X_HOST_VAR) or "").strip().lower()
+    if host == _env.GROK_BOT_HOST:
+        return {"status": "unavailable", "note": "The Reddit session is never used on a Grok Bot host."}
+    written = write_api_key(env_path, "true", key_name=_env.REDDIT_OFFERED_VAR, replace=True)
+    written = write_api_key(
+        env_path, "true" if consent else "false", key_name=_env.REDDIT_CONSENT_VAR, replace=True,
+    ) and written
+    if not consent:
+        return {"status": "declined", "consent": False, "env_written": written}
+    result: Dict[str, Any] = {"consent": True, "env_written": written, "note": REDDIT_SESSION_NOTE}
+    probe = dict(config)
+    probe["_BROWSER_COOKIE_MODE"] = "read"
+    # This setup call is the Reddit yes itself, so only FROM_BROWSER=off vetoes it.
+    refusal = _env.global_cookie_refusal(probe, reddit_consent=True)
+    if refusal:
+        result.update(status="vetoed", reason=refusal, checked=[])
+        return result
+    checked = []
+    for browser in _reddit_scan_order(config):
+        cookie, state = (reader or _env.read_reddit_session_cookie)(config, browser)
+        checked.append({"browser": browser, "result": state})
+        if cookie:
+            result["env_written"] = write_api_key(
+                env_path, browser, key_name=_env.REDDIT_FROM_BROWSER_VAR, replace=True,
+            ) and written
+            result.update(status="found", browser=browser, checked=checked)
+            return result
+    result.update(status="not-found", checked=checked)
+    return result

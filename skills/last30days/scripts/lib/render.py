@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import html
 import json
+import math
 import pathlib
 import re
 from collections import Counter
@@ -23,6 +24,7 @@ from . import (
     meta_ads,
     patent_digest,
     polymarket,
+    reddit_refs,
     registers,
     relevance,
     rerank,
@@ -2073,6 +2075,9 @@ def _format_item_engagement(item: schema.SourceItem) -> str:
         "ratings",
     ]:
         val = eng.get(key)
+        if key == "score" and item.source == "reddit" and reddit_refs.score_pending(item.metadata):
+            parts.append("score pending")
+            continue
         if val is not None and val != 0:
             parts.append(f"{val} {key}")
     # Same drift as the source list above: this allowlist silently blanks the
@@ -2464,6 +2469,28 @@ def _jobs_board_footer_line(report: schema.Report) -> str | None:
     new = board.get("new_in_window")
     if isinstance(new, int) and not isinstance(new, bool):
         line += f" │ {new:,} new in the L30"
+    if board.get("titles_only"):
+        # Roles read off the site's job sitemap: no text, no posting dates.
+        line += " │ from its job sitemap"
+        if board.get("board_titles_missing"):
+            line += ", no titles readable"
+        fallback = board.get("board_fallback")
+        if isinstance(fallback, str) and fallback.strip():
+            # The platform reader failed and the run fell to the sitemap.
+            line += f" ({_footer_safe(fallback, 100)})"
+    return line
+
+
+def _jobs_unreadable_footer_line(report: schema.Report) -> str | None:
+    """The 💼 Jobs footer line for a company whose job site is known and
+    cannot be read, when no board gave an open-role count."""
+    name = (report.artifacts or {}).get("jobs_site_unreadable")
+    if not isinstance(name, str) or not name.strip():
+        return None
+    line = f"💼 Jobs: {jobs_digest.unreadable_job_site_line(_footer_safe(name, 60))}"
+    reason = (report.artifacts or {}).get("jobs_site_unreadable_reason")
+    if isinstance(reason, str) and reason.strip():
+        line += f" ({_footer_safe(reason, 100)})"
     return line
 
 
@@ -2586,11 +2613,12 @@ def _patents_footer_line(report: schema.Report) -> str | None:
     artifact, whether or not the run read any filing's text.
 
     Applications published, patents granted and first US publications, all
-    under the company's confirmed names; a ``+`` on each when the search
-    stopped short of its full count. When nothing sits under a confirmed name
-    all three are those of the name-matched names, and the line says so. Filings
-    of the company a person leads name it: ``📜 Patents at Tesla: ...``. None
-    when the run has no artifact.
+    under the company's own names; a ``+`` on each when the search stopped
+    short of its full count. When none is the company's own, all three are
+    those of the other filers with the company's name, and the line ends
+    ``filed as {name}`` so the reader can judge whose they are. Filings of the
+    company a person leads name it: ``📜 Patents at Tesla: ...``. None when
+    the run has no artifact.
     """
     artifact = (report.artifacts or {}).get("patents")
     if not isinstance(artifact, dict) or artifact.get("status") not in {"digest", "counts-only"}:
@@ -2602,18 +2630,20 @@ def _patents_footer_line(report: schema.Report) -> str | None:
     floor = bool(counts.get("floor"))
     applications, grants = count(counts.get("applications")), count(counts.get("grants"))
     first = count(counts.get("first_publications"))
-    under = ""
-    if not applications and not grants and patent_digest.groups(artifact, patent_digest.NAME_MATCHED):
+    filed_as = []
+    others = patent_digest.groups(artifact, patent_digest.NAME_MATCHED)
+    if others and not patent_digest.has_own_filings(artifact, counts):
         applications = count(counts.get("name_matched_applications"))
         grants = count(counts.get("name_matched_grants"))
         first = count(counts.get("name_matched_first_publications"))
-        under = " under name-matched names"
+        filed_as = ["filed as " + "; ".join(_footer_safe(group["name"], 60) for group in others)]
     company = _footer_safe(artifact.get("company") or "", 60)
     label = f"Patents at {company}" if artifact.get("company_via_person") and company else "Patents"
     return " │ ".join([
         f"📜 {label}: {quantity(applications, 'application', floor=floor)} published",
-        f"{grants:,}{'+' if floor else ''} granted{under}",
+        f"{grants:,}{'+' if floor else ''} granted",
         quantity(first, "first US publication", floor=floor),
+        *filed_as,
     ])
 
 
@@ -3337,7 +3367,7 @@ def _build_source_footer_lines(
     for source_key, emoji, label, item_word, engagement_fields in _FOOTER_SOURCES:
         items = report.items_by_source.get(source_key) or []
         if source_key == "jobs":
-            board_line = _jobs_board_footer_line(report)
+            board_line = _jobs_board_footer_line(report) or _jobs_unreadable_footer_line(report)
             if board_line:
                 out.append(board_line)
                 continue
@@ -3822,8 +3852,9 @@ def _meta_ads_footer_line(report: schema.Report) -> str | None:
 def _top_voices_footer_line(report: schema.Report) -> str | None:
     """Return the 🗣️ Top voices line or None if no meaningful voices exist.
 
-    Combines top handles (X, Bluesky, Truth Social, YouTube, TikTok, Instagram)
-    and top subreddits, separated by │.
+    Combines top handles (X, Bluesky, Truth Social, YouTube, TikTok, Instagram,
+    Threads), ranked by engagement (``_rank_voice_handles``), and the most
+    frequent subreddits, separated by │.
     """
     handle_items = {
         source: _on_topic_items(report, report.items_by_source.get(source) or [])
@@ -3837,19 +3868,16 @@ def _top_voices_footer_line(report: schema.Report) -> str | None:
             "threads",
         )
     }
-    handle_counts: Counter[str] = Counter()
-    for items in handle_items.values():
-        for item in items:
-            actor = _stats_actor(item)
-            if actor and actor.startswith("@"):
-                handle_counts[actor] += 1
+    top_handles = _rank_voice_handles(
+        [item for items in handle_items.values() for item in items],
+        _subject_x_handle(report),
+    )[:3]
 
     subreddit_counts: Counter[str] = Counter()
     for item in _on_topic_items(report, report.items_by_source.get("reddit") or []):
         if item.container:
             subreddit_counts[f"r/{item.container}"] += 1
 
-    top_handles = [h for h, _ in handle_counts.most_common(3)]
     top_subs = [s for s, _ in subreddit_counts.most_common(3)]
     if not top_handles and not top_subs:
         return None
@@ -3947,7 +3975,9 @@ def _render_stats(report: schema.Report) -> list[str]:
             f"- Total evidence: {total_items} item{'s' if total_items != 1 else ''} across "
             f"{len(evidence_sources)} source{'s' if len(evidence_sources) != 1 else ''}"
         )
-    top_voices = _top_voices_overall(evidence_sources)
+    top_voices = _top_voices_overall(
+        evidence_sources, subject_handle=_subject_x_handle(report),
+    )
     if top_voices:
         lines.append(f"- Top voices: {', '.join(top_voices)}")
     for source, items in non_empty_sources.items():
@@ -4071,6 +4101,14 @@ def _format_engagement(item: schema.SourceItem | None) -> str | None:
     fields = ENGAGEMENT_DISPLAY.get(item.source)
     if fields:
         text = _fmt_pairs([(engagement.get(field), label) for field, label in fields])
+        if item.source == "reddit" and reddit_refs.score_pending(item.metadata):
+            # A fresh archive snapshot reads 0 or 1 whatever the thread's
+            # real score is, so it is withheld rather than shown.
+            text = ", ".join(part for part in ("score pending", text) if part)
+        matched = (item.metadata or {}).get("matched_comment_date") if item.source == "reddit" else None
+        if matched and str(matched) != str(item.published_at or "")[:10]:
+            # Kept for a comment that falls in the window on an older thread.
+            text = ", ".join(part for part in (text, f"comment {matched}") if part)
     else:
         # Generic fallback: engagement.items() yields (key, value) but
         # _fmt_pairs expects (value, label), so swap them.
@@ -4146,16 +4184,102 @@ def _top_actors_for_source(
     return [actor for actor, _ in counts.most_common(limit)]
 
 
-def _top_voices_overall(
-    items_by_source: dict[str, list[schema.SourceItem]], limit: int = 5
+# Top voices rank @handles by what their posts earned, not by how many they
+# posted: a headline-reposting account with ten zero-like posts used to outrank
+# the subject's own account with one viral post (#1449).
+_VOICE_POSTS_PER_HANDLE = 3  # mirrors fusion._MAX_ITEMS_PER_AUTHOR
+_VOICE_MIN_ENGAGEMENT = 5  # likes + reposts + replies over the counted posts
+_VOICE_ENGAGEMENT_KEYS = (
+    ("likes",),
+    ("reposts", "retweets", "shares"),
+    ("replies", "comments"),
+)
+
+
+def _voice_post_engagement(item: schema.SourceItem) -> int | None:
+    """Likes + reposts + replies for one post, or None when it reports none.
+
+    Sources name reposts and replies differently (TikTok ``shares``, Instagram
+    ``comments``); the first key present in each group counts.
+    """
+    engagement = item.engagement or {}
+    total = 0
+    found = False
+    for keys in _VOICE_ENGAGEMENT_KEYS:
+        for key in keys:
+            value = engagement.get(key)
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                continue
+            total += max(int(value), 0)
+            found = True
+            break
+    return total if found else None
+
+
+def _rank_voice_handles(
+    items: list[schema.SourceItem], subject_handle: str = "",
 ) -> list[str]:
+    """Every eligible @handle among ``items``, most engaged first.
+
+    A handle's score is the sum of log1p(likes + reposts + replies) over its
+    best ``_VOICE_POSTS_PER_HANDLE`` posts, so volume alone cannot win. A
+    handle whose counted posts total under ``_VOICE_MIN_ENGAGEMENT`` is
+    dropped, except the run's own subject handle. A handle with no engagement
+    metrics at all stays eligible with score 0, since its source does not
+    report them. Ties fall back to counted posts, then the handle. Handles
+    group case-insensitively (X keeps the supplied case), shown in the first
+    spelling seen.
+    """
+    posts: dict[str, list[int | None]] = {}
+    spelling: dict[str, str] = {}
+    for item in items:
+        actor = _stats_actor(item)
+        if actor and actor.startswith("@"):
+            key = actor.lower()
+            spelling.setdefault(key, actor)
+            posts.setdefault(key, []).append(_voice_post_engagement(item))
+    subject = subject_handle.strip().lstrip("@").lower()
+    ranked: list[tuple[float, int, str]] = []
+    for key, values in posts.items():
+        measured = sorted((v for v in values if v is not None), reverse=True)
+        counted = measured[:_VOICE_POSTS_PER_HANDLE]
+        is_subject = bool(subject) and key.lstrip("@") == subject
+        if measured and sum(counted) < _VOICE_MIN_ENGAGEMENT and not is_subject:
+            continue
+        score = sum(math.log1p(v) for v in counted)
+        ranked.append((score, min(len(values), _VOICE_POSTS_PER_HANDLE), spelling[key]))
+    ranked.sort(key=lambda entry: (-entry[0], -entry[1], entry[2].lower()))
+    return [handle for _, _, handle in ranked]
+
+
+def _top_voices_overall(
+    items_by_source: dict[str, list[schema.SourceItem]],
+    limit: int = 5,
+    subject_handle: str = "",
+) -> list[str]:
+    """The ``## Stats`` top voices: the most frequent actors across sources.
+
+    Non-handle actors (subreddits, channels, domains) rank by item count as
+    before. @handles are counted at most ``_VOICE_POSTS_PER_HANDLE`` times and
+    only when eligible under ``_rank_voice_handles``; the slots they win are
+    then filled with the eligible handles in engagement order.
+    """
+    all_items = [item for items in items_by_source.values() for item in items]
+    ranked_handles = _rank_voice_handles(all_items, subject_handle)
+    eligible = {handle.lower() for handle in ranked_handles}
     counts: Counter[str] = Counter()
-    for items in items_by_source.values():
-        for item in items:
-            actor = _stats_actor(item)
-            if actor:
-                counts[actor] += 1
-    return [actor for actor, _ in counts.most_common(limit)]
+    for item in all_items:
+        actor = _stats_actor(item)
+        if not actor:
+            continue
+        if actor.startswith("@"):
+            actor = actor.lower()
+            if actor not in eligible or counts[actor] >= _VOICE_POSTS_PER_HANDLE:
+                continue
+        counts[actor] += 1
+    top = [actor for actor, _ in counts.most_common(limit)]
+    by_engagement = iter(ranked_handles)
+    return [next(by_engagement) if actor.startswith("@") else actor for actor in top]
 
 
 def _stats_actor(item: schema.SourceItem) -> str | None:
@@ -4350,7 +4474,15 @@ def _top_comments_list(
         return []
     if min_score is None:
         min_score = _TOP_COMMENT_MIN_SCORE.get(item.source, 0)
-    return [c for c in comments if (c.get("score") or 0) >= min_score][:limit]
+    # A pending comment (a fresh archive snapshot, score withheld) is exempt
+    # from the vote floor; it is listed after every scored comment and printed
+    # with no vote count.
+    scored = [
+        c for c in comments
+        if isinstance(c, dict) and not c.get("score_pending") and (c.get("score") or 0) >= min_score
+    ]
+    pending = [c for c in comments if isinstance(c, dict) and c.get("score_pending")]
+    return (scored + pending)[:limit]
 
 
 def _comment_insight(item: schema.SourceItem | None) -> str | None:
@@ -4980,6 +5112,46 @@ def _is_community_comment(item: schema.SourceItem, comment: dict, text: str) -> 
     return not (_author_key(author) and _author_key(author) == _author_key(item.author))
 
 
+def _comment_entities(report) -> tuple[list[str] | None, str]:
+    """The entities a Reddit comment can be about: the comparison's, or the
+    single topic's primary entity."""
+    from . import rerank
+
+    topic = report.topic or ""
+    compared = _parse_comparison_entities(topic)
+    raw = (report.query_plan.raw_topic if report.query_plan else "") or topic
+    return compared, rerank._primary_entity(raw)
+
+
+def _comment_entity_tags(
+    item: schema.SourceItem,
+    comment: dict,
+    text: str,
+    compared: list[str] | None,
+    entity: str,
+) -> list[str] | None:
+    """Whether a Reddit comment names the topic, and for a comparison which of
+    its entities.
+
+    Returns None when the comment is not quotable. A single-topic run returns
+    ``[]`` for a quotable comment: it names the entity, or it is a top-level
+    reply (``depth`` 0, or unset) to a post whose title does. A comparison has no reply
+    exemption: the comment must itself name an entity, and the result lists
+    each one it names.
+    """
+    from . import rerank
+
+    if compared:
+        tags = [name for name in compared if rerank._entity_grounded(text, name)]
+        return tags or None
+    if not entity or rerank._entity_grounded(text, entity):
+        return []
+    # A flat top-comment list (no ``depth`` field) holds top-level replies.
+    if comment.get("depth") in (0, None) and rerank._entity_grounded(item.title or "", entity):
+        return []
+    return None
+
+
 def _quotable(body: str) -> bool:
     """Long enough to quote, and words rather than a row of emoji."""
     return len(body) >= 12 and sum(ch.isalnum() for ch in body) >= 4
@@ -5030,6 +5202,7 @@ def _render_top_comments(
     """
     candidate_pool = report.ranked_candidates if candidates is None else candidates
     subject_handle = _subject_x_handle(report)
+    compared_entities, comment_entity = _comment_entities(report)
     floor_candidates = [
         cand
         for cand in candidate_pool
@@ -5078,34 +5251,51 @@ def _render_top_comments(
             # item author's own, or one with nothing quotable in it is not a
             # reaction to quote, so the next comment takes its position.
             community: list[tuple[dict, str]] = []
+            entity_tags: dict[int, list[str]] = {}
             for tc in item.metadata.get("top_comments") or []:
                 if not isinstance(tc, dict):
                     continue
                 raw = str(tc.get("excerpt") or tc.get("text") or tc.get("body") or "")
                 if not _is_community_comment(item, tc, raw):
                     continue
+                if item.source == "reddit":
+                    tags = _comment_entity_tags(
+                        item, tc, raw, compared_entities, comment_entity
+                    )
+                    if tags is None:
+                        continue
+                    entity_tags[id(tc)] = tags
                 body = _quote_text(raw, _QUOTE_TEXT_LIMIT)
                 if _quotable(body):
                     community.append((tc, body))
-            if community and item.source in _QUOTE_POOL_VOTE_COUNTING_SOURCES:
-                top_score = community[0][0].get("score")
+            # A pending comment (a fresh archive snapshot, its score withheld)
+            # has no vote count to clear the vote floors with; it is quoted
+            # without one, after every scored line.
+            scored = [(tc, body) for tc, body in community if not tc.get("score_pending")]
+            if scored and item.source in _QUOTE_POOL_VOTE_COUNTING_SOURCES:
+                top_score = scored[0][0].get("score")
                 if not (
                     isinstance(top_score, (int, float))
                     and not isinstance(top_score, bool)
                     and top_score >= _quote_pool_item_floor(item)
                 ):
                     # Too few voted for the item's best comment: skip the item.
-                    community = []
+                    community = [
+                        (tc, body) for tc, body in community if tc.get("score_pending")
+                    ]
             for position, (tc, body) in enumerate(
                 community[:_QUOTE_POOL_COMMENTS_PER_ITEM]
             ):
                 score = tc.get("score")
-                if not _quote_pool_has_vote(item.source, score):
+                pending = bool(tc.get("score_pending"))
+                if not pending and not _quote_pool_has_vote(item.source, score):
                     continue
                 rows.append({
+                    "pending": pending,
                     "position": position, "cand": cand, "item": item, "funny": funny,
                     "author": tc.get("author"), "score": score,
                     "vote_label": _vote_label_for(item.source), "body": body,
+                    "entities": entity_tags.get(id(tc), []),
                     # A comment with no link of its own is cited by the item it
                     # sits on. The candidate's URL is another item's whenever
                     # the candidate fused several.
@@ -5193,6 +5383,11 @@ def _render_top_comments(
         *other_first,
         *other_second,
     ]
+    # Pending lines carry no vote count, so they never take a place or a
+    # printed position ahead of a scored line from any platform.
+    priority.sort(key=lambda row: bool(row.get("pending")))
+    first_order.sort(key=lambda row: bool(row.get("pending")))
+    second_order.sort(key=lambda row: bool(row.get("pending")))
 
     # Eligibility is settled above; only now are duplicates removed, and the
     # limit applied, in the order of who is covered first.
@@ -5229,10 +5424,11 @@ def _render_top_comments(
             label = "post"
         else:
             label = _QUOTE_POOL_POSITION_LABELS[position]
+        about = f" (about {', '.join(row['entities'])})" if row.get("entities") else ""
         lines.append(
             f'- "{row["body"]}" '
             f"{_quote_attribution(item, row['author'], row['score'], row['vote_label'])}"
-            f"{url_part}{origin} — {label}{' — funny' if row['funny'] else ''}"
+            f"{url_part}{origin} — {label}{about}{' — funny' if row['funny'] else ''}"
         )
     return lines
 

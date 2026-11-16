@@ -14,13 +14,9 @@ from collections import Counter
 from typing import Any
 
 from . import hiring_signals
-
-# A sentence found under this many distinct titles of a board is company or
-# role-family text, not something one role says. Counting a title in a
-# department once (however many cities or postings carry it) makes one fixed
-# number work for a three-role board and a 2,900-role one; below three nothing
-# is removed.
-BOILERPLATE_MIN_ROLES = 3
+from .job_boilerplate import BOILERPLATE_MIN_ROLES  # noqa: F401 (re-exported)
+from .job_boilerplate import key as _key
+from .job_boilerplate import role_sentences, shared_sentence_counts
 # Roles in the digest, and role-unique characters kept for each.
 DIGEST_MAX_ROLES = 40
 # Of those, how many may go to roles the run itself ranked highest (its ranked
@@ -34,26 +30,16 @@ DIGEST_MAX_CHARS = 36_000
 # Locations named on one entry before the rest are counted.
 DIGEST_ENTRY_LOCATIONS = 3
 
-_SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9\"“(])")
+def unreadable_job_site_line(name: str) -> str:
+    """What the run says about a company's job site it knows and cannot read."""
+    return f"{name}'s job site can't be read automatically"
+
+
 _TITLE_TERM = re.compile(r"[a-z][a-z0-9+#-]{2,}")
-
-
-def _key(text: str) -> str:
-    return " ".join(str(text or "").lower().split())
 
 
 def _text(item: dict[str, Any]) -> str:
     return str(item.get("description_blocks") or item.get("description") or "")
-
-
-def _sentences(text: str) -> list[str]:
-    out: list[str] = []
-    for line in text.splitlines():
-        for sentence in _SENTENCE_END.split(line):
-            sentence = " ".join(sentence.split())
-            if sentence:
-                out.append(sentence)
-    return out
 
 
 def _group(item: dict[str, Any]) -> tuple[str, str]:
@@ -89,9 +75,11 @@ def distinct_roles(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if not _key(item.get("title")):
             continue
         role = roles.setdefault(_role_key(item), {"item": item, "locations": [], "urls": []})
-        location = str(item.get("location") or "").strip()
-        if location and location not in role["locations"]:
-            role["locations"].append(location)
+        # A row a reader already merged across locations names them all itself.
+        for place in item.get("locations") or [item.get("location")]:
+            location = str(place or "").strip()
+            if location and location not in role["locations"]:
+                role["locations"].append(location)
         url = str(item.get("url") or "").strip()
         if url and url not in role["urls"]:
             role["urls"].append(url)
@@ -113,7 +101,12 @@ def select_roles(
     roles = distinct_roles(items)
     groups = {_group(role["item"]) for role in roles}
     departments = Counter(department for _title, department in groups if department)
-    locations = Counter(_key(item.get("location")) for item in items if _key(item.get("location")))
+    # Counted from the same places a role is shown with, so a place that is
+    # one role's first and several others' extra is not taken for rare.
+    locations = Counter(
+        _key(place) for item in items
+        for place in item.get("locations") or [item.get("location")] if _key(place)
+    )
     terms = Counter(
         term for title in {title for title, _department in groups}
         for term in set(_TITLE_TERM.findall(title))
@@ -234,22 +227,16 @@ def build_digest(
     titles share, cut to ``DIGEST_ROLE_CHARS``.
     """
     roles = distinct_roles(items)
-    by_group: dict[tuple[str, str], set[str]] = {}
-    for role in roles:
-        by_group.setdefault(_group(role["item"]), set()).update(
-            _key(sentence) for sentence in _sentences(_text(role["item"]))
-        )
-    shared: Counter[str] = Counter()
-    for sentences in by_group.values():
-        shared.update(sentences)
+    shared = shared_sentence_counts(
+        (str(role["item"].get("title") or ""), str(role["item"].get("department") or ""),
+         _text(role["item"]))
+        for role in roles
+    )
 
     entries: list[dict[str, Any]] = []
     for role in selected:
         item = role["item"]
-        unique = " ".join(
-            sentence for sentence in _sentences(_text(item))
-            if shared[_key(sentence)] < BOILERPLATE_MIN_ROLES
-        )
+        unique = " ".join(role_sentences(_text(item), shared))
         if len(unique) > DIGEST_ROLE_CHARS:
             unique = unique[: DIGEST_ROLE_CHARS - 3].rstrip() + "..."
         named = role["locations"][:DIGEST_ENTRY_LOCATIONS]
