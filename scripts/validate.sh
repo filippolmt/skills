@@ -8,11 +8,13 @@
 # stale by design until regeneration, so `--catalog-only` skips them and every
 # other check still runs. --isolated snapshots the current work (including untracked
 # non-ignored files), tests it first, then materializes projections in a disposable worktree.
-# --projection-diff snapshots the same way, regenerates every projection there and lists the
-# changed files per directory, leaving this checkout untouched; it runs no check.
+# --projection-diff snapshots the same way, regenerates every projection there and counts the
+# changed files per catalog entry against HEAD (uncommitted projection edits count too),
+# leaving this checkout untouched; it runs no check.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mode="${1:-}"
+generators=(gen-skills-tree gen-readme gen-distribution gen-pi gen-codex)
 if [ "$#" -gt 1 ] || [[ "$mode" != '' && "$mode" != --catalog-only && "$mode" != --isolated && "$mode" != --projection-diff ]]; then
   echo 'Usage: bash scripts/validate.sh [--catalog-only|--isolated|--projection-diff]' >&2
   exit 2
@@ -46,11 +48,22 @@ if [ "$mode" = --isolated ] || [ "$mode" = --projection-diff ]; then
 fi
 
 if [ "$mode" = --projection-diff ]; then
-  for gen in gen-skills-tree gen-readme gen-distribution gen-pi gen-codex; do node "scripts/$gen.js" > /dev/null; done
-  echo '=== projection changes against HEAD (files per directory)'
-  git status --porcelain -uall -- skills .agents docs/distribution-parity.md README.md \
-    | cut -c4- | awk -F/ '$1 == "skills" { print $1 "/" $2; next } $1 == ".agents" { print $1 "/" $2 "/" $3 "/" $4; next } { print }' \
-    | sort | uniq -c
+  for gen in "${generators[@]}"; do node "scripts/$gen.js" > /dev/null; done
+  echo '=== projection changes against HEAD (files per catalog entry)'
+  # A vendored skill names its entry in SOURCE.md; a removed one falls back to its folder.
+  git status --porcelain -z --no-renames -uall -- skills .agents docs/distribution-parity.md README.md \
+    | while IFS= read -r -d '' line; do
+        file="${line:3}"
+        case "$file" in
+          skills/*/*)
+            dir="${file#skills/}"; dir="${dir%%/*}"
+            entry="$(sed -n 's/.*\*\*Catalog entry\*\*: `\([^`]*\)`.*/\1/p' "skills/$dir/SOURCE.md" 2> /dev/null || true)"
+            echo "entry ${entry:-$dir}" ;;
+          .agents/plugins/packages/*/*)
+            pkg="${file#.agents/plugins/packages/}"; echo "entry ${pkg%%/*}" ;;
+          *) echo "$file" ;;
+        esac
+      done | sort | uniq -c
   exit 0
 fi
 
@@ -60,7 +73,7 @@ run() {
 }
 
 run bash scripts/run-tests.sh                        # every test; CI runs this same script
-run node scripts/gen-readme.js --check               # README's generated regions match the catalog; local descriptions ≤ 500 chars
+run node scripts/gen-readme.js --check               # README's generated regions match the catalog; local descriptions ≤ 500 chars; no artifact count on a branch pin
 run node scripts/gen-skills-tree.js --verify-paths   # classify artifacts and build in temp, including overlays
 run node scripts/check-renovate.js                   # Renovate regexes cover every external entry; no orphan packageRules
 run node scripts/check-sha-history.js origin/main    # no pinned sha moved behind, diverged or onto another history
@@ -75,11 +88,7 @@ if [ "$mode" = --catalog-only ]; then
   exit 0
 fi
 if [ "$mode" = --isolated ]; then
-  run node scripts/gen-skills-tree.js
-  run node scripts/gen-readme.js
-  run node scripts/gen-distribution.js
-  run node scripts/gen-pi.js
-  run node scripts/gen-codex.js
+  for gen in "${generators[@]}"; do run node "scripts/$gen.js"; done
   run node scripts/gen-skills-tree.js --check
 fi
 run node scripts/gen-distribution.js --check         # parity matrix matches the inventory

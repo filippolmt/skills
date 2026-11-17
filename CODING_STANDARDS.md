@@ -28,7 +28,7 @@ A script or workflow step that reproduces an upstream artifact's internals (a ca
 
 ## External entry descriptions
 
-A description rewritten for an external entry is checked against the upstream artifact at the pinned `sha` — the `SKILL.md` body, or a whole plugin's manifest and artifact list — not only against upstream's own description. Review reports a claim the artifact does not support.
+A description rewritten for an external entry is checked against the upstream artifact at the pinned `sha` — the `SKILL.md` body, or a whole plugin's manifest and artifact list — not only against upstream's own description. Review reports a claim the artifact does not support. A branch-pinned entry's description names no artifact count: its pin moves with every upstream commit (`gen-readme.js --check` fails on one). An offensive-security source is the exception to reading the artifact: its description is checked against the manifest, the README and the tree.
 
 ## Plugin descriptions
 

@@ -30,6 +30,8 @@ const isGitSubdir = (e) => !!e && !!e.source && e.source.source === 'git-subdir'
 // (docs/adr/0033-a-repo-root-plugin-is-a-url-entry.md).
 const isUrl = (e) => !!e && !!e.source && e.source.source === 'url';
 const isExternal = (e) => isGitSubdir(e) || isUrl(e);
+// The two branch refs renovate.json tracks by HEAD; every other ref is a tag.
+const isBranchRef = (ref) => ref === 'main' || ref === 'master';
 
 // Every spelling of "the repo root" a `path` can take. For a git-subdir entry each
 // one installs empty, which is why check-renovate rejects them.
@@ -76,4 +78,4 @@ function readCatalog() {
 // The editorial and review metadata beside the catalog (README groups, review records).
 const readCatalogMeta = () => JSON.parse(fs.readFileSync(path.join(root, 'scripts', 'catalog-meta.json'), 'utf8'));
 
-module.exports = { readCatalog, readCatalogMeta, isLocal, isGitSubdir, isUrl, isExternal, isRepoRoot, entryPath, isBundle, repoOf, root, MARKETPLACE };
+module.exports = { readCatalog, readCatalogMeta, isLocal, isGitSubdir, isUrl, isExternal, isBranchRef, isRepoRoot, entryPath, isBundle, repoOf, root, MARKETPLACE };

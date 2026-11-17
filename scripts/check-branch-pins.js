@@ -16,7 +16,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { readCatalog, isExternal, repoOf, root } = require('./catalog.js');
+const { readCatalog, isExternal, isBranchRef, repoOf, root } = require('./catalog.js');
 const { githubApi } = require('./github.js');
 
 // Pure: the tag shape renovate.json's tag manager accepts, read from its
@@ -46,7 +46,7 @@ function allowedTag(renovate, repo) {
 function branchPins(catalog) {
   const pins = new Map();
   for (const e of catalog.filter(isExternal)) {
-    if (!['main', 'master'].includes(e.source.ref)) continue;
+    if (!isBranchRef(e.source.ref)) continue;
     const repo = repoOf(e);
     pins.set(repo, [...new Set([...(pins.get(repo) || []), e.source.sha])]);
   }
