@@ -164,12 +164,12 @@ function copyAttribution(repoRoot, destination) {
   };
   rejectSymlink(destination);
   for (const item of fs.readdirSync(repoRoot, { withFileTypes: true })) {
-    if (!item.isFile() || !/^(LICEN[SC]E|COPYING|NOTICE|THIRD[-_ ]PARTY(?:[-_ ](?:NOTICES?|LICEN[SC]ES?))?)(\..*)?$/i.test(item.name)) continue;
+    if (!item.isFile() || !/^(LICEN[SC]E|COPYING|NOTICE|THIRD[-_ ]PARTY(?:[-_ ](?:NOTICES?|LICEN[SC]ES?))?)([-_.].*)?$/i.test(item.name)) continue;
     const source = path.join(repoRoot, item.name);
     let target = path.join(destination, item.name);
     rejectSymlink(target);
     if (fs.existsSync(target)) {
-      if (/^(LICEN[SC]E|COPYING)(\..*)?$/i.test(item.name) || fs.readFileSync(source).equals(fs.readFileSync(target))) continue;
+      if (/^(LICEN[SC]E|COPYING)([-_.].*)?$/i.test(item.name) || fs.readFileSync(source).equals(fs.readFileSync(target))) continue;
       // Keep both the skill's notice and the upstream root attribution.
       target = path.join(destination, 'upstream-attribution', item.name);
       rejectSymlink(path.dirname(target));
