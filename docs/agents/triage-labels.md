@@ -11,3 +11,5 @@ The skills speak in terms of five canonical triage roles. This file maps those r
 | `wontfix`                  | `wontfix`            | Will not be actioned                     |
 
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
+
+Issues opened by `.github/workflows/whole-sources.yml` (the upstream drift reports) stay unlabelled: the workflow finds them by title, rewrites their body and closes them once resolved. They take an action, not a triage state: see `docs/agents/external-entries.md`.
