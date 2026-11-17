@@ -79,6 +79,9 @@ run node scripts/check-renovate.js                   # Renovate regexes cover ev
 run node scripts/check-sha-history.js origin/main    # no pinned sha moved behind, diverged or onto another history
 run node scripts/check-whole-sources.js --classified # every external repo is whole or curated in ADR-0014, every curated one has a curation baseline
 run node scripts/check-name-collisions.js            # what claude plugin validate does NOT cover
+# Its `❯` lines report what each hooks module hooks and calls, not warnings: a
+# "gating hook with/without .catch" line is a fact (plugin-authoring reference).
+# A finding fails the run, as with every other check here.
 run claude plugin validate --strict .                # marketplace + all local plugins
 run actionlint                                       # workflow syntax and the shell in run: steps
 

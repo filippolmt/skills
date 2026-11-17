@@ -231,7 +231,8 @@ For each external source repo (git-subdir or url entry) in `marketplace.json` (o
      before it lands, not only against upstream's description.
      When a description is reviewed and kept, record the entry's pinned `sha`
      under its name in `descriptionReviewed` in `scripts/catalog-meta.json`; a
-     rewrite needs no record.
+     rewrite needs no record: its commit is the review (ADR-0029), so
+     `check-upstream-descriptions.js` clears it only once committed.
 3. Run **Check upstream Codex parity** at each new SHA.
 4. **Regenerate the README**, then validate.
 
