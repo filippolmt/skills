@@ -1,6 +1,6 @@
 {
   "name": "gateway-workers",
-  "version": "0.0.0+catalog.cbf893b95422.8f972d244ceb",
+  "version": "0.0.0+catalog.5108325eccea.24929688a947",
   "description": "Build, debug, or review Cloudflare Workers invoked by the Forward action in Gateway HTTP policies, including the GatewayMiddleware entrypoint, Gateway types, context, and continuation.",
   "author": {
     "name": "Cloudflare",

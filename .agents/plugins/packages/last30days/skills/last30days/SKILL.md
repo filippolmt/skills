@@ -1,6 +1,6 @@
 ---
 name: last30days
-version: "4.3.0"
+version: "4.3.2"
 description: "Research what people actually say about any topic in the last 30 days. Pulls posts and engagement from Reddit, X, YouTube, TikTok, Hacker News, Polymarket, GitHub, and the web. Includes a doctor health check to diagnose broken or missing sources."
 argument-hint: 'last30days nvidia earnings reaction | last30days AI video tools | last30days what users want in react'
 allowed-tools: Bash, Read, Write, AskUserQuestion, WebSearch
@@ -70,7 +70,7 @@ metadata:
 ---
 
 
-# last30days v4.3.0: Research Any Topic from the Last 30 Days
+# last30days v4.3.2: Research Any Topic from the Last 30 Days
 
 ## Skill contract
 
@@ -257,6 +257,6 @@ After the response and required citations, stop and wait unless governing instru
 - TikTok and Instagram sources require SCRAPECREATORS_API_KEY (10,000 free calls, then PAYG); `LAST30DAYS_REDDIT_BACKEND=scrapecreators` makes it Reddit's primary path.
 - Agent hosts invoke the slash-command skill contract; if `--agent` appears in the user's slash-command arguments, treat it as skill-level mode guidance, not a Python CLI flag.
 
-**Bundled scripts:** `scripts/last30days.py` (main research engine), `scripts/lib/` (search, enrichment, rendering modules), `scripts/lib/vendor/bird-search/` (vendored X search client, MIT licensed)
+**Bundled scripts:** `scripts/last30days.py` (main research engine), the search, enrichment, and rendering modules in its `lib` folder, and the vendored X search client in `lib/vendor/bird-search` (MIT licensed)
 
 Review scripts before first use to verify behavior.
