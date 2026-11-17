@@ -46,6 +46,7 @@ from . import (
     instagram,
     jobs,
     jobs_digest,
+    jobs_story,
     linkedin,
     library,
     library_index,
@@ -2307,6 +2308,23 @@ def run(
     corpus_requested = bool(requested_sources and "corpus" in requested_sources)
     if corpus_enabled and requested_sources and "corpus" not in requested_sources:
         requested_sources = [*requested_sources, "corpus"]
+    # The --search list as the user gave it, before the engine attaches its
+    # own lanes, so the dropped-source warning can tell what it would drop.
+    search_list = list(requested_sources or [])
+    # A run about a company keeps the jobs lane under a --search list that
+    # omits it: hosts routinely pass full source lists and would silently
+    # lose the lane. EXCLUDE_SOURCES=jobs is the opt-out; quick runs keep
+    # their small source budget.
+    company_signal = str(config.get("_company_signal") or "")
+    company_jobs_attached = bool(
+        requested_sources
+        and company_signal
+        and depth != "quick"
+        and "jobs" not in requested_sources
+        and "jobs" not in excluded_sources
+    )
+    if company_jobs_attached:
+        requested_sources = [*requested_sources, "jobs"]
 
     # Host-fetched X lane. EXCLUDE_SOURCES=x or a --search list without
     # x wins: the envelope is ignored with a receipt line and stays unconsumed.
@@ -2365,6 +2383,7 @@ def run(
     if mock:
         runtime = providers.mock_runtime(config, depth)
         reasoning_provider = None
+        available_before_search = list(MOCK_AVAILABLE_SOURCES)
         available = list(requested_sources or MOCK_AVAILABLE_SOURCES)
         if corpus_enabled and "corpus" not in available:
             available.append("corpus")
@@ -2379,6 +2398,7 @@ def run(
             suppress_x_host_lane=suppress_x_host_lane,
             x_envelope=envelope is not None,
         )
+        available_before_search = list(available)
         if requested_sources:
             available = [source for source in available if source in requested_sources]
     # Keep an explicitly requested but unconfigured corpus in the plan long
@@ -2399,7 +2419,6 @@ def run(
     # names it: the lane is free and bounded, and a host that forgets one
     # word must not cost the run a working board. Quick runs keep the
     # sanitizer's two-source budget, as for the installed lanes below.
-    company_signal = str(config.get("_company_signal") or "")
     if (
         host_plan
         and not requested_sources
@@ -2462,6 +2481,16 @@ def run(
         )
         if depth != "quick" and not hiring_signals_mode:
             _ensure_company_jobs_in_host_plan(plan, available, company_signal)
+        if search_list:
+            _warn_search_dropped_plan_sources(
+                external_plan,
+                search_list,
+                available_before_search,
+                excluded_sources,
+                jobs_attached=company_jobs_attached,
+                jobs_past_window=jobs_past_window,
+                company_signal=company_signal,
+            )
         plan_source = "external"
     else:
         _check_research(config)
@@ -2500,7 +2529,11 @@ def run(
         # Drill plans re-fetch only the sources that contributed to the matched
         # cluster, and host plans name their final source set; the company-topic
         # jobs injection must not widen either.
-        _ensure_jobs_in_plan(plan, available, explicit=hiring_signals_mode, topic=topic)
+        _ensure_jobs_in_plan(
+            plan, available,
+            explicit=hiring_signals_mode or company_jobs_attached,
+            topic=topic,
+        )
         _ensure_devto_in_plan(plan, available)
     if "corpus" in available and plan.subqueries:
         # Corpus is deterministic and user-registered, so it always gets one
@@ -2543,6 +2576,11 @@ def run(
             )
     else:
         print("[Planner]   (no subqueries in plan)", file=sys.stderr)
+
+    polymarket_hints = getattr(plan, "polymarket_hints", None)
+    if polymarket_hints:
+        config = dict(config)
+        config["_polymarket_hints"] = polymarket_hints
 
     if reddit_refs_envelope is not None:
         # Each Reddit stream receives the host threads its terms match.
@@ -2760,6 +2798,13 @@ def run(
     # lane's time budget for this topic (see ``_jobs_lane_budget``).
     # It goes into a copy, so the caller's config is left as it was.
     config = {**config, "_jobs_lane": {}}
+    if not jobs_past_window and "jobs" in available and any(
+        "jobs" in subquery.sources for subquery in plan.subqueries
+    ):
+        # The stories the jobs lane searches each board for, fixed before
+        # the first jobs stream starts because that stream settles the
+        # lane's budget.
+        config["_jobs_story_terms"] = _jobs_story_terms(plan, topic, config)
     stream_config = dict(config)
     stream_config["_research_deadline"] = _research_deadline(config, STREAM_FUTURE_TIMEOUT_SECONDS)
     with _abandoning_executor(max_workers=max_workers) as executor:
@@ -3000,6 +3045,11 @@ def run(
                     digg_bar_dropped = True
                     bundle.record_detail(source, bar_note)
             elif source != "jobs":
+                if source == "polymarket":
+                    # The parser already ranked these markets for the subject;
+                    # a related player's award race shares no words with the
+                    # topic, so token relevance would cut it first.
+                    normalized = polymarket.by_selection(normalized)
                 stream_limit = settings["per_stream_limit"]
                 host_fetched_x = source == "x" and config.get("_x_envelope") is not None
                 if host_fetched_x:
@@ -3926,6 +3976,8 @@ def _finalize_items_by_source(
     for source, items in items_by_source_raw.items():
         _check_research(config or {})
         items = sorted(items, key=lambda item: item.local_rank_score or 0.0, reverse=True)
+        if source == "polymarket":
+            items = polymarket.by_selection(items)
         if source == "digg":
             # De-duplication keeps the earlier of two similar stories. Two
             # searches can return the same event as a prominent story and as
@@ -3969,13 +4021,15 @@ def _finalize_items_by_source(
                     entity_count=_comparison_entity_count(config),
                 )
                 http.fixture_source_record(enrichment_request, schema.to_dict(items))
-        # Post-merge topic-relevance filter for Polymarket: comparison queries
-        # fan out into per-entity subqueries ("Hermes", "OpenClaw") whose topic
-        # is too narrow for Gamma API to filter meaningfully. Re-validating the
-        # merged list against the full original topic drops off-topic markets
+        # Post-merge topic bar for Polymarket: the entity matcher, with the
+        # run's hints, over each item's matched market and event title. It
+        # stands in for the generic relevance floor, which exempts matched
+        # markets (signals.prune_low_relevance), and drops off-topic markets
         # (e.g., WTI crude oil, Elon tweet counts) before footer emission.
         if source == "polymarket" and topic:
-            items = polymarket.filter_items_against_topic(topic, items)
+            items = polymarket.filter_items_against_topic(
+                topic, items, (config or {}).get("_polymarket_hints"),
+            )
             # --polymarket-keywords (via config): additional keyword filter
             # for ambiguous single-token topics (e.g., "Warriors" → nba,gsw).
             keywords = config.get("_polymarket_keywords") if isinstance(config, dict) else None
@@ -4153,6 +4207,38 @@ def _jobs_lane_budget(config: dict[str, Any]) -> jobs.LaneBudget:
         if isinstance(holder, dict):
             holder["budget"] = budget
     return budget
+
+
+def _jobs_story_terms(
+    plan: schema.QueryPlan, topic: str, config: dict[str, Any],
+) -> list[str]:
+    """The run's story terms: the host plan's, else drawn from its subqueries.
+
+    Drawn terms leave out the topic (the company, or the person it names),
+    the company the topic resolved to and those the host named, and every
+    entity of a comparison.
+    """
+    if plan.jobs_queries:
+        terms, origin = list(plan.jobs_queries), "host plan"
+    else:
+        company = config.get("_company") or {}
+        excluded = [
+            topic,
+            str(company.get("company") or ""),
+            *_host_companies(company),
+            *(config.get("_comparison_entities") or []),
+            *planner._comparison_entities(topic),
+        ]
+        terms = jobs_story.derive_terms(
+            (subquery.search_query for subquery in plan.subqueries), excluded,
+        )
+        origin = "drawn from the plan's subqueries"
+    log.source_log(
+        "Jobs",
+        f"story terms ({origin}): {', '.join(terms) or 'none'}",
+        tty_only=False,
+    )
+    return terms
 
 
 def _host_companies(company: dict[str, Any]) -> list[str]:
@@ -4593,6 +4679,63 @@ def _ensure_company_jobs_in_host_plan(
         "(set EXCLUDE_SOURCES=jobs to skip it).",
         tty_only=False,
     )
+
+
+# Lanes the engine attaches on its own. A --search list never drops them in
+# the sense a host needs to hear about.
+ENGINE_ATTACHED_SOURCES = frozenset(
+    {"grounding", "corpus", "perplexity", "amazon", "meta_ads"}
+)
+
+
+def _warn_search_dropped_plan_sources(
+    external_plan: dict,
+    search_list: list[str],
+    available_before_search: list[str],
+    excluded_sources: set[str],
+    *,
+    jobs_attached: bool,
+    jobs_past_window: bool,
+    company_signal: str,
+) -> None:
+    """Name, once, each --plan source that only the --search list removed.
+
+    A source counts when the plan names it, the run could serve it, and
+    EXCLUDE_SOURCES does not list it. Engine-attached lanes never count, nor
+    does jobs on a past window, where the lane is skipped whatever --search
+    says. ``jobs_attached`` means the jobs lane survived the --search list
+    because the run is about a company; the line then says so.
+    """
+    can_serve = set(available_before_search) - excluded_sources
+    named: list[str] = []
+    for subquery in external_plan.get("subqueries") or []:
+        if not isinstance(subquery, dict):
+            continue
+        for source in subquery.get("sources") or []:
+            if isinstance(source, str) and source not in named:
+                named.append(source)
+    dropped = [
+        source for source in named
+        if source in can_serve
+        and source not in search_list
+        and source not in ENGINE_ATTACHED_SOURCES
+        and not (source == "jobs" and (jobs_attached or jobs_past_window))
+    ]
+    parts: list[str] = []
+    if dropped:
+        them = "it" if len(dropped) == 1 else "them"
+        parts.append(
+            f"--search dropped {', '.join(dropped)}: the --plan names {them} "
+            f"and the run could search {them}, but --search does not list {them}."
+        )
+    if jobs_attached and not jobs_past_window and "jobs" in named:
+        parts.append(
+            "The --plan names jobs and --search would have dropped it; kept "
+            f"because the run is about a company ({company_signal}) "
+            "(set EXCLUDE_SOURCES=jobs to skip it)."
+        )
+    if parts:
+        log.source_log("Planner", " ".join(parts), tty_only=False)
 
 
 def _external_plan_names_source(external_plan: Any, source: str) -> bool:
@@ -7394,24 +7537,40 @@ def _retrieve_stream_impl(
         result = truthsocial.search_truthsocial(subquery.search_query, from_date, to_date, depth=depth, config=config)
         return truthsocial.parse_truthsocial_response(result), _result_outcome_artifact(source, result)
     if source == "polymarket":
-        # Same sharing as digg: only the search is memoized; parsing still
-        # runs per caller with its own relevance topic.
+        # Polymarket searches the stable research topic (plus the host's
+        # aliases and related names), not the per-subquery search_query, so
+        # every subquery and the thin-source retry share one search. The same
+        # topic judges relevance: a narrowed subquery would let off-topic
+        # markets through on broad passes and drop everything on narrow ones.
+        relevance_topic = raw_topic or topic or subquery.search_query
+        hints = polymarket.PolymarketHints.coerce((config or {}).get("_polymarket_hints"))
         result = fetch_memo.fetch_once(
-            ("polymarket", subquery.search_query, from_date, to_date, depth),
+            ("polymarket", relevance_topic, hints, from_date, to_date, depth),
             lambda: polymarket.search_polymarket(
-                subquery.search_query, from_date, to_date, depth=depth,
+                relevance_topic, from_date, to_date, depth=depth, hints=hints,
+                deadline=_research_deadline(config, STREAM_FUTURE_TIMEOUT_SECONDS),
             ),
             timeout=_memo_wait_seconds(config),
             cacheable=_clean_search_result,
         )
-        # Relevance filtering keys off the stable original research topic, not the
-        # per-subquery search_query (which narrows differently on each fanout pass
-        # and would let off-topic markets through on broad subqueries while dropping
-        # everything on narrow ones).
-        relevance_topic = raw_topic or topic or subquery.search_query
+        if result.get("partial"):
+            # Some term searches failed while others returned events: keep
+            # what came back, report the lane partial, and (via `error`) keep
+            # the incomplete result out of the fetch memo.
+            artifact = {
+                "_source_outcome": {
+                    "state": schema.PARTIAL,
+                    "detail": str(result.get("error") or "partial"),
+                    "attempted": True,
+                }
+            }
+        else:
+            artifact = _result_outcome_artifact(source, result)
         return (
-            polymarket.parse_polymarket_response(result, topic=relevance_topic),
-            _result_outcome_artifact(source, result),
+            polymarket.parse_polymarket_response(
+                result, topic=relevance_topic, hints=hints, to_date=to_date,
+            ),
+            artifact,
         )
     if source == "github":
         # Resolve once at the pipeline boundary so search and enrich
