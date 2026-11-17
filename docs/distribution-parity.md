@@ -204,3 +204,101 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `seo-toolkit` | `skill:skills/seo-technical/SKILL.md` | — | Unsupported — The workflows require Claude's plugin-root variable, root-level Python launcher and resources, and Claude subagents; copying individual skill folders does not preserve that runtime closure. Fallback: Install seo-toolkit@filippo-skills in Claude Code and run /seo setup before using Python tools. Optional extensions require upstream's separate activation. | Unsupported — The loose-skill projection does not preserve the upstream plugin-root runtime, Python launcher, shared resources, subagent orchestration, or schema hook. Fallback: Use seo-toolkit@filippo-skills in Claude Code; no incomplete pi skills are published. |
 | `seo-toolkit` | `skill:skills/seo/SKILL.md` | — | Unsupported — The workflows require Claude's plugin-root variable, root-level Python launcher and resources, and Claude subagents; copying individual skill folders does not preserve that runtime closure. Fallback: Install seo-toolkit@filippo-skills in Claude Code and run /seo setup before using Python tools. Optional extensions require upstream's separate activation. | Unsupported — The loose-skill projection does not preserve the upstream plugin-root runtime, Python launcher, shared resources, subagent orchestration, or schema hook. Fallback: Use seo-toolkit@filippo-skills in Claude Code; no incomplete pi skills are published. |
 | `playwright-cli` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `command:commands/autopilot.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `command:commands/chain.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `command:commands/hunt.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `command:commands/intel.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `command:commands/memory-gc.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `command:commands/pickup.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `command:commands/recon.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `command:commands/remember.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `command:commands/report.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `command:commands/scope.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `command:commands/surface.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `command:commands/token-scan.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `command:commands/triage.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `command:commands/validate.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `command:commands/web3-audit.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `skill:skills/apk-redteam-pipeline/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/bb-local-toolkit/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/bb-methodology/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/bug-bounty/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/bugcrowd-reporting/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/cloud-iam-deep/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/enterprise-vpn-attack/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/evidence-hygiene/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-api-misconfig/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-aspnet/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-ato/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-auth-bypass/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-brute-force/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-business-logic/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-cache-poison/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-captcha-bypass/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-cicd/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-clickjacking/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-cloud-misconfig/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-cors/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-csrf/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-deserialization/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-dispatch/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-dom/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-exceptional-conditions/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-file-upload/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-fintech-graphql/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-forgot-password/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-graphql/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-grpc/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-host-header/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-html-injection/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-http-smuggling/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-idor/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-jwt-crypto/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-k8s/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-laravel/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-ldap/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-lfi/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-llm-ai/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-mfa-bypass/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-misc/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-nextjs/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-nodejs/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-nosqli/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-ntlm-info/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-oauth/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-open-redirect/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-race-condition/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-rag-vector/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-rce/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-saml/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-session/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-shadow-api/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-sharepoint/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-source-leak/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-spa-api/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-springboot/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-sqli/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-ssrf/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-ssti/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-subdomain/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-tls-network/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-websocket/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-xss/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/hunt-xxe/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/ios-redteam-pipeline/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/m365-entra-attack/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/meme-coin-audit/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/mid-engagement-ir-detection/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/offensive-osint/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/okta-attack/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/osint-methodology/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/recon-scope-triage/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/redteam-mindset/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/redteam-report-template/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/report-writing/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/security-arsenal/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/supply-chain-attack-recon/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/triage-validation/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/vmware-vcenter-attack/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/web2-recon/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/web3-audit/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |

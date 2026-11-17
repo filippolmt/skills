@@ -1143,6 +1143,18 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Developer Tools"
+    },
+    {
+      "name": "bughunter",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/bughunter"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
     }
   ]
 }
