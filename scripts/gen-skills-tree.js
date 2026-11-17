@@ -490,7 +490,7 @@ if (require.main === module) {
     // There is deliberately no `.agents/skills` symlink (ADR-0021).
     fs.rmSync(TREE, { recursive: true, force: true });
     copyDir(staging, TREE);
-    console.log(`skills/ regenerated (${names.length} skills): ${names.join(', ')}`);
+    console.log(`skills/ regenerated (${names.length} skills).`);
   } finally {
     fs.rmSync(staging, { recursive: true, force: true });
   }

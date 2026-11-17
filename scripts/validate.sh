@@ -8,15 +8,17 @@
 # stale by design until regeneration, so `--catalog-only` skips them and every
 # other check still runs. --isolated snapshots the current work (including untracked
 # non-ignored files), tests it first, then materializes projections in a disposable worktree.
+# --projection-diff snapshots the same way, regenerates every projection there and lists the
+# changed files per directory, leaving this checkout untouched; it runs no check.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mode="${1:-}"
-if [ "$#" -gt 1 ] || [[ "$mode" != '' && "$mode" != --catalog-only && "$mode" != --isolated ]]; then
-  echo 'Usage: bash scripts/validate.sh [--catalog-only|--isolated]' >&2
+if [ "$#" -gt 1 ] || [[ "$mode" != '' && "$mode" != --catalog-only && "$mode" != --isolated && "$mode" != --projection-diff ]]; then
+  echo 'Usage: bash scripts/validate.sh [--catalog-only|--isolated|--projection-diff]' >&2
   exit 2
 fi
 
-if [ "$mode" = --isolated ]; then
+if [ "$mode" = --isolated ] || [ "$mode" = --projection-diff ]; then
   repo="$PWD"
   scratch="$(mktemp -d "${TMPDIR:-/tmp}/skills-validate.XXXXXX")"
   worktree="$scratch/tree"
@@ -41,6 +43,15 @@ if [ "$mode" = --isolated ]; then
   tar -cf "$scratch/untracked.tar" --null -T "$scratch/untracked"
   tar -xf "$scratch/untracked.tar" -C "$worktree"
   cd "$worktree"
+fi
+
+if [ "$mode" = --projection-diff ]; then
+  for gen in gen-skills-tree gen-readme gen-distribution gen-pi gen-codex; do node "scripts/$gen.js" > /dev/null; done
+  echo '=== projection changes against HEAD (files per directory)'
+  git status --porcelain -uall -- skills .agents docs/distribution-parity.md README.md \
+    | cut -c4- | awk -F/ '$1 == "skills" { print $1 "/" $2; next } $1 == ".agents" { print $1 "/" $2 "/" $3 "/" $4; next } { print }' \
+    | sort | uniq -c
+  exit 0
 fi
 
 run() {

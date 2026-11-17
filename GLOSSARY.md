@@ -107,7 +107,8 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
   fails by name when it is empty (ADR-0011).
 - **Vendored copy** — an upstream skill's files reproduced in the skills tree at the
   `sha` its entry pins, beside that upstream's licence and a `SOURCE.md`. What the
-  tree holds instead of a reference.
+  tree holds instead of a reference. Which root files count as licence and
+  attribution: `licencesIn` and `copyAttribution` in `scripts/portable-artifacts.js`.
 - **Overlay** — a harness-specific edit to a vendored copy, held apart from it as a patch
   so the copy stays identical to upstream (bar the frontmatter hooks every projection
   drops, ADR-0038). Named for the separation: an edit made
