@@ -576,6 +576,12 @@ Snapshot of the catalog — the source of truth is
 | Skill | What it does |
 |---|---|
 | `playwright-cli` | Automate browser interactions, test web pages and work with Playwright tests through the playwright-cli command. |
+
+### [elementalsouls/Claude-BugHunter](https://github.com/elementalsouls/Claude-BugHunter) — bug bounty & authorized red-team
+
+| Plugin | What it bundles |
+|---|---|
+| `bughunter` | Bug-bounty and authorized external red-team toolkit: vulnerability-class and framework hunting skills, enterprise identity and infrastructure assessment, recon/OSINT, triage, validation and report writing, plus slash commands that drive the engagement workflow. |
 <!-- catalog:end -->
 
 ## External skills (auto-updated by Renovate)

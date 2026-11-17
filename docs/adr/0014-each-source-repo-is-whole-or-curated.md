@@ -90,6 +90,7 @@ and a stale row would silently exclude a later skill reusing its name.
 | `tt-a1i/archify` | curated | |
 | `hashicorp/agent-skills` | curated | Only Terraform provider development; Terraform-usage and Packer skills not picked |
 | `microsoft/playwright-cli` | whole | single skill |
+| `elementalsouls/Claude-BugHunter` | whole | whole-plugin entry |
 
 ### Catalog exclusions
 
