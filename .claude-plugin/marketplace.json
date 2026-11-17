@@ -1449,6 +1449,20 @@
         "name": "Microsoft Corporation",
         "url": "https://github.com/microsoft"
       }
+    },
+    {
+      "name": "bughunter",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/elementalsouls/Claude-BugHunter",
+        "ref": "main",
+        "sha": "64410edb7f445e1837665e2fd713d47958a51094"
+      },
+      "description": "Bug-bounty and authorized external red-team bundle: 83 skills (vulnerability-class and framework hunting, enterprise identity and infrastructure assessment, recon/OSINT, triage, validation and report writing) plus 15 slash commands, with optional Burp MCP integration.",
+      "author": {
+        "name": "Sachin Sharma",
+        "url": "https://github.com/elementalsouls"
+      }
     }
   ]
 }
