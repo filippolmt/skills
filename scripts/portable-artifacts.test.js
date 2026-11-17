@@ -229,7 +229,7 @@ test('licence names take an extension or an upper-case variant, never a lower-ca
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'licence-names-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   for (const name of ['LICENSE', 'LICENSE.md', 'LICENSE-CONTENT', 'LICENSE-MIT', 'COPYING.LESSER', 'license.txt',
-    'license-check.sh', 'COPYING-tool.sh', 'LICENSE.sh', 'LICENSES', 'NOTICE']) {
+    'license-check.sh', 'COPYING-tool.sh', 'LICENSE.sh', 'NOTICE']) {
     fs.writeFileSync(path.join(dir, name), name);
   }
   fs.mkdirSync(path.join(dir, 'LICENSE-DIR'));
@@ -257,4 +257,19 @@ test('a skill keeps its own plain licence; a differing suffixed root licence lan
   assert.equal(fs.existsSync(path.join(destination, 'upstream-attribution', 'LICENSE')), false);
   assert.equal(fs.readFileSync(path.join(destination, 'LICENSE-CONTENT'), 'utf8'), 'Skill content licence\n');
   assert.equal(fs.readFileSync(path.join(destination, 'upstream-attribution', 'LICENSE-CONTENT'), 'utf8'), 'CC BY 4.0 content licence\n');
+});
+
+for (const name of ['license-mit', 'Licence_v2.txt', 'notice-board']) {
+  test(`an unrecognised licence-like ${name} fails the build instead of vanishing`, (t) => {
+    const f = fixture(t);
+    fs.writeFileSync(path.join(f.repo, name), 'terms\n');
+    assert.throws(() => buildFromInventory(f.out, [f.plugin], [f.inventory]), new RegExp(`${name.replace('.', '\\.')}.*not a recognised licence`));
+  });
+}
+
+test('licence-like tools with a code extension are left behind without failing', (t) => {
+  const f = fixture(t);
+  for (const name of ['license-check.sh', 'LICENSE.sh', 'COPYING-tool.py']) fs.writeFileSync(path.join(f.repo, name), '#!/bin/sh\n');
+  buildFromInventory(f.out, [f.plugin], [f.inventory]);
+  assert.equal(fs.existsSync(path.join(f.out, 'audit-example', 'license-check.sh')), false);
 });

@@ -29,6 +29,11 @@ copied. Untracked nested repositories are rejected rather than recursively copie
 ignore or move them before validating. The original checkout and index stay
 untouched; the temporary worktree is removed on success or failure. Keep the source checkout unchanged while it snapshots.
 
+To see what a generator change does to the projections, run
+`bash scripts/validate.sh --projection-diff`: it regenerates in the same disposable
+snapshot and lists changed files per directory. Regenerating in the checkout leaves
+generated files to clean up by hand.
+
 The generators read upstream through a shallow clone per pinned `(repo, sha)`,
 cached under `$TMPDIR/skills-tree`. The first run on a fresh temp dir clones every
 pinned repo and takes minutes; launch it in the background. Later runs reuse the

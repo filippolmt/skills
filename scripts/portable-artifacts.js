@@ -158,8 +158,18 @@ function hasStem(name, stem) {
 // The bare licence, which a skill's own copy overrides; a variant is an additional licence.
 const isPlainLicence = (name) => new RegExp(`^(?:${LICENCE})$`, 'i').test(name.replace(TEXT_EXTENSION, ''));
 
-const filesIn = (dir, stem) => fs.readdirSync(dir, { withFileTypes: true })
-  .filter((item) => item.isFile() && hasStem(item.name, stem)).map((item) => item.name).sort();
+// A name that opens like a licence but fails hasStem would vanish from every copy unnoticed;
+// only a code extension (license-check.sh) marks it as a tool rather than terms.
+function filesIn(dir, stem) {
+  const files = fs.readdirSync(dir, { withFileTypes: true }).filter((item) => item.isFile()).map((item) => item.name);
+  for (const name of files) {
+    const toolLike = /\.[a-z0-9]+$/.test(name) && !TEXT_EXTENSION.test(name);
+    if (new RegExp(`^(?:${stem})`, 'i').test(name) && !hasStem(name, stem) && !toolLike) {
+      throw new Error(`${path.join(dir, name)}: looks like a licence file but is not a recognised licence name; extend hasStem in scripts/portable-artifacts.js`);
+    }
+  }
+  return files.filter((name) => hasStem(name, stem)).sort();
+}
 const licencesIn = (dir) => filesIn(dir, LICENCE);
 
 function requireRedistributionLicence(entry, plugin) {

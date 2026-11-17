@@ -149,6 +149,16 @@ if (require.main === module) {
     process.exit(1);
   }
 
+  // A branch pin moves with every upstream commit, so a count in its description goes stale unnoticed.
+  const counted = catalog.plugins.filter((e) => ['main', 'master'].includes(e.source?.ref)
+    && /\b\d+\s+(?:slash\s+)?(?:skills?|commands?|agents?)\b/i.test(e.description));
+  if (counted.length) {
+    for (const e of counted) {
+      console.error(`description of \`${e.name}\` counts artifacts, but its ref \`${e.source.ref}\` is a branch: drop the number.`);
+    }
+    process.exit(1);
+  }
+
   // One derived set drives both regions: subtracted from the catalog projection,
   // selected for the bundle projection. Resolved here rather than inside the
   // renderers, which stay pure functions of their inputs.

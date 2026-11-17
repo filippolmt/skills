@@ -18,7 +18,8 @@ source unchanged.
 ## Fetches
 
 Both modes use these. `HEAD` resolves the repo's default branch, so `main` vs
-`master` is never a guess.
+`master` is never a guess. For an offensive-security source, read only manifests,
+licences and the tree; judge the content through its README and the user.
 
 Skill folders in a repo:
 ```bash
