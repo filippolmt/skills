@@ -18,6 +18,7 @@ function fixture(t, { kind = 'skill', name = 'audit-example', licence = true, ad
   if (licence) fs.writeFileSync(path.join(repo, 'LICENSE'), 'MIT root licence\n');
   fs.writeFileSync(path.join(repo, 'NOTICE.md'), 'Derived from ehmo/platform-design-skills.\n');
   fs.writeFileSync(path.join(repo, 'THIRD_PARTY_LICENSES.txt'), 'Third-party MIT attribution.\n');
+  fs.writeFileSync(path.join(repo, 'LICENSE-CONTENT'), 'CC BY 4.0 content licence\n');
   const plugin = { name: 'audit-plugin', source: { source: 'git-subdir', url: 'https://github.com/example/audit', path: 'plugin', sha: 'abcdef1234567890' } };
   const artifact = { kind, path: file, dispositions: { pi: { disposition: 'native' }, codex: { disposition: kind === 'skill' && !adapted ? 'native' : 'adapted' } } };
   if (adapted) artifact.dispositions.codex.sourcePath = `plugin/${file}`;
@@ -60,7 +61,7 @@ for (const target of ['pi', 'legacy', 'codex', 'codex-adapted']) {
       else build(f.out, [f.plugin], { checkout: () => f.repo });
       destination = path.join(f.out, 'audit-example');
     }
-    for (const name of ['LICENSE', 'NOTICE.md', 'THIRD_PARTY_LICENSES.txt']) {
+    for (const name of ['LICENSE', 'LICENSE-CONTENT', 'NOTICE.md', 'THIRD_PARTY_LICENSES.txt']) {
       assert.equal(fs.readFileSync(path.join(destination, name), 'utf8'), fs.readFileSync(path.join(f.repo, name), 'utf8'));
     }
   });
