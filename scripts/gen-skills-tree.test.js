@@ -65,17 +65,17 @@ test('renderSource records the commit, the licence and the entry it came from', 
     repo: 'acme/skills',
     sha: 'abc123',
     dir: 'skills/tdd',
-    licence: 'LICENSE',
+    licences: ['LICENSE', 'LICENSE-CONTENT'],
   });
   assert.match(md, /do not edit/);
   assert.match(md, /https:\/\/github\.com\/acme\/skills\/tree\/abc123\/skills\/tdd/);
   assert.match(md, /\*\*Commit\*\*: `abc123`/);
-  assert.match(md, /`LICENSE`/);
+  assert.match(md, /\*\*Licence\*\*: `LICENSE`, `LICENSE-CONTENT`, copied beside this file/);
   assert.doesNotMatch(md, /Overlay applied/);
 });
 
 test('renderSource names the overlay when one was applied', () => {
-  const md = renderSource({ entry: 'tdd', repo: 'a/b', sha: 'x', dir: '.', licence: 'LICENSE', overlay: 'tdd.patch' });
+  const md = renderSource({ entry: 'tdd', repo: 'a/b', sha: 'x', dir: '.', licences: ['LICENSE'], overlay: 'tdd.patch' });
   assert.match(md, /\*\*Overlay applied\*\*: `overlays\/tdd\.patch`/);
 });
 

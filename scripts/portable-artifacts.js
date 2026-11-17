@@ -145,15 +145,29 @@ function validateSkillDirectories(skillsRoot) {
   }
 }
 
-const licenceIn = (dir) => fs.readdirSync(dir, { withFileTypes: true })
-  .find((item) => item.isFile() && /^(LICEN[SC]E|COPYING)(\..*)?$/i.test(item.name))?.name;
+const LICENCE = 'LICEN[SC]E|COPYING';
+const ATTRIBUTION = `${LICENCE}|NOTICE|THIRD[-_ ]PARTY(?:[-_ ](?:NOTICES?|LICEN[SC]ES?))?`;
+const TEXT_EXTENSION = /\.(?:md|markdown|txt|rst|adoc|html?)$/i;
+
+// <stem>[<variant>][.<text extension>]. A variant starts upper-case (LICENSE-MIT,
+// COPYING.LESSER); a lower-case tail (license-check.sh, LICENSE.sh) is a tool, not a licence.
+function hasStem(name, stem) {
+  const tail = name.match(new RegExp(`^(?:${stem})(.*)$`, 'i'))?.[1];
+  return tail !== undefined && /^(?:[-_.][A-Z0-9][A-Za-z0-9.-]*)?$/.test(tail.replace(TEXT_EXTENSION, ''));
+}
+// The bare licence, which a skill's own copy overrides; a variant is an additional licence.
+const isPlainLicence = (name) => new RegExp(`^(?:${LICENCE})$`, 'i').test(name.replace(TEXT_EXTENSION, ''));
+
+const filesIn = (dir, stem) => fs.readdirSync(dir, { withFileTypes: true })
+  .filter((item) => item.isFile() && hasStem(item.name, stem)).map((item) => item.name).sort();
+const licencesIn = (dir) => filesIn(dir, LICENCE);
 
 function requireRedistributionLicence(entry, plugin) {
-  const licence = licenceIn(entry.repoRoot);
-  if (isExternal(plugin) && !licence) {
+  const licences = licencesIn(entry.repoRoot);
+  if (isExternal(plugin) && !licences.length) {
     throw new Error(`entry ${entry.name}: ${plugin.source.url} ships no licence — no licence, no right to redistribute`);
   }
-  return licence;
+  return licences;
 }
 
 function copyAttribution(repoRoot, destination) {
@@ -163,15 +177,14 @@ function copyAttribution(repoRoot, destination) {
     }
   };
   rejectSymlink(destination);
-  for (const item of fs.readdirSync(repoRoot, { withFileTypes: true })) {
-    if (!item.isFile() || !/^(LICEN[SC]E|COPYING|NOTICE|THIRD[-_ ]PARTY(?:[-_ ](?:NOTICES?|LICEN[SC]ES?))?)([-_.].*)?$/i.test(item.name)) continue;
-    const source = path.join(repoRoot, item.name);
-    let target = path.join(destination, item.name);
+  for (const name of filesIn(repoRoot, ATTRIBUTION)) {
+    const source = path.join(repoRoot, name);
+    let target = path.join(destination, name);
     rejectSymlink(target);
     if (fs.existsSync(target)) {
-      if (/^(LICEN[SC]E|COPYING)([-_.].*)?$/i.test(item.name) || fs.readFileSync(source).equals(fs.readFileSync(target))) continue;
+      if (isPlainLicence(name) || fs.readFileSync(source).equals(fs.readFileSync(target))) continue;
       // Keep both the skill's notice and the upstream root attribution.
-      target = path.join(destination, 'upstream-attribution', item.name);
+      target = path.join(destination, 'upstream-attribution', name);
       rejectSymlink(path.dirname(target));
       rejectSymlink(target);
       fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -278,4 +291,4 @@ function writeConvertedSkill(entry, plugin, artifact, destination) {
   return name;
 }
 
-module.exports = { copySkill, dropClaudeHooks, licenceIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validateSkillName, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill };
+module.exports = { copySkill, dropClaudeHooks, licencesIn, requireRedistributionLicence, copyAttribution, addProvenance, convertedSkillName, copySelfContained, parseFrontmatter, validateSkillName, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill };
