@@ -5,7 +5,7 @@ const os = require('os');
 const path = require('path');
 const { build, buildFromInventory, verifyFromInventory } = require('./gen-skills-tree.js');
 const { writeCodexDistribution } = require('./gen-codex.js');
-const { copyAttribution, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
+const { copyAttribution, licencesIn, validatePortableArtifacts, validateSkillDirectories, writeConvertedSkill } = require('./portable-artifacts.js');
 
 function fixture(t, { kind = 'skill', name = 'audit-example', licence = true, adapted = false } = {}) {
   const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'portable-audit-'));
@@ -15,10 +15,12 @@ function fixture(t, { kind = 'skill', name = 'audit-example', licence = true, ad
   const file = kind === 'skill' ? 'skills/example/SKILL.md' : `${kind}s/review.md`;
   fs.mkdirSync(path.dirname(path.join(source, file)), { recursive: true });
   fs.writeFileSync(path.join(source, file), `---\nname: ${name}\ndescription: Example.\n---\n# Example\n`);
-  if (licence) fs.writeFileSync(path.join(repo, 'LICENSE'), 'MIT root licence\n');
+  if (licence) {
+    fs.writeFileSync(path.join(repo, 'LICENSE'), 'MIT root licence\n');
+    fs.writeFileSync(path.join(repo, 'LICENSE-CONTENT'), 'CC BY 4.0 content licence\n');
+  }
   fs.writeFileSync(path.join(repo, 'NOTICE.md'), 'Derived from ehmo/platform-design-skills.\n');
   fs.writeFileSync(path.join(repo, 'THIRD_PARTY_LICENSES.txt'), 'Third-party MIT attribution.\n');
-  fs.writeFileSync(path.join(repo, 'LICENSE-CONTENT'), 'CC BY 4.0 content licence\n');
   const plugin = { name: 'audit-plugin', source: { source: 'git-subdir', url: 'https://github.com/example/audit', path: 'plugin', sha: 'abcdef1234567890' } };
   const artifact = { kind, path: file, dispositions: { pi: { disposition: 'native' }, codex: { disposition: kind === 'skill' && !adapted ? 'native' : 'adapted' } } };
   if (adapted) artifact.dispositions.codex.sourcePath = `plugin/${file}`;
@@ -87,6 +89,7 @@ for (const kind of ['command', 'agent']) {
     writeCodexDistribution([f.plugin], [f.inventory], f.out);
     for (const destination of [path.join(pi, 'audit-plugin-review'), path.join(f.out, 'packages', f.plugin.name, 'skills', 'audit-plugin-review')]) {
       assert.equal(fs.readFileSync(path.join(destination, 'NOTICE.md'), 'utf8'), 'Derived from ehmo/platform-design-skills.\n');
+      assert.equal(fs.readFileSync(path.join(destination, 'LICENSE-CONTENT'), 'utf8'), 'CC BY 4.0 content licence\n');
     }
   });
 }
@@ -220,4 +223,38 @@ test('root notices do not overwrite a skill-specific notice', (t) => {
   const destination = path.join(f.out, 'audit-example');
   assert.equal(fs.readFileSync(path.join(destination, 'NOTICE.md'), 'utf8'), 'Skill-specific notice.\n');
   assert.equal(fs.readFileSync(path.join(destination, 'upstream-attribution', 'NOTICE.md'), 'utf8'), 'Derived from ehmo/platform-design-skills.\n');
+});
+
+test('licence names take an extension or an upper-case variant, never a lower-case tail', (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'licence-names-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  for (const name of ['LICENSE', 'LICENSE.md', 'LICENSE-CONTENT', 'LICENSE-MIT', 'COPYING.LESSER', 'license.txt',
+    'license-check.sh', 'COPYING-tool.sh', 'LICENSE.sh', 'LICENSES', 'NOTICE']) {
+    fs.writeFileSync(path.join(dir, name), name);
+  }
+  fs.mkdirSync(path.join(dir, 'LICENSE-DIR'));
+  assert.deepEqual(licencesIn(dir), ['COPYING.LESSER', 'LICENSE', 'LICENSE-CONTENT', 'LICENSE-MIT', 'LICENSE.md', 'license.txt']);
+});
+
+test('an upstream licensed only through suffixed files is redistributable, and tools beside them stay behind', (t) => {
+  const f = fixture(t, { licence: false });
+  fs.writeFileSync(path.join(f.repo, 'LICENSE-MIT'), 'MIT\n');
+  fs.writeFileSync(path.join(f.repo, 'license-check.sh'), '#!/bin/sh\n');
+  buildFromInventory(f.out, [f.plugin], [f.inventory]);
+  const destination = path.join(f.out, 'audit-example');
+  assert.equal(fs.readFileSync(path.join(destination, 'LICENSE-MIT'), 'utf8'), 'MIT\n');
+  assert.equal(fs.existsSync(path.join(destination, 'license-check.sh')), false);
+});
+
+test('a skill keeps its own plain licence; a differing suffixed root licence lands under upstream-attribution', (t) => {
+  const f = fixture(t);
+  const skill = path.join(f.source, 'skills/example');
+  fs.writeFileSync(path.join(skill, 'LICENSE'), 'Skill licence\n');
+  fs.writeFileSync(path.join(skill, 'LICENSE-CONTENT'), 'Skill content licence\n');
+  buildFromInventory(f.out, [f.plugin], [f.inventory]);
+  const destination = path.join(f.out, 'audit-example');
+  assert.equal(fs.readFileSync(path.join(destination, 'LICENSE'), 'utf8'), 'Skill licence\n');
+  assert.equal(fs.existsSync(path.join(destination, 'upstream-attribution', 'LICENSE')), false);
+  assert.equal(fs.readFileSync(path.join(destination, 'LICENSE-CONTENT'), 'utf8'), 'Skill content licence\n');
+  assert.equal(fs.readFileSync(path.join(destination, 'upstream-attribution', 'LICENSE-CONTENT'), 'utf8'), 'CC BY 4.0 content licence\n');
 });
