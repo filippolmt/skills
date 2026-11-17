@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/cloudflare/skills/tree/cbf893b954222276bf1af57e5f23379231e0efb9/skills/web-perf
-- **Commit**: `cbf893b954222276bf1af57e5f23379231e0efb9`
+- **Upstream**: https://github.com/cloudflare/skills/tree/5108325ecceabc899c761e07aa617b09c02445ee/skills/web-perf
+- **Commit**: `5108325ecceabc899c761e07aa617b09c02445ee`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `web-perf` in `.claude-plugin/marketplace.json`
