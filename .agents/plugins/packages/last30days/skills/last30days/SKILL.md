@@ -1,6 +1,6 @@
 ---
 name: last30days
-version: "4.2.1"
+version: "4.3.0"
 description: "Research what people actually say about any topic in the last 30 days. Pulls posts and engagement from Reddit, X, YouTube, TikTok, Hacker News, Polymarket, GitHub, and the web. Includes a doctor health check to diagnose broken or missing sources."
 argument-hint: 'last30days nvidia earnings reaction | last30days AI video tools | last30days what users want in react'
 allowed-tools: Bash, Read, Write, AskUserQuestion, WebSearch
@@ -70,7 +70,7 @@ metadata:
 ---
 
 
-# last30days v4.2.1: Research Any Topic from the Last 30 Days
+# last30days v4.3.0: Research Any Topic from the Last 30 Days
 
 ## Skill contract
 
@@ -179,7 +179,7 @@ GENERAL / NEWS / PROMPTING / RECOMMENDATIONS use `What I learned:` on line 3 and
 
 **Per-run source outcomes (doctor-aligned):** Read `## Partial Coverage` and `Report.source_status`. `no-results` means clean completion with zero matches. `partial`, `rate-limited`, `auth-failed`, `unreachable`, `timeout`, `schema-drift`, `skipped-unconfigured`, and `error` do not establish that a source was quiet. Never say "nothing on X/Reddit/YouTube" for those states; qualify partial coverage and use only returned evidence. The footer has counts, not outcomes. Do not invent repair prescriptions or add outcome text to it. Plain doctor predicts configuration health; `source_status` reports this run, and `doctor --postmortem` reads those outcomes from the last-run cache.
 
-**LAW 7 - YOU ARE THE PLANNER. `--plan` IS MANDATORY ON NAMED-ENTITY TOPICS.** The hosting reasoning model generates the JSON query plan without an external provider key. Internal planning/fallback is a headless/cron path. Named entities include proper nouns, products, people, projects, and topics benefiting from handle resolution. Before the research command, verify it contains `--plan -` with the quoted JSON heredoc from Research Execution; otherwise stop and generate the plan through Step 0.75. "Provider" in an engine message does not mean you need credentials to write your own plan. The explicit no-host-WebSearch and jobs-only exceptions remain scoped to their runbook/mode procedures.
+**LAW 7 - YOU ARE THE PLANNER. `--plan` IS MANDATORY ON NAMED-ENTITY TOPICS.** The hosting reasoning model generates the JSON query plan without an external provider key. Internal planning/fallback is a headless/cron path. Named entities include proper nouns, products, people, projects, and topics benefiting from handle resolution. Before the research command, verify it contains `--plan -` with the quoted JSON heredoc from Research Execution; otherwise stop and generate the plan (with any `polymarket_hints`) through Step 0.75. "Provider" in an engine message does not mean you need credentials to write your own plan. The explicit no-host-WebSearch and jobs-only exceptions remain scoped to their runbook/mode procedures.
 
 Agent research without `--plan` exits 2 before live probes unless exempt.
 

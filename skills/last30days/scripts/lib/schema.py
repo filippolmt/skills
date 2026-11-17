@@ -71,6 +71,10 @@ class QueryPlan:
     source_weights: dict[str, float]
     notes: list[str] = field(default_factory=list)
     person_identity_anchors: list[str] = field(default_factory=list)
+    # The host's Polymarket subject hints: {kind, aliases, related[{name, relation}]}.
+    polymarket_hints: dict[str, Any] | None = None
+    # The run's own stories, which the jobs lane searches each board for.
+    jobs_queries: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -497,6 +501,8 @@ def query_plan_from_dict(payload: dict[str, Any]) -> QueryPlan:
         source_weights=dict(payload.get("source_weights") or {}),
         notes=list(payload.get("notes") or []),
         person_identity_anchors=list(payload.get("person_identity_anchors") or []),
+        polymarket_hints=copy.deepcopy(payload.get("polymarket_hints")),
+        jobs_queries=list(payload.get("jobs_queries") or []),
     )
 
 
