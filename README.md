@@ -719,7 +719,7 @@ generated regions nor command/skill name collisions:
 
 ```
 bash scripts/run-tests.sh                       # every node test; CI runs this same script
-node scripts/gen-readme.js --check              # README's generated regions match the catalog; local descriptions ≤ 500 chars
+node scripts/gen-readme.js --check              # README's generated regions match the catalog; local descriptions ≤ 500 chars; no artifact count on a branch pin
 node scripts/gen-skills-tree.js --verify-paths  # classify artifacts and build in temp, including overlays
 node scripts/check-renovate.js                  # Renovate regexes cover every external entry; no orphan packageRules
 node scripts/check-sha-history.js origin/main   # no pinned sha moved behind, diverged or onto another history
@@ -733,8 +733,9 @@ validation without changing your checkout, use `bash scripts/validate.sh --isola
 it snapshots committed, staged, unstaged and non-ignored untracked files into a
 disposable worktree, runs the offline tests first, then materializes projections
 and runs their checks and package smokes. The temporary worktree is removed on
-success or failure. The bare command instead checks already-materialized outputs
-in place. See [distribution validation](docs/agents/distribution-validation.md)
+success or failure. `--projection-diff` regenerates in the same disposable worktree
+and counts changed projection files per catalog entry, without running checks.
+The bare command instead checks already-materialized outputs in place. See [distribution validation](docs/agents/distribution-validation.md)
 for delegated work and its acceptance matrix.
 
 Output must be clean — warnings count as failures. Exit 75 means every check

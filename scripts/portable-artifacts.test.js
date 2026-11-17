@@ -229,11 +229,11 @@ test('licence names take an extension or an upper-case variant, never a lower-ca
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'licence-names-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   for (const name of ['LICENSE', 'LICENSE.md', 'LICENSE-CONTENT', 'LICENSE-MIT', 'COPYING.LESSER', 'license.txt',
-    'license-check.sh', 'COPYING-tool.sh', 'LICENSE.sh', 'NOTICE']) {
+    'LICENSES', 'MIT-LICENSE', 'APACHE-LICENSE.txt', 'license-check.sh', 'COPYING-tool.sh', 'LICENSE.sh', 'NOTICE']) {
     fs.writeFileSync(path.join(dir, name), name);
   }
   fs.mkdirSync(path.join(dir, 'LICENSE-DIR'));
-  assert.deepEqual(licencesIn(dir), ['COPYING.LESSER', 'LICENSE', 'LICENSE-CONTENT', 'LICENSE-MIT', 'LICENSE.md', 'license.txt']);
+  assert.deepEqual(licencesIn(dir), ['APACHE-LICENSE.txt', 'COPYING.LESSER', 'LICENSE', 'LICENSE-CONTENT', 'LICENSE-MIT', 'LICENSE.md', 'LICENSES', 'MIT-LICENSE', 'license.txt']);
 });
 
 test('an upstream licensed only through suffixed files is redistributable, and tools beside them stay behind', (t) => {
@@ -259,7 +259,7 @@ test('a skill keeps its own plain licence; a differing suffixed root licence lan
   assert.equal(fs.readFileSync(path.join(destination, 'upstream-attribution', 'LICENSE-CONTENT'), 'utf8'), 'CC BY 4.0 content licence\n');
 });
 
-for (const name of ['license-mit', 'Licence_v2.txt', 'notice-board']) {
+for (const name of ['license-mit', 'Licence_v2.txt', 'notice-board', 'LICENSE.v2', 'my-licence-terms.md']) {
   test(`an unrecognised licence-like ${name} fails the build instead of vanishing`, (t) => {
     const f = fixture(t);
     fs.writeFileSync(path.join(f.repo, name), 'terms\n');
@@ -269,7 +269,23 @@ for (const name of ['license-mit', 'Licence_v2.txt', 'notice-board']) {
 
 test('licence-like tools with a code extension are left behind without failing', (t) => {
   const f = fixture(t);
-  for (const name of ['license-check.sh', 'LICENSE.sh', 'COPYING-tool.py']) fs.writeFileSync(path.join(f.repo, name), '#!/bin/sh\n');
+  for (const name of ['license-check.sh', 'LICENSE.sh', 'COPYING-tool.py', 'license.json']) fs.writeFileSync(path.join(f.repo, name), '#!/bin/sh\n');
   buildFromInventory(f.out, [f.plugin], [f.inventory]);
   assert.equal(fs.existsSync(path.join(f.out, 'audit-example', 'license-check.sh')), false);
+});
+
+test('root attribution also takes prefixed and CamelCase names', (t) => {
+  const f = fixture(t);
+  for (const name of ['MIT-LICENSE', 'ThirdPartyNotices.txt', 'NOTICES']) fs.writeFileSync(path.join(f.repo, name), `${name}\n`);
+  buildFromInventory(f.out, [f.plugin], [f.inventory]);
+  for (const name of ['MIT-LICENSE', 'ThirdPartyNotices.txt', 'NOTICES']) {
+    assert.equal(fs.readFileSync(path.join(f.out, 'audit-example', name), 'utf8'), `${name}\n`);
+  }
+});
+
+test('a licence-like document inside a skill folder is the skill\'s own content, not a build failure', (t) => {
+  const f = fixture(t);
+  fs.writeFileSync(path.join(f.source, 'skills/example/license-guide.md'), 'How to pick a licence.\n');
+  buildFromInventory(f.out, [f.plugin], [f.inventory]);
+  assert.equal(fs.existsSync(path.join(f.out, 'audit-example', 'license-guide.md')), true);
 });

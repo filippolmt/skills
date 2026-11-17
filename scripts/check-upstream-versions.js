@@ -4,7 +4,7 @@
 // Exit 0: current; 1: stale pins or tag-switch candidates; 2: incomplete/error.
 const fs = require('fs');
 const path = require('path');
-const { readCatalog, isExternal, repoOf, entryPath, root } = require('./catalog.js');
+const { readCatalog, isExternal, isBranchRef, repoOf, entryPath, root } = require('./catalog.js');
 const { githubApi } = require('./github.js');
 const { releaseTagPattern, allowedTag, latestTags, tagNames } = require('./check-branch-pins.js');
 
@@ -88,7 +88,7 @@ async function audit(catalog, { repo, tag, api = githubApi, tags = tagNames, ren
     }
     for (const affected of pins.values()) {
       const { ref, sha } = affected[0].source;
-      const branch = ['main', 'master'].includes(ref);
+      const branch = isBranchRef(ref);
       const groups = (ref.match(pattern) || {}).groups;
       if (!branch && !groups) throw new Error(`${source}: unsupported ref ${ref}`);
       const target = branch ? ref : latest.find((t) =>

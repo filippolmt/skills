@@ -26,7 +26,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { readCatalog, isLocal, isBundle, repoOf, root } = require('./catalog.js');
+const { readCatalog, isLocal, isBundle, isBranchRef, repoOf, root } = require('./catalog.js');
 
 const START = '<!-- catalog:start -->';
 const END = '<!-- catalog:end -->';
@@ -150,8 +150,9 @@ if (require.main === module) {
   }
 
   // A branch pin moves with every upstream commit, so a count in its description goes stale unnoticed.
-  const counted = catalog.plugins.filter((e) => ['main', 'master'].includes(e.source?.ref)
-    && /\b\d+\s+(?:slash\s+)?(?:skills?|commands?|agents?)\b/i.test(e.description));
+  // A number, optionally with + and one qualifier word, before an artifact noun: 26+ skills, 12 SEO skills, 3 sub-agents.
+  const counted = catalog.plugins.filter((e) => isBranchRef(e.source?.ref)
+    && /\b\d+\+?\s+(?:[A-Za-z]+\s+)?(?:slash[-\s]?)?(?:sub-?agents?|skills?|commands?|agents?)\b/i.test(e.description));
   if (counted.length) {
     for (const e of counted) {
       console.error(`description of \`${e.name}\` counts artifacts, but its ref \`${e.source.ref}\` is a branch: drop the number.`);

@@ -145,31 +145,26 @@ function validateSkillDirectories(skillsRoot) {
   }
 }
 
-const LICENCE = 'LICEN[SC]E|COPYING';
-const ATTRIBUTION = `${LICENCE}|NOTICE|THIRD[-_ ]PARTY(?:[-_ ](?:NOTICES?|LICEN[SC]ES?))?`;
+const LICENCE = 'LICEN[SC]ES?|COPYING';
+const ATTRIBUTION = `${LICENCE}|NOTICES?|THIRD[-_ ]?PARTY(?:[-_ ]?(?:NOTICES?|LICEN[SC]ES?))?`;
 const TEXT_EXTENSION = /\.(?:md|markdown|txt|rst|adoc|html?)$/i;
+// Code and data beside the terms, never terms themselves: license-check.sh, license.json.
+const CODE_EXTENSION = /\.(?:sh|bash|zsh|ps1|py|rb|pl|js|mjs|cjs|ts|tsx|go|rs|json|ya?ml|toml)$/i;
 
-// <stem>[<variant>][.<text extension>]. A variant starts upper-case (LICENSE-MIT,
-// COPYING.LESSER); a lower-case tail (license-check.sh, LICENSE.sh) is a tool, not a licence.
+// [<PREFIX>-]<stem>[<Variant>][.<text extension>]: MIT-LICENSE, LICENSE-MIT, COPYING.LESSER,
+// ThirdPartyNotices.txt. Prefix and variant start upper-case; a lower-case tail is a tool, not terms.
 function hasStem(name, stem) {
-  const tail = name.match(new RegExp(`^(?:${stem})(.*)$`, 'i'))?.[1];
-  return tail !== undefined && /^(?:[-_.][A-Z0-9][A-Za-z0-9.-]*)?$/.test(tail.replace(TEXT_EXTENSION, ''));
+  const matches = (candidate) => {
+    const tail = candidate.match(new RegExp(`^(?:${stem})(.*)$`, 'i'))?.[1];
+    return tail !== undefined && /^(?:[-_.][A-Z0-9][A-Za-z0-9.-]*)?$/.test(tail.replace(TEXT_EXTENSION, ''));
+  };
+  return matches(name) || matches(name.replace(/^[A-Z0-9]+[-_]/, ''));
 }
 // The bare licence, which a skill's own copy overrides; a variant is an additional licence.
 const isPlainLicence = (name) => new RegExp(`^(?:${LICENCE})$`, 'i').test(name.replace(TEXT_EXTENSION, ''));
 
-// A name that opens like a licence but fails hasStem would vanish from every copy unnoticed;
-// only a code extension (license-check.sh) marks it as a tool rather than terms.
-function filesIn(dir, stem) {
-  const files = fs.readdirSync(dir, { withFileTypes: true }).filter((item) => item.isFile()).map((item) => item.name);
-  for (const name of files) {
-    const toolLike = /\.[a-z0-9]+$/.test(name) && !TEXT_EXTENSION.test(name);
-    if (new RegExp(`^(?:${stem})`, 'i').test(name) && !hasStem(name, stem) && !toolLike) {
-      throw new Error(`${path.join(dir, name)}: looks like a licence file but is not a recognised licence name; extend hasStem in scripts/portable-artifacts.js`);
-    }
-  }
-  return files.filter((name) => hasStem(name, stem)).sort();
-}
+const filesIn = (dir, stem) => fs.readdirSync(dir, { withFileTypes: true })
+  .filter((item) => item.isFile() && hasStem(item.name, stem)).map((item) => item.name).sort();
 const licencesIn = (dir) => filesIn(dir, LICENCE);
 
 function requireRedistributionLicence(entry, plugin) {
@@ -187,6 +182,12 @@ function copyAttribution(repoRoot, destination) {
     }
   };
   rejectSymlink(destination);
+  // An upstream root file that reads like terms but fails hasStem would vanish from every copy unnoticed.
+  for (const item of fs.readdirSync(repoRoot, { withFileTypes: true })) {
+    if (item.isFile() && /licen[sc]e|copying|notice/i.test(item.name) && !hasStem(item.name, ATTRIBUTION) && !CODE_EXTENSION.test(item.name)) {
+      throw new Error(`${path.join(repoRoot, item.name)}: looks like a licence file but is not a recognised licence name; extend hasStem in scripts/portable-artifacts.js`);
+    }
+  }
   for (const name of filesIn(repoRoot, ATTRIBUTION)) {
     const source = path.join(repoRoot, name);
     let target = path.join(destination, name);
