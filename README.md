@@ -581,7 +581,7 @@ Snapshot of the catalog — the source of truth is
 
 | Plugin | What it bundles |
 |---|---|
-| `bughunter` | Bug-bounty and authorized external red-team bundle: 83 skills (vulnerability-class and framework hunting, enterprise identity and infrastructure assessment, recon/OSINT, triage, validation and report writing) plus 15 slash commands, with optional Burp MCP integration. |
+| `bughunter` | Bug-bounty and authorized external red-team toolkit: vulnerability-class and framework hunting skills, enterprise identity and infrastructure assessment, recon/OSINT, triage, validation and report writing, plus slash commands that drive the engagement workflow. |
 <!-- catalog:end -->
 
 ## External skills (auto-updated by Renovate)
