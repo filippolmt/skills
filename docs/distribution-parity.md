@@ -219,6 +219,7 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `bughunter` | `command:commands/triage.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
 | `bughunter` | `command:commands/validate.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
 | `bughunter` | `command:commands/web3-audit.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `mcp:.claude-plugin/plugin.json#mcpServers.hackerone` | — | Native — Preserved as package MCP configuration. | Unsupported — pi packages cannot declare MCP servers. Fallback: Configure the server in pi settings. |
 | `bughunter` | `skill:skills/apk-redteam-pipeline/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `bughunter` | `skill:skills/bb-local-toolkit/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `bughunter` | `skill:skills/bb-methodology/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |

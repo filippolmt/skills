@@ -1,5 +1,5 @@
 # Source
 
-- **Source**: https://github.com/cathrynlavery/diagram-design/tree/f6db0decea96de66b901331a0f79a8d4b147ebae/commands/export-diagram.md
+- **Source**: https://github.com/cathrynlavery/diagram-design/tree/bddddb607f0416815084b7db25255ee646076ca9/commands/export-diagram.md
 - **Catalog entry**: `diagram-design`
 - **Transformation**: Converted command to a deterministic namespaced Agent Skill; relative links repointed at sibling skills or the upstream file.
