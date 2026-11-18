@@ -105,7 +105,56 @@ function orphanRuleError(catalog, renovate) {
     : null;
 }
 
-module.exports = { coverageError, entryShapeError, orphanRuleError };
+// Pure: the message naming every harness CLI a workflow installs globally that is
+// unpinned, or null. CI tests the projections with pi, Codex and Claude Code; a
+// floating install runs whatever is latest that minute, unrecorded.
+// `workflows` is `[{ file, text }]`, `file` relative to the repo root.
+const GLOBAL_NPM_INSTALL = /npm (?:install|i) (?:-g|--global) ([^\n]+)/g;
+
+// The `<depName>@<currentValue>` pins Renovate's own regexes extract from `file`,
+// one entry per claim: what the CLI pins are checked against, independently of
+// how this guard finds them.
+function claimedPins(file, text, renovate) {
+  const claims = [];
+  for (const manager of renovate.customManagers || []) {
+    const patterns = manager.managerFilePatterns || [];
+    const reaches = patterns.some((pattern) => {
+      const regex = /^\/(.*)\/$/.exec(pattern);
+      if (!regex) throw new Error(`renovate.json: managerFilePatterns ${pattern} is not a /regex/; this guard reads only that form`);
+      return new RegExp(regex[1]).test(file);
+    });
+    if (!reaches) continue;
+    for (const pattern of manager.matchStrings || []) {
+      for (const m of text.matchAll(new RegExp(pattern, 'g'))) {
+        if (m.groups?.depName && m.groups?.currentValue) claims.push(`${m.groups.depName}@${m.groups.currentValue}`);
+      }
+    }
+  }
+  return claims;
+}
+
+function cliPinError(workflows, renovate = {}) {
+  const errors = [];
+  for (const { file, text } of workflows) {
+    const claims = claimedPins(file, text, renovate);
+    const specs = [...text.matchAll(GLOBAL_NPM_INSTALL)]
+      .flatMap((install) => install[1].trim().split(/\s+/).filter((word) => !word.startsWith('-')));
+    // A pin installed by two steps is claimed twice by one manager: compare per install.
+    const count = (list, spec) => list.filter((item) => item === spec).length;
+    for (const spec of new Set(specs)) {
+      if (!/^(?:@[^/@\s]+\/)?[^@\s]+@\d+\.\d+\.\d+$/.test(spec)) {
+        errors.push(`${file}: ${spec} is unpinned; pin an exact version for Renovate to bump.`);
+      } else if (!claims.includes(spec)) {
+        errors.push(`${file}: ${spec} is claimed by no Renovate customManager; it will stay at this version. Fix the manager's file pattern or regex.`);
+      } else if (count(claims, spec) > count(specs, spec)) {
+        errors.push(`${file}: ${spec} is claimed by more than one customManager; they would open competing bumps. Narrow the regexes.`);
+      }
+    }
+  }
+  return errors.length ? errors.join('\n') : null;
+}
+
+module.exports = { coverageError, entryShapeError, orphanRuleError, cliPinError };
 
 if (require.main === module) {
   const catalog = readCatalog();

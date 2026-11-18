@@ -6,7 +6,7 @@
 // trees that FAIL — running it against the live repo (as CI does) only ever shows
 // the passing shape, which is the one case that proves nothing.
 const assert = require('assert');
-const { coverageError, entryShapeError, orphanRuleError } = require('./check-renovate.js');
+const { coverageError, entryShapeError, orphanRuleError, cliPinError } = require('./check-renovate.js');
 
 // Two git-subdir entries pinned the two ways renovate.json splits on — a branch
 // `ref` and a tag `ref` — a url entry (a plugin that is its whole repo, ADR-0033),
@@ -94,5 +94,48 @@ assert.strictEqual(orphanRuleError(CATALOG, rules('o/r', 'https://github.com/o/w
   'owner/repo and repo-URL names of pinned sources are not orphans');
 assert.match(orphanRuleError(CATALOG, rules('o/r', 'o/gone')), /o\/gone/, 'the orphan is named');
 assert.doesNotMatch(orphanRuleError(CATALOG, rules('o/r', 'o/gone')), /o\/r,/, 'and only the orphan');
+
+// --- harness CLIs the CI installs globally: each must be pinned, so a run is
+// reproducible, and claimed by a manager, so Renovate keeps it at the latest
+// release. A floating install is the silent version of a stale pin. ---
+const wf = (file, line) => ({ file, text: `jobs:\n  t:\n    steps:\n      - run: ${line}\n` });
+const NPM = 'npm install (?:-g|--global) (?<depName>@[a-z0-9-]+/[a-z0-9-]+)@(?<currentValue>\\d+\\.\\d+\\.\\d+)';
+const cliManager = (pattern = NPM, files = '/^\\.github/workflows/[^/]+\\.ya?ml$/') =>
+  ({ customManagers: [{ managerFilePatterns: [files], matchStrings: [pattern], datasourceTemplate: 'npm' }] });
+
+err = cliPinError([wf('.github/workflows/v.yml', 'npm install -g @anthropic-ai/claude-code')], cliManager());
+assert.match(err, /@anthropic-ai\/claude-code/, 'the unpinned CLI is named');
+assert.match(err, /\.github\/workflows\/v\.yml/, 'with the file it is installed in');
+assert.match(err, /unpinned/, 'and the fault');
+
+
+const PINNED = wf('.github/workflows/pi.yml', 'npm install --global @earendil-works/pi-coding-agent@1.0.4');
+assert.strictEqual(cliPinError([PINNED], cliManager()), null, 'a pinned CLI a manager claims is fine');
+
+// --- the silent failure: pinned, but no manager reaches it, so it stays at that
+// version forever. Three ways to get there: no manager at all, a manager whose
+// file pattern misses the workflow, a manager whose regex misses the line. ---
+for (const [renovate, why] of [
+  [{}, 'no manager'],
+  [cliManager(NPM, '/^\\.github/actions/.+$/'), 'a file pattern that misses the workflow'],
+  [cliManager(NPM.replace('(?:-g|--global)', '-g')), 'a regex that misses the line'],
+]) {
+  err = cliPinError([PINNED], renovate);
+  assert.match(err, /@earendil-works\/pi-coding-agent@1\.0\.4/, `${why}: the pin is named`);
+  assert.match(err, /no Renovate customManager/, `${why}: and the fault`);
+}
+
+
+// --- claimed twice: two managers would open competing bump PRs for one pin ---
+const twice = { customManagers: [...cliManager().customManagers, ...cliManager().customManagers] };
+err = cliPinError([PINNED], twice);
+assert.match(err, /@earendil-works\/pi-coding-agent@1\.0\.4/, 'the doubly claimed pin is named');
+assert.match(err, /more than one customManager/, 'and the fault');
+
+
+// --- the same pin installed by two steps of one workflow is two installs, each
+// claimed once: not a double claim ---
+const twoSteps = { file: PINNED.file, text: PINNED.text + PINNED.text.replace(/^jobs:\n/, '') };
+assert.strictEqual(cliPinError([twoSteps], cliManager()), null, 'two installs, one manager: fine');
 
 console.log('ok');
