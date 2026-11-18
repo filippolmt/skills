@@ -1,0 +1,9 @@
+{
+  "name": "orca-agent-view",
+  "version": "0.2.0",
+  "description": "Opens Claude subagents from the Orca sidebar: Orca's own agent-view mod, installable from a marketplace where a managed policy rejects the --plugin-dir that Orca launches it with. Synced daily from stablyai/orca; inert outside an Orca pane.",
+  "author": {
+    "name": "stablyai"
+  },
+  "license": "MIT"
+}

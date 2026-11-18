@@ -55,6 +55,14 @@
       }
     },
     {
+      "name": "orca-agent-view",
+      "source": "./plugins/orca-agent-view",
+      "description": "Opens Claude subagents from the Orca sidebar: Orca's own agent-view mod, installable from a marketplace where a managed policy rejects the --plugin-dir that Orca launches it with. Synced daily from stablyai/orca; inert outside an Orca pane.",
+      "author": {
+        "name": "stablyai"
+      }
+    },
+    {
       "name": "printing-press-bundle",
       "source": "./plugins/printing-press-bundle",
       "description": "Install printing-press with the sibling skills that create and maintain a CLI locally (printing-press-polish, printing-press-score, printing-press-reprint, and the internal printing-press-output-review) and agent-report-guard, the hook that keeps its subagents reporting back. Bundles them as dependencies.",

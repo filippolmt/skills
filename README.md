@@ -379,6 +379,7 @@ Snapshot of the catalog — the source of truth is
 - `subito-research` — Searches Subito.it for buyers: filters listings by criteria, judges each price against the market, checks scam signals, and prepares seller questions and an offer. Reads subito.it with playwright-cli.
 - `settings-validator` — Validates and improves Claude Code managed, user, shared-project, or project-local settings: confirms the intended configuration, checks every key against the official docs and published JSON schema, applies best practice, and returns complete corrected JSON.
 - `work-eta` — A band above the prompt, shown while a work runs (your prompt until the main turn and every subagent are done): a countdown to when it should end and the clock time — the 90th percentile of your past works of the same kind that ran longer than this one so far, once 20 are recorded; until then the elapsed time — plus active subagents and the slowest one.
+- `orca-agent-view` — Opens Claude subagents from the Orca sidebar: Orca's own agent-view mod, installable from a marketplace where a managed policy rejects the --plugin-dir that Orca launches it with. Synced daily from stablyai/orca; inert outside an Orca pane.
 
 ### [mattpocock/skills](https://github.com/mattpocock/skills) — engineering & productivity
 
