@@ -1,21 +1,29 @@
 const parseEndpoint = function parseAgentHookEndpointFile(contents) {
-    const values = Object.fromEntries(contents.split(/\r?\n/).map((line)=>line.trim()).filter(Boolean).map((line)=>{
-        const normalizedLine = line.replace(/^set\s+/i, '');
-        const [key, ...rest] = normalizedLine.split('=');
-        return [
-            key,
-            rest.join('=')
-        ];
-    }));
-    if (!values.ORCA_AGENT_HOOK_PORT || !values.ORCA_AGENT_HOOK_TOKEN || !values.ORCA_AGENT_HOOK_ENV || !values.ORCA_AGENT_HOOK_VERSION) {
-        throw new Error('Agent hook endpoint file is missing required fields');
-    }
-    return {
-        port: values.ORCA_AGENT_HOOK_PORT,
-        token: values.ORCA_AGENT_HOOK_TOKEN,
-        env: values.ORCA_AGENT_HOOK_ENV,
-        version: values.ORCA_AGENT_HOOK_VERSION
-    };
+  const values = Object.fromEntries(
+    contents
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const normalizedLine = line.replace(/^set\s+/i, '')
+        const [key, ...rest] = normalizedLine.split('=')
+        return [key, rest.join('=')]
+      })
+  )
+  if (
+    !values.ORCA_AGENT_HOOK_PORT ||
+    !values.ORCA_AGENT_HOOK_TOKEN ||
+    !values.ORCA_AGENT_HOOK_ENV ||
+    !values.ORCA_AGENT_HOOK_VERSION
+  ) {
+    throw new Error('Agent hook endpoint file is missing required fields')
+  }
+  return {
+    port: values.ORCA_AGENT_HOOK_PORT,
+    token: values.ORCA_AGENT_HOOK_TOKEN,
+    env: values.ORCA_AGENT_HOOK_ENV,
+    version: values.ORCA_AGENT_HOOK_VERSION
+  }
 }
 
 let identity

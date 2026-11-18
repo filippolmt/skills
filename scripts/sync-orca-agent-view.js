@@ -40,7 +40,11 @@ function endpointParser(text) {
   process.emitWarning = (warning, ...rest) => (/stripTypeScriptTypes/.test(warning) ? undefined : emitWarning.call(process, warning, ...rest));
   let js;
   try {
-    js = stripTypeScriptTypes(text.slice(start + 'export '.length, end + 2), { mode: 'transform' }).trim();
+    // 'strip' is the only mode Node 26 accepts; it blanks types in place, so tidy the leftover spaces.
+    js = stripTypeScriptTypes(text.slice(start + 'export '.length, end + 2), { mode: 'strip' })
+      .replace(/(?<=\S) +(?=[),])| +$/gm, '')
+      .replace(/\) +\{/g, ') {')
+      .trim();
   } finally {
     process.emitWarning = emitWarning;
   }
