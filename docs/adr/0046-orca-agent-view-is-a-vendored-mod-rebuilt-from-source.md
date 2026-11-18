@@ -28,8 +28,11 @@ code.
   plugin or command, or a changed file set. A loud failure costs a stale copy;
   guessing would ship a `register.js` that differs from Orca's.
 - `orca-agent-view-sync.yml` runs it daily against the latest `vX.Y.Z` tag and
-  opens a PR only on a diff. That PR is not auto-merged, unlike `regenerate`'s:
-  its diff is third-party code that runs inside Claude Code.
+  opens a PR only on a diff. As `regenerate` does, it then waits for that PR's
+  `validate` run and merges it once the run is green. The diff is third-party
+  code that runs inside Claude Code, but Orca's own auto-updates already run the
+  same code through `--plugin-dir`, so a manual review would add trust in little
+  besides the script. A red `validate` fails the sync run, where it shows.
 - Orca keeps `version: "0.2.0"` across content changes, because its install path
   hashes the content. A changed file therefore bumps our patch, or takes Orca's
   version once Orca's is higher (`nextVersion`). Without a bump, `/plugin update`

@@ -1,12 +1,14 @@
 name: orca-agent-view-sync
 
-# Rebuilds plugins/orca-agent-view from the latest Orca release tag and proposes
-# a PR when the mod changed (ADR-0046). Orca tags almost daily and the mod
-# rarely changes, so the PR comes only on a real diff. The PR is left for review,
-# not auto-merged: it ships third-party code that runs inside Claude Code.
+# Rebuilds plugins/orca-agent-view from the latest Orca release tag and opens a
+# PR when the mod changed (ADR-0046). Orca tags almost daily and the mod rarely
+# changes, so the PR comes only on a real diff. It merges unattended once
+# `validate` passes, the way regenerate.yml does: Orca already runs this same
+# code from its own updates, so a review here would add little.
 #
 # The push uses REGEN_TOKEN, as regenerate.yml does: a branch pushed with
-# GITHUB_TOKEN gets its `validate` run parked awaiting approval.
+# GITHUB_TOKEN gets its `validate` run parked awaiting approval. This job waits
+# for that run and merges on green, so a red `validate` fails here, visibly.
 
 on:
   schedule:
@@ -52,25 +54,60 @@ jobs:
       - name: Show the diff
         if: github.event_name == 'pull_request'
         run: git diff --stat
-      - name: Propose a PR
+      - name: Open the PR and merge it on a green validate
         if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ secrets.REGEN_TOKEN }}
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
+          set -euo pipefail
           if git diff --quiet; then
             echo "orca-agent-view is current with Orca $TAG"
             exit 0
           fi
           version=$(node -p "require('./plugins/orca-agent-view/.claude-plugin/plugin.json').version")
           branch=sync/orca-agent-view
+          title="fix(orca-agent-view): sync with Orca $TAG"
+          attempts=6
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git switch -c "$branch"
-          git commit -am "fix(orca-agent-view): sync with Orca $TAG"
+          git add plugins/orca-agent-view
+          git commit -m "$title"
           git push --force origin "$branch"
-          if ! gh pr view "$branch" --json state --jq .state 2>/dev/null | grep -qx OPEN; then
-            gh pr create --base main --head "$branch" --assignee filippolmt \
-              --title "fix(orca-agent-view): sync with Orca $TAG" \
-              --body "Rebuilt by \`orca-agent-view-sync\` from stablyai/orca \`$TAG\`; plugin version $version. Review the diff of \`hooks/register.js\` before merging: it runs inside Claude Code."
+          sha="$(git rev-parse HEAD)"
+          find_pr() { gh pr list --head "$branch" --state open --json number --jq '.[0].number // empty'; }
+          body="Rebuilt by \`orca-agent-view-sync\` from stablyai/orca \`$TAG\`; plugin version $version. Merged unattended once \`validate\` passes (ADR-0046)."
+          pr="$(find_pr)"
+          if [ -z "$pr" ]; then
+            gh pr create --base main --head "$branch" --title "$title" --body "$body" >/dev/null
+            pr="$(find_pr)"
+          else
+            gh pr edit "$pr" --title "$title" --body "$body" >/dev/null
           fi
+          # Match validate's run by head sha: the branch is long-lived, and an
+          # earlier cycle's run must not decide this one.
+          run=""
+          for attempt in $(seq "$attempts"); do
+            run="$(gh run list --workflow validate.yml --event pull_request --limit 20 \
+              --json databaseId,headSha --jq "map(select(.headSha == \"$sha\")) | .[0].databaseId // empty")"
+            if [ -n "$run" ]; then break; fi
+            if [ "$attempt" -lt "$attempts" ]; then sleep 5; fi
+          done
+          if [ -z "$run" ]; then
+            echo "::error::no pull_request run of validate appeared for $sha" >&2
+            exit 1
+          fi
+          gh run watch "$run" --exit-status
+          merged=false
+          for attempt in $(seq "$attempts"); do
+            if gh pr merge --squash "$pr"; then merged=true; break; fi
+            state="$(gh pr view "$pr" --json mergeStateStatus --jq .mergeStateStatus || echo unknown)"
+            echo "merge rejected on attempt $attempt, mergeStateStatus=$state"
+            if [ "$attempt" -lt "$attempts" ]; then sleep 5; fi
+          done
+          if [ "$merged" != true ]; then
+            echo "::error::validate passed on $sha but #$pr would not merge" >&2
+            exit 1
+          fi
+        shell: bash
