@@ -1,6 +1,6 @@
 {
   "name": "kubernetes-operations",
-  "version": "0.0.0+catalog.9c61ab243def.9802b20b0433",
+  "version": "0.0.0+catalog.42203085cfc5.5651bd1b9237",
   "description": "Kubernetes operations: kubernetes-architect agent plus the helm-chart-scaffolding, k8s-manifest-generator, k8s-security-policies, and gitops-workflow skills.",
   "author": {
     "name": "Seth Hobson",
