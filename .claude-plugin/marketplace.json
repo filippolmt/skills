@@ -1449,8 +1449,8 @@
         "source": "git-subdir",
         "url": "https://github.com/microsoft/playwright-cli",
         "path": "skills/playwright-cli",
-        "ref": "v0.1.24",
-        "sha": "261206400b18cd0629a8b45dd14ea5488fcf261f"
+        "ref": "v0.1.25",
+        "sha": "c872a33cec77fa03c28fa7c6d1ad99d15d04ce42"
       },
       "description": "Automate browser interactions, test web pages and work with Playwright tests through the playwright-cli command.",
       "author": {
