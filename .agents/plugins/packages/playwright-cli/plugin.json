@@ -1,6 +1,6 @@
 {
   "name": "playwright-cli",
-  "version": "0.1.24+catalog.261206400b18.64c43891221f",
+  "version": "0.1.25+catalog.c872a33cec77.c2b4c2dbd9d1",
   "description": "Automate browser interactions, test web pages and work with Playwright tests through the playwright-cli command.",
   "author": {
     "name": "Microsoft Corporation",
