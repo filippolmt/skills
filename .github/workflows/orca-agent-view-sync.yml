@@ -70,7 +70,7 @@ jobs:
           git commit -am "fix(orca-agent-view): sync with Orca $TAG"
           git push --force origin "$branch"
           if ! gh pr view "$branch" --json state --jq .state 2>/dev/null | grep -qx OPEN; then
-            gh pr create --base main --head "$branch" \
+            gh pr create --base main --head "$branch" --assignee filippolmt \
               --title "fix(orca-agent-view): sync with Orca $TAG" \
               --body "Rebuilt by \`orca-agent-view-sync\` from stablyai/orca \`$TAG\`; plugin version $version. Review the diff of \`hooks/register.js\` before merging: it runs inside Claude Code."
           fi
