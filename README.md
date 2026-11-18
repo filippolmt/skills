@@ -722,7 +722,7 @@ generated regions nor command/skill name collisions:
 bash scripts/run-tests.sh                       # every node test; CI runs this same script
 node scripts/gen-readme.js --check              # README's generated regions match the catalog; local descriptions ≤ 500 chars; no artifact count on a branch pin
 node scripts/gen-skills-tree.js --verify-paths  # classify artifacts and build in temp, including overlays
-node scripts/check-renovate.js                  # Renovate regexes cover every external entry; no orphan packageRules
+node scripts/check-renovate.js                  # Renovate regexes cover every external entry; no orphan packageRules; harness CLIs in workflows pinned and claimed
 node scripts/check-sha-history.js origin/main   # no pinned sha moved behind, diverged or onto another history
 node scripts/check-whole-sources.js --classified # every external repo is whole or curated in ADR-0014, every curated one has a curation baseline
 node scripts/check-name-collisions.js           # what validate does NOT cover
