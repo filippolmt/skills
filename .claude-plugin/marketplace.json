@@ -619,7 +619,7 @@
         "url": "https://github.com/wshobson/agents",
         "path": "plugins/api-scaffolding",
         "ref": "main",
-        "sha": "9c61ab243def98f72da12abd41cfcf5bcd91af9d"
+        "sha": "42203085cfc5736204bf0f6d436dff7e1da0bf3f"
       },
       "description": "REST and GraphQL API scaffolding: backend-architect, fastapi-pro, django-pro, and graphql-architect agents plus the fastapi-templates skill.",
       "author": {
@@ -634,7 +634,7 @@
         "url": "https://github.com/wshobson/agents",
         "path": "plugins/shell-scripting",
         "ref": "main",
-        "sha": "9c61ab243def98f72da12abd41cfcf5bcd91af9d"
+        "sha": "42203085cfc5736204bf0f6d436dff7e1da0bf3f"
       },
       "description": "Production-grade Bash scripting: bash-pro and posix-shell-pro agents plus the bash-defensive-patterns, bats-testing-patterns, and shellcheck-configuration skills.",
       "author": {
@@ -649,7 +649,7 @@
         "url": "https://github.com/wshobson/agents",
         "path": "plugins/kubernetes-operations",
         "ref": "main",
-        "sha": "9c61ab243def98f72da12abd41cfcf5bcd91af9d"
+        "sha": "42203085cfc5736204bf0f6d436dff7e1da0bf3f"
       },
       "description": "Kubernetes operations: kubernetes-architect agent plus the helm-chart-scaffolding, k8s-manifest-generator, k8s-security-policies, and gitops-workflow skills.",
       "author": {
@@ -664,7 +664,7 @@
         "url": "https://github.com/wshobson/agents",
         "path": "plugins/developer-essentials",
         "ref": "main",
-        "sha": "9c61ab243def98f72da12abd41cfcf5bcd91af9d"
+        "sha": "42203085cfc5736204bf0f6d436dff7e1da0bf3f"
       },
       "description": "Everyday engineering practice: monorepo-architect agent plus the auth-implementation-patterns, bazel-build-optimization, code-review-excellence, debugging-strategies, e2e-testing-patterns, error-handling-patterns, git-advanced-workflows, monorepo-management, nx-workspace-patterns, sql-optimization-patterns, and turborepo-caching skills.",
       "author": {
@@ -679,7 +679,7 @@
         "url": "https://github.com/wshobson/agents",
         "path": "plugins/cicd-automation",
         "ref": "main",
-        "sha": "9c61ab243def98f72da12abd41cfcf5bcd91af9d"
+        "sha": "42203085cfc5736204bf0f6d436dff7e1da0bf3f"
       },
       "description": "CI/CD pipelines: cloud-architect, deployment-engineer, devops-troubleshooter, kubernetes-architect, and terraform-specialist agents, the workflow-automate command, plus the deployment-pipeline-design, github-actions-templates, gitlab-ci-patterns, and secrets-management skills.",
       "author": {
