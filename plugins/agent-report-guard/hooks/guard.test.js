@@ -34,6 +34,8 @@ assert.deepStrictEqual(named.hookSpecificOutput.updatedInput, agent().tool_input
 assert.strictEqual(named.hookSpecificOutput.hookEventName, 'PreToolUse');
 assert.ok(/standards-review/.test(named.systemMessage), 'says which name it dropped');
 assert.ok(/\[mailbox\]/.test(named.systemMessage), 'points at the per-call opt-out');
+// The model reads additionalContext; systemMessage reaches only the user.
+assert.strictEqual(named.hookSpecificOutput.additionalContext, named.systemMessage);
 // No permissionDecision: the call keeps its normal permission flow.
 assert.ok(!('permissionDecision' in named.hookSpecificOutput));
 
