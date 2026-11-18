@@ -36,6 +36,8 @@ assert.ok(/standards-review/.test(named.systemMessage), 'says which name it drop
 assert.ok(/\[mailbox\]/.test(named.systemMessage), 'points at the per-call opt-out');
 // The model reads additionalContext; systemMessage reaches only the user.
 assert.strictEqual(named.hookSpecificOutput.additionalContext, named.systemMessage);
+// An auto-mode denial of the rewritten call wants an unnamed re-send (ADR-0045).
+assert.ok(/auto mode.*re-send it without name/.test(named.systemMessage), 'says how to answer an auto-mode denial');
 // No permissionDecision: the call keeps its normal permission flow.
 assert.ok(!('permissionDecision' in named.hookSpecificOutput));
 

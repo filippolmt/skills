@@ -150,8 +150,8 @@ sub-agents and then read what they report — `code-review`, `research`,
 `codebase-design`, `improve-codebase-architecture`, `implement-spec`,
 `printing-press`, `wayfinder`, `impeccable` — stall when those sub-agents are
 spawned with a `name`: a named agent becomes a mailbox teammate that notifies
-idle without a report body, so the parent waits, and then has to chase the
-report with `SendMessage`. The local `agent-report-guard` plugin drops the
+idle with a truncated report, so the parent waits, and then has to chase the
+rest with `SendMessage`. The local `agent-report-guard` plugin drops the
 name, so they report back on their own.
 
 **A skill invokes sibling skills at runtime.** `grill-with-docs` calls `grilling`
@@ -373,7 +373,7 @@ Snapshot of the catalog — the source of truth is
 
 <!-- catalog:start -->
 **Local:**
-- `agent-report-guard` — Drops `name` from Agent tool calls so the subagent reports back on its own: a named agent becomes a mailbox teammate that notifies idle without a report body, leaving fan-out skills (code-review, research, printing-press) chasing the report with SendMessage. Opt out per call with `[mailbox]` in the description, or session-wide with ALLOW_NAMED_AGENTS=1.
+- `agent-report-guard` — Drops `name` from Agent tool calls so the subagent reports back on its own: a named agent becomes a mailbox teammate that notifies idle with a truncated report, leaving fan-out skills (code-review, research, printing-press) chasing the report with SendMessage. Opt out per call with `[mailbox]` in the description, or session-wide with ALLOW_NAMED_AGENTS=1.
 - `zsh-wordsplit-guard` — Catches commands zsh runs differently from bash: expansions zsh leaves unsplit (`for x in $var`, a stored `$DC build`), words it expands where bash keeps them literal (`=word`, a glob in `--flag=*.md`, a URL query or a path matching nothing, `$name:` modifiers, `(…)` in `${v/pattern/…}`), bash-only `${!name}` and `${v@Q}`, and assignments to `path` or `status`. Literal words are rewritten, others denied; rules shown at session start. Split rules opt out with `[nosplit]` or ALLOW_ZSH_NOSPLIT=1.
 - `subito-listing` — Prepares a Subito.it sale listing, or diagnoses and improves one already live: a price grounded in comparables researched on the web (sold vs asking, read with playwright-cli), a numbered photo shot list, and a title and description ready to paste within the platform limits.
 - `subito-research` — Searches Subito.it for buyers: filters listings by criteria, judges each price against the market, checks scam signals, and prepares seller questions and an offer. Reads subito.it with playwright-cli.

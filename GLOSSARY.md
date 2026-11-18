@@ -174,11 +174,13 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Named spawn** — an `Agent` tool call that passes `name`. The harness
   registers it as a **mailbox teammate**; the tool result carries no report.
 - **Unnamed spawn** — an `Agent` call without `name`. It **reports back** on its
-  own: the report arrives as the tool result, or in the completion notification.
+  own: the report arrives as the tool result, in the completion notification,
+  or, in auto mode, through the subagent's `SubagentHandback` call.
 - **Mailbox teammate** — a subagent addressable by name via `SendMessage`
   (`"taskKind": "in_process_teammate"` in its `.meta.json`). When it finishes it
-  emits an **idle notification** — an envelope with no report body — so the
-  report has to be chased with `SendMessage`.
+  emits an **idle notification** — an envelope whose report is truncated — so
+  the rest has to be chased with `SendMessage`. It gets no `SubagentHandback`,
+  in auto mode included.
 - **Fan-out skill** — a skill that spawns sibling subagents and then reads their
   reports (`code-review`'s two axes, `research`, `printing-press`). It assumes an
   unnamed spawn; a named one leaves it waiting. The local `agent-report-guard`

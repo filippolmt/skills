@@ -18,16 +18,18 @@
 //
 // So: drop the name and let the call through. `updatedInput` alone (no
 // `permissionDecision`) keeps the normal permission flow intact. In auto mode
-// that costs one retry: the classifier reviewed the input Claude wrote, so the
-// rewritten call is denied once and Claude re-sends it unnamed (#738). `allow`
-// would skip the classifier and `ask` would prompt every time, so the retry stays.
+// that can cost one retry: the classifier reviewed the input Claude wrote, so
+// the rewritten call can be denied once and Claude re-sends it unnamed. `allow`
+// would skip the classifier and `ask` would normally prompt, so the retry stays
+// (ADR-0045).
 //
 // A mailbox teammate is a real harness feature, so both opt-outs are honoured:
 //   - per call    — put `[mailbox]` in the Agent call's `description`
 //   - session     — ALLOW_NAMED_AGENTS=1
 //
 // On the headless (`claude -p`) path every spawn is async and reports back
-// whether it is named or not, so there the rewrite is a no-op.
+// whether it is named or not, so there the rewrite buys nothing, and in auto
+// mode it still costs the same denial.
 const fs = require('fs');
 
 // Only `name` registers the mailbox. `team_name` is deprecated and ignored by
@@ -57,9 +59,9 @@ delete updatedInput[MAILBOX_FIELD];
 
 // Silent rewriting would leave the model believing it has a teammate to
 // message, and `systemMessage` reaches only the user: the model reads
-// `additionalContext`. The note names the per-call opt-out so the next call
+// `additionalContext`. The notice names the per-call opt-out so the next call
 // can take it.
-const note =
+const dropNotice =
   'agent-report-guard: dropped name="' + toolInput[MAILBOX_FIELD] + '" — a named ' +
   'agent becomes a mailbox teammate: it notifies idle with a truncated report, and ' +
   'the rest has to be chased with SendMessage. Spawned unnamed: wait for its ' +
@@ -69,10 +71,10 @@ const note =
   'the session).';
 
 process.stdout.write(JSON.stringify({
-  systemMessage: note,
+  systemMessage: dropNotice,
   hookSpecificOutput: {
     hookEventName: 'PreToolUse',
     updatedInput: updatedInput,
-    additionalContext: note,
+    additionalContext: dropNotice,
   },
 }));
