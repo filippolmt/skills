@@ -54,7 +54,7 @@ jobs:
         with:
           node-version: 26
       - name: Install the tested Codex CLI
-        run: npm install --global @openai/codex@0.160.1
+        run: npm install --global @openai/codex@0.170.0
       - name: Materialize Codex packages for this revision
         run: |
           node scripts/gen-skills-tree.js
