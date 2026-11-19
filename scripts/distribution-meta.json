@@ -28,6 +28,18 @@
     }
   },
   "artifacts": {
+    "agent-skills/manifest-capability:.claude-plugin/plugin.json#experimental": {
+      "codex": {
+        "disposition": "unsupported",
+        "limitation": "experimental.evals points claude plugin eval at upstream's maintainer eval suite in evals/plugin; Codex has no plugin eval runner.",
+        "fallback": "Nothing to install: the suite tests the plugin and adds no runtime behaviour."
+      },
+      "pi": {
+        "disposition": "unsupported",
+        "limitation": "experimental.evals points claude plugin eval at upstream's maintainer eval suite in evals/plugin; pi has no plugin eval runner.",
+        "fallback": "Nothing to install: the suite tests the plugin and adds no runtime behaviour."
+      }
+    },
     "ui-ux-pro-max/skill:SKILL.md": {
       "codex": {
         "disposition": "unsupported",
