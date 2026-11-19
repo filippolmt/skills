@@ -584,11 +584,11 @@ Snapshot of the catalog — the source of truth is
 |---|---|
 | `bughunter` | Bug-bounty and authorized external red-team toolkit: vulnerability-class and framework hunting skills, enterprise identity and infrastructure assessment, recon/OSINT, triage, validation and report writing, plus slash commands that drive the engagement workflow. |
 
-### [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) — software lifecycle, spec to ship
+### [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) — software lifecycle, spec to ship; overlaps mattpocock/skills, enable one set per project
 
 | Plugin | What it bundles |
 |---|---|
-| `agent-skills` | Senior-engineer workflows for the whole development lifecycle, from spec to ship. Bundles the accessibility-auditor, code-reviewer, security-auditor, test-engineer and web-performance-auditor agents; the a11y, build, code-simplify, constraints, plan, review, ship, spec, test and webperf commands; and skills for accessibility, API design, browser testing, CI/CD, code review, simplification, constraint-, doubt-, source- and spec-driven development, context engineering, debugging, deprecation, ADRs, frontend UI, git workflow, idea refinement, incremental implementation, interviewing, observability, performance, planning, security, shipping, TDD and a skill router. Overlaps mattpocock/skills (tdd, code-review, grilling, domain-modeling, diagnosing-bugs): enable one set per project. |
+| `agent-skills` | Senior-engineer workflows for the whole development lifecycle, from spec to ship: skills for specs, planning, incremental implementation, TDD, debugging, code review and simplification, security, performance, accessibility, observability, documentation and ADRs, git workflow, CI/CD and launch, plus a skill router; slash commands that drive the spec-plan-build-test-review-ship flow; and code-reviewer, security-auditor, test-engineer, accessibility and web-performance auditor agents. |
 <!-- catalog:end -->
 
 ## External skills (auto-updated by Renovate)

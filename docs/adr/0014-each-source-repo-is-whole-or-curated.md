@@ -91,7 +91,7 @@ and a stale row would silently exclude a later skill reusing its name.
 | `hashicorp/agent-skills` | curated | Only Terraform provider development; Terraform-usage and Packer skills not picked |
 | `microsoft/playwright-cli` | whole | single skill |
 | `elementalsouls/Claude-BugHunter` | whole | whole-plugin entry |
-| `addyosmani/agent-skills` | whole | whole-plugin entry; overlaps `mattpocock/skills`, enable one set per project |
+| `addyosmani/agent-skills` | whole | whole-plugin entry |
 
 ### Catalog exclusions
 

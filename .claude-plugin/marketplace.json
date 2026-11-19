@@ -1480,7 +1480,7 @@
         "ref": "main",
         "sha": "8c99fa36d90068c82d547f7c12a9d67a3e95f4ee"
       },
-      "description": "Senior-engineer workflows for the whole development lifecycle, from spec to ship. Bundles the accessibility-auditor, code-reviewer, security-auditor, test-engineer and web-performance-auditor agents; the a11y, build, code-simplify, constraints, plan, review, ship, spec, test and webperf commands; and skills for accessibility, API design, browser testing, CI/CD, code review, simplification, constraint-, doubt-, source- and spec-driven development, context engineering, debugging, deprecation, ADRs, frontend UI, git workflow, idea refinement, incremental implementation, interviewing, observability, performance, planning, security, shipping, TDD and a skill router. Overlaps mattpocock/skills (tdd, code-review, grilling, domain-modeling, diagnosing-bugs): enable one set per project.",
+      "description": "Senior-engineer workflows for the whole development lifecycle, from spec to ship: skills for specs, planning, incremental implementation, TDD, debugging, code review and simplification, security, performance, accessibility, observability, documentation and ADRs, git workflow, CI/CD and launch, plus a skill router; slash commands that drive the spec-plan-build-test-review-ship flow; and code-reviewer, security-auditor, test-engineer, accessibility and web-performance auditor agents.",
       "author": {
         "name": "Addy Osmani",
         "url": "https://github.com/addyosmani"
