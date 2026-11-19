@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/pbakaus/impeccable/tree/acb4cfe14470b1fdf51e855431af618d936b7db8/plugin/skills/impeccable
-- **Commit**: `acb4cfe14470b1fdf51e855431af618d936b7db8`
+- **Upstream**: https://github.com/pbakaus/impeccable/tree/b49177d32788f2dc585c42831d845dacf1ebed2c/plugin/skills/impeccable
+- **Commit**: `b49177d32788f2dc585c42831d845dacf1ebed2c`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `impeccable` in `.claude-plugin/marketplace.json`
