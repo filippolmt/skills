@@ -33,6 +33,16 @@
       "datasourceTemplate": "github-tags",
       "packageNameTemplate": "{{{depName}}}",
       "versioningTemplate": "regex:^(?<compatibility>[a-z][a-z0-9]*-)?v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/[^/]+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "npm (?:install|i) (?:-g|--global) (?<depName>(?:@[a-z0-9-]+/)?[a-z0-9.-]+)@(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "datasourceTemplate": "npm"
     }
   ],
   "packageRules": [

@@ -6,7 +6,7 @@
 // trees that FAIL — running it against the live repo (as CI does) only ever shows
 // the passing shape, which is the one case that proves nothing.
 const assert = require('assert');
-const { coverageError, entryShapeError, orphanRuleError } = require('./check-renovate.js');
+const { coverageError, entryShapeError, orphanRuleError, cliPinError } = require('./check-renovate.js');
 
 // Two git-subdir entries pinned the two ways renovate.json splits on — a branch
 // `ref` and a tag `ref` — a url entry (a plugin that is its whole repo, ADR-0033),
@@ -94,5 +94,71 @@ assert.strictEqual(orphanRuleError(CATALOG, rules('o/r', 'https://github.com/o/w
   'owner/repo and repo-URL names of pinned sources are not orphans');
 assert.match(orphanRuleError(CATALOG, rules('o/r', 'o/gone')), /o\/gone/, 'the orphan is named');
 assert.doesNotMatch(orphanRuleError(CATALOG, rules('o/r', 'o/gone')), /o\/r,/, 'and only the orphan');
+
+// --- harness CLIs the CI installs globally: each must be pinned, so a run is
+// reproducible, and claimed by exactly one manager, so Renovate keeps it current
+// (ADR-0047). A floating install is the silent version of a stale pin. ---
+const wf = (...lines) => ({ file: '.github/workflows/v.yml', text: `jobs:\n  t:\n    steps:\n${lines.map((l) => `      - run: ${l}\n`).join('')}` });
+const NPM = 'npm install (?:-g|--global) (?<depName>@[a-z0-9-]+/[a-z0-9-]+)@(?<currentValue>\\d+\\.\\d+\\.\\d+)';
+const cliManager = (pattern = NPM, files = '/^\\.github/workflows/[^/]+\\.ya?ml$/') =>
+  ({ customManagers: [{ managerFilePatterns: [files], matchStrings: [pattern] }] });
+const PIN = 'npm install --global @e/pi@1.0.4';
+
+err = cliPinError([wf('npm install -g @a/claude')], cliManager());
+assert.match(err, /@a\/claude/, 'the unpinned CLI is named');
+assert.match(err, /\.github\/workflows\/v\.yml/, 'with the file it is installed in');
+assert.match(err, /unpinned/, 'and the fault');
+
+assert.strictEqual(cliPinError([wf(PIN)], cliManager()), null, 'a pinned CLI a manager claims is fine');
+assert.strictEqual(cliPinError([wf(PIN, PIN)], cliManager()), null, 'two installs, each claimed once: fine');
+assert.strictEqual(cliPinError([wf(`${PIN} && pi --version`)], cliManager()), null,
+  'a command chained after the install is not a package');
+assert.strictEqual(cliPinError([wf('npm ci')], cliManager()), null, 'a local install is not checked');
+
+// --- the global flag in every position and spelling npm accepts: missing one
+// lets an unpinned install through without a word ---
+for (const line of ['npm install @a/claude -g', 'npm i --location=global @a/claude',
+  'npm install --location global @a/claude', 'npm add -g @a/claude && echo done']) {
+  assert.match(cliPinError([wf(line)], cliManager()) || '', /@a\/claude is unpinned/, `${line}: read as a global install`);
+}
+err = cliPinError([wf('npm install -g "@a/claude"')], cliManager());
+assert.match(err, /@a\/claude is unpinned/, 'a quoted spec is read without its quotes');
+err = cliPinError([{ file: '.github/workflows/v.yml', text: '      run: |\n        npm install -g \\\n          @a/claude\n' }], cliManager());
+assert.match(err, /@a\/claude is unpinned/, 'a spec on a continuation line is read');
+assert.doesNotMatch(err, /\\ is unpinned/, 'and the backslash is not a package');
+assert.strictEqual(cliPinError([wf('echo ok # npm install -g @a/claude')], cliManager()), null,
+  'a commented-out install is not an install');
+
+// --- the silent failure: pinned, but no manager reaches it, so it stays at that
+// version forever. Three ways to get there: no manager at all, a manager whose
+// file pattern misses the workflow, a manager whose regex misses the line. ---
+for (const [renovate, why] of [
+  [{}, 'no manager'],
+  [cliManager(NPM, '/^\\.github/actions/.+$/'), 'a file pattern that misses the workflow'],
+  [cliManager(NPM.replace('(?:-g|--global)', '-g')), 'a regex that misses the line'],
+]) {
+  err = cliPinError([wf(PIN)], renovate);
+  assert.match(err, /@e\/pi@1\.0\.4/, `${why}: the pin is named`);
+  assert.match(err, /no Renovate customManager/, `${why}: and the fault`);
+}
+
+// --- claimed twice: two managers would open competing bump PRs for one pin ---
+const twice = { customManagers: [...cliManager().customManagers, ...cliManager().customManagers] };
+err = cliPinError([wf(PIN)], twice);
+assert.match(err, /@e\/pi@1\.0\.4/, 'the doubly claimed pin is named');
+assert.match(err, /more than one customManager/, 'and the fault');
+
+// --- a double claim and a missing one must not cancel out: the first install is
+// claimed twice, the second (`npm i`, which the regex misses) by none ---
+err = cliPinError([wf(PIN, 'npm i --global @e/pi@1.0.4')], twice);
+assert.match(err, /more than one customManager/, 'the double claim is reported');
+assert.match(err, /no Renovate customManager/, 'and so is the unclaimed install');
+// ...nor may a matching comment stand in for the install it sits above.
+err = cliPinError([{ file: '.github/workflows/v.yml', text: `# ${PIN}\n      run: npm i -g @e/pi@1.0.4\n` }],
+  cliManager());
+assert.match(err, /no Renovate customManager/, 'a claim on a comment does not cover the real install');
+
+err = cliPinError([wf(PIN)], cliManager(NPM, '**/*.yml'));
+assert.match(err, /\*\*\/\*\.yml is not a \/regex\//, 'a managerFilePatterns form this check cannot read is reported');
 
 console.log('ok');

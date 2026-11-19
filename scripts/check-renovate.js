@@ -8,7 +8,9 @@
 // This asserts the regex matches EXACTLY the external entries — run in CI. It also
 // rejects the two entry shapes that do not install what they say: a git-subdir
 // `path` at the repo root, and a url entry carrying a `path`; and a packageRule
-// naming a package no entry pins, which Renovate drops silently (ADR-0040).
+// naming a package no entry pins, which Renovate drops silently (ADR-0040). And
+// it rejects a harness CLI a workflow installs with `npm install -g` that is
+// unpinned, or that no customManager (or more than one) bumps (ADR-0047).
 //
 // Usage: node scripts/check-renovate.js   (exit 1 on mismatch)
 
@@ -105,15 +107,114 @@ function orphanRuleError(catalog, renovate) {
     : null;
 }
 
-module.exports = { coverageError, entryShapeError, orphanRuleError };
+// npm's aliases for `install`: a global install under any of them is still one.
+const NPM_INSTALL = new Set(['install', 'i', 'add', 'in', 'ins', 'inst', 'insta', 'instal', 'isnt', 'isnta', 'isntal', 'isntall']);
+const SHELL_SEPARATOR = new Set(['&&', '||', ';', '|']);
+
+// Every package spec a global `npm install` names in `text`, with its offset. Reads
+// shell as words split on whitespace: a spec quoted or built from a variable reads
+// as written, and is then reported unpinned rather than skipped.
+function globalInstalls(text) {
+  // A `\` continuation becomes two spaces, so offsets still point into `text`.
+  const flat = text.replace(/\\\n/g, '  ');
+  const installs = [];
+  let lineStart = 0;
+  for (const line of flat.split('\n')) {
+    let command = [];
+    const commands = [command];
+    for (const m of line.matchAll(/\S+/g)) {
+      if (m[0].startsWith('#')) break;
+      if (SHELL_SEPARATOR.has(m[0])) { commands.push(command = []); continue; }
+      const word = m[0].replace(/;$/, '');
+      command.push({ word, at: lineStart + m.index });
+      if (word !== m[0]) commands.push(command = []);
+    }
+    for (const words of commands) {
+      const npm = words.findIndex((w) => w.word === 'npm');
+      if (npm < 0 || !NPM_INSTALL.has(words[npm + 1]?.word)) continue;
+      const args = words.slice(npm + 2);
+      let global = false;
+      const specs = [];
+      for (let i = 0; i < args.length; i++) {
+        const { word, at } = args[i];
+        if (word === '-g' || word === '--global' || word === '--location=global') global = true;
+        else if (word === '--location') global ||= args[++i]?.word === 'global';
+        else if (!word.startsWith('-')) {
+          const quoted = /^(['"])(.*)\1$/.exec(word);
+          specs.push(quoted ? { spec: quoted[2], at: at + 1 } : { spec: word, at });
+        }
+      }
+      if (global) installs.push(...specs);
+    }
+    lineStart += line.length + 1;
+  }
+  return installs;
+}
+
+// The `<depName>@<currentValue>` pins Renovate's own regexes extract from `file`,
+// each with the span of text it matched: what the installs are checked against,
+// independently of how globalInstalls reads them.
+function claimedPins(file, text, renovate) {
+  const claims = [];
+  const errors = [];
+  for (const manager of renovate.customManagers || []) {
+    const reaches = (manager.managerFilePatterns || []).some((pattern) => {
+      const regex = /^\/(.*)\/$/.exec(pattern);
+      if (!regex) errors.push(`renovate.json: managerFilePatterns ${pattern} is not a /regex/; this check reads only that form.`);
+      return regex && new RegExp(regex[1]).test(file);
+    });
+    if (!reaches) continue;
+    for (const pattern of manager.matchStrings || []) {
+      for (const m of text.matchAll(new RegExp(pattern, 'g'))) {
+        if (m.groups?.depName && m.groups?.currentValue) {
+          claims.push({ spec: `${m.groups.depName}@${m.groups.currentValue}`, from: m.index, to: m.index + m[0].length });
+        }
+      }
+    }
+  }
+  return { claims, errors };
+}
+
+// Pure: the message naming every harness CLI a workflow installs globally that is
+// unpinned, or pinned but bumped by no customManager or by several, or null. CI
+// tests the projections with pi, Codex and Claude Code; a floating install runs
+// whatever is latest that minute, unrecorded, and a pin no manager reaches stays
+// at its version without a word (ADR-0047).
+// `workflows` is `[{ file, text }]`, `file` relative to the repo root.
+function cliPinError(workflows, renovate) {
+  const errors = [];
+  for (const { file, text } of workflows) {
+    const { claims, errors: patternErrors } = claimedPins(file, text, renovate);
+    errors.push(...patternErrors);
+    // Claims are matched to installs by WHERE they are, not counted: an install
+    // claimed twice and one claimed by none cancel out in a plain count.
+    for (const { spec, at } of globalInstalls(text)) {
+      const owners = claims.filter((c) => c.spec === spec && c.from <= at && at + spec.length <= c.to).length;
+      if (!/^(?:@[^/@\s]+\/)?[^@\s]+@\d+\.\d+\.\d+$/.test(spec)) {
+        errors.push(`${file}: ${spec} is unpinned; pin an exact version for Renovate to bump.`);
+      } else if (owners === 0) {
+        errors.push(`${file}: ${spec} is claimed by no Renovate customManager; it will stay at this version. Fix the manager's file pattern or regex.`);
+      } else if (owners > 1) {
+        errors.push(`${file}: ${spec} is claimed by more than one customManager; they would open competing bumps. Narrow the regexes.`);
+      }
+    }
+  }
+  return errors.length ? [...new Set(errors)].join('\n') : null;
+}
+
+module.exports = { coverageError, entryShapeError, orphanRuleError, cliPinError };
 
 if (require.main === module) {
   const catalog = readCatalog();
   const renovate = JSON.parse(fs.readFileSync(path.join(root, 'renovate.json'), 'utf8'));
 
-  // Both checks run: a shape error must not hide a coverage error until the next run.
+  const workflowDir = path.join(root, '.github', 'workflows');
+  const workflows = fs.readdirSync(workflowDir).filter((f) => /\.ya?ml$/.test(f)).map((f) =>
+    ({ file: `.github/workflows/${f}`, text: fs.readFileSync(path.join(workflowDir, f), 'utf8') }));
+
+  // Every check runs: a shape error must not hide a coverage error until the next run.
   const errors = [entryShapeError(catalog.plugins), coverageError(catalog, renovate),
-    orphanRuleError(catalog, renovate)].filter(Boolean);
+    orphanRuleError(catalog, renovate), cliPinError(workflows, renovate)].filter(Boolean);
   if (errors.length) {
     console.error(errors.join('\n'));
     process.exit(1);
@@ -121,5 +222,6 @@ if (require.main === module) {
 
   // The count, not just "ok": zero entries and zero matches also passes, and that
   // is the one green worth being able to spot.
-  console.log(`Renovate regex matches all ${externalCount(catalog)} external entries.`);
+  console.log(`Renovate regex matches all ${externalCount(catalog)} external entries; ` +
+    `every global npm install in ${workflows.length} workflows is pinned and claimed.`);
 }
