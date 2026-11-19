@@ -583,6 +583,12 @@ Snapshot of the catalog — the source of truth is
 | Plugin | What it bundles |
 |---|---|
 | `bughunter` | Bug-bounty and authorized external red-team toolkit: vulnerability-class and framework hunting skills, enterprise identity and infrastructure assessment, recon/OSINT, triage, validation and report writing, plus slash commands that drive the engagement workflow. |
+
+### [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) — software lifecycle, spec to ship; overlaps mattpocock/skills, enable one set per project
+
+| Plugin | What it bundles |
+|---|---|
+| `agent-skills` | Senior-engineer workflows for the whole development lifecycle, from spec to ship: skills for idea refinement and interviewing, spec-, constraint-, source- and doubt-driven development, planning, incremental implementation, API and frontend design, TDD and browser testing, debugging, code review and simplification, security, performance, accessibility, observability, context engineering, documentation and ADRs, deprecation and migration, git workflow, CI/CD and launch, plus a skill router; slash commands for each lifecycle step and for accessibility, web-performance and constraint checks; and code-reviewer, security-auditor, test-engineer, accessibility and web-performance auditor agents. |
 <!-- catalog:end -->
 
 ## External skills (auto-updated by Renovate)
