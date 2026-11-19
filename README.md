@@ -588,7 +588,7 @@ Snapshot of the catalog — the source of truth is
 
 | Plugin | What it bundles |
 |---|---|
-| `agent-skills` | Senior-engineer workflows for the whole development lifecycle, from spec to ship: skills for specs, planning, incremental implementation, TDD, debugging, code review and simplification, security, performance, accessibility, observability, documentation and ADRs, git workflow, CI/CD and launch, plus a skill router; slash commands that drive the spec-plan-build-test-review-ship flow; and code-reviewer, security-auditor, test-engineer, accessibility and web-performance auditor agents. |
+| `agent-skills` | Senior-engineer workflows for the whole development lifecycle, from spec to ship: skills for idea refinement and interviewing, spec-, constraint-, source- and doubt-driven development, planning, incremental implementation, API and frontend design, TDD and browser testing, debugging, code review and simplification, security, performance, accessibility, observability, context engineering, documentation and ADRs, deprecation and migration, git workflow, CI/CD and launch, plus a skill router; slash commands for each lifecycle step and for accessibility, web-performance and constraint checks; and code-reviewer, security-auditor, test-engineer, accessibility and web-performance auditor agents. |
 <!-- catalog:end -->
 
 ## External skills (auto-updated by Renovate)
