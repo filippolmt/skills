@@ -305,3 +305,45 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `bughunter` | `skill:skills/vmware-vcenter-attack/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `bughunter` | `skill:skills/web2-recon/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `bughunter` | `skill:skills/web3-audit/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `agent:agents/accessibility-auditor.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `agent-skills` | `agent:agents/code-reviewer.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `agent-skills` | `agent:agents/security-auditor.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `agent-skills` | `agent:agents/test-engineer.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `agent-skills` | `agent:agents/web-performance-auditor.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `agent-skills` | `command:.claude/commands/a11y.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `agent-skills` | `command:.claude/commands/build.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `agent-skills` | `command:.claude/commands/code-simplify.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `agent-skills` | `command:.claude/commands/constraints.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `agent-skills` | `command:.claude/commands/plan.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `agent-skills` | `command:.claude/commands/review.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `agent-skills` | `command:.claude/commands/ship.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `agent-skills` | `command:.claude/commands/spec.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `agent-skills` | `command:.claude/commands/test.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `agent-skills` | `command:.claude/commands/webperf.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `agent-skills` | `manifest-capability:.claude-plugin/plugin.json#experimental` | — | Unsupported — experimental.evals points claude plugin eval at upstream's maintainer eval suite in evals/plugin; Codex has no plugin eval runner. Fallback: Nothing to install: the suite tests the plugin and adds no runtime behaviour. | Unsupported — experimental.evals points claude plugin eval at upstream's maintainer eval suite in evals/plugin; pi has no plugin eval runner. Fallback: Nothing to install: the suite tests the plugin and adds no runtime behaviour. |
+| `agent-skills` | `skill:skills/accessibility-engineering/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/api-and-interface-design/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/browser-testing-with-devtools/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/ci-cd-and-automation/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/code-review-and-quality/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/code-simplification/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/constraint-driven-development/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/context-engineering/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/debugging-and-error-recovery/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/deprecation-and-migration/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/documentation-and-adrs/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/doubt-driven-development/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/frontend-ui-engineering/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/git-workflow-and-versioning/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/idea-refine/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/incremental-implementation/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/interview-me/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/observability-and-instrumentation/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/performance-optimization/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/planning-and-task-breakdown/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/security-and-hardening/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/shipping-and-launch/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/source-driven-development/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/spec-driven-development/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/test-driven-development/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `agent-skills` | `skill:skills/using-agent-skills/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
