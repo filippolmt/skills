@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Union
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit, quote
 
-from . import bounded_get, health, usage
+from . import bounded_get, health, proxy, usage
 from . import log as _log
 
 DEFAULT_TIMEOUT = 30
@@ -932,6 +932,7 @@ def request(
     retry_dns: bool = True,
     return_headers: bool = False,
     redirect_guard: Callable[[str], bool] | None = None,
+    sensitive_url: bool = False,
 ) -> Union[Dict[str, Any], str, tuple[Union[Dict[str, Any], str], ResponseHeaders]]:
     """Make an HTTP request and return JSON response.
 
@@ -958,6 +959,8 @@ def request(
         return_headers: Also return the response headers, for a host that
             answers in a header (a session token) rather than the body. Not
             available with owned_get, whose child process reports no headers.
+        sensitive_url: Exclude credential-bearing URLs and their responses
+            from request diagnostics and fixture capture.
 
     Returns:
         Parsed JSON response as dict, or raw text string if raw=True. With
@@ -996,9 +999,28 @@ def request(
         quote(parts.fragment, safe=safe),
     ))
 
-    fixture_request = _fixture_request(method, url, json_data, raw)
+    # Proxy mode: a paid call backed by the proxy sentinel goes to the metered
+    # proxy instead (lib/proxy.py). Rewritten before fixture capture so the
+    # recorded request carries the proxy URL and the bearer key is redacted.
+    usage_url = url
+    try:
+        routed = proxy.route(method, url, headers)
+    except proxy.ProxyUnavailable as exc:
+        unavailable = HTTPError(f"API key proxy: {exc}", exc.status_code)
+        _raise(unavailable)
+    call_key = None
+    if routed is not None:
+        url = routed.url
+        headers = routed.headers
+        call_key = proxy.new_idempotency_key()
+        headers[proxy.IDEMPOTENCY_HEADER] = call_key
+
+    fixture_request = None if sensitive_url else _fixture_request(method, url, json_data, raw)
     fixture_redactions = _fixture_redactions(url, headers, json_data)
-    replayed = _fixture_replay(fixture_request, return_headers=return_headers)
+    replayed = _fixture_replay(
+        fixture_request if fixture_request is not None else {"method": method, "url": "<redacted>"},
+        return_headers=return_headers,
+    )
     if replayed is not _NO_FIXTURE:
         return replayed
 
@@ -1012,7 +1034,8 @@ def request(
         setattr(req, _REDIRECT_GUARD_ATTR, redirect_guard)
 
     def log_request(message: str) -> None:
-        log(_scrub_fixture_value(message, redactions=fixture_redactions))
+        if not sensitive_url:
+            log(_scrub_fixture_value(message, redactions=fixture_redactions))
 
     safe_url = re.sub(r'([?&])(key|api_key|token|secret)=[^&]*', r'\1\2=***', url)
     log_request(f"{method} {safe_url}")
@@ -1028,7 +1051,8 @@ def request(
     response_headers: Optional[ResponseHeaders] = None
 
     def raise_recorded(error: HTTPError) -> None:
-        _fixture_record(fixture_request, error=error, redactions=fixture_redactions)
+        if fixture_request is not None:
+            _fixture_record(fixture_request, error=error, redactions=fixture_redactions)
         _raise(error)
 
     def deadline_error() -> HTTPError:
@@ -1060,6 +1084,8 @@ def request(
                 if bypass_proxy else _open_request(req, request_timeout)
             )
             with transport as response:
+                if routed is not None:
+                    proxy.record_charge(getattr(response, "headers", None), call_key=call_key)
                 if return_headers:
                     response_headers = ResponseHeaders(response.headers.items())
                     final = response.geturl() if hasattr(response, "geturl") else ""
@@ -1081,9 +1107,11 @@ def request(
         """Stop waiting at the wall deadline, even during DNS or body reads."""
         if owned_get:
             try:
-                status, body, error = bounded_get.get(
+                owned = bounded_get.get(
                     req, timeout=request_timeout,
                     deadline_monotonic=deadline_monotonic, cancel=cancel,
+                    # Only a proxied call needs the charge header back.
+                    **({"with_headers": True} if routed is not None else {}),
                 )
             except bounded_get.GetLaunchError:
                 usage.cancel(charge)
@@ -1092,6 +1120,12 @@ def request(
                 if not exc.started:
                     usage.cancel(charge)
                 raise deadline_error() from exc
+            if routed is not None:
+                status, body, error, owned_headers = owned
+                if error is None:
+                    proxy.record_charge(dict(owned_headers), call_key=call_key)
+            else:
+                status, body, error = owned
             try:
                 decoded = body.decode("utf-8") if body is not None else None
             except UnicodeDecodeError:
@@ -1150,7 +1184,14 @@ def request(
         try:
             if attempt > 0 and on_retry is not None:
                 on_retry()
-            charge = usage.begin_http(url, method)
+            if routed is not None:
+                # Another call may have turned this lane off while we waited.
+                try:
+                    proxy.ensure_open(routed.provider)
+                except proxy.ProxyUnavailable as exc:
+                    raise_recorded(HTTPError(f"API key proxy: {exc}", exc.status_code))
+                req.add_header(proxy.DEADLINE_HEADER, proxy.deadline_value(request_timeout))
+            charge = usage.begin_http(usage_url, method)
             response_status, body, response_error = open_and_read_before_deadline(request_timeout)
             if body:
                 try:
@@ -1167,12 +1208,13 @@ def request(
             body = body or ""
             log_request(f"Response: {response_status} ({len(body)} bytes)")
             value = body if raw else (json.loads(body) if body else {})
-            _fixture_record(
-                fixture_request,
-                value=value,
-                redactions=fixture_redactions,
-                headers=response_headers,
-            )
+            if fixture_request is not None:
+                _fixture_record(
+                    fixture_request,
+                    value=value,
+                    redactions=fixture_redactions,
+                    headers=response_headers,
+                )
             if return_headers:
                 return value, response_headers
             return value
@@ -1184,6 +1226,13 @@ def request(
                 snippet = _scrub_fixture_value(" ".join(body.split()), redactions=fixture_redactions)
                 log_request(f"Error body: {snippet[:200]}")
             last_error = HTTPError(f"HTTP {e.code}: {e.reason}", e.code, body)
+
+            # A proxy error that ends the lane (out of credits, spend ceiling,
+            # provider off, duplicate call) is never retried.
+            if routed is not None and proxy.observe_error(
+                routed.provider, e.code, body, getattr(e, "headers", None), call_key,
+            ):
+                raise_recorded(last_error)
 
             # Don't retry client errors (4xx) except rate limits
             if 400 <= e.code < 500 and e.code != 429:

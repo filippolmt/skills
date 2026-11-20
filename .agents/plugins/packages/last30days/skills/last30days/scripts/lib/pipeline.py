@@ -30,6 +30,7 @@ from . import (
     corpus,
     dates,
     dedupe,
+    deepline,
     devto,
     digg,
     dripstack,
@@ -55,6 +56,7 @@ from . import (
     normalize,
     permission_preflight,
     perplexity,
+    person,
     pinterest,
     planner,
     polymarket,
@@ -159,6 +161,8 @@ STREAM_ARTIFACT_LIFT_KEYS: tuple[str, ...] = ("meta_ads_page", "meta_ads_tally")
 # Worst case per stream is one timeout ceiling (+ one inline 5xx retry in the
 # main fan-out, itself bounded by the lane's own timeouts); no new config knobs.
 STREAM_FUTURE_TIMEOUT_SECONDS = 180.0
+# Leave time for the background adapter to return its final poll receipt.
+DEEP_RESEARCH_RECEIPT_SECONDS = 1.0
 # A job board lists the roles open today, so it cannot answer a window that
 # ended in the past.
 JOBS_PAST_WINDOW_SKIP = "skipped: a job board shows the roles open today, not those of a past window"
@@ -174,6 +178,9 @@ REDDIT_SC_BACKFILL_RESERVE_SECONDS = 45.0
 REDDIT_SC_BACKFILL_MIN_SECONDS = 8.0
 REDDIT_SC_BACKFILL_RETURN_MARGIN_SECONDS = 5.0
 THIN_RETRY_FUTURE_TIMEOUT_SECONDS = 120.0
+# Leave 20 seconds of the five-minute foreground window for report output.
+FINALIZATION_WORK_CUTOFF_SECONDS = 280.0
+DISCOVERY_FINALIZATION_RESERVE_SECONDS = 10.0
 # One X source, ordered backends: grok (up to 240s/call) + xai (90-180s) would
 # stack sequentially inside one unbounded future under MCP's kill. The chain
 # owns a shared monotonic deadline (x_api's TIMEOUT 30/RETRIES 2/DEADLINE 90
@@ -196,6 +203,15 @@ def _research_deadline(config: dict[str, Any], seconds: float) -> float:
     return min(deadline, inherited) if inherited is not None else deadline
 
 
+def _finalization_deadline(config: dict[str, Any], run_started: float) -> float:
+    deadline = run_started + FINALIZATION_WORK_CUTOFF_SECONDS
+    deadline = min(deadline, config.get("_finalization_deadline", deadline))
+    inherited = config.get("_research_deadline")
+    if inherited is not None:
+        deadline = min(deadline, inherited - DISCOVERY_FINALIZATION_RESERVE_SECONDS)
+    return deadline
+
+
 def _check_research(config: dict[str, Any]) -> None:
     if _research_stopped(config):
         raise TimeoutError("research budget exhausted or cancelled")
@@ -211,6 +227,28 @@ def _wait_for_research(futures, config: dict[str, Any]):
         )
         done.update(completed)
     return done, pending
+
+
+def _completed_streams(batches, bundle: schema.RetrievalBundle):
+    for futures, wait_config, timeout_seconds, keep_ready in batches:
+        done, pending = _wait_for_research(futures, wait_config)
+        timed_out = False
+        for future in pending:
+            if keep_ready and future.done():
+                # A shorter background budget can elapse while the ordinary
+                # batch is still being collected. Its adapter enforces its
+                # own deadline, so keep any completed receipt.
+                done.add(future)
+                continue
+            timed_out = True
+            _subquery, source = futures[future]
+            future.cancel()
+            detail = f"{source} timed out after {timeout_seconds:g}s"
+            bundle.errors_by_source[source] = detail
+            bundle.record_failure(source, health.TIMEOUT, detail, attempted=True)
+        for future in done:
+            subquery, source = futures[future]
+            yield future, subquery, source, timed_out
 
 
 @contextlib.contextmanager
@@ -360,6 +398,14 @@ def normalize_requested_sources(sources: list[str] | None) -> list[str] | None:
     return normalized
 
 
+def _excluded_sources(config: dict[str, Any]) -> set[str]:
+    return {
+        source.strip().lower()
+        for source in str(config.get("EXCLUDE_SOURCES") or "").split(",")
+        if source.strip()
+    }
+
+
 class NoRequestedSourceAvailable(RuntimeError):
     """None of the sources the user asked for with --search is configured."""
 
@@ -485,6 +531,10 @@ def available_sources(
         "linkedin" in include_sources or (requested_sources and "linkedin" in requested_sources)
     ):
         available.append("linkedin")
+    # The person's own LinkedIn posts: a person run only, with a profile read
+    # from an anchored URL. Never a keyword search, so no other run gets it.
+    if _person_posts_mode(config):
+        available.append(PERSON_POSTS_SOURCE)
     # Trustpilot: opt-in additive source via INCLUDE_SOURCES=trustpilot (same
     # consent pattern as Perplexity/LinkedIn). Off by default -- unlike arXiv and
     # Techmeme, which are zero-auth, it can spawn a one-time headless-Chrome WAF
@@ -543,7 +593,7 @@ def available_sources(
             available.append("telegram")
     # xquik is a backend of the single "x" source (see env.x_backend_chain),
     # not a separate parallel source — registered via the "x" entry above.
-    exclude = {s.strip().lower() for s in (config.get("EXCLUDE_SOURCES") or "").split(",") if s.strip()}
+    exclude = _excluded_sources(config)
     if exclude:
         available = [s for s in available if s not in exclude]
     return available
@@ -2047,16 +2097,23 @@ def diagnose(
     *,
     safe: bool = False,
     x_envelope: bool = False,
+    probe_x: bool = True,
 ) -> dict[str, Any]:
     # ``x_envelope`` is True when a validated --x-posts envelope is present for
     # this invocation, so available_sources lists x even without a backend
     # and the optional-source omission note does not fire.
     requested_sources = normalize_requested_sources(requested_sources)
+    probe_x = (
+        probe_x and not safe and not x_envelope
+        and not env.x_host_lane_declared(config)
+        and (requested_sources is None or "x" in requested_sources)
+        and "x" not in _excluded_sources(config)
+    )
     google_key = _google_key(config)
-    x_status = env.get_x_source_status(config, probe=not safe)
+    x_status = env.get_x_source_status(config, probe=probe_x)
     # Compute once and reuse for both the diag flag and available_sources below.
     # safe=True (doctor/--diagnose/--preflight) must stay network-free.
-    x_pending = env.x_pending_browser_auth(config, local_only=safe)
+    x_pending = env.x_pending_browser_auth(config, local_only=not probe_x)
     native_web_backend = None
     if config.get("BRAVE_API_KEY"):
         native_web_backend = "brave"
@@ -2133,7 +2190,7 @@ def diagnose(
         # answer X availability from local evidence only. x_pending is
         # precomputed by diagnose() to avoid double evaluation.
         "available_sources": available_sources(
-            config, requested_sources, x_pending=x_pending, local_only=safe,
+            config, requested_sources, x_pending=x_pending, local_only=not probe_x,
             x_envelope=x_envelope,
         ),
         "safe": safe,
@@ -2146,7 +2203,9 @@ def diagnose(
         "credential_destinations": credential_destinations,
         "local_writes": local_writes,
     }
-    diag["permission_preflight"] = permission_preflight.build(config, diag)
+    diag["permission_preflight"] = permission_preflight.build(
+        config, diag, requested_sources=requested_sources,
+    )
     return diag
 
 
@@ -2162,6 +2221,19 @@ def _inner_max_workers(stream_count: int, *, internal_subrun: bool) -> int:
     return max(4, min(16, stream_count or 1))
 
 
+def library_context_index_path(
+    config: dict[str, Any], save_dir: Path | str | None,
+) -> Path | None:
+    setting = str(config.get("LAST30DAYS_LIBRARY_CONTEXT") or "off").strip().lower()
+    if setting in {"0", "false", "no", "off"} or save_dir == "":
+        return None
+    if path := config.get("_LAST30DAYS_LIBRARY_DB"):
+        return Path(path).expanduser()
+    if save_dir is not None:
+        return Path(save_dir).expanduser().resolve() / ".last30days-library.db"
+    return library_index.DEFAULT_LIBRARY_DB
+
+
 def _load_library_context(
     *,
     topic: str,
@@ -2174,10 +2246,10 @@ def _load_library_context(
     save_dir: Path | str | None = None,
 ) -> tuple[list[schema.LibraryContext], str | None]:
     """Resolve compact prior-run context without making a research run depend on it."""
-    setting = str(config.get("LAST30DAYS_LIBRARY_CONTEXT") or "off").strip().lower()
-    if mock or internal_subrun or setting in {"0", "false", "no", "off"}:
+    if mock or internal_subrun:
         return [], None
-    if save_dir == "":
+    db_path = library_context_index_path(config, save_dir)
+    if db_path is None:
         return [], None
 
     memory_dir = (
@@ -2190,13 +2262,6 @@ def _load_library_context(
         if save_dir is not None
         else library.DEFAULT_BRIEFS_DIR
     )
-    db_path = config.get("_LAST30DAYS_LIBRARY_DB")
-    if not db_path:
-        db_path = (
-            Path(memory_dir).expanduser().resolve() / ".last30days-library.db"
-            if save_dir is not None
-            else library_index.DEFAULT_LIBRARY_DB
-        )
     store_db = config.get("_LAST30DAYS_STORE_DB")
     if not store_db:
         # Scoped runs read only a store inside the save dir (usually absent);
@@ -2289,6 +2354,9 @@ def run(
         youtube_yt.reset_search_cache()
     settings = _resolve_depth_settings(depth, config)
     requested_sources = normalize_requested_sources(requested_sources)
+    local_corpus_drill = config.get("_drill_mode") and requested_sources == ["corpus"]
+    if local_corpus_drill:
+        web_backend = "none"
     # Wall-clock origin for budget-aware enrichment lanes. Amazon review
     # enrichment starts at search time (inside _retrieve_stream_impl) so it
     # overlaps other sources instead of waiting for them all to finish.
@@ -2299,11 +2367,7 @@ def run(
         corpus_dirs or config.get("_CORPUS_DIRS"),
         config.get("LAST30DAYS_CORPUS_DIRS"),
     )
-    excluded_sources = {
-        source.strip().lower()
-        for source in str(config.get("EXCLUDE_SOURCES") or "").split(",")
-        if source.strip()
-    }
+    excluded_sources = _excluded_sources(config)
     corpus_enabled = bool(resolved_corpus_dirs) and "corpus" not in excluded_sources
     corpus_requested = bool(requested_sources and "corpus" in requested_sources)
     if corpus_enabled and requested_sources and "corpus" not in requested_sources:
@@ -2343,6 +2407,7 @@ def run(
     x_lane_missing = (
         envelope is None
         and not mock
+        and not local_corpus_drill
         and not suppress_x_host_lane
         and env.x_host_lane_declared(config)
     )
@@ -2380,7 +2445,11 @@ def run(
     # automatic lane only for engine-planned runs.
     host_plan = external_plan is not None
     auto_company_jobs = not host_plan and _company_topic_likely(topic)
-    if mock:
+    if local_corpus_drill:
+        runtime = schema.ProviderRuntime("local", "deterministic", "local-score")
+        reasoning_provider = None
+        available_before_search = available = ["corpus"]
+    elif mock:
         runtime = providers.mock_runtime(config, depth)
         reasoning_provider = None
         available_before_search = list(MOCK_AVAILABLE_SOURCES)
@@ -2444,6 +2513,14 @@ def run(
                 + ". Run `last30days.py doctor` to see what each one needs."
             )
         raise RuntimeError("No sources are available for this run.")
+    # A person run's own posts are not a source the host names in --search:
+    # keep the lane whatever the list says. EXCLUDE_SOURCES still opts out.
+    if (
+        PERSON_POSTS_SOURCE in available_before_search
+        and PERSON_POSTS_SOURCE not in available
+        and PERSON_POSTS_SOURCE not in excluded_sources
+    ):
+        available.append(PERSON_POSTS_SOURCE)
 
     planner_requested_sources = (
         [source for source in requested_sources if source not in excluded_sources]
@@ -2512,6 +2589,15 @@ def run(
             plan_source = "llm"
         else:
             plan_source = "deterministic"
+
+    # A person run: the person's anchors join any the plan supplied, and the
+    # identity gate fails closed even when no anchor is known.
+    person_ctx = config.get("_person")
+    if person_ctx is not None:
+        plan.person_identity_anchors = _merged_person_anchors(
+            plan.person_identity_anchors, person_ctx.anchors,
+        )
+        plan.person_run = True
 
     _check_research(config)
     # Safety net: ensure grounding appears in all subqueries even if the planner
@@ -2619,6 +2705,10 @@ def run(
     # on one platform, and an unrelated same-name account elsewhere must not
     # bypass the floors.
     creator_first_party = _creator_first_party_by_source(tiktok_creators, ig_creators)
+    if person_ctx is not None and person_ctx.full_name:
+        # The person's own posts rarely repeat their name; scoped to the
+        # posts lane, so no same-name account elsewhere is exempted.
+        creator_first_party[PERSON_POSTS_SOURCE] = {person_ctx.full_name.lower()}
     # Real X handles: --x-handle, --x-related, or @mentions in the topic. These
     # determine whether the deferred X floor applies. Topic words like "peter"
     # are NOT real handles and should not trigger the floor — when no real
@@ -2710,6 +2800,10 @@ def run(
                     freshness_mode=plan.freshness_mode,
                     ranking_query=f"What is @{github_user} doing on GitHub?",
                 )
+                if person_ctx is not None:
+                    # Authored by the person's resolved account.
+                    for item in normalized:
+                        item.metadata["identity_anchor"] = True
                 # Use the first subquery's label so RRF can look up the weight
                 primary_label = plan.subqueries[0].label if plan.subqueries else "primary"
                 bundle.add_items(primary_label, "github", normalized)
@@ -2744,13 +2838,13 @@ def run(
         primary = plan.subqueries[0]
         bundle.mark_attempted("corpus")
         result = corpus.search(
-            topic,
+            primary.search_query if local_corpus_drill else topic,
             resolved_corpus_dirs,
             from_date=from_date,
             to_date=to_date,
             all_time=corpus_all_time,
             limit=settings["per_stream_limit"],
-            cache_dir=env.CONFIG_DIR,
+            cache_dir=None if config.get("_no_research_persistence") else env.CONFIG_DIR,
         )
         prepared_query = relevance.PreparedQuery(primary.ranking_query)
         lookback_window_days = (
@@ -2807,7 +2901,10 @@ def run(
         config["_jobs_story_terms"] = _jobs_story_terms(plan, topic, config)
     stream_config = dict(config)
     stream_config["_research_deadline"] = _research_deadline(config, STREAM_FUTURE_TIMEOUT_SECONDS)
-    with _abandoning_executor(max_workers=max_workers) as executor:
+    batches = [(futures, stream_config, STREAM_FUTURE_TIMEOUT_SECONDS, False)]
+    background_futures = {}
+    with contextlib.ExitStack() as stack:
+        executor = stack.enter_context(_abandoning_executor(max_workers=max_workers))
         for subquery in plan.subqueries:
             for source in subquery.sources:
                 if source not in available:
@@ -2816,6 +2913,9 @@ def run(
                     continue
                 # Skip GitHub keyword search if person-mode already ran
                 if source == "github" and (_github_person_done or _github_custom_done):
+                    continue
+                # The person's posts run once, below, never per subquery.
+                if source == PERSON_POSTS_SOURCE:
                     continue
                 if source == "jobs" and jobs_past_window:
                     bundle.source_status["jobs"] = schema.SourceOutcome(
@@ -2855,13 +2955,33 @@ def run(
                         continue
                     source_fetch_count[source] = current + 1
                 bundle.mark_attempted(source)
-                futures[
-                    executor.submit(
+                active_futures, active_executor, active_config = futures, executor, stream_config
+                if (
+                    source == "perplexity"
+                    and config.get("_deep_research")
+                    and str(config.get("PERPLEXITY_API_KEY") or "").strip()
+                ):
+                    background_timeout = perplexity.deep_timeout_seconds(config)
+                    active_config = {
+                        **config,
+                        "_research_deadline": _research_deadline(config, background_timeout),
+                    }
+                    background_wait_config = {
+                        **active_config,
+                        "_research_deadline": _research_deadline(
+                            config, background_timeout + DEEP_RESEARCH_RECEIPT_SECONDS,
+                        ),
+                    }
+                    active_executor = stack.enter_context(_abandoning_executor(max_workers=1))
+                    active_futures = background_futures
+                    batches.append((background_futures, background_wait_config, background_timeout, True))
+                active_futures[
+                    active_executor.submit(
                         _retrieve_stream,
                         topic=topic,
                         subquery=subquery,
                         source=source,
-                        config=stream_config,
+                        config=active_config,
                         depth=depth,
                         date_range=(from_date, to_date),
                         runtime=runtime,
@@ -2881,23 +3001,32 @@ def run(
                     )
                 ] = (subquery, source)
 
-        # Bounded fan-out (reddit-lane futures_wait pattern): the whole Phase 1
-        # waits at most STREAM_FUTURE_TIMEOUT_SECONDS, so a hung lane degrades
-        # to a TIMEOUT partial instead of stalling run() forever. Worst case
-        # per stream is the wait ceiling plus, for a stream that failed fast
-        # with a 5xx while budget remained, one inline retry bounded by that
-        # lane's own timeouts. No retry starts after the wait timed out or
-        # the enrichment cancel fired.
-        done, not_done = _wait_for_research(futures, stream_config)
-        budget_expired = bool(not_done)
-        for future in not_done:
-            subquery, source = futures[future]
-            future.cancel()
-            detail = f"{source} timed out after {STREAM_FUTURE_TIMEOUT_SECONDS:g}s"
-            bundle.errors_by_source[source] = detail
-            bundle.record_failure(source, health.TIMEOUT, detail, attempted=True)
-        for future in done:
-            subquery, source = futures[future]
+        # The person's own LinkedIn posts: one read, in the same executor and
+        # under the same deadline as every other stream.
+        person_posts_mode = _person_posts_mode(config)
+        if (
+            person_posts_mode
+            and not mock
+            and plan.subqueries
+            and PERSON_POSTS_SOURCE in available
+        ):
+            bundle.mark_attempted(PERSON_POSTS_SOURCE)
+            futures[
+                executor.submit(
+                    _fetch_person_posts,
+                    mode=person_posts_mode,
+                    profile_url=person_ctx.linkedin_url,
+                    stored_posts=list((person_ctx.profile or {}).get("posts") or []),
+                    author=person_ctx.full_name,
+                    config=stream_config,
+                    from_date=from_date,
+                    to_date=to_date,
+                )
+            ] = (plan.subqueries[0], PERSON_POSTS_SOURCE)
+
+        # Collect ordinary streams and any inline retries before waiting on
+        # the longer background request.
+        for future, subquery, source, budget_expired in _completed_streams(batches, bundle):
             try:
                 raw_items, artifact = future.result(timeout=0)
             except Exception as exc:
@@ -2913,7 +3042,7 @@ def run(
                 # wait already timed out or cancel fired: the retry's lane
                 # timeouts plus the blocking sleep would run past the budget
                 # that just expired.
-                if _is_transient_error(exc):
+                if future not in background_futures and _is_transient_error(exc):
                     if budget_expired or _research_stopped(stream_config):
                         bundle.errors_by_source[source] = str(exc)
                         state, attempted = _classify_source_failure(exc)
@@ -2961,6 +3090,10 @@ def run(
                     state, attempted = _classify_source_failure(exc)
                     bundle.record_failure(source, state, str(exc), attempted=attempted)
                     continue
+            if source == PERSON_POSTS_SOURCE and isinstance(artifact, dict):
+                artifact = dict(artifact)
+                person_ctx.older_posts = list(artifact.pop("_person_older_posts", None) or [])
+                person_ctx.posts_read = bool(artifact.pop("_person_posts_read", False))
             if isinstance(artifact, dict) and artifact.get("_source_skipped"):
                 # The lane chose not to run (jobs' past-window skip is the
                 # precedent): not attempted, so it is no failure, no degraded
@@ -3262,20 +3395,37 @@ def run(
 
     # Finalize after the deferred floor so the report's per-source view and the
     # source_status counts describe the same post-floor evidence set fusion sees.
+    finalization_deadline = _finalization_deadline(config, run_started)
     items_by_source = _finalize_items_by_source(
         bundle.items_by_source, topic=topic, config=config, depth=depth, mock=mock,
         elapsed=time.monotonic() - run_started, out_of_time=out_of_time_sources,
+        finalization_deadline=finalization_deadline,
     )
     # Fusion gates on identity too, but the footer counts and Top voices read
     # this per-source view, so a namesake left here still reaches the report.
     # Gated after enrichment so a backfilled transcript can supply the anchor.
-    items_by_source = {
-        source: [
+    gated_items_by_source: dict[str, list[schema.SourceItem]] = {}
+    dropped_by_identity: dict[str, int] = {}
+    for source, items in items_by_source.items():
+        kept = [
             item for item in items
-            if entity_extract.matches_person_identity(item, plan.person_identity_anchors, x_handle)
+            if entity_extract.matches_person_identity(
+                item, plan.person_identity_anchors, x_handle,
+                person_run=getattr(plan, "person_run", False),
+            )
         ]
-        for source, items in items_by_source.items()
-    }
+        if len(kept) < len(items):
+            dropped_by_identity[source] = len(items) - len(kept)
+        gated_items_by_source[source] = kept
+    items_by_source = gated_items_by_source
+    if person_ctx is not None:
+        person_ctx.dropped_counts = dropped_by_identity
+        person_ctx.in_window_posts = len(items_by_source.get(PERSON_POSTS_SOURCE, []))
+        person_ctx.first_party_in_window = _first_party_in_window(
+            items_by_source, x_handle=x_handle, github_person=_github_person_done,
+            from_date=from_date, to_date=to_date,
+        )
+        bundle.artifacts["person_profile"] = person_ctx.to_dict()
     retained_markets = {
         source_item_key(item) for item in items_by_source.get("polymarket", [])
     }
@@ -3316,14 +3466,15 @@ def run(
     private_candidates = [
         candidate
         for candidate in candidates
-        if candidate.source == "corpus"
-        or any(item.source == "corpus" for item in candidate.source_items)
+        if schema.candidate_has_corpus(candidate)
     ]
     private_candidate_ids = {id(candidate) for candidate in private_candidates}
     public_candidates = [
         candidate for candidate in candidates if id(candidate) not in private_candidate_ids
     ]
     _check_research(config)
+    if reasoning_provider is not None:
+        reasoning_provider.set_request_budget(finalization_deadline, config.get("_enrich_cancel"))
     ranked_public = rerank.rerank_candidates(
         topic=topic,
         plan=plan,
@@ -3971,10 +4122,15 @@ def _finalize_items_by_source(
     mock: bool = False,
     elapsed: float = 0.0,
     out_of_time: set[str] | None = None,
+    finalization_deadline: float | None = None,
 ) -> dict[str, list[schema.SourceItem]]:
+    config = config or {}
+    if finalization_deadline is None:
+        finalization_deadline = _finalization_deadline(config, time.monotonic() - elapsed)
+    cancel = config.get("_enrich_cancel")
     finalized = {}
     for source, items in items_by_source_raw.items():
-        _check_research(config or {})
+        _check_research(config)
         items = sorted(items, key=lambda item: item.local_rank_score or 0.0, reverse=True)
         if source == "polymarket":
             items = polymarket.by_selection(items)
@@ -4011,15 +4167,21 @@ def _finalize_items_by_source(
             matched, replayed = http.fixture_source_replay(enrichment_request)
             if matched:
                 items = _merge_replayed_enrichment(items, replayed)
-            else:
+            elif time.monotonic() < finalization_deadline:
                 sc_token = (
                     config.get("SCRAPECREATORS_API_KEY")
                     if config and env.is_youtube_sc_available(config) else None
                 )
-                youtube_yt.backfill_transcripts(
-                    items, topic=topic, depth=depth, token=sc_token,
-                    entity_count=_comparison_entity_count(config),
-                )
+                with youtube_yt.sc_spend_until(
+                    lambda: _research_stopped(config),
+                    cancel=cancel,
+                    deadline=finalization_deadline,
+                    return_deadline=finalization_deadline,
+                ):
+                    youtube_yt.backfill_transcripts(
+                        items, topic=topic, depth=depth, token=sc_token,
+                        entity_count=_comparison_entity_count(config),
+                    )
                 http.fixture_source_record(enrichment_request, schema.to_dict(items))
         # Post-merge topic bar for Polymarket: the entity matcher, with the
         # run's hints, over each item's matched market and event title. It
@@ -4390,6 +4552,224 @@ def _jobs_board_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
     if env.jobs_digest_disabled():
         return {key: value for key, value in artifact.items() if key != "digest"}
     return artifact
+
+
+# -- person runs ----------------------------------------------------------------
+
+# The person's own LinkedIn posts, read once per person run.
+PERSON_POSTS_SOURCE = "linkedin_profile"
+# Older posts kept for the Person Profile, and each one's text cap.
+PERSON_OLDER_POSTS_MAX = 6
+PERSON_OLDER_POST_CHARS = 300
+# How far back older posts reach.
+PERSON_POSTS_LOOKBACK_DAYS = 365
+PERSON_POSTS_PAGES = deepline.DEFAULT_CAPS[deepline.TOOL_POSTS]
+
+_PERSON_POSTS_FAILURE_STATES: dict[str, str] = {
+    deepline.AUTH_FAILED: schema.AUTH_FAILED,
+    deepline.OUT_OF_CREDITS: schema.PAYMENT_REQUIRED,
+    deepline.RATE_LIMITED: schema.RATE_LIMITED,
+    deepline.TIMEOUT: health.TIMEOUT,
+}
+
+
+def _person_posts_mode(config: dict[str, Any]) -> str | None:
+    """How this run reads the person's posts: "stored", "deepline", or None.
+
+    Only a person run whose LinkedIn profile was read from an anchored URL
+    qualifies. A ScrapeCreators profile read already returned the posts
+    ("stored"); otherwise a Deepline key reads them ("deepline").
+    """
+    ctx = config.get("_person")
+    if ctx is None or ctx.linkedin_status != person.LINKEDIN_CHECKED or not ctx.linkedin_url:
+        return None
+    profile = ctx.profile or {}
+    if profile.get("source") == "scrapecreators" and profile.get("posts"):
+        return "stored"
+    if deepline.is_available(config):
+        return "deepline"
+    return None
+
+
+def _read_person_posts(
+    profile_url: str, config: dict[str, Any], from_date: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    """Up to two pages of the person's posts from Deepline, and the failure that
+    ended the read before any post arrived (None when the read worked)."""
+    import uuid
+
+    client = deepline.from_config(config, uuid.uuid4().hex)
+    if client is None:
+        return [], {"state": schema.SKIPPED_UNCONFIGURED, "detail": "No Deepline key", "attempted": False}
+    cutoff = (
+        date.fromisoformat(from_date) - timedelta(days=PERSON_POSTS_LOOKBACK_DAYS)
+    ).isoformat()
+    posts: list[dict[str, Any]] = []
+    token = None
+    for _page in range(PERSON_POSTS_PAGES):
+        result = client.get_posts(
+            profile_url,
+            deadline_monotonic=config.get("_research_deadline"),
+            posted_limit="year",
+            pagination_token=token,
+        )
+        if result["status"] != deepline.OK:
+            state = _PERSON_POSTS_FAILURE_STATES.get(result["status"], "error")
+            detail = f"LinkedIn posts read failed: {result['status']}"
+            if result.get("detail"):
+                detail += f" ({result['detail']})"
+            if posts:
+                # A later page failed: keep the posts already read, but the
+                # read is incomplete, so the count is a floor, not a total.
+                return posts, {"state": state, "detail": detail, "partial": True}
+            return [], {"state": state, "detail": detail}
+        page = result["data"] or {}
+        posts.extend(page.get("posts") or [])
+        token = page.get("next_token")
+        days = [post.get("date") for post in posts if post.get("date")]
+        # A second page only helps while this one still reaches inside the
+        # year and the older-activity list is not yet full.
+        older = [day for day in days if day < from_date]
+        if not token or (days and min(days) < cutoff) or len(older) >= PERSON_OLDER_POSTS_MAX:
+            break
+    return posts, None
+
+
+def _split_person_posts(
+    posts: list[dict[str, Any]], *, author: str, from_date: str, to_date: str,
+    owner_id: str = "",
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """(in-window raw items, older-activity entries newest first).
+
+    Undated posts are dropped: older activity is shown by its real date, and
+    the window cannot be checked without one. The upstream's own date limit is
+    not trusted, so the year cutoff is applied here.
+    """
+    cutoff = (
+        date.fromisoformat(from_date) - timedelta(days=PERSON_POSTS_LOOKBACK_DAYS)
+    ).isoformat()
+    in_window: list[dict[str, Any]] = []
+    older: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for post in posts:
+        day = str(post.get("date") or "")
+        key = str(post.get("url") or post.get("id") or "")
+        if not day or (key and key in seen):
+            continue
+        if key:
+            seen.add(key)
+        text = str(post.get("text") or "").strip()
+        # A post another member wrote shows on the profile's activity because
+        # the person shared it; it is not their own words.
+        post_author = str(post.get("author_id") or "").lower()
+        is_reshare = bool(post.get("is_reshare")) or bool(
+            owner_id and post_author and post_author != owner_id.lower()
+        )
+        if from_date <= day <= to_date:
+            in_window.append({
+                "id": post.get("id"),
+                "url": post.get("url"),
+                "text": text,
+                "date": day,
+                "is_reshare": is_reshare,
+                "author": author,
+                "engagement": dict(post.get("engagement") or {}),
+            })
+        elif cutoff <= day < from_date:
+            if len(text) > PERSON_OLDER_POST_CHARS:
+                text = text[: PERSON_OLDER_POST_CHARS - 1].rstrip() + "\u2026"
+            older.append({"date": day, "url": post.get("url"), "text": text, "is_reshare": is_reshare})
+    older.sort(key=lambda entry: entry["date"], reverse=True)
+    return in_window, older[:PERSON_OLDER_POSTS_MAX]
+
+
+def _fetch_person_posts(
+    *,
+    mode: str,
+    profile_url: str,
+    stored_posts: list[dict[str, Any]],
+    author: str,
+    config: dict[str, Any],
+    from_date: str,
+    to_date: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """The posts lane's stream result: in-window raw items, plus an artifact
+    carrying the older posts and, on failure or an empty window, the outcome.
+
+    Never raises: a failure is an outcome, and the generic transient retry
+    must not re-run this lane through the keyword-search path.
+    """
+    try:
+        if mode == "stored":
+            posts, failure = list(stored_posts), None
+        else:
+            posts, failure = _read_person_posts(profile_url, config, from_date)
+        in_window, older = _split_person_posts(
+            posts, author=author, from_date=from_date, to_date=to_date,
+            owner_id=profile_url.rstrip("/").rsplit("/", 1)[-1],
+        )
+    except Exception as exc:  # noqa: BLE001 - a lane failure is an outcome
+        return [], {
+            "_person_older_posts": [],
+            "_source_outcome": {"state": "error", "detail": f"LinkedIn posts lane failed: {type(exc).__name__}"},
+        }
+    artifact: dict[str, Any] = {"_person_older_posts": older, "_person_posts_read": failure is None}
+    if failure is not None and failure.get("partial"):
+        # The posts that arrived still count; only the total is unknown.
+        log.source_log("LinkedIn profile", f"posts read incomplete: {failure['detail']}", tty_only=False)
+    elif failure is not None:
+        artifact["_source_outcome"] = failure
+    elif not in_window:
+        # Like a pinned GitHub user with no activity: recorded, never
+        # backfilled with a keyword search for the name.
+        artifact["_source_outcome"] = {
+            "state": schema.NO_RESULTS,
+            "detail": "No LinkedIn posts by the person in the window",
+        }
+    log.source_log(
+        "LinkedIn profile",
+        f"{len(in_window)} post(s) in the window, {len(older)} older",
+        tty_only=False,
+    )
+    return in_window, artifact
+
+
+def _merged_person_anchors(plan_anchors: list[str], person_anchors: list[str]) -> list[str]:
+    """The plan's anchors followed by the person's, each once, ignoring case."""
+    merged: list[str] = []
+    seen: set[str] = set()
+    for anchor in [*plan_anchors, *person_anchors]:
+        text = " ".join(str(anchor or "").split())
+        if text and text.casefold() not in seen:
+            seen.add(text.casefold())
+            merged.append(text)
+    return merged
+
+
+def _first_party_in_window(
+    items_by_source: dict[str, list[schema.SourceItem]],
+    *,
+    x_handle: str | None,
+    github_person: bool,
+    from_date: str,
+    to_date: str,
+) -> int:
+    """Dated in-window items from the person's own accounts: their LinkedIn
+    posts, posts by the resolved X handle, and GitHub person-mode activity."""
+
+    def in_window(item: schema.SourceItem) -> bool:
+        return bool(item.published_at) and from_date <= item.published_at[:10] <= to_date
+
+    handle = (x_handle or "").lstrip("@").lower()
+    count = sum(in_window(item) for item in items_by_source.get(PERSON_POSTS_SOURCE, []))
+    if handle:
+        count += sum(
+            in_window(item) for item in items_by_source.get("x", [])
+            if (item.author or "").lstrip("@").lower() == handle
+        )
+    if github_person:
+        count += sum(in_window(item) for item in items_by_source.get("github", []))
+    return count
 
 
 def _rejected_job_keys(
@@ -5354,7 +5734,10 @@ def _run_supplemental_searches(
     x_dicts = [
         {"author_handle": item.author or "", "text": item.body or ""}
         for item in bundle.items_by_source.get("x", [])
-        if entity_extract.matches_person_identity(item, plan.person_identity_anchors, x_handle)
+        if entity_extract.matches_person_identity(
+            item, plan.person_identity_anchors, x_handle,
+            person_run=getattr(plan, "person_run", False),
+        )
     ]
     reddit_dicts = [
         {
@@ -6758,12 +7141,7 @@ def _retrieve_stream_impl(
         reddit_query = raw_topic or subquery.search_query
         dedicated_subreddits = config.get("_dedicated_subreddits") or None
         has_sc_key = bool(config.get("SCRAPECREATORS_API_KEY"))
-        sc_first = (
-            has_sc_key
-            and (config.get(env.REDDIT_BACKEND_PIN_VAR) or "").lower()
-            == "scrapecreators"
-        )
-        if sc_first:
+        if env.reddit_scrapecreators_primary(config):
             # env.REDDIT_BACKEND_PIN_VAR=scrapecreators: SC primary, public fallback
             if config.get("_reddit_envelope") is not None:
                 log.source_log(
@@ -7573,9 +7951,6 @@ def _retrieve_stream_impl(
             artifact,
         )
     if source == "github":
-        # Resolve once at the pipeline boundary so search and enrich
-        # share the result; otherwise each call would re-run the env
-        # lookup and gh-CLI subprocess fallback (up to 5s timeout each).
         token = github.resolve_token(config.get("GITHUB_TOKEN"))
         response = github.search_github(subquery.search_query, from_date, to_date, depth=depth, token=token)
         # Judge results against the stable research topic, not the narrowed
@@ -7586,7 +7961,8 @@ def _retrieve_stream_impl(
         # tokenless anon tier and returns empty here rather than raising — github
         # is now always eligible, so raising would spam "github failed" on every
         # tokenless run. The condition is logged in github.search_github.
-        items = github.enrich_with_comments(items, depth=depth, token=token)
+        if token:
+            items = github.enrich_with_comments(items, depth=depth)
         return items, _result_outcome_artifact(source, response)
     if source == "pinterest":
         result = pinterest.search_pinterest(
