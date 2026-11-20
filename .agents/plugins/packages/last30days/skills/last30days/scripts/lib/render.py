@@ -23,7 +23,9 @@ from . import (
     library_index,
     meta_ads,
     patent_digest,
+    person,
     polymarket,
+    proxy,
     reddit_refs,
     registers,
     relevance,
@@ -32,6 +34,13 @@ from . import (
     signals,
     skill_meta,
     x_envelope,
+)
+from .library import (
+    PRIVATE_CORPUS_END,
+    PRIVATE_CORPUS_START,
+    PUBLIC_CLUSTERS_MARKER,
+    PUBLIC_DRILL_MARKER,
+    PUBLIC_FRESHNESS_MARKER,
 )
 
 
@@ -237,6 +246,7 @@ SOURCE_LABELS = {
     "devto": "dev.to",
     "truthsocial": "Truth Social",
     "linkedin": "LinkedIn",
+    "linkedin_profile": "LinkedIn",
     "xiaohongshu": "Xiaohongshu",
     "x": "X",
     "github": "GitHub",
@@ -251,10 +261,6 @@ SOURCE_LABELS = {
     "jobs": "Jobs",
     "corpus": "Your files",
 }
-
-PRIVATE_CORPUS_START = "<!-- LAST30DAYS_PRIVATE_CORPUS_START -->"
-PRIVATE_CORPUS_END = "<!-- LAST30DAYS_PRIVATE_CORPUS_END -->"
-
 
 # vote_weight = max points a fully on-topic, max-upvoted top comment can add to
 # the LLM humor score. Tuned against real runs: typical funny comments score
@@ -299,7 +305,7 @@ def _render_drill_context(report: schema.Report) -> list[str]:
     sources = context.get("sources") or []
     source_text = ", ".join(_source_label(source) for source in sources) or "none"
     original = context.get("original_summary") or "No cached summary was available."
-    return [
+    lines = [
         "## Drill Follow-up",
         "",
         f"- Target: {context.get('target') or report.drill_of}",
@@ -314,6 +320,9 @@ def _render_drill_context(report: schema.Report) -> list[str]:
         f"- {int(context.get('new_items') or 0)} new items after dedupe",
         f"- Re-researched sources: {source_text}",
     ]
+    if schema.drill_has_corpus_context(report):
+        return [PRIVATE_CORPUS_START, *map(_defang_corpus_sentinels, lines), PRIVATE_CORPUS_END]
+    return [PUBLIC_DRILL_MARKER, *lines]
 
 
 def _render_library_context(report: schema.Report) -> list[str]:
@@ -415,8 +424,11 @@ def _render_ranked_clusters(
     clusters: list[schema.Cluster],
     *,
     digest_urls: Collection[str] = (),
+    mark_public_clusters: bool = False,
 ) -> list[str]:
     lines = ["## Ranked Evidence Clusters", ""]
+    if mark_public_clusters:
+        lines.insert(0, PUBLIC_CLUSTERS_MARKER)
     candidate_by_id = {
         candidate.candidate_id: candidate for candidate in report.ranked_candidates
     }
@@ -672,20 +684,30 @@ def _candidate_freshness_flag(report: schema.Report, candidate_id: str) -> str:
 
 
 def _render_freshness_verdicts(report: schema.Report) -> list[str]:
-    if not report.freshness_verdicts:
-        return []
+    public, private = schema.partition_freshness_verdicts(report, {"corpus"})
+    lines = [PUBLIC_FRESHNESS_MARKER, *_freshness_table(public, "Freshness Verification")] if public else []
+    if private:
+        if lines:
+            lines.append("")
+        local = _freshness_table(private, "Local freshness verification")
+        lines.extend([PRIVATE_CORPUS_START, *map(_defang_corpus_sentinels, local), PRIVATE_CORPUS_END])
+    return lines
+
+
+def _freshness_table(verdicts: list[schema.FreshnessVerdict], heading: str) -> list[str]:
     lines = [
-        "## Freshness Verification",
+        f"## {heading}",
         "",
         "| Verdict | Claim | Evidence | Checked |",
         "| --- | --- | --- | --- |",
     ]
-    for verdict in report.freshness_verdicts:
-        claim = verdict.claim.replace("|", "\\|")
+    for verdict in verdicts:
+        claim = " ".join(verdict.claim.splitlines()).replace("|", "\\|")
         if verdict.detail:
             # The verifier's detail carries the formatted movement for stale
             # rows and the reason a claim could not be re-checked otherwise.
-            claim += f" ({verdict.detail.replace('|', chr(92) + '|')})"
+            detail = " ".join(verdict.detail.splitlines()).replace("|", "\\|")
+            claim += f" ({detail})"
         evidence_label = (
             verdict.evidence_timestamp or verdict.source_timestamp or "source"
         )
@@ -728,6 +750,7 @@ def _render_registered_sections(
     cluster_limit: int,
     *,
     include_source_diagnostics: bool = True,
+    mark_public_clusters: bool = False,
 ) -> list[str]:
     """Render one audience preset's ordered, budgeted evidence sections."""
 
@@ -792,6 +815,7 @@ def _render_registered_sections(
         "clusters": _render_ranked_clusters(
             report,
             visible_clusters,
+            mark_public_clusters=mark_public_clusters,
         ),
         "stats": _render_stats(report),
         "best_takes": best_takes,
@@ -833,6 +857,7 @@ def render_compact(
 ) -> str:
     audience = registers.get_register(register)
     evidence_report = schema.without_sources(report, {"corpus"})
+    has_corpus = schema.report_has_corpus(report)
     non_empty = [s for s, items in sorted(report.items_by_source.items()) if items]
     lines = [
         *_render_badge(report.topic, report.range_from, report.range_to),
@@ -895,6 +920,10 @@ def render_compact(
     aux_candidates = _auxiliary_candidate_pool(
         evidence_report, visible_clusters, solid_clusters
     )
+    person_block = _person_profile_block(evidence_report)
+    if person_block:
+        lines.extend(person_block)
+        lines.append("")
     hiring_block = (
         []
         if no_solid_evidence
@@ -924,6 +953,7 @@ def render_compact(
         # a synthesis-only voice change, so it intentionally takes this path.
         lines.extend(_render_ranked_clusters(
             evidence_report, visible_clusters, digest_urls=jobs_digest_urls,
+            mark_public_clusters=has_corpus,
         ))
         lines.extend(_render_stats(evidence_report))
 
@@ -956,7 +986,8 @@ def render_compact(
     else:
         lines.extend(
             _render_registered_sections(
-                evidence_report, audience, fun_params, cluster_limit
+                evidence_report, audience, fun_params, cluster_limit,
+                mark_public_clusters=has_corpus,
             )
         )
     corpus_section = _render_corpus_section(report)
@@ -1049,6 +1080,7 @@ def render_for_html(
                     fun_params,
                     8,
                     include_source_diagnostics=False,
+                    mark_public_clusters=schema.report_has_corpus(report),
                 ),
             ]
         )
@@ -1833,6 +1865,10 @@ def render_full(report: schema.Report, save_path: str | None = None) -> str:
             lines.extend(single_row)
             lines.append("")
 
+    person_block = _person_profile_block(evidence_report)
+    if person_block:
+        lines.extend(person_block)
+        lines.append("")
     # The board's digest, as the compact output carries it: the saved file
     # lists only the ranked postings below, so this is where the board is read.
     jobs_digest_block, _digest_urls = _jobs_digest_block(evidence_report)
@@ -1845,7 +1881,10 @@ def render_full(report: schema.Report, save_path: str | None = None) -> str:
         lines.append("")
 
     # ALL clusters (no limit)
-    lines.extend(_render_ranked_clusters(evidence_report, evidence_report.clusters))
+    lines.extend(_render_ranked_clusters(
+        evidence_report, evidence_report.clusters,
+        mark_public_clusters=schema.report_has_corpus(report),
+    ))
 
     fun_params = _FUN_LEVELS["medium"]
     full_clusters = _clusters_clearing_relevance_floor(
@@ -2024,7 +2063,7 @@ def render_full(report: schema.Report, save_path: str | None = None) -> str:
         lines.extend(corpus_section)
         lines.append("")
 
-    freshness_verdicts = _render_freshness_verdicts(evidence_report)
+    freshness_verdicts = _render_freshness_verdicts(report)
     if freshness_verdicts:
         lines.extend(freshness_verdicts)
         lines.append("")
@@ -2185,6 +2224,7 @@ def render_brief(report: schema.Report, cluster_limit: int = 8) -> str:
     is no matching data; Sections 1 and 5 always appear.
     """
     evidence_report = schema.without_sources(report, {"corpus"})
+    public_cluster_boundary = [PUBLIC_CLUSTERS_MARKER] if schema.report_has_corpus(report) else []
     non_empty = [s for s, items in sorted(report.items_by_source.items()) if items]
     lines = [
         f"# Production Brief: {report.topic}",
@@ -2203,8 +2243,7 @@ def render_brief(report: schema.Report, cluster_limit: int = 8) -> str:
     if library_context:
         lines.extend([*library_context, ""])
 
-    lines.append("## Ranked Storylines")
-    lines.append("")
+    lines.extend([*public_cluster_boundary, "## Ranked Storylines", ""])
     candidate_by_id = {c.candidate_id: c for c in evidence_report.ranked_candidates}
     requested_clusters = evidence_report.clusters[:cluster_limit]
     visible_clusters = _clusters_clearing_relevance_floor(
@@ -2284,8 +2323,7 @@ def render_brief(report: schema.Report, cluster_limit: int = 8) -> str:
 
     tensions = [c for c in visible_clusters if c.uncertainty]
     if tensions:
-        lines.append("## Topic Tensions")
-        lines.append("")
+        lines.extend([*public_cluster_boundary, "## Topic Tensions", ""])
         for cluster in tensions[:cluster_limit]:
             label = (
                 cluster.uncertainty.replace("-", " ").title()
@@ -2304,8 +2342,7 @@ def render_brief(report: schema.Report, cluster_limit: int = 8) -> str:
             lines.append(f"- {q}")
         lines.append("")
 
-    lines.append("## Source Clusters")
-    lines.append("")
+    lines.extend([*public_cluster_boundary, "## Source Clusters", ""])
     for cluster in visible_clusters:
         source_tags = " + ".join(_source_label(s) for s in cluster.sources)
         lines.append(f"- **{_safe_title(cluster.title)}**: {source_tags}")
@@ -2492,6 +2529,205 @@ def _jobs_unreadable_footer_line(report: schema.Report) -> str | None:
     if isinstance(reason, str) and reason.strip():
         line += f" ({_footer_safe(reason, 100)})"
     return line
+
+
+# Per-field caps for the Person Profile's remote text.
+_PERSON_SHORT_CHARS = 120
+_PERSON_HEADLINE_CHARS = 200
+_PERSON_BIO_CHARS = 500
+_PERSON_POST_CHARS = 240
+_PERSON_ROLES_SHOWN = 2
+_PERSON_LINKS_SHOWN = 6
+_PERSON_OLDER_SHOWN = 6
+# Fewer first-party items than this in the window and older activity shows.
+_PERSON_THIN_WINDOW = 3
+_PERSON_DATE = re.compile(r"^\d{4}-\d{2}(?:-\d{2})?$")
+_PERSON_BIO_FENCE = re.compile(r"^\s*<untrusted_content>\s*|\s*</untrusted_content>\s*$")
+_LINKEDIN_STATUS_LINES = {
+    person.LINKEDIN_CHECKED: "LinkedIn: checked",
+    person.LINKEDIN_NO_KEY: "LinkedIn: not checked (no key)",
+}
+
+
+def _person_text(value: object, limit: int) -> str:
+    """Remote text as one inert, capped line: truncated, Markdown escaped,
+    then through the evidence formatter that defangs the engine's sentinels."""
+    text = " ".join(str(value or "").split())
+    if not text:
+        return ""
+    escaped = _escape_markdown_plain_text(_truncate(text, limit))
+    return _format_untrusted_evidence(escaped, len(escaped))
+
+
+def _person_date(value: object) -> str:
+    text = str(value or "").strip()
+    return text if _PERSON_DATE.match(text) else ""
+
+
+def _person_links(profile_artifact: dict, profile: dict, bio: dict) -> list[str]:
+    """Handles and sites the profile or bio page named, each made safe."""
+    links: list[str] = []
+    handles = profile_artifact.get("derived_handles")
+    for key, value in (handles if isinstance(handles, dict) else {}).items():
+        value = str(value or "").strip()
+        if not value:
+            continue
+        if value.lower().startswith(("http://", "https://")):
+            links.append(_markdown_url_link(value))
+        elif key == "x":
+            links.append("X @" + _person_text(value.lstrip("@"), _PERSON_SHORT_CHARS))
+        elif key == "github":
+            links.append("GitHub " + _person_text(value, _PERSON_SHORT_CHARS))
+        else:
+            links.append(_person_text(f"{key} {value}", _PERSON_SHORT_CHARS))
+    for url in [*(bio.get("links") or []), *(profile.get("websites") or [])]:
+        link = _markdown_url_link(url) if isinstance(url, str) else ""
+        if link and link not in links:
+            links.append(link)
+    return [link for link in links if link][:_PERSON_LINKS_SHOWN]
+
+
+def _person_profile_block(report: schema.Report) -> list[str]:
+    """What a person run's own lanes found, printed before the ranked evidence.
+
+    Present only when the run carries the ``person_profile`` artifact. Every
+    field that came from LinkedIn, the employer's site or a post is remote
+    text: each goes through ``_person_text`` with its own cap, and each URL
+    through ``_markdown_url_link``. The LinkedIn line names the one status the
+    run reached; only "checked" makes an in-window post count of zero real.
+    Older posts are listed here and never join the ranked evidence.
+    """
+    profile_artifact = (report.artifacts or {}).get("person_profile")
+    if not isinstance(profile_artifact, dict):
+        return []
+    profile = profile_artifact.get("profile") if isinstance(profile_artifact.get("profile"), dict) else {}
+    bio = profile_artifact.get("bio") if isinstance(profile_artifact.get("bio"), dict) else {}
+    out = ["## Person Profile", ""]
+
+    basis = []
+    # The profile URL is an anchor too, but the match basis below already says
+    # how it was found; listing it again only repeats it.
+    anchors = [
+        _person_text(a, _PERSON_SHORT_CHARS) for a in profile_artifact.get("anchors") or []
+        if not str(a).lower().startswith(("http://", "https://"))
+    ]
+    if any(anchors):
+        basis.append("results kept only when they name " + ", ".join(a for a in anchors if a))
+    # How the LinkedIn URL was found (supplied, or looked up and verified)
+    # is in match_basis; a looked-up URL was not given by the user.
+    basis.extend(
+        text for text in (
+            _person_text(b, _PERSON_HEADLINE_CHARS) for b in profile_artifact.get("match_basis") or []
+        ) if text
+    )
+    if profile_artifact.get("identity_weak") or not basis:
+        line = (
+            "- Identity: uncertain. Nothing beyond the name ties these results to this "
+            "person; adding an employer (`--employer`) or a LinkedIn URL (`--linkedin`) "
+            "would sharpen it."
+        )
+        if basis:
+            line += " Partial basis: " + "; ".join(basis) + "."
+        out.append(line)
+    else:
+        out.append("- Identity basis: " + "; ".join(basis) + ".")
+
+    roles = [role for role in profile.get("current_roles") or [] if isinstance(role, dict)]
+    for role in roles[:_PERSON_ROLES_SHOWN]:
+        title = _person_text(role.get("title"), _PERSON_SHORT_CHARS)
+        company = _person_text(role.get("company"), _PERSON_SHORT_CHARS)
+        text = " at ".join(part for part in (title, company) if part)
+        if text:
+            start = _person_date(role.get("start_date"))
+            out.append(f"- Current role: {text}{f', since {start}' if start else ''} (LinkedIn)")
+    headline = _person_text(profile.get("headline"), _PERSON_HEADLINE_CHARS)
+    if headline:
+        out.append(f"- LinkedIn headline: {headline}")
+
+    # The bio arrives fenced. The fence is dropped rather than copied or
+    # doubled; the text inside is made inert like every other remote field.
+    bio_text = _person_text(
+        _PERSON_BIO_FENCE.sub("", str(bio.get("bio") or "")), _PERSON_BIO_CHARS
+    )
+    if bio_text:
+        source = _markdown_url_link(str(bio.get("url") or ""))
+        out.append(f"- Bio: {bio_text}" + (f" (source: {source})" if source else ""))
+
+    links = _person_links(profile_artifact, profile, bio)
+    if links:
+        out.append(
+            "- Links found on the profile or bio page, not confirmed as this person's: "
+            + ", ".join(links)
+        )
+
+    status = profile_artifact.get("linkedin_status") or person.LINKEDIN_NO_KEY
+    checked = status == person.LINKEDIN_CHECKED
+    line = "- " + _LINKEDIN_STATUS_LINES.get(status, f"LinkedIn: {_person_text(status, 40)}")
+    if not checked:
+        line += "; LinkedIn activity unknown"
+    mismatch = _person_text(profile_artifact.get("linkedin_mismatch"), _PERSON_HEADLINE_CHARS)
+    if mismatch:
+        line += f" ({mismatch})"
+    if profile_artifact.get("timed_out"):
+        line += ". The person lookups timed out before finishing, so some were not fully checked"
+    out.append(line + ".")
+
+    first_party = int(profile_artifact.get("first_party_in_window") or 0)
+    if checked and profile_artifact.get("posts_read"):
+        out.append(
+            f"- LinkedIn posts in the window: {int(profile_artifact.get('in_window_posts') or 0):,}. "
+            f"First-party items in the window (LinkedIn, resolved X and GitHub): {first_party:,}."
+        )
+    elif checked and int(profile_artifact.get("in_window_posts") or 0):
+        out.append(
+            f"- LinkedIn posts in the window: at least {int(profile_artifact.get('in_window_posts') or 0):,}, "
+            "the posts read did not finish. "
+            f"First-party items in the window (LinkedIn, resolved X and GitHub): {first_party:,}."
+        )
+    elif checked:
+        out.append(
+            "- LinkedIn posts in the window: unknown, the posts read did not finish. "
+            f"First-party items in the window (resolved X and GitHub): {first_party:,}."
+        )
+    else:
+        out.append(
+            "- LinkedIn posts in the window: unknown, LinkedIn was not read. "
+            f"First-party items in the window (resolved X and GitHub): {first_party:,}."
+        )
+
+    older = [post for post in profile_artifact.get("older_posts") or [] if isinstance(post, dict)]
+    if older and first_party < _PERSON_THIN_WINDOW:
+        out.append(
+            f"- Older activity on LinkedIn, from before this window opened on {report.range_from} "
+            "and not part of this window's findings:"
+        )
+        for post in older[:_PERSON_OLDER_SHOWN]:
+            parts = [
+                (_person_date(post.get("date")) or "undated")
+                + (" (reshare)" if post.get("is_reshare") else "")
+            ]
+            text = _person_text(post.get("text"), _PERSON_POST_CHARS)
+            link = _markdown_url_link(str(post.get("url") or ""))
+            parts.extend(part for part in (text, link) if part)
+            out.append("  - " + " | ".join(parts))
+
+    counts = profile_artifact.get("dropped_counts")
+    dropped = {
+        str(source): count
+        for source, count in (counts if isinstance(counts, dict) else {}).items()
+        if isinstance(count, int) and not isinstance(count, bool) and count > 0
+    }
+    total = sum(dropped.values())
+    if total:
+        breakdown = ", ".join(
+            f"{_source_label(source)} {count:,}"
+            for source, count in sorted(dropped.items(), key=lambda kv: (-kv[1], kv[0]))
+        )
+        out.append(
+            f"- Dropped as namesakes: {total:,} item{'s' if total != 1 else ''} that named "
+            f"someone with this name but matched none of this person's anchors ({breakdown})."
+        )
+    return out
 
 
 def _jobs_digest(report: schema.Report) -> dict | None:
@@ -3325,6 +3561,13 @@ _FOOTER_SOURCES: list[tuple[str, str, str, str, list[tuple[str, str]]]] = [
         [("likes", "likes"), ("comments", "comments")],
     ),
     (
+        "linkedin_profile",
+        "👔",
+        "LinkedIn (their posts)",
+        "post",
+        [("likes", "likes"), ("comments", "comments")],
+    ),
+    (
         "github",
         "🐙",
         "GitHub",
@@ -3978,6 +4221,8 @@ def _render_emoji_footer(
     freshness_warning = _assess_data_freshness(report)
     freshness_line = f"🕒 {freshness_warning}" if freshness_warning else None
     raw_line = f"📎 Raw results saved to {save_path}" if save_path else None
+    # Proxy mode only: what the API key's metered proxy charged this run.
+    proxy_line = proxy.footer_line()
 
     body: list[str] = []
     body.extend(source_lines)
@@ -3989,6 +4234,8 @@ def _render_emoji_footer(
     # its own emptiness.
     if freshness_line and (body or raw_line):
         body.append(freshness_line)
+    if proxy_line:
+        body.append(proxy_line)
     if raw_line:
         body.append(raw_line)
 
@@ -4138,6 +4385,7 @@ ENGAGEMENT_DISPLAY: dict[str, list[tuple[str, str]]] = {
     "bluesky": [("likes", "likes"), ("reposts", "rt"), ("replies", "re")],
     "truthsocial": [("likes", "likes"), ("reposts", "rt"), ("replies", "re")],
     "linkedin": [("likes", "likes"), ("comments", "cmt")],
+    "linkedin_profile": [("likes", "likes"), ("comments", "cmt")],
     "polymarket": [],
     "github": [
         ("stars", "stars"),

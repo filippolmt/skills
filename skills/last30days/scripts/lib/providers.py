@@ -7,10 +7,12 @@ import json
 import os
 import re
 import sys
+import time
+from threading import Event
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
-from . import env, http, schema
+from . import env, http, proxy, schema
 
 GEMINI_FLASH_LITE = "gemini-3.1-flash-lite"
 GEMINI_PRO = "gemini-3.1-pro-preview"
@@ -125,6 +127,12 @@ class ReasoningClient:
         self._usage_prompt_tokens = 0
         self._usage_completion_tokens = 0
         self._usage_complete = True
+        self._request_deadline: float | None = None
+        self._request_cancel: Event | None = None
+
+    def set_request_budget(self, deadline: float, cancel: Event | None) -> None:
+        self._request_deadline = deadline
+        self._request_cancel = cancel
 
     @staticmethod
     def _valid_token_count(value: Any) -> bool:
@@ -177,6 +185,14 @@ class ReasoningClient:
         self._usage_complete = False
 
     def _post(self, url: str, payload: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
+        if self._request_deadline is not None:
+            now = time.monotonic()
+            if now >= self._request_deadline or (
+                self._request_cancel is not None and self._request_cancel.is_set()
+            ):
+                raise http.DeadlineExceeded()
+            kwargs["deadline_monotonic"] = min(self._request_deadline, now + kwargs["timeout"])
+            kwargs["cancel"] = self._request_cancel
         try:
             return http.post(url, payload, on_retry=self._mark_usage_incomplete, **kwargs)
         except Exception:
@@ -465,14 +481,19 @@ def resolve_runtime(config: dict[str, Any], depth: str) -> tuple[schema.Provider
     xai_key = config.get("XAI_API_KEY")
 
     if provider_name == "auto":
+        # An xAI lane served by the API-key proxy ranks after every provider
+        # the user holds a key for.
+        xai_proxied = xai_key == proxy.SENTINEL
         if google_key:
             provider_name = "gemini"
         elif openai_token and config.get("OPENAI_AUTH_STATUS") == env.AUTH_STATUS_OK:
             provider_name = "openai"
-        elif xai_key:
+        elif xai_key and not xai_proxied:
             provider_name = "xai"
         elif config.get("OPENROUTER_API_KEY"):
             provider_name = "openrouter"
+        elif xai_key:
+            provider_name = "xai"
         else:
             return schema.ProviderRuntime(
                 reasoning_provider="local",
