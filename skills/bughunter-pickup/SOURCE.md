@@ -1,5 +1,5 @@
 # Source
 
-- **Source**: https://github.com/elementalsouls/Claude-BugHunter/tree/0e70a021e59d6875004e7a563f8511aca2ba3bc1/commands/pickup.md
+- **Source**: https://github.com/elementalsouls/Claude-BugHunter/tree/5b7e76eb8e2b2a2793686c74ad53b7b57bdee6c2/commands/pickup.md
 - **Catalog entry**: `bughunter`
 - **Transformation**: Converted command to a deterministic namespaced Agent Skill; relative links repointed at sibling skills or the upstream file.
