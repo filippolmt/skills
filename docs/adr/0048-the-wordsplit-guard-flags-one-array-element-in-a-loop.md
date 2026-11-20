@@ -30,6 +30,7 @@ assignment earlier in the command does not exempt it. A subscript of `@` or
 `*`, or a slice holding `,`, is an array and stays allowed. Only the outer
 expansion of a `${…}` group is read: an expansion in its subscript or after
 its flags is never a loop word, so `${=arr[$i]}` and `${(f)arr[$i]}` pass.
+The same holds for an unbraced subscript: `$arr[$i,$j]` is a slice, not `$i`.
 
 ## Why
 

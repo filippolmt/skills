@@ -37,9 +37,23 @@ const WORD = /(?:\$\{[^}]*\}|[^\s])+/g;
 // `${=v}` and `${(f)v}` (explicit splits), `${v[@]}`, `$v[*]` and a slice
 // `${v[1,2]}` (an array expansion yields several words too). One element,
 // `$v[i]` or `${v[$i]}`, is one word: still a hit (docs/adr/0048).
-const ELEMENT = '(\\[(?![@*]\\])[^\\],]*\\])?';
-const NONSPLIT_EXPANSION = new RegExp('\\$(?:\\{([A-Za-z_]\\w*)' + ELEMENT + '(?:[:#%/][^}]*)?\\}|([A-Za-z_]\\w*)' +
-  ELEMENT + '(?![\\w[]))');
+// shortcut: a subscript is read up to its first `]` and refused at any `,`; a nested
+// `]` or a `,` inside an arithmetic expression needs a parser if a false hit shows up.
+const ELEMENT = '(\\[(?![@*]\\])[^\\],]*\\])';
+const NONSPLIT_EXPANSION = new RegExp('\\$(?:\\{([A-Za-z_]\\w*)' + ELEMENT + '?(?:[:#%/][^}]*)?\\}|([A-Za-z_]\\w*)' +
+  '(?:' + ELEMENT + '|(?![\\w[])))');
+// A `${…}` group, or `$name[…]` with its subscript: each is read as one unit.
+const GROUP = /\$\{[^}]*\}|\$[A-Za-z_]\w*\[[^\]]*\]/g;
+
+// The first non-splitting expansion of a loop word, read at the top level only:
+// a group that is not one itself (`${=arr[$i]}`, `$arr[$i,$j]`) is masked, so
+// the `$i` in its subscript is never taken for the loop word (#773).
+function outerExpansion(word) {
+  return NONSPLIT_EXPANSION.exec(word.replace(GROUP, (group) => {
+    const own = NONSPLIT_EXPANSION.exec(group);
+    return own && own.index === 0 ? group : '_';
+  }));
+}
 // Text around the expansion that makes the word harmless — see
 // docs/adr/0005-what-the-wordsplit-guard-flags.md. A glob metacharacter yields
 // several words whatever `SH_WORD_SPLIT` says (`$D/*.log`), and a path
@@ -100,11 +114,8 @@ while ((header = FOR_HEADER.exec(words))) {
   FOR_HEADER.lastIndex = header.index + 3;
   if (!inCommandPosition(header.index)) continue;
   const found = (withoutSubstitutions(header[2]).match(WORD) || [])
-    .filter((word) => !HARMLESS_AROUND.test(word.replace(/\$\{[^}]*\}|\$[A-Za-z_]\w*\[[^\]]*\]/g, '')))
-    // Only a `${…}` group that is itself a non-splitting form counts: a `$i` in
-    // its subscript (`${=arr[$i]}`) is not a loop word, the flag splits the whole.
-    .map((word) => NONSPLIT_EXPANSION.exec(word.replace(/\$\{[^}]*\}/g,
-      (group) => (NONSPLIT_EXPANSION.exec(group) || {}).index === 0 ? group : '_')))
+    .filter((word) => !HARMLESS_AROUND.test(word.replace(GROUP, '')))
+    .map(outerExpansion)
     .find(Boolean);
   if (!found) continue;
   const name = found[1] || found[3];

@@ -42,6 +42,8 @@ allowed('for x in $arr[*]; do echo $x; done');         // the whole array
 allowed('for x in $arr[@]; do echo $x; done');
 allowed('for x in ${arr[1,2]}; do echo $x; done');     // a slice yields several words
 allowed('for x in $arr[1,-1]; do echo $x; done');
+allowed('for x in $arr[$i,$j]; do echo $x; done');      // a slice's subscript is not a loop word either
+assert.ok(/`\$arr\[\$i\]` stays one word/.test(denied('for x in $arr[$i]x; do echo $x; done')), 'names the element, not `$i`');
 allowed('for x in "${a[@]}"; do echo $x; done');       // quoted array
 allowed('for x in ${a[@]}; do echo $x; done');         // array, splits regardless
 allowed('a=(uno due tre); for x in $a; do echo $x; done'); // array assigned here
@@ -128,6 +130,9 @@ for (const wrap of [s => s, s => 'out=$(' + s + ')', s => 'echo "$(' + s + ')"',
   denied(wrap('a=(x y); unset a; a="x y"; for x in $a; do echo "$x"; done'));
   denied(wrap('a=(x y); a="x y"; for x in $a; do echo "$x"; done'));
   denied(wrap('for x in $v; do echo "$x"; done'));
+  denied(wrap('arr=(x "y z"); for x in ${arr[$i]}; do echo "$x"; done'));
+  allowed(wrap('for x in ${=arr[$i]}; do echo "$x"; done'));
+  allowed(wrap('for x in $arr[$i,$j]; do echo "$x"; done'));
   allowed(wrap('a=(x y); for x in $a; do echo "$x"; done'));
   allowed(wrap('for x in $(printf "%s\\n" $v); do echo "$x"; done'));
   allowed(wrap('for x in $(echo $(echo $(printf "%s\\n" $v))); do :; done'));
