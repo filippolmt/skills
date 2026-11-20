@@ -74,7 +74,8 @@ These three came out of a differential test — 39 `for`-list shapes, each execu
 in zsh 5.9 to count real iterations, compared against the guard's verdict. The
 other six mismatches it surfaced were the metric's fault, not the guard's:
 `"$v"`, `${(f)v}`, `${(s.,.)v}` and `$arr[1]` iterate once because that is what
-they ask for, and `for x in "$v" $w` or `$v $v` iterate more than once while
+they ask for (`$arr[1]` is flagged since
+[ADR-0048](0048-the-wordsplit-guard-flags-one-array-element-in-a-loop.md)), and `for x in "$v" $w` or `$v $v` iterate more than once while
 still hiding an unsplit expansion. Iteration count alone does not decide a hit;
 intent does.
 - Widening the exemption again needs the same evidence: a replay showing the

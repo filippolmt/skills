@@ -27,6 +27,21 @@ allowed('for f in $(git diff --name-only); do echo $f; done'); // substitution s
 allowed('for f in `ls`; do echo $f; done');
 allowed('for x in ${=v}; do echo $x; done');           // explicit IFS split
 allowed('for x in ${(f)v}; do echo $x; done');         // explicit per-line split
+// An expansion inside a `${…}` subscript is not a loop word: the split flag
+// applies to the whole group (#773).
+allowed('for x in ${=arr[$i]}; do echo $x; done');
+allowed('for x in ${(f)arr[$i]}; do echo $x; done');
+denied('for x in ${v:-$d}; do echo $x; done');         // the outer group still counts
+denied('for x in ${v}${=w[$i]}; do echo $x; done');
+// One element is one word in zsh; bash splits `${arr[$i]}` (docs/adr/0048).
+assert.ok(/`\$\{=arr\[\$i\]\}`/.test(denied('for x in $arr[$i]; do echo $x; done')), 'names the element split');
+denied('for x in ${arr[$i]}; do echo $x; done');
+denied('for x in $arr[2]; do echo $x; done');
+denied('deps=("" "2 3"); i=2; for d in ${deps[$i]}; do echo $d; done'); // an array's element is still one word
+allowed('for x in $arr[*]; do echo $x; done');         // the whole array
+allowed('for x in $arr[@]; do echo $x; done');
+allowed('for x in ${arr[1,2]}; do echo $x; done');     // a slice yields several words
+allowed('for x in $arr[1,-1]; do echo $x; done');
 allowed('for x in "${a[@]}"; do echo $x; done');       // quoted array
 allowed('for x in ${a[@]}; do echo $x; done');         // array, splits regardless
 allowed('a=(uno due tre); for x in $a; do echo $x; done'); // array assigned here

@@ -34,9 +34,12 @@ const WORD = /(?:\$\{[^}]*\}|[^\s])+/g;
 // A non-splitting expansion: `$var`, `${var}`, or a braced form carrying a
 // modifier (`${v:-a b c}`, `${v#p}`, `${v%x}`, `${v/a/b}`). Excluded by
 // construction: `$1`, `$@`, `$*`, `$#` (positionals: correct, or split anyway),
-// `${=v}` and `${(f)v}` (explicit splits), `${v[@]}` (an array expansion yields
-// several words too).
-const NONSPLIT_EXPANSION = /\$(?:\{([A-Za-z_]\w*)(?:[:#%/][^}]*)?\}|([A-Za-z_]\w*)(?![\w[]))/;
+// `${=v}` and `${(f)v}` (explicit splits), `${v[@]}`, `$v[*]` and a slice
+// `${v[1,2]}` (an array expansion yields several words too). One element,
+// `$v[i]` or `${v[$i]}`, is one word: still a hit (docs/adr/0048).
+const ELEMENT = '(\\[(?![@*]\\])[^\\],]*\\])?';
+const NONSPLIT_EXPANSION = new RegExp('\\$(?:\\{([A-Za-z_]\\w*)' + ELEMENT + '(?:[:#%/][^}]*)?\\}|([A-Za-z_]\\w*)' +
+  ELEMENT + '(?![\\w[]))');
 // Text around the expansion that makes the word harmless — see
 // docs/adr/0005-what-the-wordsplit-guard-flags.md. A glob metacharacter yields
 // several words whatever `SH_WORD_SPLIT` says (`$D/*.log`), and a path
@@ -97,11 +100,15 @@ while ((header = FOR_HEADER.exec(words))) {
   FOR_HEADER.lastIndex = header.index + 3;
   if (!inCommandPosition(header.index)) continue;
   const found = (withoutSubstitutions(header[2]).match(WORD) || [])
-    .filter((word) => !HARMLESS_AROUND.test(word.replace(/\$\{[^}]*\}/g, '')))
-    .map((word) => NONSPLIT_EXPANSION.exec(word))
+    .filter((word) => !HARMLESS_AROUND.test(word.replace(/\$\{[^}]*\}|\$[A-Za-z_]\w*\[[^\]]*\]/g, '')))
+    // Only a `${…}` group that is itself a non-splitting form counts: a `$i` in
+    // its subscript (`${=arr[$i]}`) is not a loop word, the flag splits the whole.
+    .map((word) => NONSPLIT_EXPANSION.exec(word.replace(/\$\{[^}]*\}/g,
+      (group) => (NONSPLIT_EXPANSION.exec(group) || {}).index === 0 ? group : '_')))
     .find(Boolean);
   if (!found) continue;
-  const name = found[1] || found[2];
+  const name = found[1] || found[3];
+  const subscript = found[2] || found[4] || '';
   // `a=(x y); for i in $a` is fine: an array expands to several words even with
   // SH_WORD_SPLIT off. Only what was assigned BEFORE this loop can be one.
   // shortcut: track textual assignments/unsets, not branch or subshell scope; use a parser if scope-related false hits appear.
@@ -110,8 +117,9 @@ while ((header = FOR_HEADER.exec(words))) {
     '(?:[A-Za-z_]\\w*=[^\\s;&|]*\\s+)*' + name + '=(\\()?|' +
     '(?:^|[;&|(\\n])\\s*unset\\s+(?:[^\\s;&|]+\\s+)*' + name + '(?=[\\s;&|]|$)', 'g');
   const last = [...withoutSubstitutions(words.slice(0, header.index), true).matchAll(changes)].pop();
-  if (last && last[1]) continue;
-  hit = { expansion: found[0], name: name, header: header[0].trim() };
+  // An element of an array is one word, however the array was assigned.
+  if (last && last[1] && !subscript) continue;
+  hit = { expansion: found[0], name: name + subscript, header: header[0].trim() };
   break;
 }
 
