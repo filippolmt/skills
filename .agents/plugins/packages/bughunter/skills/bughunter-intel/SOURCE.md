@@ -1,5 +1,5 @@
 # Source
 
-- **Source**: https://github.com/elementalsouls/Claude-BugHunter/tree/5b7e76eb8e2b2a2793686c74ad53b7b57bdee6c2/commands/intel.md
+- **Source**: https://github.com/elementalsouls/Claude-BugHunter/tree/c5d5c38123bf01f1223da3225bd3d28a930d028f/commands/intel.md
 - **Catalog entry**: `bughunter`
 - **Transformation**: Converted command to a deterministic namespaced Agent Skill; relative links repointed at sibling skills or the upstream file.
