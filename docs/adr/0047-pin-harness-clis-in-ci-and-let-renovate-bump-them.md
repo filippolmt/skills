@@ -4,6 +4,10 @@ status: accepted
 
 # Pin the harness CLIs in CI and let Renovate bump them
 
+> **Amended by [ADR-0049](0049-renovate-automerges-harness-cli-bumps-on-every-check.md).**
+> Minor and patch bumps now automerge through Renovate itself, which waits for
+> every check on the branch, not only the required ones.
+
 CI tests the projections with three harness CLIs, each installed globally with
 npm in a workflow: Claude Code (`validate.yml`, `regenerate.yml`), pi
 (`pi-integration.yml`) and Codex (`codex-integration.yml`). Claude Code was

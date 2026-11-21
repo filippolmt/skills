@@ -73,6 +73,23 @@
       "automergeStrategy": "squash"
     },
     {
+      "description": "Harness CLIs pinned in workflows (ADR-0049): Renovate merges itself, so every check on the branch must pass, including the path-filtered pi and Codex smokes that branch protection cannot require.",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchDatasources": [
+        "npm"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash",
+      "platformAutomerge": false
+    },
+    {
       "description": "microsoft/playwright-cli keeps 2020 tags from a retired project (v0.4.3 to v0.180.0) that hold no skill and outrank the current v0.1.x series (ADR-0040).",
       "matchManagers": [
         "custom.regex"
