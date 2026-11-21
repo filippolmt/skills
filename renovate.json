@@ -101,6 +101,16 @@
         "microsoft/playwright-cli"
       ],
       "allowedVersions": "!/^v0\\.(4\\.[34]|5\\.[0-2]|15[0-2]\\.0|16[12]\\.0|162\\.1|17[01]\\.0|180\\.0)$/"
+    },
+    {
+      "description": "proximo follows main on purpose although upstream publishes tags (ADR-0050). Inert for Renovate, since no entry pins proximo to a tag; it keeps check-branch-pins from reporting the branch pin. Remove it if proximo goes back to a tag.",
+      "matchDatasources": [
+        "github-tags"
+      ],
+      "matchPackageNames": [
+        "filippolmt/proximo"
+      ],
+      "allowedVersions": "!/.*/"
     }
   ]
 }
