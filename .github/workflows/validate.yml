@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The pull request's merge commit plus its first parent, the base it was built on.
+          fetch-depth: 2
       - uses: actions/setup-node@v7
         with:
           node-version: 26
@@ -35,14 +38,13 @@ jobs:
       - name: Refuse a pinned sha moved off its history
         # The step above lets a vanished path through for regeneration to prune; a
         # sha behind, diverged or unrelated would prune what upstream never removed
-        # (ADR-0041). Only a pull request has a base to compare against.
+        # (ADR-0041). Only a pull request has a base to compare against: HEAD^1, the
+        # base its merge commit was built on. A base fetched now would flag every sha
+        # bumped on main since the event as moved behind.
         if: github.event_name == 'pull_request'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          BASE_REF: ${{ github.base_ref }}
-        run: |
-          git fetch --depth=1 origin "$BASE_REF"
-          node scripts/check-sha-history.js FETCH_HEAD
+        run: node scripts/check-sha-history.js HEAD^1
       - name: Check external entry shapes and Renovate regex coverage
         run: node scripts/check-renovate.js
       - name: Check every external repo is classified in ADR-0014

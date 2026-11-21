@@ -27,7 +27,11 @@ external entry whose `sha` changed in the same repo, it asks GitHub to compare
   `unrelated`. GitHub answers 404 both when the shas share no merge base and when
   a `sha` does not exist; `--verify-paths` names a missing `sha` too.
 
-`validate` runs it on pull requests against the fetched base branch. `validate` is
+`validate` runs it on pull requests against `HEAD^1`, the base the pull request's
+merge commit was built on. A base branch fetched later would race the job: a sha
+bumped on `main` in between reads as moved behind on a pull request that never
+touched it. `validate.sh` uses the merge base with `origin/main` for the same
+reason. `validate` is
 a required check, so a failure stops the automerge, and a human then decides with
 `/add-external-skill update`. New and removed entries have no move to check. An
 entry now pinned in another repo has no history to compare either: the script
