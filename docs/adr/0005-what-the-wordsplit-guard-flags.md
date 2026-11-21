@@ -4,6 +4,10 @@ status: accepted
 
 # What the wordsplit guard flags: a bare expansion, measured against real traffic
 
+> **Amended by [ADR-0048](0048-the-wordsplit-guard-flags-one-array-element-in-a-loop.md).**
+> One array element (`$arr[1]`, `${arr[$i]}`) is now flagged: its `[` is a
+> subscript in zsh, not a glob character.
+
 `zsh-wordsplit-guard` denies `for x in $var` because zsh does not word-split a
 parameter expansion, so the body runs once over the whole string. The hard part
 was never the mechanism — it was drawing the line around **which** expansions

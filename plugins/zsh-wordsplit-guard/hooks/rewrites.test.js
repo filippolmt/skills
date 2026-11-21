@@ -39,6 +39,13 @@ const CASES = [
     bash: 'for x in $v; do echo "<$x>"; done', zsh: 'for x in ${=v}; do echo "<$x>"; done' },
   { hook: 'guard', named: '${(f)v}', setup: 'v=$(printf "a b\\nc")',
     bash: 'IFS=$\'\\n\'; for x in $v; do echo "<$x>"; done', zsh: 'for x in ${(f)v}; do echo "<$x>"; done' },
+  // One element (docs/adr/0048): zsh counts from 1, bash from 0.
+  { hook: 'guard', named: '${=arr[$i]}', setup: { bash: 'arr=(a "2 3"); i=1', zsh: 'arr=(a "2 3"); i=2' },
+    bash: 'for x in ${arr[$i]}; do echo "<$x>"; done', zsh: 'for x in ${=arr[$i]}; do echo "<$x>"; done' },
+  { hook: 'guard', allowed: true, setup: { bash: 'arr=(a "2 3")', zsh: 'arr=(a "2 3")' },
+    bash: 'for x in "${arr[@]}"; do echo "<$x>"; done', zsh: 'for x in $arr[*]; do echo "<$x>"; done' },
+  { hook: 'guard', allowed: true, setup: { bash: 'arr=(a "2 3" b)', zsh: 'arr=(a "2 3" b)' },
+    bash: 'for x in "${arr[@]:0:2}"; do echo "<$x>"; done', zsh: 'for x in ${arr[1,2]}; do echo "<$x>"; done' },
   { hook: 'guard', named: '${=c}',
     bash: 'for c in "a x" "b x y"; do printf "<%s>" $c; echo; done',
     zsh: 'for c in "a x" "b x y"; do printf "<%s>" ${=c}; echo; done' },

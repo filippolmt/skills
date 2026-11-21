@@ -1,7 +1,7 @@
 {
   "name": "zsh-wordsplit-guard",
   "description": "Catches commands zsh runs differently from bash: expansions zsh leaves unsplit (`for x in $var`, a stored `$DC build`), words it expands where bash keeps them literal (`=word`, a glob in `--flag=*.md`, a URL query or a path matching nothing, `$name:` modifiers, `(…)` in `${v/pattern/…}`), bash-only `${!name}` and `${v@Q}`, and assignments to `path` or `status`. Literal words are rewritten, others denied; rules shown at session start. Split rules opt out with `[nosplit]` or ALLOW_ZSH_NOSPLIT=1.",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "author": {
     "name": "Filippo Merante Caparrotta"
   }
