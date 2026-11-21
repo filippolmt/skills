@@ -3263,7 +3263,7 @@ def _propagate_config_to_environ(config: dict[str, object]) -> None:
     XAI_BASE_URL overrides are silently ignored. This is a no-op for
     keys that are already set in process env.
     """
-    for key in ("OPENAI_BASE_URL", "XAI_BASE_URL", "OPENROUTER_BASE_URL"):
+    for key in ("OPENAI_BASE_URL", "XAI_BASE_URL", "OPENROUTER_BASE_URL", "SCRAPECREATORS_BASE_URL"):
         val = config.get(key)
         if val and not os.environ.get(key):
             os.environ[key] = val
@@ -4404,9 +4404,10 @@ def _main(
 
     if args.preflight:
         requested_sources = resolve_requested_sources(args.search, config)
-        diag = pipeline.diagnose(config, requested_sources, safe=True)
+        preflight_config = pipeline.with_plan_source_omissions(config, external_plan)
+        diag = pipeline.diagnose(preflight_config, requested_sources, safe=True)
         preflight = permission_preflight.build(
-            config,
+            preflight_config,
             diag,
             planned_save_dir=args.save_dir,
             report_on_save_dir=(
@@ -4933,7 +4934,8 @@ def _main(
             return 2
     if args.diagnose:
         diag = pipeline.diagnose(
-            config, requested_sources, safe=True,
+            pipeline.with_plan_source_omissions(config, external_plan),
+            requested_sources, safe=True,
             x_envelope=x_posts_envelope is not None,
         )
         if args.include_research_backend:
@@ -5020,7 +5022,8 @@ def _main(
         return law7_exit
 
     diag = pipeline.diagnose(
-        config, requested_sources, safe=args.mock,
+        pipeline.with_plan_source_omissions(config, external_plan),
+        requested_sources, safe=args.mock,
         x_envelope=x_posts_envelope is not None,
         probe_x=(
             (external_plan is None or pipeline._external_plan_names_source(external_plan, "x"))
@@ -5434,6 +5437,8 @@ def _main(
                     topic, comp_count, config, lookback_days=args.lookback_days,
                     is_company=(
                         not main_company.get("company_via_person")
+                        and main_company.get("company_peer_discovery")
+                        != company_resolve.COMPANY_PEER_KEYWORD
                         and bool(
                             main_company.get("company")
                             or config.get("_company_signal")
