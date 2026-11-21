@@ -1,6 +1,6 @@
 {
   "name": "database-optimizer",
-  "version": "0.4.20+catalog.36f3fe8052da.4297482595bf",
+  "version": "0.4.21+catalog.4b94d98605ba.c7eece9b2629",
   "description": "Optimizes database queries and improves performance across PostgreSQL and MySQL systems.",
   "author": {
     "name": "jeffallan",
