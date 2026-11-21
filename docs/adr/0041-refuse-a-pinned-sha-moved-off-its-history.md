@@ -30,9 +30,9 @@ external entry whose `sha` changed in the same repo, it asks GitHub to compare
 `validate` runs it on pull requests against `HEAD^1`, the base the pull request's
 merge commit was built on. A base branch fetched later would race the job: a sha
 bumped on `main` in between reads as moved behind on a pull request that never
-touched it. `validate.sh` uses the merge base with `origin/main` for the same
-reason. `validate` is
-a required check, so a failure stops the automerge, and a human then decides with
+touched it. Locally, `validate.sh` compares against the merge base with
+`origin/main`, so a branch behind `main` is not flagged either. `validate` is a
+required check, so a failure stops the automerge, and a human then decides with
 `/add-external-skill update`. New and removed entries have no move to check. An
 entry now pinned in another repo has no history to compare either: the script
 names it in a note, for whoever made that edit to check by hand.
