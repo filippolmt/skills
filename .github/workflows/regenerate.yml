@@ -117,7 +117,7 @@ jobs:
       - name: Install Claude Code CLI
         # run-tests.sh runs mod tests under `claude plugin test`.
         if: steps.diff.outputs.changed == 'true'
-        run: npm install -g @anthropic-ai/claude-code@2.1.328
+        run: npm install -g @anthropic-ai/claude-code@2.1.330
       - name: Validate before proposing
         if: steps.diff.outputs.changed == 'true'
         run: |
