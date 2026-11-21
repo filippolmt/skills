@@ -49,6 +49,8 @@ fi
   write('.gitignore', 'secret.txt\n');
   git('add', '.');
   git('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.test', 'commit', '-qm', 'fixture');
+  // validate.sh compares sha history against the merge base with origin/main.
+  git('update-ref', 'refs/remotes/origin/main', 'HEAD');
   const trace = path.join(temp, 'trace');
   const state = () => ({
     status: git('status', '--porcelain=v1', '-z'),

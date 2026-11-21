@@ -10,7 +10,8 @@
 // so a human decides.
 //
 // Usage: node scripts/check-sha-history.js <base-ref>
-//   e.g. origin/main locally; FETCH_HEAD after fetching the PR base in CI.
+//   e.g. "$(git merge-base HEAD origin/main)" locally; HEAD^1, the merge commit's
+//   base, in CI.
 // Exit 0: every moved sha is ahead or identical; 1: one is behind, diverged or
 // unrelated (no merge base, or a sha that does not exist);
 // 2: the base cannot be read or the GitHub API fails.
