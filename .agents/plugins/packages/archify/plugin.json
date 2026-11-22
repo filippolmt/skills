@@ -1,6 +1,6 @@
 {
   "name": "archify",
-  "version": "3.2.0+catalog.208acba8d412.3f735f2044f3",
+  "version": "3.3.0+catalog.af3aaf3c3676.7bf0566d00d4",
   "description": "Create validated architecture, workflow, sequence, data-flow, lifecycle/state, ERD, class, tree, timeline, and waterfall diagrams as explorable standalone HTML with dark/light themes, motion, and image/SVG/WebM export, or a one-page explainer that answers a question with diagrams and charts. Accept plain-language requirements or pasted Mermaid input; inspect repository evidence when the diagram must reflect real code.",
   "author": {
     "name": "tt-a1i",
