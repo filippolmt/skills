@@ -54,7 +54,7 @@ if os.name == "nt":
 SCRIPT_DIR = Path(__file__).parent.resolve()
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from lib import company_resolve, competitors as competitors_mod, corpus, dates, discovery_handoff, env, fetch_memo, freshness, health, html_render, http, patents, permission_preflight, person, pipeline, proxy, reddit, reddit_arctic, reddit_discover, reddit_envelope, reddit_health, reddit_search, reddit_session, registers, render, report_checklist, schema, subproc, ui, web_search_keyless, x_envelope, yahoo_finance
+from lib import company_resolve, competitors as competitors_mod, corpus, dates, discovery_handoff, env, fetch_memo, freshness, health, html_render, http, patents, permission_preflight, person, pipeline, proxy, reddit, reddit_arctic, reddit_discover, reddit_envelope, reddit_health, reddit_search, reddit_session, registers, render, report_checklist, schema, shortform_envelope, subproc, ui, web_search_keyless, x_envelope, yahoo_finance
 from lib.private_files import replace_private_text
 
 atexit.register(subproc.cleanup_children)
@@ -970,6 +970,20 @@ def build_parser() -> argparse.ArgumentParser:
             "and the topic. At most 50 threads; single-topic runs only."
         ),
     )
+    parser.add_argument(
+        "--shortform-urls",
+        dest="shortform_urls",
+        metavar="PATH",
+        help=(
+            "Path to a last30days-shortform-urls/1 JSON envelope of TikTok and "
+            "Instagram post URLs and TikTok creator profile URLs the hosting "
+            "model found with its own web search ('-' reads stdin). Only each "
+            "entry's url is read; used only by the keyless TikTok/Instagram "
+            "lane (no ScrapeCreators key, or credits exhausted), which dates, "
+            "hydrates and topic-checks every post itself. At most 40 URLs; "
+            "single-topic runs only."
+        ),
+    )
     parser.add_argument("--web-backend", default="auto",
                         choices=["auto", "brave", "exa", "serper", "parallel", "parallel-mcp", "keyless", "none"],
                         help="Web search backend (default: auto; parallel-mcp explicitly opts into the "
@@ -1008,6 +1022,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-results", dest="max_results", type=int,
                         help="Override the final ranked-pool cap (pool_limit/rerank_limit) from the depth profile. "
                              "Use for high-volume topics where the default (deep=60) under-covers. See issue #716.")
+    parser.add_argument(
+        "--source",
+        dest="harvest_source",
+        default=None,
+        help="Transcript source for 'library harvest' (auto, all, claude, codex, antigravity, gemini, cursor)",
+    )
+    parser.add_argument(
+        "--since",
+        dest="harvest_since",
+        default=None,
+        help="Only harvest finished briefs on or after YYYY-MM-DD (for 'library harvest')",
+    )
+    parser.add_argument(
+        "--dry-run",
+        dest="dry_run",
+        action="store_true",
+        help="Preview 'library harvest' without writing files",
+    )
     parser.add_argument("--max-per-source", dest="max_per_source", type=int,
                         help="Override the per-stream cap (per_stream_limit) applied to each (source, subquery) before "
                              "pooling. Raising it increases unique-item yield when one source has many relevant items. "
@@ -3287,11 +3319,82 @@ SETUP_PASSTHROUGH_FLAGS = {
     "--github",
     "--github-start",
     "--github-poll",
+    "--install-hooks",
     "--openclaw",
     "--reddit-session",
     "--no-reddit-session",
     "--store-key",
+    "--uninstall-hooks",
 }
+
+INSTALL_HOOKS_FLAG = "--install-hooks"
+UNINSTALL_HOOKS_FLAG = "--uninstall-hooks"
+
+
+def _split_hook_flags(
+    extra_argv: list[str],
+) -> tuple[str | None, str | None, list[str]]:
+    """Pull optional-value ``--install-hooks [HOST]`` / ``--uninstall-hooks [HOST]``.
+
+    Returns ``(install_target, uninstall_target, remaining)``. Each target is
+    ``None`` when absent, ``""`` when passed bare (meaning all detected local
+    harnesses), or the explicit host string when supplied. Callers MUST check
+    ``is not None``, never truthiness.
+    """
+    install_target: str | None = None
+    uninstall_target: str | None = None
+    remaining: list[str] = []
+    i = 0
+    while i < len(extra_argv):
+        arg = extra_argv[i]
+        if arg in (INSTALL_HOOKS_FLAG, UNINSTALL_HOOKS_FLAG):
+            value = ""
+            if i + 1 < len(extra_argv) and not extra_argv[i + 1].startswith("-"):
+                value = extra_argv[i + 1]
+                i += 2
+            else:
+                i += 1
+            if arg == INSTALL_HOOKS_FLAG:
+                install_target = value
+            else:
+                uninstall_target = value
+            continue
+        if arg.startswith(INSTALL_HOOKS_FLAG + "="):
+            install_target = arg[len(INSTALL_HOOKS_FLAG) + 1 :]
+            i += 1
+            continue
+        if arg.startswith(UNINSTALL_HOOKS_FLAG + "="):
+            uninstall_target = arg[len(UNINSTALL_HOOKS_FLAG) + 1 :]
+            i += 1
+            continue
+        remaining.append(arg)
+        i += 1
+    return install_target, uninstall_target, remaining
+
+
+def _run_hook_setup(
+    install_target: str | None,
+    uninstall_target: str | None,
+) -> int:
+    from lib import hook_installer
+
+    if install_target is not None and uninstall_target is not None:
+        sys.stderr.write(
+            "[last30days] pass --install-hooks or --uninstall-hooks, not both.\n"
+        )
+        return 2
+    try:
+        # Bare --install-hooks / --uninstall-hooks uses "" -> "all", so dispatch
+        # checks `is not None` rather than string truthiness.
+        if install_target is not None:
+            result = hook_installer.install_hooks(install_target or "all")
+        else:
+            result = hook_installer.uninstall_hooks(uninstall_target or "all")
+    except ValueError as exc:
+        sys.stderr.write(f"[last30days] {exc}\n")
+        return 2
+    print(json.dumps(result, indent=2, sort_keys=True))
+    return 0
 
 STORE_KEY_FLAG = "--store-key"
 
@@ -3717,18 +3820,22 @@ def _envelope_digest(
     x_main: x_envelope.Envelope | None,
     comp_plan: dict[str, dict] | None,
     reddit_threads: reddit_envelope.Envelope | None = None,
+    shortform_urls: shortform_envelope.Envelope | None = None,
 ) -> str | None:
     """One digest binding the report cache to every host envelope of the run.
 
-    Without a --reddit-threads envelope this is the X digest unchanged; with
-    one, its file digest is folded in, so a different thread list never
-    replays a report built from another.
+    Without a --reddit-threads or --shortform-urls envelope this is the X
+    digest unchanged; with one, its file digest is folded in, so a different
+    thread or URL list never replays a report built from another.
     """
     x_digest = _x_envelope_digest(x_main, comp_plan)
-    if reddit_threads is None:
+    if reddit_threads is None and shortform_urls is None:
         return x_digest
     parts = [f"x:{x_digest}"] if x_digest else []
-    parts.append(f"reddit:{reddit_threads.sha256}")
+    if reddit_threads is not None:
+        parts.append(f"reddit:{reddit_threads.sha256}")
+    if shortform_urls is not None:
+        parts.append(f"shortform:{shortform_urls.sha256}")
     return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
 
 
@@ -3738,9 +3845,10 @@ def _validate_extra_argv(parser: argparse.ArgumentParser, topic: str, extra_argv
     if topic.lower() == "setup":
         if USE_RECORDED_BROWSER_CONSENT_FLAG in extra_argv and len(extra_argv) > 1:
             parser.error(f"{USE_RECORDED_BROWSER_CONSENT_FLAG} must be the only setup option")
-        # --store-key carries a value token; the name itself is allowlisted
-        # later in _run_store_key, not here.
+        # --store-key and --install-hooks/--uninstall-hooks carry optional
+        # value tokens validated later by their handlers, not here.
         _, _, extra_argv = _split_store_key(extra_argv)
+        _, _, extra_argv = _split_hook_flags(extra_argv)
         unsupported = [arg for arg in extra_argv if arg not in SETUP_PASSTHROUGH_FLAGS]
         if unsupported:
             parser.error(
@@ -3777,6 +3885,7 @@ def _config_policy_for_args(args: argparse.Namespace, topic: str, extra_argv: li
     reuse_browser_consent = normalized_topic == "setup" and USE_RECORDED_BROWSER_CONSENT_FLAG in extra_argv
     is_library_command = (
         normalized_topic == "library feed"
+        or normalized_topic == "library harvest"
         or normalized_topic == "library search"
         or normalized_topic.startswith("library search ")
     )
@@ -3873,7 +3982,9 @@ def _run_library_feed(args: argparse.Namespace, config: dict[str, object]) -> in
             f"library feed; preserved the original at {backup.name}\n"
         )
 
+    publishable_entries: list[library.LibraryEntry] = []
     publishable_brief_documents: dict[str, str] = {}
+    omitted_private_briefs = 0
     for entry in entries:
         rendered = html_render.render_library_brief(entry)
         target = rendered_briefs_dir / entry.output_name
@@ -3883,6 +3994,10 @@ def _run_library_feed(args: argparse.Namespace, config: dict[str, object]) -> in
             str(target),
             private=entry.entry_id in private_entries,
         )
+        if library.is_unbounded_private_brief(entry.content, source_format=entry.source_format):
+            omitted_private_briefs += 1
+            continue
+        publishable_entries.append(entry)
         publishable_brief_documents[entry.entry_id] = html_render.render_library_brief(
             entry, include_private=False
         )
@@ -3922,6 +4037,11 @@ def _run_library_feed(args: argparse.Namespace, config: dict[str, object]) -> in
     )
 
     if args.publish:
+        if omitted_private_briefs:
+            sys.stderr.write(
+                f"[last30days] Omitted {omitted_private_briefs} private local-corpus "
+                "finished brief(s) from public publishing.\n"
+            )
         password = _publish_password_for_args(args, config)
         entry_urls: dict[str, str] = {}
         try:
@@ -3936,7 +4056,7 @@ def _run_library_feed(args: argparse.Namespace, config: dict[str, object]) -> in
             if batch_error := getattr(brief_results, "error", None):
                 raise batch_error
             published_index = html_render.render_library_index(
-                entries,
+                publishable_entries,
                 entry_urls=entry_urls,
                 feed_url=None,
             )
@@ -3954,7 +4074,7 @@ def _run_library_feed(args: argparse.Namespace, config: dict[str, object]) -> in
         # Keep the local artifacts useful as a record of the live publication.
         feed_path.write_text(
             feed.render_atom(
-                entries,
+                publishable_entries,
                 library_id=library_id,
                 entry_urls=entry_urls,
                 author=feed_author,
@@ -3962,7 +4082,7 @@ def _run_library_feed(args: argparse.Namespace, config: dict[str, object]) -> in
             encoding="utf-8",
         )
         index_path.write_text(
-            html_render.render_library_index(entries, entry_urls=entry_urls),
+            html_render.render_library_index(publishable_entries, entry_urls=entry_urls),
             encoding="utf-8",
         )
         sys.stderr.write(f"[last30days] Published library to {index_url}\n")
@@ -4036,6 +4156,78 @@ def _run_library_search(
     if synced.rebuilt:
         sys.stderr.write("[last30days] Rebuilt a corrupt library search index.\n")
     print(render.render_library_search(query, matches), end="")
+    return 0
+
+
+def _run_library_harvest(
+    args: argparse.Namespace,
+    config: dict[str, object],
+) -> int:
+    """Scan local agent transcripts offline and archive finished briefs."""
+    from lib import brief_capture, library, library_index, transcript_harvest
+
+    if args.publish or args.publish_html:
+        sys.stderr.write("[last30days] library harvest does not publish output.\n")
+        return 2
+    if args.output:
+        sys.stderr.write(
+            "[last30days] library harvest writes into <save_dir>/finished/; "
+            "--output is not supported.\n"
+        )
+        return 2
+
+    since_date = None
+    if args.harvest_since is not None:
+        try:
+            since_date = datetime.date.fromisoformat(args.harvest_since.strip())
+        except ValueError:
+            sys.stderr.write(
+                f"[last30days] invalid --since date '{args.harvest_since}'; expected YYYY-MM-DD.\n"
+            )
+            return 2
+
+    if args.save_dir == "":
+        sys.stderr.write(
+            "[last30days] saving is disabled (--save-dir / LAST30DAYS_MEMORY_DIR is empty); "
+            "pass --save-dir <dir> to run library harvest.\n"
+        )
+        return 2
+    memory_dir = Path(args.save_dir).expanduser() if args.save_dir else library.DEFAULT_MEMORY_DIR
+
+    try:
+        result = transcript_harvest.harvest_transcripts(
+            save_dir=memory_dir,
+            source=args.harvest_source or "auto",
+            since=since_date,
+            dry_run=bool(args.dry_run),
+        )
+    except ValueError as exc:
+        sys.stderr.write(f"[last30days] {exc}\n")
+        return 2
+
+    if not args.dry_run and result.saved > 0:
+        try:
+            save_root = memory_dir.resolve()
+            db_path = library_index.saved_report_index_path(save_root)
+            if db_path == library_index.DEFAULT_LIBRARY_DB:
+                library_index.sync_library(save_root)
+            else:
+                library_index.sync_library(save_root, save_root / "briefings", db_path=db_path)
+        except (library_index.LibrarySearchUnavailable, OSError, sqlite3.DatabaseError):
+            pass
+
+    for note in result.notes:
+        sys.stderr.write(f"[last30days] Harvest note: {note}\n")
+
+    finished_dir = memory_dir.resolve() / brief_capture.FINISHED_SUBDIR
+    saved_label = "Would save" if result.dry_run else "Saved"
+    print(
+        f"Scanned files: {result.scanned_files}\n"
+        f"Matched briefs: {result.matched_briefs}\n"
+        f"{saved_label}: {result.saved}\n"
+        f"Duplicates: {result.duplicates}\n"
+        f"Destination: {finished_dir}"
+    )
     return 0
 
 
@@ -4222,6 +4414,7 @@ def _main(
     if args.cached_report and (
         args.emit != "html" or not args.synthesis_file or not args.topic or args.deep_research
         or args.plan or args.competitors_plan or args.x_posts or args.reddit_threads
+        or args.shortform_urls
         or args.discover is not None or args.drill or args.diagnose or args.preflight
         or args.welcome or args.resolve_save_dir or args.resolve_browser_consent
         or args.verify_freshness is True
@@ -4241,7 +4434,8 @@ def _main(
     if args.followup_run is not None and (not cached_followup or not re.fullmatch(r"[0-9a-f]{32}", args.followup_run)):
         parser.error("--followup-run requires a cache ID and --drill or post-run --verify-freshness")
     if cached_followup and any(
-        value is not None for value in (args.x_posts, args.reddit_threads, args.plan, args.competitors_plan)
+        value is not None
+        for value in (args.x_posts, args.reddit_threads, args.shortform_urls, args.plan, args.competitors_plan)
     ):
         parser.error("cached follow-ups use saved evidence and do not accept new plans or envelope files")
     if args.welcome:
@@ -4281,17 +4475,36 @@ def _main(
             "JSON is not accepted); write the envelope to a .json file and pass its path.\n"
         )
         return 2
+    if args.shortform_urls is not None and shortform_envelope.looks_inline_json(args.shortform_urls):
+        sys.stderr.write(
+            "[last30days] --shortform-urls accepts a file path or '-' only (inline "
+            "JSON is not accepted); write the envelope to a .json file and pass its path.\n"
+        )
+        return 2
     if args.publish and command_topic != "library feed":
         sys.stderr.write(
             "[last30days] --publish is only supported by the 'library feed' command.\n"
         )
         return 2
+    if (
+        args.harvest_source is not None
+        or args.harvest_since is not None
+        or args.dry_run
+    ) and command_topic != "library harvest":
+        sys.stderr.write(
+            "[last30days] --source, --since, and --dry-run are only supported by the 'library harvest' command.\n"
+        )
+        return 2
     if command_topic == "setup":
-        # Persisting a credential needs no config load (no Keychain / pass
-        # probes, no cookie policy), so it dispatches before get_config.
+        # Persisting a credential or managing local hook configs needs no
+        # config load (no Keychain / pass probes, no cookie policy), so these
+        # dispatch before get_config.
         store_key_present, store_key_name, _ = _split_store_key(extra_argv)
         if store_key_present:
             return _run_store_key(store_key_name)
+        install_target, uninstall_target, _ = _split_hook_flags(extra_argv)
+        if install_target is not None or uninstall_target is not None:
+            return _run_hook_setup(install_target, uninstall_target)
 
     config = env.get_config(policy=_config_policy_for_args(args, topic, extra_argv))
     if args.no_research_persistence:
@@ -4438,6 +4651,8 @@ def _main(
 
     if command_topic == "library feed":
         return _run_library_feed(args, config)
+    if command_topic == "library harvest":
+        return _run_library_harvest(args, config)
     if command_topic == "library search" or command_topic.startswith("library search "):
         return _run_library_search(args, config, topic[len("library search") :].strip())
 
@@ -4821,6 +5036,12 @@ def _main(
                 "run locally or omit --reddit-threads.\n"
             )
             return 2
+        if args.shortform_urls is not None:
+            sys.stderr.write(
+                "[last30days] --shortform-urls is not supported by the hosted backend; "
+                "run locally or omit --shortform-urls.\n"
+            )
+            return 2
         from lib import hosted
         depth = "deep" if args.deep else "quick" if args.quick else "default"
         try:
@@ -4932,6 +5153,45 @@ def _main(
         except reddit_envelope.EnvelopeContractError as exc:
             sys.stderr.write(f"[last30days] {exc.message}\n")
             return 2
+    # Host-found TikTok / Instagram URLs: validated up front like the Reddit
+    # refs. Only the keyless short-form lane reads them.
+    shortform_urls_envelope: shortform_envelope.Envelope | None = None
+    if args.shortform_urls is not None:
+        excluded = {
+            token.strip().lower() for token in str(config.get("EXCLUDE_SOURCES") or "").split(",")
+        }
+        searched = [
+            name for name in ("tiktok", "instagram")
+            if name not in excluded and (requested_sources is None or name in requested_sources)
+        ]
+        if not searched:
+            sys.stderr.write(
+                "[last30days] --shortform-urls ignored: TikTok and Instagram are not searched this run.\n"
+            )
+            args.shortform_urls = None
+    if args.shortform_urls is not None:
+        if not topic:
+            sys.stderr.write("[last30days] --shortform-urls requires a research topic.\n")
+            return 2
+        if _comparison_requested(args, topic):
+            sys.stderr.write(
+                "[last30days] --shortform-urls applies to a single-topic run; "
+                "omit it on a comparison run.\n"
+            )
+            return 2
+        try:
+            shortform_urls_envelope = shortform_envelope.read(args.shortform_urls, topic)
+        except shortform_envelope.EnvelopeContractError as exc:
+            sys.stderr.write(f"[last30days] {exc.message}\n")
+            return 2
+        if all(
+            (env.get_tiktok_token(config) if name == "tiktok" else env.get_instagram_token(config))
+            for name in searched
+        ):
+            sys.stderr.write(
+                "[last30days] --shortform-urls: ScrapeCreators is configured, so it stays the "
+                "TikTok/Instagram path; the host URLs are used only if it runs out of credits.\n"
+            )
     if args.diagnose:
         diag = pipeline.diagnose(
             pipeline.with_plan_source_omissions(config, external_plan),
@@ -4983,7 +5243,9 @@ def _main(
         cached = _load_last_report_cache(
             topic,
             ttl_seconds=_report_cache_ttl_seconds(config),
-            x_envelope_sha256=_envelope_digest(x_posts_envelope, comp_plan, reddit_threads_envelope),
+            x_envelope_sha256=_envelope_digest(
+                x_posts_envelope, comp_plan, reddit_threads_envelope, shortform_urls_envelope,
+            ),
             research_options=research_options,
             requested_window=requested_window,
             use_cached_envelopes=args.cached_report,
@@ -5372,6 +5634,7 @@ def _main(
                     if comp_enabled else x_posts_envelope
                 ),
                 reddit_threads=None if comp_enabled else reddit_threads_envelope,
+                shortform_urls=None if comp_enabled else shortform_urls_envelope,
             )
             patents.collect(patent_lane, r)
             r.artifacts["resolved"] = {
@@ -5664,7 +5927,9 @@ def _main(
     if not args.no_research_persistence:
         _write_last_run(
             original_topic, report, entity_reports=entity_reports,
-            x_envelope_sha256=_envelope_digest(x_posts_envelope, comp_plan, reddit_threads_envelope),
+            x_envelope_sha256=_envelope_digest(
+                x_posts_envelope, comp_plan, reddit_threads_envelope, shortform_urls_envelope,
+            ),
             research_options=research_options,
         )
         if _research_store_enabled(args, config):
