@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/wshobson/agents/tree/91ff75307f5668916f3eb77d5ba556266c961376/plugins/api-scaffolding/skills/fastapi-templates
-- **Commit**: `91ff75307f5668916f3eb77d5ba556266c961376`
+- **Upstream**: https://github.com/wshobson/agents/tree/12bcec79ec7f24868bc75fe8cd21428ebf5e96d0/plugins/api-scaffolding/skills/fastapi-templates
+- **Commit**: `12bcec79ec7f24868bc75fe8cd21428ebf5e96d0`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `api-scaffolding` in `.claude-plugin/marketplace.json`
