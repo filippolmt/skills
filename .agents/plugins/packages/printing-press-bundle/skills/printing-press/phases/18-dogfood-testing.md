@@ -54,10 +54,16 @@ and acceptance-marker writing are deterministic:
 cli-printing-press dogfood --live \
   --dir "$CLI_WORK_DIR" \
   --level full \
-  --research-dir "$RESEARCH_DIR" \
+  --research-dir "$API_RUN_DIR" \
   --json \
   --write-acceptance "$PROOFS_DIR/phase5-acceptance.json"
 ```
+
+`research.json` is written to `$API_RUN_DIR` (Phase 1.5e), the same directory Phases 11 and 12 pass.
+`$RESEARCH_DIR` is `$API_RUN_DIR/research` and does not contain that file. Live dogfood
+also reads the parent directory when `<dir>/research.json` is absent, but a missing
+or unparseable file after that lookup fails the run instead of reporting novel-feature
+coverage as passed.
 
 Use `--level quick` only when the user selected Quick Check in Step 1.
 
@@ -70,7 +76,7 @@ carries the captured session, and export it before the `dogfood --live` call:
 
 ```bash
 <API>_CONFIG="$SESSION_DIR/config.toml" cli-printing-press dogfood --live \
-  --dir "$CLI_WORK_DIR" --level full --research-dir "$RESEARCH_DIR" --json \
+  --dir "$CLI_WORK_DIR" --level full --research-dir "$API_RUN_DIR" --json \
   --write-acceptance "$PROOFS_DIR/phase5-acceptance.json"
 ```
 
@@ -273,8 +279,10 @@ Printing Press. Do not hand-author the marker and do not compute a digest.
 (`auth_env_vars`). The command refuses when that variable, or any manifest
 credential variable, is set, and it refuses this reason for `none`, `cookie`,
 `composed`, and `session_handshake` auth. The marker includes
-`source_fingerprint` and `source_files`. A later `.go` edit makes it stale;
-rerun the command after the tree is final.
+`source_fingerprint` and `source_files`. A later `.go` edit makes it stale.
+Replacing only the stamped `var version = "..."` string in `internal/cli/root.go`,
+`internal/cli/version.go`, or `cmd/<name>-pp-mcp/main.go` does not; any other
+edit in those files does. Rerun the command after the tree is final.
 
 ```bash
 "$PRINTING_PRESS_BIN" dogfood \

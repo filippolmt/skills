@@ -1,6 +1,6 @@
 {
   "name": "printing-press",
-  "version": "4.35.7+catalog.4895a7efa904.76bf8fe5ab2d",
+  "version": "4.35.8+catalog.cd61c4ba3f89.47714bdeba33",
   "description": "Generate a ship-ready CLI for an API via a lean research → generate → build → shipcheck loop.",
   "author": {
     "name": "Matt Van Horn and Trevin Chow",
