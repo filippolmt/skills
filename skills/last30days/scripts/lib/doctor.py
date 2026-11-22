@@ -414,8 +414,31 @@ def _sc_gated_record(config: Dict[str, Any], purpose: str) -> Dict[str, Any]:
     if config.get("SCRAPECREATORS_API_KEY"):
         return _record(status=health.OK, requires="SCRAPECREATORS_API_KEY",
                        detail=f"{_sc_key_detail(config)} ({purpose})")
+    if purpose in ("tiktok", "instagram") and env.is_shortform_oss_available(config, purpose):
+        return _record(
+            status=health.OK,
+            requires="yt-dlp + web discovery (SearXNG/Serper/Exa/Brave/keyless floor/host search)",
+            detail=_shortform_keyless_detail(config, purpose),
+        )
     return _record(status="unconfigured", requires="SCRAPECREATORS_API_KEY",
                    fix=_sc_fix())
+
+
+def _shortform_keyless_detail(config: Dict[str, Any], purpose: str) -> str:
+    """Which discovery sources the keyless lane has, and how much to expect.
+
+    Exa serves no Instagram posts, so its key is not listed there.
+    """
+    armed = ", ".join(env.shortform_discovery_sources(config, purpose))
+    if purpose == "instagram":
+        return (
+            f"keyless lane armed via {armed}; best effort, low recall (public pages, "
+            "no views or comments); ScrapeCreators key absent"
+        )
+    comments = ("top comments from the public endpoint" if env.is_tiktok_public_comments_on(config)
+                else "comments off")
+    return (f"keyless lane armed via {armed}; {comments}; finds videos through "
+            "creators, not keyword search; ScrapeCreators key absent")
 
 
 def _sc_optin_record(config: Dict[str, Any], source: str, purpose: str) -> Dict[str, Any]:
@@ -1446,8 +1469,24 @@ def _sub_lanes_for(source: str, config: Dict[str, Any]):
         backups.append(_x_auth_path(config))
     elif source == "tiktok":
         comments = {"enabled": bool(env.is_tiktok_comments_available(config))}
+        backups.append({
+            "name": "yt-dlp + web discovery",
+            "armed": env.is_shortform_oss_available(config, "tiktok"),
+            "note": (
+                "used when ScrapeCreators is missing or 402s; via "
+                + ", ".join(env.shortform_discovery_sources(config, "tiktok"))
+            ),
+        })
     elif source == "instagram":
         comments = {"enabled": bool(env.is_instagram_comments_available(config))}
+        backups.append({
+            "name": "yt-dlp + web discovery",
+            "armed": env.is_shortform_oss_available(config, "instagram"),
+            "note": (
+                "used when ScrapeCreators is missing or 402s; best effort, low recall; via "
+                + ", ".join(env.shortform_discovery_sources(config, "instagram"))
+            ),
+        })
     return backups, comments
 
 
@@ -1492,6 +1531,24 @@ def _setup_block(config: Dict[str, Any]) -> Dict[str, Any]:
         # unset are listed: one whose placeholder fell through to a real
         # lower-priority credential is configured and does not appear.
         "unsubstituted_templates": env.templated_config_keys(config),
+    }
+
+
+def _brief_capture_hooks_block(config: Dict[str, Any]) -> Dict[str, Any]:
+    """Read-only summary of installed brief-capture hooks and archived finished briefs."""
+    from . import brief_capture, hook_installer, library
+
+    memory_dir = Path(
+        config.get("LAST30DAYS_MEMORY_DIR") or library.DEFAULT_MEMORY_DIR
+    ).expanduser()
+    finished_dir = memory_dir / brief_capture.FINISHED_SUBDIR
+    finished_count = (
+        sum(1 for _ in finished_dir.glob("*.md")) if finished_dir.is_dir() else 0
+    )
+    return {
+        "harnesses": hook_installer.hook_status(),
+        "finished_briefs": finished_count,
+        "finished_dir": str(finished_dir),
     }
 
 
@@ -1584,6 +1641,11 @@ def build_report(config: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as exc:
         permissions = {"status": "unavailable", "error": f"{type(exc).__name__}: {exc}"}
 
+    try:
+        brief_hooks = _brief_capture_hooks_block(config)
+    except Exception as exc:
+        brief_hooks = {"error": f"{type(exc).__name__}: {exc}", "harnesses": {}, "finished_briefs": 0}
+
     return {
         "engine_version": _engine_version(),
         "config": {
@@ -1595,6 +1657,7 @@ def build_report(config: Dict[str, Any]) -> Dict[str, Any]:
             "host_lane_file_ignored": bool(config.get("_X_HOST_LANE_FILE_IGNORED")),
         },
         "setup": _setup_block(config),
+        "brief_capture_hooks": brief_hooks,
         "permissions": permissions,
         "sources": sources,
         "mode": "config",
@@ -1814,6 +1877,29 @@ def render_text(report: Dict[str, Any]) -> str:
     if cli_block:
         lines.append("")
         lines.extend(cli_block)
+
+    hooks_info = report.get("brief_capture_hooks") or {}
+    harnesses = hooks_info.get("harnesses") or {}
+    if harnesses:
+        active = [
+            f"{name} ({entry['status']})"
+            for name, entry in harnesses.items()
+            if entry.get("status") in {"installed", "plugin-active"}
+        ]
+        finished_count = hooks_info.get("finished_briefs", 0)
+        if active:
+            active_label = ", ".join(active)
+        else:
+            bundled_note = (
+                " (Claude plugin hook available when installed as a plugin)"
+                if (harnesses.get("claude") or {}).get("plugin_bundled_available")
+                else ""
+            )
+            active_label = (
+                f"none active{bundled_note} — run `last30days.py setup --install-hooks`"
+            )
+        lines.append("")
+        lines.append(f"brief capture hooks: {active_label}; finished briefs: {finished_count}")
 
     lines.append("")
     lines.append(

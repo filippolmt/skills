@@ -5,6 +5,9 @@ metrics (views, likes, comments, shares), and fetch video transcripts.
 
 Requires SCRAPECREATORS_API_KEY in config. 100 free API calls, then PAYG.
 API docs: https://scrapecreators.com/docs
+
+When the key is missing or ScrapeCreators returns 402, search_and_enrich
+falls back to web discovery + yt-dlp (lib.shortform_oss).
 """
 
 import re
@@ -452,6 +455,7 @@ def search_and_enrich(
     token: str = None,
     hashtags: List[str] | None = None,
     creators: List[str] | None = None,
+    config: Dict[str, Any] | None = None,
     *,
     deadline: float | None = None,
     cancel: threading.Event | None = None,
@@ -460,6 +464,7 @@ def search_and_enrich(
 
     Uses expand_tiktok_queries() to generate multiple search queries,
     runs ScrapeCreators for each, and merges/deduplicates results by video ID.
+    Falls back to web discovery + yt-dlp when the key is missing or 402s.
 
     Args:
         topic: Search topic (raw topic, not planner's narrowed query)
@@ -469,12 +474,15 @@ def search_and_enrich(
         token: ScrapeCreators API key
         hashtags: Optional list of TikTok hashtags to search (without #)
         creators: Optional list of TikTok creator handles to fetch videos from
+        config: Optional env config (discovery keys for the OSS fallback)
         deadline: Shared monotonic deadline for search and enrichment
         cancel: Optional research cancellation event
 
     Returns:
         Dict with 'items' list. Each item has a 'caption_snippet' field.
     """
+    from . import shortform_oss
+
     core_topic = _extract_core_subject(topic)
     seen_ids: Set[str] = set()
     items: List[Dict[str, Any]] = []
@@ -504,29 +512,50 @@ def search_and_enrich(
                         items.append(item)
 
         # Step 1: Multi-query keyword search — run ScrapeCreators for each expanded query
-        queries = expand_tiktok_queries(topic, depth)
-        for q in queries:
-            search_result = search_tiktok(
-                q, from_date, to_date, depth, token, deadline=deadline, cancel=cancel,
-            )
-            if search_result.get("error"):
-                last_error = search_result["error"]
-            for item in search_result.get("items", []):
-                vid = item.get("video_id", "")
-                if vid and vid not in seen_ids:
-                    seen_ids.add(vid)
-                    items.append(item)
+        if token:
+            queries = expand_tiktok_queries(topic, depth)
+            for q in queries:
+                search_result = search_tiktok(
+                    q, from_date, to_date, depth, token, deadline=deadline, cancel=cancel,
+                )
+                if search_result.get("error"):
+                    last_error = search_result["error"]
+                for item in search_result.get("items", []):
+                    vid = item.get("video_id", "")
+                    if vid and vid not in seen_ids:
+                        seen_ids.add(vid)
+                        items.append(item)
     except http.DeadlineExceeded:
         last_error = BUDGET_ERROR
 
     # Sort merged results by views descending
     items.sort(key=lambda x: x.get("engagement", {}).get("views") or 0, reverse=True)
 
+    # OSS fallback: web discovery + yt-dlp when the key is missing or credits
+    # are exhausted. Bounded by the same deadline/cancel as the paid path.
+    from_oss = False
+    if not items and (not token or shortform_oss.credits_exhausted(last_error)):
+        cfg = config
+        if cfg is None:
+            from . import env as envmod
+            cfg = envmod.get_config()
+        oss = shortform_oss.search(
+            "tiktok", topic, from_date, to_date, depth, cfg, creators=creators,
+            deadline=deadline, cancel=cancel,
+        )
+        items = oss.get("items") or []
+        from_oss = bool(items)
+        if from_oss:
+            last_error = None
+        elif not last_error:
+            last_error = oss.get("error")
+
     if not items:
         return {"items": [], "error": last_error}
 
     # Attach captions as they arrive so a later timeout cannot discard them.
-    if last_error != BUDGET_ERROR:
+    # OSS items already carry caption_snippet from the video description.
+    if not from_oss and last_error != BUDGET_ERROR:
         try:
             fetch_captions(items, token, depth, deadline=deadline, cancel=cancel)
         except http.DeadlineExceeded:
@@ -558,8 +587,12 @@ def enrich_with_comments(
     *,
     deadline: float | None = None,
     cancel: threading.Event | None = None,
+    public: bool = False,
 ) -> List[Dict[str, Any]]:
     """Enrich top TikTok posts with comment data from ScrapeCreators.
+
+    With ``public=True`` the comments come from TikTok's public web comment
+    endpoint instead: free, no key, same comment shape.
 
     For the top N posts by engagement, fetches comments via the SC API
     and attaches them as a ``top_comments`` field on each item. Mirrors
@@ -575,8 +608,9 @@ def enrich_with_comments(
         Items list (mutated in place) with top_comments added to enriched items.
         Raises DeadlineExceeded on a budget stop; collected comments remain attached.
     """
-    if not items or not token or max_posts <= 0:
+    if not items or max_posts <= 0 or not (token or public):
         return items
+    fetch = _fetch_public_comments if public else _fetch_post_comments
 
     _check_budget(deadline, cancel)
     ranked = sorted(items, key=_tiktok_total_engagement, reverse=True)
@@ -590,7 +624,7 @@ def enrich_with_comments(
         if not post_url:
             return False
         try:
-            comments = _fetch_post_comments(
+            comments = fetch(
                 post_url, token, max_comments, deadline=deadline, cancel=cancel,
                 creator=str(item.get("author_name") or ""),
             )
@@ -655,6 +689,60 @@ def _fetch_post_comments(
         return []
 
     raw_comments = data.get("comments") or data.get("data") or []
+    return _normalize_comments(raw_comments, max_comments, creator)
+
+
+_PUBLIC_COMMENTS_URL = "https://www.tiktok.com/api/comment/list/"
+_POST_ID_RE = re.compile(r"/(?:video|photo)/(\d{8,})")
+
+
+def _fetch_public_comments(
+    post_url: str,
+    _token: str = "",
+    max_comments: int = 5,
+    *,
+    deadline: float | None = None,
+    cancel: threading.Event | None = None,
+    creator: str = "",
+) -> List[Dict[str, Any]]:
+    """Top comments for one post from TikTok's public web endpoint, no key.
+
+    Same shape as ``_fetch_post_comments``. Empty list on any provider error;
+    DeadlineExceeded propagates to the lane.
+    """
+    m = _POST_ID_RE.search(post_url or "")
+    if not m:
+        return []
+    _check_budget(deadline, cancel)
+    try:
+        # Optional and backed up by ScrapeCreators: a failure here is logged,
+        # never recorded as the run's own, so a recovered stream stays
+        # cacheable and is not refetched (paid calls included) by later streams.
+        with http.capture_failures():
+            data = http.get(
+                _PUBLIC_COMMENTS_URL,
+                params={"aweme_id": m.group(1), "count": 20, "cursor": 0, "aid": 1988},
+                headers={"User-Agent": http.BROWSER_USER_AGENT, "Referer": "https://www.tiktok.com/"},
+                timeout=10,
+                retries=1,
+                deadline_monotonic=deadline,
+                cancel=cancel,
+            )
+    except http.DeadlineExceeded:
+        raise
+    except Exception as exc:
+        _log(f"Public comment fetch error for {post_url}: {exc}")
+        return []
+    raw_comments = data.get("comments") if isinstance(data, dict) else None
+    return _normalize_comments(raw_comments or [], max_comments, creator)
+
+
+def _normalize_comments(
+    raw_comments: List[Dict[str, Any]], max_comments: int, creator: str,
+) -> List[Dict[str, Any]]:
+    """TikTok comment payloads (ScrapeCreators or the public endpoint, same
+    field names) to the ``top_comments`` shape, most liked first."""
+    raw_comments = [c for c in raw_comments if isinstance(c, dict)]
     # Sort by digg_count desc so normalize sees the highest-signal first.
     raw_comments = sorted(
         raw_comments,
