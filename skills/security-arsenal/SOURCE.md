@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/elementalsouls/Claude-BugHunter/tree/6a530fb3149c8c34d3ba0eb31b4eb431e91da648/skills/security-arsenal
-- **Commit**: `6a530fb3149c8c34d3ba0eb31b4eb431e91da648`
+- **Upstream**: https://github.com/elementalsouls/Claude-BugHunter/tree/a7e73914e6e7eba98f39721df53d76629b9bed23/skills/security-arsenal
+- **Commit**: `a7e73914e6e7eba98f39721df53d76629b9bed23`
 - **Licence**: `LICENSE`, `LICENSE-CONTENT`, copied beside this file
 - **Catalog entry**: `bughunter` in `.claude-plugin/marketplace.json`
