@@ -1,6 +1,6 @@
 {
   "name": "printing-press-score",
-  "version": "4.35.8+catalog.cd61c4ba3f89.f63e5b5363cc",
+  "version": "4.36.0+catalog.5f69ced904c0.5c5faaf13f25",
   "description": "Score a generated CLI against the Steinberger bar, or compare two CLIs side-by-side.",
   "author": {
     "name": "Matt Van Horn and Trevin Chow",
