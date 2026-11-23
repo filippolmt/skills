@@ -33,10 +33,11 @@ first: what it shows picks the branch.
 | --- | --- |
 | A last line saying the proximo stack is not running or degraded | Run `proximo doctor`. A Remedy of `proximo up` is yours to run; any other is the developer's. Then run `proximo status` again: until the line is gone the routes listed may not answer, so no other row applies |
 | A line `⚠ Listening on 0.0.0.0:…` (or `[::]`) | The stack predates the loopback-only Traefik: `proximo up` is yours to run, and it narrows it. A developer who wants a route reachable from another host has no setting for it; only a shared route is, on the mesh ([sharing](https://filippolmt.github.io/proximo/sharing.html)) |
-| No route for the container, or a route flagged with a warning | [`references/expose.md`](references/expose.md) |
+| No route for the container, or a route flagged with a warning | [`references/expose.md`](references/expose.md). A row `no route — observed for Incidents (…)` is inventory, not a fault: add no label to it. `(one-off container)` is a `docker compose run`, never routed by design — the route is served by `docker compose up` |
 | A route, but the host does not answer, answers 502/503, or the browser distrusts the certificate | [`references/routing.md`](references/routing.md) |
 | A route, the host answers, and the page itself is wrong | [`references/inspection.md`](references/inspection.md) |
 | A route, the host answers, and a request fails on the server — a 500, or an API call that comes back wrong | [`references/transcript.md`](references/transcript.md) |
+| A route, the host answers, but a request header the app expects never arrives — its name has `_` or `.` — or a path with `%00` gets 400 | Traefik drops such headers and rejects `%00` at the entry point; send the dashed name (`X-Api-Key`). [troubleshooting](https://filippolmt.github.io/proximo/troubleshooting.html#a-request-header-or-path-never-reaches-the-container) |
 | Nothing is visibly broken, and the developer says something is **not progressing** — a queue not draining, a job that never finishes, a worker that keeps dying | [`references/transcript.md`](references/transcript.md) — ask for **Incidents** |
 | Nothing about a route is wrong, and a call **from inside a container** to an address the host reaches — a host behind a VPN, a network over a tunnel — hangs until it times out | Run `proximo doctor` and read *The stack network is on the declared subnet*: the stack network can shadow that route. A Remedy of `proximo up` is yours to run. If the subnet it states overlaps the address, `proximo config subnet <cidr>` moves the stack: ask the developer for a free private range, since only they know which ones their VPN uses. Then [troubleshooting](https://filippolmt.github.io/proximo/troubleshooting.html#a-container-cannot-reach-an-address-your-host-can) |
 | A route carries `proximo.share`, or a **colleague** reports a shared link that times out, lands on a `.test` address, loses its login, or fails at the certificate | The `PEER` column says whether the route is served on its peer names; then [sharing](https://filippolmt.github.io/proximo/sharing.html) and the matching section of [troubleshooting](https://filippolmt.github.io/proximo/troubleshooting.html#a-shared-link-does-not-resolve-or-times-out). `proximo doctor` checks this machine's side (`peer-intermediate`, `peer-routes`, `peer-dns`, `peer-relay`, `mesh`); nothing here can see the colleague's |
@@ -72,7 +73,7 @@ hop came up in the last ten minutes.
 never what a container wrote. A worker that is alive and blocked on a slow query
 declares nothing, so an empty listing means *proximo saw nothing happen*, never
 *nothing is wrong*. Under `--service` the listing always ends with the
-**readings** — one per running container (running since when, healthcheck,
+**readings** — one per running container of the service, a one-off excepted (running since when, healthcheck,
 restarts, when its output last moved) — and deliberately draws no conclusion:
 identical readings come from a consumer with nothing to do and one that is stuck.
 A scaled service gives you one reading per replica; do not generalise one
