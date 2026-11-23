@@ -1464,7 +1464,7 @@
         "source": "url",
         "url": "https://github.com/elementalsouls/Claude-BugHunter",
         "ref": "main",
-        "sha": "5601278eac03eacc0a8a85485006512de1a16ff6"
+        "sha": "6a530fb3149c8c34d3ba0eb31b4eb431e91da648"
       },
       "description": "Bug-bounty and authorized external red-team toolkit: vulnerability-class and framework hunting skills, enterprise identity and infrastructure assessment, recon/OSINT, triage, validation and report writing, plus slash commands that drive the engagement workflow.",
       "author": {
