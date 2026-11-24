@@ -1331,8 +1331,8 @@
         "source": "git-subdir",
         "url": "https://github.com/tt-a1i/archify",
         "path": "archify",
-        "ref": "v3.3.0",
-        "sha": "af3aaf3c36762f2afb62a4a09533f6c7273b07e5"
+        "ref": "v3.3.1",
+        "sha": "894225cca657d181e03f332e716b63782ba6b4da"
       },
       "description": "Create validated architecture, workflow, sequence, data-flow, lifecycle/state, ERD, class, tree, timeline, and waterfall diagrams as explorable standalone HTML with dark/light themes, motion, and image/SVG/WebM export, or a one-page explainer that answers a question with diagrams and charts. Accept plain-language requirements or pasted Mermaid input; inspect repository evidence when the diagram must reflect real code.",
       "author": {
