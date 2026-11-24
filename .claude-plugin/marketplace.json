@@ -551,8 +551,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press",
-        "ref": "v4.36.0",
-        "sha": "5f69ced904c0b0f0bd8fdb21c1fed669c31fb5e2"
+        "ref": "v4.36.1",
+        "sha": "3cb2a3aa2f6d3a630cc93968e8fdf3cfe0a5438a"
       },
       "description": "Generate a ship-ready CLI for an API via a lean research → generate → build → shipcheck loop.",
       "author": {
@@ -566,8 +566,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-polish",
-        "ref": "v4.36.0",
-        "sha": "5f69ced904c0b0f0bd8fdb21c1fed669c31fb5e2"
+        "ref": "v4.36.1",
+        "sha": "3cb2a3aa2f6d3a630cc93968e8fdf3cfe0a5438a"
       },
       "description": "Polish a generated CLI to pass verification and become publish-ready: runs diagnostics (dogfood, verify, scorecard, go vet, gosec), auto-fixes issues, and reports the before/after delta.",
       "author": {
@@ -581,8 +581,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-score",
-        "ref": "v4.36.0",
-        "sha": "5f69ced904c0b0f0bd8fdb21c1fed669c31fb5e2"
+        "ref": "v4.36.1",
+        "sha": "3cb2a3aa2f6d3a630cc93968e8fdf3cfe0a5438a"
       },
       "description": "Score a generated CLI against the Steinberger bar, or compare two CLIs side-by-side.",
       "author": {
@@ -596,8 +596,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-output-review",
-        "ref": "v4.36.0",
-        "sha": "5f69ced904c0b0f0bd8fdb21c1fed669c31fb5e2"
+        "ref": "v4.36.1",
+        "sha": "3cb2a3aa2f6d3a630cc93968e8fdf3cfe0a5438a"
       },
       "description": "Internal sub-skill: agentic review of a printed CLI's sampled command output for plausibility issues rule-based checks can't catch. Invoked by printing-press and printing-press-polish; not for direct use.",
       "author": {
@@ -611,8 +611,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/cli-printing-press",
         "path": "skills/printing-press-reprint",
-        "ref": "v4.36.0",
-        "sha": "5f69ced904c0b0f0bd8fdb21c1fed669c31fb5e2"
+        "ref": "v4.36.1",
+        "sha": "3cb2a3aa2f6d3a630cc93968e8fdf3cfe0a5438a"
       },
       "description": "Regenerate an existing printed CLI from scratch under the current Printing Press, carrying prior research, novel features, and patches into the new run.",
       "author": {
