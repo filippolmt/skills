@@ -1,6 +1,6 @@
 {
   "name": "workers-profiling",
-  "version": "0.0.0+catalog.5108325eccea.6cc29ed5c247",
+  "version": "0.0.0+catalog.14472d57ac96.c912d8890b9f",
   "description": "Profile or debug CPU usage and memory allocation in deployed Cloudflare Workers and Durable Objects.",
   "author": {
     "name": "Cloudflare",

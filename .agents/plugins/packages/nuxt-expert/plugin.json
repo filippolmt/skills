@@ -1,0 +1,11 @@
+{
+  "name": "nuxt-expert",
+  "version": "0.5.2+catalog.d98d06edb54c.21d99cf46c69",
+  "description": "Builds, upgrades and reviews Nuxt 4 full-stack applications: SSR-safe data fetching, Nitro server routes, hybrid rendering with route rules, auth, deployment presets and tests.",
+  "author": {
+    "name": "jeffallan",
+    "url": "https://github.com/Jeffallan"
+  },
+  "repository": "https://github.com/Jeffallan/claude-skills",
+  "skills": "./skills/"
+}

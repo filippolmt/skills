@@ -1,0 +1,11 @@
+{
+  "name": "flask-expert",
+  "version": "0.5.2+catalog.d98d06edb54c.dbb473fbcf90",
+  "description": "Builds, modernizes and audits Flask 3.x applications: application factories and blueprints, Flask-SQLAlchemy models and migrations, validated JSON APIs, auth, pytest fixtures and production deployment.",
+  "author": {
+    "name": "jeffallan and Saifullah1999Pk",
+    "url": "https://github.com/Jeffallan"
+  },
+  "repository": "https://github.com/Jeffallan/claude-skills",
+  "skills": "./skills/"
+}

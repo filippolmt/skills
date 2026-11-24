@@ -701,6 +701,42 @@
       "category": "Developer Tools"
     },
     {
+      "name": "firebase-expert",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/firebase-expert"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "flask-expert",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/flask-expert"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "nuxt-expert",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/nuxt-expert"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
       "name": "terraform-skill",
       "source": {
         "source": "local",

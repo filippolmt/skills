@@ -1,6 +1,6 @@
 {
   "name": "react-expert",
-  "version": "0.4.21+catalog.4b94d98605ba.0275efdab215",
+  "version": "0.5.2+catalog.d98d06edb54c.5e3e1a8beb58",
   "description": "Use when building React 18+ applications in .jsx or .tsx files, Next.js App Router projects, or create-react-app setups.",
   "author": {
     "name": "jeffallan",

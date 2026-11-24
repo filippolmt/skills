@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/wshobson/agents/tree/1eecf4b58eb380ff7ddc258a11c6586381d67b95/plugins/kubernetes-operations/skills/helm-chart-scaffolding
-- **Commit**: `1eecf4b58eb380ff7ddc258a11c6586381d67b95`
+- **Upstream**: https://github.com/wshobson/agents/tree/34e50fee32114afd9475f25d81492712f08cb71c/plugins/kubernetes-operations/skills/helm-chart-scaffolding
+- **Commit**: `34e50fee32114afd9475f25d81492712f08cb71c`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `kubernetes-operations` in `.claude-plugin/marketplace.json`

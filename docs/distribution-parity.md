@@ -103,6 +103,9 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `database-optimizer` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `playwright-expert` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `sql-pro` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `firebase-expert` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `flask-expert` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `nuxt-expert` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `ui-ux-pro-max` | `skill:SKILL.md` | — | Unsupported — The pinned skill invokes its search tool through CLAUDE_PLUGIN_ROOT, which is unavailable in Codex. Fallback: Use the Claude plugin or upstream's harness-specific installer. | Unsupported — The pinned skill invokes its search tool through CLAUDE_PLUGIN_ROOT, which is unavailable in pi. Fallback: Use the Claude plugin or upstream's harness-specific installer. |
 | `terraform-skill` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `agents-sdk` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
@@ -230,6 +233,7 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `bughunter` | `skill:skills/cloud-iam-deep/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `bughunter` | `skill:skills/enterprise-vpn-attack/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `bughunter` | `skill:skills/evidence-hygiene/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/exploit-completion/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `bughunter` | `skill:skills/hunt-api-misconfig/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `bughunter` | `skill:skills/hunt-aspnet/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `bughunter` | `skill:skills/hunt-ato/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |

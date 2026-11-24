@@ -1,6 +1,6 @@
 {
   "name": "cloudflare-app-bootstrap",
-  "version": "0.0.0+catalog.5108325eccea.e21ef7341c03",
+  "version": "0.0.0+catalog.14472d57ac96.4bece95a356e",
   "description": "Get a Cloudflare Workers app to a working local request by connecting its bindings, secrets, and initial data, then verifying real application behavior.",
   "author": {
     "name": "Cloudflare",
