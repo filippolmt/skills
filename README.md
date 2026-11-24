@@ -592,6 +592,12 @@ Snapshot of the catalog — the source of truth is
 | Plugin | What it bundles |
 |---|---|
 | `agent-skills` | Senior-engineer workflows for the whole development lifecycle, from spec to ship: skills for idea refinement and interviewing, spec-, constraint-, source- and doubt-driven development, planning, incremental implementation, API and frontend design, TDD and browser testing, debugging, code review and simplification, security, performance, accessibility, observability, context engineering, documentation and ADRs, deprecation and migration, git workflow, CI/CD and launch, plus a skill router; slash commands for each lifecycle step and for accessibility, web-performance and constraint checks; and code-reviewer, security-auditor, test-engineer, accessibility and web-performance auditor agents. |
+
+### [mario-montanari/italiano-scrittura-anti-ai](https://github.com/mario-montanari/italiano-scrittura-anti-ai) — Italian writing without AI tics
+
+| Plugin | What it bundles |
+|---|---|
+| `italiano-scrittura-anti-ai` | Writes and revises Italian text to the standard norm without the tics of AI-generated prose, translates English into Italian without calques, measures an author's voice on a corpus, and defends a human text flagged by an AI detector. Bundles the italiano-scrittura-anti-ai skill plus the calibra-voce, difendi and traduci commands. |
 <!-- catalog:end -->
 
 ## External skills (auto-updated by Renovate)
