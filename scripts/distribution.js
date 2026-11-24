@@ -6,7 +6,7 @@ const path = require('path');
 const { isBundle } = require('./catalog.js');
 
 const MANIFEST_METADATA = new Set([
-  'name', 'version', 'description', 'author', 'homepage', 'repository', 'license',
+  'name', 'displayName', 'version', 'description', 'author', 'homepage', 'repository', 'license',
   'keywords', 'skills', 'commands', 'agents', 'hooks', 'mcpServers', 'dependencies',
   'types', 'userConfig',
   // Fields Claude Code never reads: a schema hint, free-form data, directory-listing links.
