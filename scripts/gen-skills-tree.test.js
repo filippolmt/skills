@@ -16,6 +16,9 @@ const {
   treeFingerprint,
   breakingBump,
   pruneManifest,
+  orphanedSources,
+  dropSourceRows,
+  dropSourceMeta,
   formatLike,
   unresolved,
   build,
@@ -114,6 +117,34 @@ test('treeFingerprint sees a file added, not only a file changed', () => {
 test('a breaking bump is a minor below 1.0.0 and a major above', () => {
   assert.equal(breakingBump('0.1.3'), '0.2.0');
   assert.equal(breakingBump('1.4.2'), '2.0.0');
+});
+
+test('a prune that empties a source repo drops its ADR-0014 rows and catalog-meta records', () => {
+  const entry = (name, repo) => ({ name, source: { source: 'git-subdir', url: `https://github.com/${repo}`, path: name } });
+  const before = [entry('a', 'o/gone'), entry('b', 'o/gone'), entry('c', 'o/kept'), { name: 'local', source: './plugins/local' }];
+  assert.deepEqual(orphanedSources(before, [before[2], before[3]]), ['o/gone']);
+  assert.deepEqual(orphanedSources(before, [before[1], before[2]]), []);
+
+  const adr = ['| `o/gone` | curated | |', '| `o/kept` | whole | |', '| `o/gone` | `x` | reason |', 'prose `o/gone`'].join('\n');
+  assert.equal(dropSourceRows(adr, ['o/gone']), ['| `o/kept` | whole | |', 'prose `o/gone`'].join('\n'));
+
+  const meta = [
+    '{',
+    '  "groups": [',
+    '    { "repo": "o/kept", "tagline": "k", "kind": "skill" },',
+    '    { "repo": "o/gone", "tagline": "g", "kind": "skill" }',
+    '  ],',
+    '  "curationBaseline": {',
+    '    "o/gone": "1111",',
+    '    "o/kept": "2222"',
+    '  }',
+    '}',
+    '',
+  ].join('\n');
+  assert.deepEqual(JSON.parse(dropSourceMeta(meta, ['o/gone'])), {
+    groups: [{ repo: 'o/kept', tagline: 'k', kind: 'skill' }],
+    curationBaseline: { 'o/kept': '2222' },
+  });
 });
 
 test('pruneManifest drops a helper from a bundle and bumps its version', () => {
