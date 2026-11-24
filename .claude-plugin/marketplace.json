@@ -1530,6 +1530,20 @@
         "name": "Addy Osmani",
         "url": "https://github.com/addyosmani"
       }
+    },
+    {
+      "name": "italiano-scrittura-anti-ai",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/mario-montanari/italiano-scrittura-anti-ai",
+        "ref": "v1.7.0",
+        "sha": "f8f29d85d9f7c9844e57573f7f10f813f1377cfc"
+      },
+      "description": "Writes and revises Italian text to the standard norm without the tics of AI-generated prose, translates English into Italian without calques, measures an author's voice on a corpus, and defends a human text flagged by an AI detector. Bundles the italiano-scrittura-anti-ai skill plus the calibra-voce, difendi and traduci commands.",
+      "author": {
+        "name": "Mario Montanari",
+        "url": "https://mariomontanari.it"
+      }
     }
   ]
 }

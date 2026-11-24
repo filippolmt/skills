@@ -306,6 +306,42 @@
         "limitation": "pi packages cannot install declarative lifecycle hooks.",
         "fallback": "Run node <skill>/scripts/gate.mjs before finishing."
       }
+    },
+    "italiano-scrittura-anti-ai/command:commands/calibra-voce.md": {
+      "codex": {
+        "disposition": "unsupported",
+        "limitation": "The command looks for references/voce-personale.md and scripts/profilo_voce.py only under CLAUDE_PLUGIN_ROOT, ~/.claude/skills or .claude/skills; none exists in Codex, so it would run without them.",
+        "fallback": "Ask the italiano-scrittura-anti-ai skill for the same task: it links the same references from its own folder."
+      },
+      "pi": {
+        "disposition": "unsupported",
+        "limitation": "The command looks for references/voce-personale.md and scripts/profilo_voce.py only under CLAUDE_PLUGIN_ROOT, ~/.claude/skills or .claude/skills; none exists in pi, so it would run without them.",
+        "fallback": "Ask the italiano-scrittura-anti-ai skill for the same task: it links the same references from its own folder."
+      }
+    },
+    "italiano-scrittura-anti-ai/command:commands/difendi.md": {
+      "codex": {
+        "disposition": "unsupported",
+        "limitation": "The command looks for references/scudo-falsi-positivi.md only under CLAUDE_PLUGIN_ROOT, ~/.claude/skills or .claude/skills; none exists in Codex, so it would run without them.",
+        "fallback": "Ask the italiano-scrittura-anti-ai skill for the same task: it links the same references from its own folder."
+      },
+      "pi": {
+        "disposition": "unsupported",
+        "limitation": "The command looks for references/scudo-falsi-positivi.md only under CLAUDE_PLUGIN_ROOT, ~/.claude/skills or .claude/skills; none exists in pi, so it would run without them.",
+        "fallback": "Ask the italiano-scrittura-anti-ai skill for the same task: it links the same references from its own folder."
+      }
+    },
+    "italiano-scrittura-anti-ai/command:commands/traduci.md": {
+      "codex": {
+        "disposition": "unsupported",
+        "limitation": "The command looks for references/tradurre-in-italiano.md only under CLAUDE_PLUGIN_ROOT, ~/.claude/skills or .claude/skills; none exists in Codex, so it would run without them.",
+        "fallback": "Ask the italiano-scrittura-anti-ai skill for the same task: it links the same references from its own folder."
+      },
+      "pi": {
+        "disposition": "unsupported",
+        "limitation": "The command looks for references/tradurre-in-italiano.md only under CLAUDE_PLUGIN_ROOT, ~/.claude/skills or .claude/skills; none exists in pi, so it would run without them.",
+        "fallback": "Ask the italiano-scrittura-anti-ai skill for the same task: it links the same references from its own folder."
+      }
     }
   }
 }

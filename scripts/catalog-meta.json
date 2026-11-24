@@ -23,7 +23,8 @@
     { "repo": "AgriciDaniel/claude-seo", "tagline": "SEO analysis & AI search readiness", "kind": "plugin" },
     { "repo": "microsoft/playwright-cli", "tagline": "browser automation", "kind": "skill" },
     { "repo": "elementalsouls/Claude-BugHunter", "tagline": "bug bounty & authorized red-team", "kind": "plugin" },
-    { "repo": "addyosmani/agent-skills", "tagline": "software lifecycle, spec to ship; overlaps mattpocock/skills, enable one set per project", "kind": "plugin" }
+    { "repo": "addyosmani/agent-skills", "tagline": "software lifecycle, spec to ship; overlaps mattpocock/skills, enable one set per project", "kind": "plugin" },
+    { "repo": "mario-montanari/italiano-scrittura-anti-ai", "tagline": "Italian writing without AI tics", "kind": "plugin" }
   ],
   "omit": [],
   "descriptionReviewed": {

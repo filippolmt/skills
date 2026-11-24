@@ -92,6 +92,7 @@ and a stale row would silently exclude a later skill reusing its name.
 | `microsoft/playwright-cli` | whole | single skill |
 | `elementalsouls/Claude-BugHunter` | whole | whole-plugin entry |
 | `addyosmani/agent-skills` | whole | whole-plugin entry |
+| `mario-montanari/italiano-scrittura-anti-ai` | whole | whole-plugin entry |
 
 ### Catalog exclusions
 
