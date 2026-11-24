@@ -93,7 +93,9 @@ discussion. (Architecture vocabulary — module, seam, depth — lives in the
 - **Prune** — what a regeneration does to an entry whose `path` no longer exists at
   its `sha`: the entry leaves the catalog, its name leaves every bundle's
   `dependencies` (breaking bump), and the regeneration PR names it. Not a skip — a
-  removal, recorded (ADR-0015). Owned distribution metadata leaves with the entry.
+  removal, recorded (ADR-0015). Owned distribution metadata leaves with the entry;
+  a source repo left with no entry loses its ADR-0014 rows, group and curation
+  baseline (ADR-0051).
   Refused before catalog, manifest, or metadata writes when a non-bundle depends on
   the entry, a surviving runtime dependency would break, or a bundle would lose
   the skill it is named after.

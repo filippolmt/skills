@@ -137,6 +137,31 @@ function pruneManifest(manifest, gone, bundle) {
   return { ...manifest, version: breakingBump(manifest.version), dependencies: deps.filter((d) => !lost.includes(d)) };
 }
 
+// The source repos a prune leaves with no catalog entry. Their ADR-0014 rows and
+// catalog-meta records would outlive them, and `--classified` fails on a curated
+// source with no entry, so the prune drops those too (ADR-0051).
+function orphanedSources(before, after) {
+  const kept = new Set(after.map(repoOf));
+  return [...new Set(before.map(repoOf))].filter((repo) => repo && !kept.has(repo));
+}
+
+// ADR-0014 without the orphaned repos' rows: their Source repos row and every
+// exclusion. The reasons stay in git history, as for a stale exclusion.
+function dropSourceRows(adr, repos) {
+  return adr.split('\n').filter((line) => !repos.some((r) => line.startsWith(`| \`${r}\` |`))).join('\n');
+}
+
+// catalog-meta.json without the orphaned repos' group and curation baseline. Edited
+// as text, because its groups are one-line objects `formatLike` would unfold.
+function dropSourceMeta(meta, repos) {
+  const out = meta.split('\n')
+    .filter((line) => !repos.some((r) => line.includes(`"repo": "${r}"`) || line.trim().startsWith(`"${r}": `)))
+    .join('\n')
+    .replace(/,(\n\s*[}\]])/g, '$1');
+  JSON.parse(out);
+  return out;
+}
+
 // `obj` as JSON in the layout of `original`: two-space indent, and an array the
 // original kept on one line stays on one line. Without the second half a pruned
 // manifest's diff is mostly whitespace around the one name that left.
@@ -272,6 +297,14 @@ function prune(text, gone) {
   const rawMetadata = fs.readFileSync(metadataFile, 'utf8');
   const metadata = pruneDistributionMetadata(JSON.parse(rawMetadata), gone, planned);
   writes.push([metadataFile, formatLike(rawMetadata, metadata)]);
+  const orphaned = orphanedSources(JSON.parse(text).plugins, doc.plugins);
+  if (orphaned.length) {
+    const adrFile = path.join(root, 'docs', 'adr', '0014-each-source-repo-is-whole-or-curated.md');
+    const metaFile = path.join(root, 'scripts', 'catalog-meta.json');
+    writes.push([adrFile, dropSourceRows(fs.readFileSync(adrFile, 'utf8'), orphaned)]);
+    writes.push([metaFile, dropSourceMeta(fs.readFileSync(metaFile, 'utf8'), orphaned)]);
+    console.log(`source repos left with no entry, dropped from ADR-0014 and catalog-meta.json:\n${orphaned.map((r) => `  ${r}`).join('\n')}`);
+  }
   for (const [file, body] of writes) fs.writeFileSync(file, body);
   execFileSync('node', [path.join(root, 'scripts', 'gen-readme.js')], { stdio: 'inherit' });
   return doc.plugins;
@@ -429,6 +462,9 @@ module.exports = {
   treeFingerprint,
   breakingBump,
   pruneManifest,
+  orphanedSources,
+  dropSourceRows,
+  dropSourceMeta,
   formatLike,
   unresolved,
   build,

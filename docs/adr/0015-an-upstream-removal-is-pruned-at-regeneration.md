@@ -6,7 +6,10 @@ status: accepted
 
 Amended by [ADR-0041](0041-refuse-a-pinned-sha-moved-off-its-history.md): a path
 that vanishes because the `sha` moved behind, diverged or onto an unrelated
-history fails `validate` instead of being pruned.
+history fails `validate` instead of being pruned. Amended by
+[ADR-0051](0051-a-prune-that-empties-a-source-drops-its-records.md): a prune that
+leaves a source repo with no entry also drops its ADR-0014 rows and catalog-meta
+records.
 
 When an upstream deletes or renames a skill folder, Renovate still bumps the entry's
 `sha` — it cannot see folders. Under [ADR-0010](0010-vendor-a-shared-skills-tree-on-main.md)
