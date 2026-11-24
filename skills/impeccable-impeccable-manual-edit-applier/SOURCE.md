@@ -1,5 +1,5 @@
 # Source
 
-- **Source**: https://github.com/pbakaus/impeccable/tree/b49177d32788f2dc585c42831d845dacf1ebed2c/agents/impeccable-manual-edit-applier.md
+- **Source**: https://github.com/pbakaus/impeccable/tree/88cfafae649164e6dc48b88d3c0c1bf6662eaade/agents/impeccable-manual-edit-applier.md
 - **Catalog entry**: `impeccable`
 - **Transformation**: Converted agent to a deterministic namespaced Agent Skill; relative links repointed at sibling skills or the upstream file.
