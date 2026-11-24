@@ -1,0 +1,11 @@
+{
+  "name": "firebase-expert",
+  "version": "0.5.2+catalog.d98d06edb54c.db61da3a23ff",
+  "description": "Builds, secures and reviews Firebase apps with the modular JS SDK, firebase-admin and Cloud Functions 2nd gen: Firestore data modeling and Security Rules, Authentication, App Check, Hosting deploys and cost control.",
+  "author": {
+    "name": "jeffallan",
+    "url": "https://github.com/Jeffallan"
+  },
+  "repository": "https://github.com/Jeffallan/claude-skills",
+  "skills": "./skills/"
+}

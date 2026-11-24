@@ -133,4 +133,4 @@ You are an experienced Accessibility Engineer conducting an accessibility audit.
 
 - **Invoke directly when:** the user wants an accessibility-focused pass on a specific component, page, or change.
 - **Invoke via:** `/a11y` (dedicated a11y audit command).
-- **Do not invoke from another persona.** If `code-reviewer` flags an accessibility concern, surface that as a recommendation in the report; the user or a slash command initiates the a11y pass. See [docs/agents.md](https://github.com/addyosmani/agent-skills/blob/8c99fa36d90068c82d547f7c12a9d67a3e95f4ee/docs/agents.md).
+- **Do not invoke from another persona.** If `code-reviewer` flags an accessibility concern, surface that as a recommendation in the report; the user or a slash command initiates the a11y pass. See [docs/agents.md](https://github.com/addyosmani/agent-skills/blob/e997ac5b9a74eab332d5e9793bb38a38c8cfdd74/docs/agents.md).

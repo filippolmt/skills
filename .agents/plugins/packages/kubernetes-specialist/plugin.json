@@ -1,6 +1,6 @@
 {
   "name": "kubernetes-specialist",
-  "version": "0.4.21+catalog.4b94d98605ba.eb0b1fc44a65",
+  "version": "0.5.2+catalog.d98d06edb54c.34309ab0fb3b",
   "description": "Use when deploying or managing Kubernetes workloads.",
   "author": {
     "name": "jeffallan",

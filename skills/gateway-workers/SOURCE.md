@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/cloudflare/skills/tree/5108325ecceabc899c761e07aa617b09c02445ee/skills/gateway-workers
-- **Commit**: `5108325ecceabc899c761e07aa617b09c02445ee`
+- **Upstream**: https://github.com/cloudflare/skills/tree/14472d57ac968d1a0322a568077277209b259183/skills/gateway-workers
+- **Commit**: `14472d57ac968d1a0322a568077277209b259183`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `gateway-workers` in `.claude-plugin/marketplace.json`

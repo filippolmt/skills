@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/addyosmani/agent-skills/tree/8c99fa36d90068c82d547f7c12a9d67a3e95f4ee/skills/code-review-and-quality
-- **Commit**: `8c99fa36d90068c82d547f7c12a9d67a3e95f4ee`
+- **Upstream**: https://github.com/addyosmani/agent-skills/tree/e997ac5b9a74eab332d5e9793bb38a38c8cfdd74/skills/code-review-and-quality
+- **Commit**: `e997ac5b9a74eab332d5e9793bb38a38c8cfdd74`
 - **Licence**: `LICENSE`, copied beside this file
 - **Catalog entry**: `agent-skills` in `.claude-plugin/marketplace.json`

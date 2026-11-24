@@ -1,6 +1,6 @@
 {
   "name": "web-perf",
-  "version": "0.0.0+catalog.5108325eccea.21bb4992ae4c",
+  "version": "0.0.0+catalog.14472d57ac96.e6f77ffd4214",
   "description": "Audit, diagnose, or optimize page load and interaction performance via Chrome DevTools MCP — Core Web Vitals and Lighthouse performance scores.",
   "author": {
     "name": "Cloudflare",
