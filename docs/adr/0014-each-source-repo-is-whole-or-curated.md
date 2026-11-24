@@ -106,6 +106,7 @@ and a stale row would silently exclude a later skill reusing its name.
 | `mvanhorn/cli-printing-press` | `printing-press-publish`, `printing-press-amend`, `printing-press-import` | Bound to the third-party public library `mvanhorn/printing-press-library` |
 | `mvanhorn/cli-printing-press` | `printing-press-retro` | Files findings for the Press's maintainers |
 | `mvanhorn/cli-printing-press` | `verify-printing-press` | For the Press's maintainers: builds the Press from its own repo and prints its golden test fixture |
+| `Jeffallan/claude-skills` | `ticket-guard` | Runs `${CLAUDE_PLUGIN_ROOT}/runtime/guard.pyz` with the plugin's `hooks/hooks.json` and `ticket:execute`/`ticket:complete` commands; a per-skill entry ships none of them |
 | `tt-a1i/archify` | `archify-review` | For archify's maintainers: triages its issues and links its `REVIEWING.md` by relative path |
 | `hashicorp/agent-skills` | `azure-verified-modules`, `refactor-module`, `terraform-policy`, `terraform-search-import`, `terraform-stacks`, `terraform-style-guide`, `terraform-test` | For writing Terraform configuration, not providers; `terraform-skill` already covers that ground |
 | `hashicorp/agent-skills` | `packer/*/skills/*` | Packer image building, outside the provider-development pick |

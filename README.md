@@ -479,6 +479,9 @@ Snapshot of the catalog — the source of truth is
 | `database-optimizer` | Optimizes database queries and improves performance across PostgreSQL and MySQL systems. |
 | `playwright-expert` | Use when writing E2E tests with Playwright, setting up test infrastructure, or debugging flaky browser tests. |
 | `sql-pro` | Optimizes SQL queries, designs database schemas, and troubleshoots performance issues. |
+| `firebase-expert` | Builds, secures and reviews Firebase apps with the modular JS SDK, firebase-admin and Cloud Functions 2nd gen: Firestore data modeling and Security Rules, Authentication, App Check, Hosting deploys and cost control. |
+| `flask-expert` | Builds, modernizes and audits Flask 3.x applications: application factories and blueprints, Flask-SQLAlchemy models and migrations, validated JSON APIs, auth, pytest fixtures and production deployment. |
+| `nuxt-expert` | Builds, upgrades and reviews Nuxt 4 full-stack applications: SSR-safe data fetching, Nitro server routes, hybrid rendering with route rules, auth, deployment presets and tests. |
 
 ### [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) — UI/UX design
 
