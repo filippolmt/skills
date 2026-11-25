@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/elementalsouls/Claude-BugHunter/tree/9796beeeded3b9e6df50b9f5f89e79dc43bc6915/skills/recon-scope-triage
-- **Commit**: `9796beeeded3b9e6df50b9f5f89e79dc43bc6915`
+- **Upstream**: https://github.com/elementalsouls/Claude-BugHunter/tree/6a2153d9932adf41fa4d7f5dee626047c5005a83/skills/recon-scope-triage
+- **Commit**: `6a2153d9932adf41fa4d7f5dee626047c5005a83`
 - **Licence**: `LICENSE`, `LICENSE-CONTENT`, copied beside this file
 - **Catalog entry**: `bughunter` in `.claude-plugin/marketplace.json`
