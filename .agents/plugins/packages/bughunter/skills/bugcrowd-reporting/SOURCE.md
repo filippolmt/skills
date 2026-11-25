@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/elementalsouls/Claude-BugHunter/tree/6a2153d9932adf41fa4d7f5dee626047c5005a83/skills/bugcrowd-reporting
-- **Commit**: `6a2153d9932adf41fa4d7f5dee626047c5005a83`
+- **Upstream**: https://github.com/elementalsouls/Claude-BugHunter/tree/4c9966e4cafea11e24309d9e71d1c89602319c57/skills/bugcrowd-reporting
+- **Commit**: `4c9966e4cafea11e24309d9e71d1c89602319c57`
 - **Licence**: `LICENSE`, `LICENSE-CONTENT`, copied beside this file
 - **Catalog entry**: `bughunter` in `.claude-plugin/marketplace.json`

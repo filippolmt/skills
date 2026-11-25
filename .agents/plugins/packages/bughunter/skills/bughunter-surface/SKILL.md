@@ -17,7 +17,7 @@ View the prioritized attack surface for a target.
    top of the manifest's `ranked_surface` (P1/P2/Kill)
 4. Outputs P1 (start here), P2 (after P1), and Kill List (skip)
 
-> The manifest is the recon→hunt contract — see [`docs/recon-manifest.md`](https://github.com/elementalsouls/Claude-BugHunter/blob/6a2153d9932adf41fa4d7f5dee626047c5005a83/docs/recon-manifest.md).
+> The manifest is the recon→hunt contract — see [`docs/recon-manifest.md`](https://github.com/elementalsouls/Claude-BugHunter/blob/4c9966e4cafea11e24309d9e71d1c89602319c57/docs/recon-manifest.md).
 > Run `cbh surface <target>` for the raw deterministic ranking.
 
 ## Usage
