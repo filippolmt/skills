@@ -48,7 +48,7 @@ jobs:
         with:
           node-version: 26
       - name: Install the tested pi CLI
-        run: npm install --global @earendil-works/pi-coding-agent@1.6.0
+        run: npm install --global @earendil-works/pi-coding-agent@1.6.1
       - name: Materialize pi projections for this revision
         run: |
           node scripts/gen-skills-tree.js
