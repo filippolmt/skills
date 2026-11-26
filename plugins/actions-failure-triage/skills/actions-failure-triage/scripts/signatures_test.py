@@ -51,7 +51,8 @@ assert len(mixed) == 2, mixed
 split = plan([job(11, "##[error]boom", name="lint"), job(22, "##[error]boom", name="test")])
 assert len(split) == 2, split
 
-def raw(stamp, *messages):
+
+def failed_log(stamp, *messages):
     # Real `--log-failed` lines from this repo's regenerate/tree job: it prints the nested
     # validate run's step summary (✓ passed, X failed, - skipped) before its own error.
     return "\n".join(f"tree\tUNKNOWN STEP\t{stamp} {m}" for m in messages)
@@ -60,7 +61,7 @@ def raw(stamp, *messages):
 # Same cause (the ADR-0014 check), different step-tail windows and annotation blocks:
 # jobs 138200837003 and 138114484960. One group.
 tree = plan([
-    job(138200837003, run("extract", stdin=raw(
+    job(138200837003, run("extract", stdin=failed_log(
         "2026-11-24T03:47:53.0537042Z",
         "  ✓ Check external entry shapes and Renovate regex coverage",
         "  X Check every external repo is classified in ADR-0014",
@@ -77,7 +78,7 @@ tree = plan([
         "",
         "##[error]Process completed with exit code 1.",
     )), workflow="regenerate", name="tree"),
-    job(138114484960, run("extract", stdin=raw(
+    job(138114484960, run("extract", stdin=failed_log(
         "2026-11-24T00:18:33.6553225Z",
         "  ✓ Resolve every catalog path at its pinned sha",
         "  ✓ Refuse a pinned sha moved off its history",
@@ -94,12 +95,13 @@ tree = plan([
 ])
 assert len(tree) == 1, tree
 
-# Counters and uppercase hex differ between same-cause runs: one group.
-counted = plan([
-    job(11, "Tests: 3 failed, 41 passed\nFAIL suite ABCDEF1234 > parses"),
-    job(22, "Tests: 4 failed, 40 passed\nFAIL suite 9F8E7D6C5B > parses"),
-])
+# Summary counters differ between same-cause runs: one group.
+counted = plan([job(11, "Tests: 3 failed, 41 passed"), job(22, "Tests: 4 failed, 40 passed")])
 assert len(counted) == 1, counted
+
+# Uppercase hex ids differ between same-cause runs: one group.
+hexed = plan([job(11, "FAIL suite ABCDEF1234 > parses"), job(22, "FAIL suite 9F8E7D6C5B > parses")])
+assert len(hexed) == 1, hexed
 
 # Distinct causes stay apart, even when they share a heading and the generic exit line.
 causes = plan([
@@ -111,11 +113,18 @@ causes = plan([
             "##[error]Process completed with exit code 1."),
     job(33, "npm ERR! code E404\n##[error]Process completed with exit code 1."),
     job(44, "npm ERR! code ERESOLVE\n##[error]Process completed with exit code 1."),
-    # Only the generic exit line: no evidence to share, its own inspection.
-    job(55, "##[error]Process completed with exit code 1."),
-    job(66, "##[error]Process completed with exit code 2."),
+    # The exit code is evidence: an OOM kill (137) is not an ordinary failure (1).
+    job(55, "Run pytest\n##[error]Process completed with exit code 1."),
+    job(66, "Run pytest\n##[error]Process completed with exit code 137."),
+    # A number naming the test, the port or the step is an id, not a counter.
+    job(77, "test 12 failed"),
+    job(88, "test 13 failed"),
+    job(99, "Port 8080 failed"),
+    job(100, "Port 8081 failed"),
+    job(101, "exit status 1 error 2"),
+    job(102, "exit status 2 error 2"),
 ])
-assert len(causes) == 6, causes
+assert len(causes) == 12, [g["signature"] for g in causes]
 
 # An empty signal shares no evidence: each such job is its own inspection.
 blank = plan([job(11, ""), job(22, "")])
