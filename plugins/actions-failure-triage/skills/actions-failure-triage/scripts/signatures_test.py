@@ -51,6 +51,72 @@ assert len(mixed) == 2, mixed
 split = plan([job(11, "##[error]boom", name="lint"), job(22, "##[error]boom", name="test")])
 assert len(split) == 2, split
 
+def raw(stamp, *messages):
+    # Real `--log-failed` lines from this repo's regenerate/tree job: it prints the nested
+    # validate run's step summary (✓ passed, X failed, - skipped) before its own error.
+    return "\n".join(f"tree\tUNKNOWN STEP\t{stamp} {m}" for m in messages)
+
+
+# Same cause (the ADR-0014 check), different step-tail windows and annotation blocks:
+# jobs 138200837003 and 138114484960. One group.
+tree = plan([
+    job(138200837003, run("extract", stdin=raw(
+        "2026-11-24T03:47:53.0537042Z",
+        "  ✓ Check external entry shapes and Renovate regex coverage",
+        "  X Check every external repo is classified in ADR-0014",
+        "  - Check no local command or skill name is already taken",
+        "  - Validate marketplace and plugins",
+        "  - Lint GitHub workflows",
+        "  - Post Run actions/setup-node@v7",
+        "  ✓ Post Run actions/checkout@v7",
+        "  ✓ Complete job",
+        "",
+        "ANNOTATIONS",
+        "X Process completed with exit code 1.",
+        "validate: .github#7",
+        "",
+        "##[error]Process completed with exit code 1.",
+    )), workflow="regenerate", name="tree"),
+    job(138114484960, run("extract", stdin=raw(
+        "2026-11-24T00:18:33.6553225Z",
+        "  ✓ Resolve every catalog path at its pinned sha",
+        "  ✓ Refuse a pinned sha moved off its history",
+        "  ✓ Check external entry shapes and Renovate regex coverage",
+        "  X Check every external repo is classified in ADR-0014",
+        "  - Check no local command or skill name is already taken",
+        "  - Validate marketplace and plugins",
+        "  - Lint GitHub workflows",
+        "  - Post Run actions/setup-node@v7",
+        "  ✓ Post Run actions/checkout@v7",
+        "  ✓ Complete job",
+        "##[error]Process completed with exit code 1.",
+    )), workflow="regenerate", name="tree"),
+])
+assert len(tree) == 1, tree
+
+# Counters and uppercase hex differ between same-cause runs: one group.
+counted = plan([
+    job(11, "Tests: 3 failed, 41 passed\nFAIL suite ABCDEF1234 > parses"),
+    job(22, "Tests: 4 failed, 40 passed\nFAIL suite 9F8E7D6C5B > parses"),
+])
+assert len(counted) == 1, counted
+
+# Distinct causes stay apart, even when they share a heading and the generic exit line.
+causes = plan([
+    job(11, "Curated sources and curation baselines disagree (ADR-0039):\n"
+            "- `Jeffallan/claude-skills`: curated source with no catalog entry\n"
+            "##[error]Process completed with exit code 1."),
+    job(22, "Curated sources and curation baselines disagree (ADR-0039):\n"
+            "- `antfu/skills`: curated source with no curation baseline\n"
+            "##[error]Process completed with exit code 1."),
+    job(33, "npm ERR! code E404\n##[error]Process completed with exit code 1."),
+    job(44, "npm ERR! code ERESOLVE\n##[error]Process completed with exit code 1."),
+    # Only the generic exit line: no evidence to share, its own inspection.
+    job(55, "##[error]Process completed with exit code 1."),
+    job(66, "##[error]Process completed with exit code 2."),
+])
+assert len(causes) == 6, causes
+
 # An empty signal shares no evidence: each such job is its own inspection.
 blank = plan([job(11, ""), job(22, "")])
 assert sorted(g["inspect"]["id"] for g in blank) == [11, 22], blank

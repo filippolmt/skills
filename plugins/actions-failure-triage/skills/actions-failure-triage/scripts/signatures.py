@@ -22,7 +22,11 @@ import sys
 NOISE = [
     (re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z?"), "<time>"),
     (re.compile(r"/tmp/[\w.-]+"), "/tmp/<tmp>"),
-    (re.compile(r"\b[0-9a-f]{7,40}\b"), "<sha>"),
+    # Hex ids, either case, with at least one digit so plain words stay.
+    (re.compile(r"\b(?=[0-9a-fA-F]*\d)[0-9a-fA-F]{7,40}\b"), "<hex>"),
+    # Test counters: "3 failed", "fail 0".
+    (re.compile(r"\b\d+(\s+(?:passed|failed|tests?|errors?|warnings?|skipped|suites?|todo)\b)", re.I), r"<n>\1"),
+    (re.compile(r"\b((?:pass|fail|tests?|suites?|skipped|todo)\s+)\d+\b", re.I), r"\1<n>"),
     (re.compile(r"\b\d+(\.\d+)?\s?(ms|s|m)\b"), "<duration>"),
     (re.compile(r"\b\d{5,}\b"), "<n>"),
 ]
@@ -80,14 +84,21 @@ def extract(log):
     return out[-MAX_LINES:]
 
 
+# Lines present whatever the cause: the runner's exit line, and the annotation block and
+# passed-step lines of a `gh run view` summary printed inside the log.
+BOILERPLATE = re.compile(
+    r"^((##\[error\]|X\s+)?Process completed with exit code \d+\.?|ANNOTATIONS|\S+: \.github#\d+)$")
+
+
 def signature(signal):
     lines = []
     for line in signal.splitlines():
+        line = line.strip()
+        if not line or PASSING.match(line) or BOILERPLATE.match(line):
+            continue
         for pattern, mask in NOISE:
             line = pattern.sub(mask, line)
-        line = line.strip()
-        if line:
-            lines.append(line)
+        lines.append(line)
     return "\n".join(lines)
 
 
