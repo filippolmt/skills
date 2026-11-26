@@ -1,0 +1,9 @@
+{
+  "name": "actions-failure-triage",
+  "version": "0.1.0+catalog.local.aa97d6b8d732",
+  "description": "Triages failing GitHub Actions checks across pull requests: groups failed jobs by error signature, inspects one representative per cause with secrets masked, and reports the causes with their run links.",
+  "author": {
+    "name": "Filippo Merante Caparrotta"
+  },
+  "skills": "./skills/"
+}
