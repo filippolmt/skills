@@ -93,6 +93,7 @@ and a stale row would silently exclude a later skill reusing its name.
 | `elementalsouls/Claude-BugHunter` | whole | whole-plugin entry |
 | `addyosmani/agent-skills` | whole | whole-plugin entry |
 | `mario-montanari/italiano-scrittura-anti-ai` | whole | whole-plugin entry |
+| `cli/cli` | curated | Only `gh`; `gh-skill` (manages skills through the `gh skill` command) not picked, and `.github/skills/` are the repo's own maintainer skills |
 
 ### Catalog exclusions
 

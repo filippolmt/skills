@@ -600,6 +600,12 @@ Snapshot of the catalog — the source of truth is
 | Plugin | What it bundles |
 |---|---|
 | `italiano-scrittura-anti-ai` | Writes and revises Italian text to the standard norm without the tics of AI-generated prose, translates English into Italian without calques, measures an author's voice on a corpus, and defends a human text flagged by an AI detector. Bundles the italiano-scrittura-anti-ai skill plus the calibra-voce, difendi and traduci commands. |
+
+### [cli/cli](https://github.com/cli/cli) — GitHub CLI
+
+| Skill | What it does |
+|---|---|
+| `gh` | Patterns for invoking the GitHub CLI (gh) from agents: structured output, pagination, repo targeting, search vs list, and the gh api fallback. |
 <!-- catalog:end -->
 
 ## External skills (auto-updated by Renovate)
