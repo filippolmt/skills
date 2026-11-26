@@ -1,0 +1,11 @@
+{
+  "name": "flagship",
+  "version": "0.0.0+catalog.ff191de7d903.bfc359768ee5",
+  "description": "Build, debug, or review code that uses Cloudflare Flagship feature flags from Workers, OpenFeature SDKs, the evaluation API, or Wrangler.",
+  "author": {
+    "name": "Cloudflare",
+    "url": "https://github.com/cloudflare"
+  },
+  "repository": "https://github.com/cloudflare/skills",
+  "skills": "./skills/"
+}

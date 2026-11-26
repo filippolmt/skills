@@ -1,0 +1,11 @@
+{
+  "name": "artifacts",
+  "version": "0.0.0+catalog.ff191de7d903.3d30c122da0d",
+  "description": "Build, debug, or review code that uses Cloudflare Artifacts, Git-compatible versioned storage, from Workers, the REST API, or Git clients.",
+  "author": {
+    "name": "Cloudflare",
+    "url": "https://github.com/cloudflare"
+  },
+  "repository": "https://github.com/cloudflare/skills",
+  "skills": "./skills/"
+}
