@@ -51,6 +51,10 @@ assert len(mixed) == 2, mixed
 split = plan([job(11, "##[error]boom", name="lint"), job(22, "##[error]boom", name="test")])
 assert len(split) == 2, split
 
+# An empty signal shares no evidence: each such job is its own inspection.
+blank = plan([job(11, ""), job(22, "")])
+assert sorted(g["inspect"]["id"] for g in blank) == [11, 22], blank
+
 # extract: `gh run view --log-failed` text in, only the failure signal out, secrets masked.
 def log(*lines):
     # `gh run view --log-failed` shape: "<job>\t<step>\t<timestamp> <message>"; the step is
@@ -91,6 +95,18 @@ for secret in ("abc.def-ghi", "ghp_", "hunter2", "AKIA"):
 # still skipping lines that report passing tests.
 bare = run("extract", stdin=log("\u2714 retries after a failed fetch (5ms)", "ok 3 - parse", "Error: ENOENT: no such file, open 'x'"))
 assert bare.splitlines() == ["Error: ENOENT: no such file, open 'x'"], bare
+
+# redact: any log text, every common secret form masked, the error itself kept.
+redacted = run("redact", stdin="\n".join([
+    "AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEY",
+    "OPENAI_API_KEY=sk-proj-abc123 NPM_TOKEN=npm_abc123",
+    "password: hunter2",
+    "git clone https://deploy:pa55w0rd@example.com/r.git",
+    "SyntaxError: Unexpected token ) in JSON at position 4",
+]))
+for secret in ("wJalrXUtnFEMI", "sk-proj-abc123", "npm_abc123", "hunter2", "pa55w0rd"):
+    assert secret not in redacted, (secret, redacted)
+assert "Unexpected token ) in JSON" in redacted, redacted
 
 # However long the log, the output stays bounded.
 noisy = run("extract", stdin="\n".join(f"x\ty\t##[error]failure {i}" for i in range(500)))

@@ -6,6 +6,8 @@ Usage:
     Prints only the failure signal: the failing step's last output lines up to each
     ##[error] (error-looking lines when there is none), secrets masked, at most 20
     lines. This is the "signal" a job carries below.
+  gh run view --job <id> --log-failed | signatures.py redact
+    Prints the log with the same secret masking, for a full inspection.
   signatures.py group < jobs.json
     jobs.json: [{"id", "pr", "workflow", "job", "url", "signal"}, ...]
     Prints the groups as JSON, first-seen order: {"workflow", "job", "signature",
@@ -29,10 +31,13 @@ NOISE = [
 SIGNAL = re.compile(r"\b(error|exception|fail(ed|ure)?|panic|traceback)\b", re.I)
 PASSING = re.compile(r"^(\u2714|\u2713|\u2139|ok\b|PASS\b)")
 SECRETS = [
-    (re.compile(r"(Bearer|Basic|token)\s+[^\s'\"]+", re.I), r"\1 ***"),
+    (re.compile(r"\b(Bearer|Basic)\s+[^\s'\"]+", re.I), r"\1 ***"),
     (re.compile(r"\b(gh[pousr]_|github_pat_)\w+"), "***"),
     (re.compile(r"\bAKIA[0-9A-Z]{16}\b"), "***"),
-    (re.compile(r"\b(password|passwd|secret|token|api[_-]?key)=\S+", re.I), r"\1=***"),
+    # KEY=value and key: value, env-style names included (AWS_SECRET_ACCESS_KEY, NPM_TOKEN).
+    (re.compile(r"\b(\w*(?:password|passwd|secret|token|api[_-]?key|access[_-]?key)\w*)(\s*[=:]\s*)[^\s'\"]+", re.I),
+     r"\1\2***"),
+    (re.compile(r"(://[^/\s:@]+):[^/\s@]+@"), r"\1:***@"),
 ]
 PREFIX = re.compile(r"^(?:[^\t]*\t){2}(?:\d{4}-\d{2}-\d{2}T\S+ ?)?")
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
@@ -44,6 +49,12 @@ def messages(log):
     # --log-failed prefixes "<job>\t<step>\t<timestamp> ": keep the message.
     for line in log.splitlines():
         yield ANSI.sub("", PREFIX.sub("", line)).strip()
+
+
+def redact(text):
+    for pattern, mask in SECRETS:
+        text = pattern.sub(mask, text)
+    return text
 
 
 def extract(log):
@@ -63,9 +74,7 @@ def extract(log):
     if not marked:
         picked = [m for m in messages(log) if SIGNAL.search(m) and not PASSING.match(m)]
     out = []
-    for message in picked:
-        for pattern, mask in SECRETS:
-            message = pattern.sub(mask, message)
+    for message in map(redact, picked):
         if message not in out:
             out.append(message)
     return out[-MAX_LINES:]
@@ -85,7 +94,8 @@ def signature(signal):
 def group(jobs):
     groups = {}
     for job in jobs:
-        key = (job["workflow"], job["job"], signature(job["signal"]))
+        # An empty signal shares no evidence with another: keyed by its own id.
+        key = (job["workflow"], job["job"], signature(job["signal"]) or f"<no signal: {job['id']}>")
         g = groups.get(key)
         if g is None:
             g = groups[key] = {
@@ -102,6 +112,9 @@ def group(jobs):
 def main(argv):
     if argv[1:] == ["extract"]:
         print("\n".join(extract(sys.stdin.read())))
+        return 0
+    if argv[1:] == ["redact"]:
+        sys.stdout.write(redact(sys.stdin.read()))
         return 0
     if argv[1:] == ["group"]:
         json.dump(group(json.load(sys.stdin)), sys.stdout, indent=2)

@@ -1,6 +1,6 @@
 ---
 name: actions-failure-triage
-description: Triage failing GitHub Actions checks on one or more pull requests, grouping failed jobs by error signature so each cause is inspected once. Use when the user asks why CI, PR checks or a workflow run fail.
+description: Triage failing GitHub Actions checks on one or more pull requests, grouping failed jobs by error signature so each cause is inspected once. Use when the user asks why GitHub Actions runs or pull request checks fail.
 ---
 
 # GitHub Actions failure triage
@@ -16,9 +16,9 @@ run it with `python3`.
 ## 1. Failed jobs
 
 List the failed checks of every pull request in scope with structured output
-(`gh pr checks <pr> --json name,workflow,bucket,link`). Keep the GitHub Actions
-checks whose `bucket` is `fail`. Each `link` ends in `/job/<id>`: that id is
-the job.
+(`gh pr checks <pr> --json name,workflow,bucket,link`). Keep the checks whose
+`bucket` is `fail` and whose `link` holds `/actions/runs/`: those are GitHub
+Actions jobs, and the `link` ends in `/job/<id>`, the job id.
 
 Done when every failed job of every pull request in scope is listed with its
 pull request, workflow, job name, id and link.
@@ -31,11 +31,8 @@ For each failed job, read only its failure signal:
 gh run view --job <id> --log-failed | python3 <skill dir>/scripts/signatures.py extract
 ```
 
-`--log-failed` returns the job's whole log; `extract` keeps the failing step's
-last output lines up to each `##[error]` (error-looking lines when there is
-none), masks tokens, keys and passwords, and caps the output at 20 lines. Quote log text to
-the user only from this output, or from a step 4 log you have redacted the same
-way.
+`--log-failed` returns the job's whole log; `extract` reduces it to the failing
+step's last lines with secrets masked, so only that reaches your context.
 
 Done when every job from step 1 carries a `signal`; a job whose signal is empty
 is a step 4 inspection on its own.
@@ -50,17 +47,22 @@ python3 <skill dir>/scripts/signatures.py group < jobs.json
 ```
 
 Each group is one signature: same workflow, same job, same signal once
-timestamps, temp paths, SHAs, durations and run ids are masked. Its `inspect`
-job is the **representative**; `jobs` and `prs` are everything that shares it.
+run-specific noise is masked. Its `inspect` job is the **representative**;
+`jobs` and `prs` are everything that shares it.
+
+Done when every job from step 1 sits in exactly one group.
 
 ## 4. Inspect each representative
 
-For each group, read the representative's full failed-step log
-(`gh run view --job <id> --log-failed`) and find the cause: the failing
-command, the first error, and what changed (the pull request diff, a
-dependency, the runner image, a flaky external service). Move on to the
-complete job log (`--log`) only when the failed steps alone leave the cause
-open.
+For each group, read the representative's full log through the same masking:
+
+```bash
+gh run view --job <id> --log-failed | python3 <skill dir>/scripts/signatures.py redact
+```
+
+Find the cause: the failing command, the first error, and what changed (the
+pull request diff, a dependency, the runner image, a flaky external service).
+Quote log text to the user only from `extract` or `redact` output.
 
 The other jobs of the group are confirmed by their matching signal: open their
 logs only when the representative's cause plainly cannot explain one of them,
