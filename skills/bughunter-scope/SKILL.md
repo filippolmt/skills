@@ -60,7 +60,7 @@ anchored `re:^host$` rules, so no subdomain is implied. Path-limited assets,
 placeholders (`<your-tenant>.example.com`), free text and mid-label wildcards land in
 `## Needs manual review` and are **not** in scope until you move a rule up. Re-running
 the import refreshes only the `cbh-import` blocks; rules you added by hand are kept.
-See [`docs/cbh-cli.md`](https://github.com/elementalsouls/Claude-BugHunter/blob/4c9966e4cafea11e24309d9e71d1c89602319c57/docs/cbh-cli.md).
+See [`docs/cbh-cli.md`](https://github.com/elementalsouls/Claude-BugHunter/blob/c5ff11779ee00beda2cbe05d5093fcd4ecba8f04/docs/cbh-cli.md).
 
 ## Rules
 

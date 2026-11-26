@@ -211,6 +211,7 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `playwright-cli` | `skill:SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `bughunter` | `command:commands/autopilot.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
 | `bughunter` | `command:commands/chain.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
+| `bughunter` | `command:commands/diff.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
 | `bughunter` | `command:commands/hunt.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
 | `bughunter` | `command:commands/intel.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
 | `bughunter` | `command:commands/memory-gc.md` | — | Adapted — Converted to a deterministic namespaced skill, relative links repointed. | Adapted — Converted to a deterministic namespaced skill, relative links repointed. |
@@ -302,6 +303,7 @@ Every catalog artifact has one target outcome. The generated Codex and pi projec
 | `bughunter` | `skill:skills/recon-scope-triage/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `bughunter` | `skill:skills/redteam-mindset/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `bughunter` | `skill:skills/redteam-report-template/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
+| `bughunter` | `skill:skills/regression-hunting/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `bughunter` | `skill:skills/report-writing/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `bughunter` | `skill:skills/security-arsenal/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |
 | `bughunter` | `skill:skills/supply-chain-attack-recon/SKILL.md` | — | Native — Packaged as an Agent Skill. | Native — Published in the root skills tree. |

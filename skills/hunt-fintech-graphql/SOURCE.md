@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/elementalsouls/Claude-BugHunter/tree/4c9966e4cafea11e24309d9e71d1c89602319c57/skills/hunt-fintech-graphql
-- **Commit**: `4c9966e4cafea11e24309d9e71d1c89602319c57`
+- **Upstream**: https://github.com/elementalsouls/Claude-BugHunter/tree/c5ff11779ee00beda2cbe05d5093fcd4ecba8f04/skills/hunt-fintech-graphql
+- **Commit**: `c5ff11779ee00beda2cbe05d5093fcd4ecba8f04`
 - **Licence**: `LICENSE`, `LICENSE-CONTENT`, copied beside this file
 - **Catalog entry**: `bughunter` in `.claude-plugin/marketplace.json`
