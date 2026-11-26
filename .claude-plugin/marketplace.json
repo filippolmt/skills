@@ -1281,6 +1281,36 @@
       }
     },
     {
+      "name": "artifacts",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/artifacts",
+        "ref": "main",
+        "sha": "ff191de7d903788eceaf516a514ae7d3b56b924a"
+      },
+      "description": "Build, debug, or review code that uses Cloudflare Artifacts, Git-compatible versioned storage, from Workers, the REST API, or Git clients.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
+    },
+    {
+      "name": "flagship",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cloudflare/skills",
+        "path": "skills/flagship",
+        "ref": "main",
+        "sha": "ff191de7d903788eceaf516a514ae7d3b56b924a"
+      },
+      "description": "Build, debug, or review code that uses Cloudflare Flagship feature flags from Workers, OpenFeature SDKs, the evaluation API, or Wrangler.",
+      "author": {
+        "name": "Cloudflare",
+        "url": "https://github.com/cloudflare"
+      }
+    },
+    {
       "name": "impeccable",
       "source": {
         "source": "git-subdir",

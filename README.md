@@ -532,6 +532,8 @@ Snapshot of the catalog — the source of truth is
 | `frameworks-on-cloudflare` | Build, migrate, and deploy web-framework applications (Astro, SvelteKit, React Router, TanStack Start, Nuxt, Hono, SPAs) on Cloudflare Workers. |
 | `workers-development` | Run, inspect, and debug Cloudflare Workers locally with Local Explorer, and route production debugging to Workers observability. |
 | `cloudflare-app-bootstrap` | Get a Cloudflare Workers app to a working local request by connecting its bindings, secrets, and initial data, then verifying real application behavior. |
+| `artifacts` | Build, debug, or review code that uses Cloudflare Artifacts, Git-compatible versioned storage, from Workers, the REST API, or Git clients. |
+| `flagship` | Build, debug, or review code that uses Cloudflare Flagship feature flags from Workers, OpenFeature SDKs, the evaluation API, or Wrangler. |
 
 ### [pbakaus/impeccable](https://github.com/pbakaus/impeccable) — frontend design fluency
 
