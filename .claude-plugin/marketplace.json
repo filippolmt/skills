@@ -1334,7 +1334,7 @@
         "ref": "v3.3.2",
         "sha": "a0199aab7bc1e87821c286f9b297afb8f98894ec"
       },
-      "description": "Create validated architecture, workflow, sequence, data-flow, lifecycle/state, ERD, class, tree, timeline, and waterfall diagrams as explorable standalone HTML with dark/light themes, motion, and image/SVG/WebM export, or a one-page explainer that answers a question with diagrams and charts. Accept plain-language requirements or pasted Mermaid input; inspect repository evidence when the diagram must reflect real code.",
+      "description": "Create validated architecture, workflow, sequence, data-flow, lifecycle/state, ERD, class, tree, timeline, and waterfall diagrams as explorable standalone HTML with dark/light themes, motion, and image/SVG/WebM export, optionally with a guided story and video; a one-page explainer that answers a question with diagrams and charts, made unasked by default for complex answers; or a source-backed Code Analysis of a local repository's architecture health, coupling and refactoring scope. Accept plain-language requirements or pasted Mermaid input; inspect repository evidence when the diagram must reflect real code.",
       "author": {
         "name": "tt-a1i",
         "url": "https://github.com/tt-a1i"
