@@ -557,7 +557,7 @@ Snapshot of the catalog — the source of truth is
 
 | Skill | What it does |
 |---|---|
-| `archify` | Create validated architecture, workflow, sequence, data-flow, lifecycle/state, ERD, class, tree, timeline, and waterfall diagrams as explorable standalone HTML with dark/light themes, motion, and image/SVG/WebM export, or a one-page explainer that answers a question with diagrams and charts. Accept plain-language requirements or pasted Mermaid input; inspect repository evidence when the diagram must reflect real code. |
+| `archify` | Create validated architecture, workflow, sequence, data-flow, lifecycle/state, ERD, class, tree, timeline, and waterfall diagrams as explorable standalone HTML with dark/light themes, motion, and image/SVG/WebM export, optionally with a guided story and video; a one-page explainer that answers a question with diagrams and charts, made unasked by default for complex answers; or a source-backed Code Analysis of a local repository's architecture health, coupling and refactoring scope. Accept plain-language requirements or pasted Mermaid input; inspect repository evidence when the diagram must reflect real code. |
 
 ### [cathrynlavery/diagram-design](https://github.com/cathrynlavery/diagram-design) — editorial diagram system
 
