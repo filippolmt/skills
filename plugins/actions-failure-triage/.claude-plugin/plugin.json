@@ -1,0 +1,11 @@
+{
+  "name": "actions-failure-triage",
+  "description": "Triages failing GitHub Actions checks across pull requests: groups failed jobs by error signature, inspects one representative per cause with secrets masked, and reports the causes with their run links.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Filippo Merante Caparrotta"
+  },
+  "dependencies": [
+    "gh"
+  ]
+}
