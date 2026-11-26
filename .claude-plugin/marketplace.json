@@ -1479,8 +1479,8 @@
       "source": {
         "source": "url",
         "url": "https://github.com/AgriciDaniel/claude-seo",
-        "ref": "v2.6.2",
-        "sha": "468ed5b0d9e3249394783710e54abb02837e326b"
+        "ref": "v2.6.3",
+        "sha": "c067311b497eff49110b73d4be33bdd3d7e6b40d"
       },
       "description": "Comprehensive SEO analysis: skills and agents covering technical SEO, content, schema, sitemaps, backlinks, local and international SEO, ecommerce, Google APIs, AI search, and agent readiness.",
       "author": {
