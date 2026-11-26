@@ -24,7 +24,8 @@
     { "repo": "microsoft/playwright-cli", "tagline": "browser automation", "kind": "skill" },
     { "repo": "elementalsouls/Claude-BugHunter", "tagline": "bug bounty & authorized red-team", "kind": "plugin" },
     { "repo": "addyosmani/agent-skills", "tagline": "software lifecycle, spec to ship; overlaps mattpocock/skills, enable one set per project", "kind": "plugin" },
-    { "repo": "mario-montanari/italiano-scrittura-anti-ai", "tagline": "Italian writing without AI tics", "kind": "plugin" }
+    { "repo": "mario-montanari/italiano-scrittura-anti-ai", "tagline": "Italian writing without AI tics", "kind": "plugin" },
+    { "repo": "cli/cli", "tagline": "GitHub CLI", "kind": "skill" }
   ],
   "omit": [],
   "descriptionReviewed": {
@@ -45,6 +46,7 @@
   },
   "curationBaseline": {
     "antfu/skills": "d524ed287eef22757297827ce42e3cad88abd20c",
+    "cli/cli": "529111a21612ff1e29dc45e567a157df24e0e243",
     "filippolmt/proximo": "1449a8f537d114a2e4fd30d1d5b57c1e7246ff5b",
     "hashicorp/agent-skills": "146815e19decbb28252eebcf4125054e0a8783f1",
     "Jeffallan/claude-skills": "d98d06edb54c25cfb94017c0ef830342a34a43ba",

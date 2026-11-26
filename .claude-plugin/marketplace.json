@@ -1574,6 +1574,21 @@
         "name": "Mario Montanari",
         "url": "https://mariomontanari.it"
       }
+    },
+    {
+      "name": "gh",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/cli/cli",
+        "path": "skills/gh",
+        "ref": "v2.106.0",
+        "sha": "529111a21612ff1e29dc45e567a157df24e0e243"
+      },
+      "description": "Patterns for invoking the GitHub CLI (gh) from agents: structured output, pagination, repo targeting, search vs list, and the gh api fallback.",
+      "author": {
+        "name": "GitHub Inc.",
+        "url": "https://github.com/cli"
+      }
     }
   ]
 }
