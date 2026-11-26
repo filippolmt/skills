@@ -1,0 +1,11 @@
+{
+  "name": "gh",
+  "version": "2.106.0+catalog.529111a21612.4829a979f024",
+  "description": "Patterns for invoking the GitHub CLI (gh) from agents: structured output, pagination, repo targeting, search vs list, and the gh api fallback.",
+  "author": {
+    "name": "GitHub Inc.",
+    "url": "https://github.com/cli"
+  },
+  "repository": "https://github.com/cli/cli",
+  "skills": "./skills/"
+}

@@ -41,6 +41,18 @@
       "category": "Developer Tools"
     },
     {
+      "name": "actions-failure-triage",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/actions-failure-triage"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
       "name": "printing-press-bundle",
       "source": {
         "source": "local",
@@ -1221,6 +1233,18 @@
       "source": {
         "source": "local",
         "path": "./.agents/plugins/packages/agent-skills"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "gh",
+      "source": {
+        "source": "local",
+        "path": "./.agents/plugins/packages/gh"
       },
       "policy": {
         "installation": "AVAILABLE",
