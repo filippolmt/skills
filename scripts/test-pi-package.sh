@@ -14,6 +14,10 @@ cleanup() { rm -rf "$test_home"; }
 trap cleanup EXIT
 export PI_CODING_AGENT_DIR="$test_home/config"
 export PI_PACKAGE_DIR="$test_home/packages"
+# pi also loads user-level skills from $HOME (~/.agents/skills): one named like a
+# catalog entry shadows the package's copy and the origin check below fails.
+export HOME="$test_home/home"
+mkdir -p "$HOME"
 export PI_OFFLINE=1
 export PI_SKIP_VERSION_CHECK=1
 
