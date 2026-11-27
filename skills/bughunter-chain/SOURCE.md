@@ -1,5 +1,5 @@
 # Source
 
-- **Source**: https://github.com/elementalsouls/Claude-BugHunter/tree/063874d1c44637a76be978d207de6c98becf7421/commands/chain.md
+- **Source**: https://github.com/elementalsouls/Claude-BugHunter/tree/9b7fc8dcf599a48f5f986971fdc62146a7f5a431/commands/chain.md
 - **Catalog entry**: `bughunter`
 - **Transformation**: Converted command to a deterministic namespaced Agent Skill; relative links repointed at sibling skills or the upstream file.

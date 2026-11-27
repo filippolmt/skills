@@ -2,7 +2,7 @@
 
 Vendored copy — **do not edit**. Regenerate with `node scripts/gen-skills-tree.js`.
 
-- **Upstream**: https://github.com/elementalsouls/Claude-BugHunter/tree/063874d1c44637a76be978d207de6c98becf7421/skills/hunt-clickjacking
-- **Commit**: `063874d1c44637a76be978d207de6c98becf7421`
+- **Upstream**: https://github.com/elementalsouls/Claude-BugHunter/tree/9b7fc8dcf599a48f5f986971fdc62146a7f5a431/skills/hunt-clickjacking
+- **Commit**: `9b7fc8dcf599a48f5f986971fdc62146a7f5a431`
 - **Licence**: `LICENSE`, `LICENSE-CONTENT`, copied beside this file
 - **Catalog entry**: `bughunter` in `.claude-plugin/marketplace.json`

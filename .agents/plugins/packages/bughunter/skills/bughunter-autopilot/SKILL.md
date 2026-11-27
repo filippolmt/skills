@@ -54,7 +54,7 @@ Runs the full hunt cycle without stopping for approval at each step:
 ```
 1. SCOPE     Load and confirm program scope
 2. RECON     Run recon (or use cached if < 7 days old)
-3. RANK      Prioritize attack surface (recon-ranker agent)
+3. RANK      Prioritize attack surface (deterministic engine ranking)
 4. HUNT      Test P1 endpoints systematically
 5. VALIDATE  7-Question Gate on findings
 6. REPORT    Draft reports for validated findings
@@ -87,12 +87,13 @@ vuln_class with strong **negative** history on this tech stack (`dead-class`).
 - **`--quick` / `--yolo`:** the command passes `--use-memory` to the engine — skips on.
 - A vuln_class never hunted on this stack is **never** skipped, and every skip is logged
   (`hunt: skipped via ledger (...)`). Coverage is never silently reduced.
-- Capture is automatic; the ledger fills itself as you run. Manage size with `/memory-gc`.
+- Capture is automatic only when memory is on (`--quick`/`--yolo`, which pass
+  `--use-memory`); a default run writes nothing to the ledger. Manage size with `/memory-gc`.
 
 ## After Autopilot
 
 - Run `/remember` to log successful patterns to hunt memory
-- Run `/pickup target.com` next time to pick up where you left off
+- Run `/pickup target.com` next time to pick up where you left off (only finds data from runs with memory on)
 - Check the ledger (`~/.claude/bughunter/memory/findings.jsonl`) or run `/memory-gc` for its size
 
 > **Cross-engagement persistence is opt-in (`--use-memory`).** By default the engine
