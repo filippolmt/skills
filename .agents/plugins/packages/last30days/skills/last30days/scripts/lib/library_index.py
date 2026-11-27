@@ -2,16 +2,21 @@
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import os
 import re
 import sqlite3
+import stat
+from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from datetime import date
 from pathlib import Path
 
-from . import library
+from . import library, private_files, rust_accel
 from .private_files import prepare_private_sqlite_files
+
+_IS_JUNCTION = getattr(os.path, "isjunction", None)
 
 
 DEFAULT_LIBRARY_DB = library.DEFAULT_BRIEFS_DIR.parent / "library.db"
@@ -91,9 +96,19 @@ CREATE VIRTUAL TABLE IF NOT EXISTS library_fts USING fts5(
 """
 
 
+@contextmanager
+def _managed_connection(conn: sqlite3.Connection):
+    """Commit or roll back ``conn`` and always close it on exit."""
+    try:
+        with conn as active:
+            yield active
+    finally:
+        conn.close()
+
+
 def fts5_available() -> bool:
     try:
-        with sqlite3.connect(":memory:") as conn:
+        with _managed_connection(sqlite3.connect(":memory:")) as conn:
             conn.execute("CREATE VIRTUAL TABLE probe USING fts5(value)")
     except sqlite3.DatabaseError:
         return False
@@ -125,6 +140,38 @@ def sync_library(
         return replace(_sync_library(memory_dir, briefs_dir, target), rebuilt=True)
 
 
+def _resolve_regular_source_path(path: Path | str) -> Path | None:
+    """Strictly resolve an existing regular non-symlink source file path."""
+    raw_source = Path(path).expanduser()
+    if _IS_JUNCTION is not None and _IS_JUNCTION(raw_source):
+        return None
+    try:
+        lstat_res = raw_source.lstat()
+    except OSError:
+        return None
+    if stat.S_ISLNK(lstat_res.st_mode) or not stat.S_ISREG(lstat_res.st_mode):
+        return None
+    try:
+        canonical_parent = raw_source.parent.resolve(strict=True)
+    except (OSError, RuntimeError):
+        return None
+    canonical_source = canonical_parent / raw_source.name
+    if _IS_JUNCTION is not None and _IS_JUNCTION(canonical_source):
+        return None
+    try:
+        canonical_stat = canonical_source.lstat()
+    except OSError:
+        return None
+    if stat.S_ISLNK(canonical_stat.st_mode) or not stat.S_ISREG(canonical_stat.st_mode):
+        return None
+    if (os.name == "posix" or (lstat_res.st_ino and canonical_stat.st_ino)) and (
+        canonical_stat.st_dev,
+        canonical_stat.st_ino,
+    ) != (lstat_res.st_dev, lstat_res.st_ino):
+        return None
+    return canonical_source
+
+
 def index_entry(
     path: Path | str,
     *,
@@ -136,16 +183,18 @@ def index_entry(
         raise LibrarySearchUnavailable(
             "library search requires a Python SQLite build with FTS5 support"
         )
-    source = Path(path).expanduser().resolve()
+    canonical_source = _resolve_regular_source_path(path)
+    if canonical_source is None:
+        return False
     try:
-        entry = library.parse_markdown_file(source, source_format=source_format)
+        entry = library.parse_markdown_file(canonical_source, source_format=source_format)
     except (OSError, UnicodeError, ValueError):
         return False
     if library.is_unbounded_private_brief(entry.content, source_format=entry.source_format):
         return False
     target = Path(db_path).expanduser()
     _ensure_private_directory(target.parent)
-    with _connect(target) as conn:
+    with _managed_connection(_connect(target)) as conn:
         _upsert_entry(conn, entry)
         conn.commit()
     return True
@@ -157,17 +206,19 @@ def index_brief(
     db_path: Path | str = DEFAULT_LIBRARY_DB,
 ) -> bool:
     """Index one saved artifact, parsing it through ``scan_library``."""
-    source = Path(path).expanduser().resolve()
+    source = _resolve_regular_source_path(path)
+    if source is None:
+        return False
     if source.suffix.lower() == ".json":
         entries, _ = library.scan_library(source.parent / ".missing", source.parent)
     else:
         entries, _ = library.scan_library(source.parent, source.parent / ".missing")
-    entry = next((item for item in entries if item.source_path.resolve() == source), None)
+    entry = next((item for item in entries if item.source_path == source), None)
     if entry is None:
         return False
     target = Path(db_path).expanduser()
     _ensure_private_directory(target.parent)
-    with _connect(target) as conn:
+    with _managed_connection(_connect(target)) as conn:
         _upsert_entry(conn, entry)
         conn.commit()
     return True
@@ -188,7 +239,7 @@ def search(
     brief_matches: list[LibrarySearchMatch] = []
     if target.is_file():
         try:
-            with _connect(target) as conn:
+            with _managed_connection(_connect(target)) as conn:
                 rows = conn.execute(
                     """SELECT d.topic, d.published_date, d.headline,
                               snippet(library_fts, 4, '', '', ' … ', 36) AS snippet,
@@ -238,15 +289,192 @@ def sync_and_search(
     ), synced
 
 
+def _sync_library_rust(
+    memory_dir: Path | str,
+    briefs_dir: Path | str,
+    db_path: Path,
+) -> SyncResult | None:
+    """Fast parallel sync path using ``last30days-core`` for Markdown scanning and fingerprinting."""
+    md_requests, json_entries, notes = library._collect_sync_inputs(memory_dir, briefs_dir)
+    if md_requests:
+        wire_requests = [
+            {
+                "path": r["path"],
+                "stem": r["stem"],
+                "source_format": r["source_format"],
+                "expected_dev_ino": r["expected_dev_ino"],
+                "fallback_date": r["fallback_date"],
+            }
+            for r in md_requests
+        ]
+        outcomes = rust_accel.scan_markdown_files(wire_requests)
+        if outcomes is None:
+            return None
+    else:
+        outcomes = []
+
+    # Merge scanned Markdown metadata + JSON entries using exact _keep_preferred semantics.
+    # Each value: (kind, mtime_ns, size, entry_id, slug, pub_date, stem, source_format, unbounded, fingerprint, payload)
+    preferred: dict[str, dict[str, object]] = {}
+
+    def _keep(record: dict[str, object]) -> None:
+        eid = str(record["entry_id"])
+        existing_rec = preferred.get(eid)
+        if existing_rec is None or int(record["mtime_ns"]) > int(existing_rec["mtime_ns"]):
+            preferred[eid] = record
+
+    for req, outcome in zip(md_requests, outcomes):
+        if outcome.get("status") != "ok":
+            notes.append(f"Skipped {req['path']}: {outcome.get('reason', 'scan failed')}")
+            continue
+        meta = outcome["meta"]
+        _keep(
+            {
+                "kind": "md",
+                "mtime_ns": req["_mtime_ns"],
+                "size": req["_size"],
+                "entry_id": meta["entry_id"],
+                "slug": meta["slug"],
+                "topic": meta["topic"],
+                "published_date": meta["published_date"],
+                "stem": req["stem"],
+                "source_format": meta["source_format"],
+                "unbounded_private": bool(meta["unbounded_private"]),
+                "fingerprint": meta["indexable_fingerprint"],
+                "path": Path(str(req["path"])),
+                "root": req.get("_root"),
+                "expected_parent_dir": req.get("_expected_parent_dir"),
+                "expected_parent_id": req.get("_expected_parent_id"),
+            }
+        )
+
+    for entry in json_entries:
+        mtime_ns, file_size = _entry_file_identity(entry)
+        _keep(
+            {
+                "kind": "json",
+                "mtime_ns": mtime_ns,
+                "size": file_size,
+                "entry_id": entry.entry_id,
+                "slug": entry.slug,
+                "topic": entry.topic,
+                "published_date": entry.published_date.isoformat(),
+                "stem": entry.source_path.stem,
+                "source_format": entry.source_format,
+                "unbounded_private": library.is_unbounded_private_brief(
+                    entry.content, source_format=entry.source_format
+                ),
+                "fingerprint": _fingerprint(_indexable_content(entry.content)),
+                "entry": entry,
+            }
+        )
+
+    # Mirror library._suppress_superseded_raw (requires full topic agreement
+    # alongside slug and date so distinct topics such as C# and C++ stay visible).
+    finished_keys = {
+        (rec["slug"], str(rec["topic"]).casefold(), rec["published_date"])
+        for rec in preferred.values()
+        if rec["source_format"] == "finished-brief" and not rec["unbounded_private"]
+    }
+    if finished_keys:
+        preferred = {
+            eid: rec
+            for eid, rec in preferred.items()
+            if not (
+                rec["source_format"] == "markdown"
+                and (rec["slug"], str(rec["topic"]).casefold(), rec["published_date"]) in finished_keys
+                and library._is_unsuffixed_raw_dump(str(rec["stem"]))
+            )
+        }
+
+    _ensure_private_directory(db_path.parent)
+    indexed = unchanged = 0
+    with _managed_connection(_connect(db_path)) as conn:
+        existing = {
+            row["entry_id"]: (row["source_mtime_ns"], row["source_size"], row["content_hash"])
+            for row in conn.execute(
+                "SELECT entry_id, source_mtime_ns, source_size, content_hash FROM library_documents"
+            )
+        }
+        current_ids: set[str] = set()
+        fts_rows = conn.execute("SELECT count(*) FROM library_fts").fetchone()[0]
+        fts_trustworthy = fts_rows >= len(existing) if existing else True
+
+        for rec in preferred.values():
+            if rec["unbounded_private"]:
+                continue
+            eid = str(rec["entry_id"])
+            current_ids.add(eid)
+            mtime_ns = int(rec["mtime_ns"])
+            file_size = int(rec["size"])
+            fingerprint = str(rec["fingerprint"])
+            if fts_trustworthy and existing.get(eid) == (mtime_ns, file_size, fingerprint):
+                unchanged += 1
+                continue
+            if rec["kind"] == "json":
+                _upsert_entry(conn, rec["entry"], fingerprint=fingerprint)  # type: ignore[arg-type]
+                indexed += 1
+            else:
+                try:
+                    entry = library.parse_markdown_file(
+                        rec["path"],  # type: ignore[arg-type]
+                        source_format=str(rec["source_format"]),
+                        root=rec.get("root"),  # type: ignore[arg-type]
+                        expected_parent_dir=rec.get("expected_parent_dir"),  # type: ignore[arg-type]
+                        expected_parent_id=rec.get("expected_parent_id"),  # type: ignore[arg-type]
+                    )
+                except (OSError, UnicodeError, ValueError) as exc:
+                    notes.append(f"Skipped {rec['path']}: {exc}")
+                    current_ids.discard(eid)
+                    continue
+                if library.is_unbounded_private_brief(
+                    entry.content, source_format=entry.source_format
+                ):
+                    current_ids.discard(eid)
+                    continue
+                if entry.entry_id != eid:
+                    current_ids.discard(eid)
+                    current_ids.add(entry.entry_id)
+                if (
+                    entry.entry_id != eid
+                    or entry.source_mtime_ns != mtime_ns
+                    or entry.source_size != file_size
+                ):
+                    fingerprint = _fingerprint(_indexable_content(entry.content))
+                _upsert_entry(conn, entry, fingerprint=fingerprint)
+                indexed += 1
+
+        stale_ids = set(existing) - current_ids
+        for entry_id in stale_ids:
+            conn.execute("DELETE FROM library_fts WHERE entry_id = ?", (entry_id,))
+            conn.execute("DELETE FROM library_documents WHERE entry_id = ?", (entry_id,))
+        conn.commit()
+
+    return SyncResult(
+        indexed=indexed,
+        removed=len(stale_ids),
+        unchanged=unchanged,
+        notes=tuple(notes),
+    )
+
+
 def _sync_library(
     memory_dir: Path | str,
     briefs_dir: Path | str,
     db_path: Path,
 ) -> SyncResult:
+    if (
+        rust_accel.engine_mode() != "python"
+        and library.scan_library is library._ORIGINAL_SCAN_LIBRARY
+    ):
+        accelerated = _sync_library_rust(memory_dir, briefs_dir, db_path)
+        if accelerated is not None:
+            return accelerated
+
     entries, notes = library.scan_library(memory_dir, briefs_dir)
     _ensure_private_directory(db_path.parent)
     indexed = unchanged = 0
-    with _connect(db_path) as conn:
+    with _managed_connection(_connect(db_path)) as conn:
         existing = {
             row["entry_id"]: (row["source_mtime_ns"], row["source_size"], row["content_hash"])
             for row in conn.execute(
@@ -264,10 +492,10 @@ def _sync_library(
             if library.is_unbounded_private_brief(entry.content, source_format=entry.source_format):
                 continue
             current_ids.add(entry.entry_id)
-            stat = entry.source_path.stat()
+            mtime_ns, file_size = _entry_file_identity(entry)
             fingerprint = _fingerprint(_indexable_content(entry.content))
             if fts_trustworthy and existing.get(entry.entry_id) == (
-                stat.st_mtime_ns, stat.st_size, fingerprint
+                mtime_ns, file_size, fingerprint
             ):
                 unchanged += 1
                 continue
@@ -286,22 +514,31 @@ def _sync_library(
     )
 
 
+def _regular_stat(path: Path) -> os.stat_result:
+    if _IS_JUNCTION is not None and _IS_JUNCTION(path):
+        raise OSError(errno.ELOOP, f"Refusing to follow junction: {path}")
+    st = path.lstat()
+    if stat.S_ISLNK(st.st_mode) or not stat.S_ISREG(st.st_mode):
+        raise OSError(f"Expected a regular library file: {path}")
+    return st
+
+
+def _entry_file_identity(entry: library.LibraryEntry) -> tuple[int, int]:
+    if entry.source_mtime_ns is not None and entry.source_size is not None:
+        return entry.source_mtime_ns, entry.source_size
+    st = _regular_stat(entry.source_path)
+    return st.st_mtime_ns, st.st_size
+
+
 def _connect(path: Path) -> sqlite3.Connection:
     _ensure_private_directory(path.parent)
-    if not path.exists():
-        try:
-            fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-        except FileExistsError:
-            pass
-        else:
-            os.close(fd)
-    path.chmod(0o600)
-    conn = sqlite3.connect(str(path))
+    safe_path = prepare_private_sqlite_files(path, create=True)
+    conn = sqlite3.connect(str(safe_path))
     try:
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA busy_timeout=5000")
         conn.executescript(_SCHEMA)
-    except Exception:
+    except BaseException:
         conn.close()
         raise
     return conn
@@ -313,7 +550,7 @@ def _upsert_entry(
     *,
     fingerprint: str | None = None,
 ) -> None:
-    stat = entry.source_path.stat()
+    mtime_ns, file_size = _entry_file_identity(entry)
     private_free_content = library.public_markdown(entry.content)
     indexed_content = _without_library_context(private_free_content)
     headline = entry.headline
@@ -322,7 +559,17 @@ def _upsert_entry(
         headline = library._markdown_headline(private_free_content) or library._brief_prose_headline(private_free_content) or entry.topic
         summary = library._markdown_summary(private_free_content) or library._brief_prose_summary(private_free_content) or headline
     content_hash = fingerprint or _fingerprint(indexed_content)
-    source_path = str(entry.source_path.resolve())
+    if (
+        entry.source_mtime_ns is not None
+        and entry.source_path.is_absolute()
+        and ".." not in entry.source_path.parts
+    ):
+        source_path = str(entry.source_path)
+    else:
+        try:
+            source_path = str(entry.source_path.resolve(strict=True))
+        except (OSError, RuntimeError):
+            source_path = str(entry.source_path)
     replaced = conn.execute(
         "SELECT entry_id FROM library_documents WHERE source_path = ? AND entry_id != ?",
         (source_path, entry.entry_id),
@@ -349,8 +596,8 @@ def _upsert_entry(
         (
             entry.entry_id,
             source_path,
-            stat.st_mtime_ns,
-            stat.st_size,
+            mtime_ns,
+            file_size,
             content_hash,
             entry.topic,
             entry.published_date.isoformat(),
@@ -377,7 +624,7 @@ def _search_store_sightings(
         # Standard SQLite builds reject a UNC server name in a URI authority.
         use_uri = os.name == "posix"
         database = f"{path.as_uri()}?mode=ro" if use_uri else str(path)
-        with sqlite3.connect(database, uri=use_uri) as conn:
+        with _managed_connection(sqlite3.connect(database, uri=use_uri)) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 """SELECT t.name AS topic, rr.run_date,
@@ -390,7 +637,7 @@ def _search_store_sightings(
                    JOIN research_runs rr ON rr.id = fs.run_id
                    JOIN topics t ON t.id = fs.topic_id
                    WHERE findings_fts MATCH ? AND rr.status IN ('completed', 'degraded')
-                         AND fs.source != 'corpus'
+                         AND fs.source != 'corpus' AND f.dismissed = 0
                    ORDER BY rank, rr.run_date DESC
                    LIMIT ?""",
                 (expression, limit),
@@ -445,15 +692,77 @@ def _without_library_context(content: str) -> str:
     return _LEGACY_LIBRARY_CONTEXT.sub("", without_marked)
 
 
-def _ensure_private_directory(path: Path) -> None:
-    missing: list[Path] = []
-    current = path
-    while not current.exists():
-        missing.append(current)
-        current = current.parent
-    path.mkdir(parents=True, exist_ok=True, mode=0o700)
-    for directory in missing:
-        directory.chmod(0o700)
+def _harden_private_directory_fd(directory: Path) -> None:
+    """Verify ``directory`` is an owned real directory and fchmod it to 0o700."""
+    if _IS_JUNCTION is not None and _IS_JUNCTION(directory):
+        raise OSError(errno.ELOOP, f"Refusing to follow junction directory: {directory}")
+    if os.name != "posix":
+        st = directory.lstat()
+        if stat.S_ISLNK(st.st_mode) or not stat.S_ISDIR(st.st_mode):
+            raise OSError(f"Expected a real private directory: {directory}")
+        return
+    flags = os.O_RDONLY
+    for attr in ("O_DIRECTORY", "O_NOFOLLOW", "O_CLOEXEC"):
+        flags |= getattr(os, attr, 0)
+    try:
+        fd = os.open(directory, flags)
+    except OSError as exc:
+        if exc.errno == errno.ELOOP:
+            raise OSError(
+                errno.ELOOP, f"Refusing to follow symlink directory: {directory}"
+            ) from exc
+        raise
+    try:
+        st = os.fstat(fd)
+        if not stat.S_ISDIR(st.st_mode):
+            raise OSError(f"Expected a real private directory: {directory}")
+        geteuid = getattr(os, "geteuid", None)
+        if geteuid is not None and st.st_uid != geteuid():
+            raise OSError(f"Refusing to use private directory owned by another user: {directory}")
+        if stat.S_IMODE(st.st_mode) != 0o700:
+            os.fchmod(fd, 0o700)
+    finally:
+        os.close(fd)
+
+
+def _ensure_private_directory(path: Path) -> Path:
+    target = Path(path).expanduser()
+    abs_target = target if target.is_absolute() else Path(os.getcwd()) / target
+    missing_names: list[str] = []
+    current = abs_target
+    while True:
+        if _IS_JUNCTION is not None and _IS_JUNCTION(current):
+            raise OSError(errno.ELOOP, f"Refusing to follow junction directory: {current}")
+        try:
+            current.lstat()
+            break
+        except FileNotFoundError:
+            if current == current.parent:
+                raise
+            if current.name in ("", ".", ".."):
+                raise OSError(f"Invalid private directory component: {current}")
+            missing_names.append(current.name)
+            current = current.parent
+
+    # Validate the deepest existing ancestor chain BEFORE creating anything.
+    if os.name == "posix":
+        verified = private_files._resolve_trusted_parent_dir(current)
+    else:
+        st = current.lstat()
+        if stat.S_ISLNK(st.st_mode) or not stat.S_ISDIR(st.st_mode):
+            raise OSError(f"Expected a directory for private file: {current}")
+        verified = current.resolve(strict=True)
+
+    for name in reversed(missing_names):
+        verified = verified / name
+        if _IS_JUNCTION is not None and _IS_JUNCTION(verified):
+            raise OSError(errno.ELOOP, f"Refusing to follow junction directory: {verified}")
+        try:
+            os.mkdir(verified, 0o700)
+        except FileExistsError:
+            pass
+        _harden_private_directory_fd(verified)
+    return verified
 
 
 def _is_confirmed_corruption(exc: sqlite3.DatabaseError) -> bool:
@@ -507,8 +816,16 @@ def _dedupe_matches(matches: list[LibrarySearchMatch]) -> list[LibrarySearchMatc
 
 
 def _remove_database(path: Path) -> None:
-    for candidate in (path, Path(f"{path}-wal"), Path(f"{path}-shm")):
+    for candidate in (
+        path,
+        Path(f"{path}-wal"),
+        Path(f"{path}-shm"),
+        Path(f"{path}-journal"),
+    ):
         try:
+            st = candidate.lstat()
+            if not stat.S_ISREG(st.st_mode):
+                continue
             candidate.unlink()
         except FileNotFoundError:
             pass
