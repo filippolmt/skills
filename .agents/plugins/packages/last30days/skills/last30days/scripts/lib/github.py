@@ -12,11 +12,13 @@ import os
 import re
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Dict, List, Optional
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, as_completed, wait as futures_wait
+from http.client import HTTPException
+from typing import Any, Callable, Dict, List, Optional
 
 from . import dates, env, http, log, schema
 from .query import extract_core_subject
@@ -79,7 +81,7 @@ def resolve_token(token: Optional[str] = None) -> Optional[str]:
 def _fetch_json(
     url: str,
     token: Optional[str] = None,
-    timeout: int = 15,
+    timeout: float = 15,
     failure_out: Optional[List[str]] = None,
 ) -> Optional[Dict[str, Any]]:
     """Fetch JSON from GitHub API. Returns None on failure.
@@ -116,11 +118,11 @@ def _fetch_json(
         _log(f"HTTP {e.code}: {e.reason}")
         _note(f"HTTP {e.code}: {e.reason}")
         return None
-    except (urllib.error.URLError, OSError, TimeoutError) as e:
+    except (urllib.error.URLError, OSError, TimeoutError, HTTPException) as e:
         _log(f"Network error: {e}")
         _note(f"network error: {e}")
         return None
-    except json.JSONDecodeError as e:
+    except (json.JSONDecodeError, UnicodeDecodeError) as e:
         _log(f"JSON decode error: {e}")
         _note(f"invalid JSON: {e}")
         return None
@@ -201,34 +203,77 @@ def _clears_topical_floor(topic: str, title: str, repo: str) -> bool:
 # a missing closer ("(created:>2025-03-20") is still stripped rather than
 # leaking into the query; qualifier-only wrapper residue is discarded below.
 QUALIFIER_KEYS = frozenset({
-    "archived", "assignee", "author", "base", "closed", "comments", "commenter",
-    "created", "fork", "forks", "head", "in", "interactions", "involves", "is",
-    "label", "language", "license", "linked", "mentions", "merged", "milestone",
-    "no", "org", "project", "pushed", "reactions", "repo", "review",
-    "review-requested", "reviewed-by", "size", "sort", "stars", "state", "team",
-    "topic", "topics", "type", "updated", "user",
+    "answered", "archived", "assignee", "author", "base", "category", "closed",
+    "comments", "commenter", "created", "draft", "fork", "forks", "head", "in",
+    "interactions", "involves", "is", "label", "language", "license", "linked",
+    "mentions", "merged", "milestone", "no", "org", "owner", "parent-issue",
+    "project", "pushed", "reactions", "reason", "repo", "review",
+    "review-requested", "reviewed-by", "sha", "size", "sort", "stars", "state",
+    "status", "sub-issue", "team", "topic", "topics", "type", "updated", "user",
+    "visibility",
 })
 
-_QUALIFIER_KEYS_ALT = "|".join(sorted(QUALIFIER_KEYS))
+_QUALIFIER_KEYS_ALT = "|".join(sorted(QUALIFIER_KEYS, key=lambda k: (-len(k), k)))
 
 _QUALIFIER_RE = re.compile(
-    r"(?:(?<=[\s,;(\[\"'])|^)(?:" + _QUALIFIER_KEYS_ALT + r"):(?:[<>]=?)?(?:\"[^\"]*\"|[^\s,;()\[\]]+)[,;]?",
+    r"(?:(?<=[\s,;(\)\[\]\"'])|^)[-+]*?(?:"
+    + _QUALIFIER_KEYS_ALT
+    + r"):(?:[<>]=?)?(?:\([^)]*\)|\"[^\"]*\"|\([^\s,;()\[\]]+|[^\s,;()\[\]]+)[,;]?",
     re.IGNORECASE,
 )
 
 # A qualifier fully wrapped in a single pair of parens/brackets/quotes. The
 # wrapper pair is consumed with the qualifier, so stripping leaves no residue.
+# Optional leading +/- negation before the wrapper (e.g. `-(is:public)`,
+# `-"is:public"`) is consumed when bounded by whitespace/punctuation.
 # An unbalanced quote (e.g. `label:"bug`) is not a wrapper shape and is left
 # to _QUALIFIER_RE, which strips the qualifier as before.
 _WRAPPED_QUALIFIER_RE = re.compile(
-    r"[\(\[\"'](?:" + _QUALIFIER_KEYS_ALT + r"):(?:[<>]=?)?(?:\"[^\"]*\"|[^\s,;()\[\]]+)[\)\]\"']",
+    r"(?:(?:(?<=[\s,;(\)\[\]\"'])|^)[-+]+)?[\(\[\"'][-+]*(?:"
+    + _QUALIFIER_KEYS_ALT
+    + r"):(?:[<>]=?)?(?:\([^)]*\)|\"[^\"]*\"|[^\s,;()\[\]\"']+)[\)\]\"']",
     re.IGNORECASE,
 )
 
-# Empty wrapper pairs left behind when a nested wrapper collapses (e.g. the
-# `()` from "((created:>2025-03-20))"). Removed to fixpoint; a pair enclosing
-# real text stays.
-_EMPTY_WRAPPER_RE = re.compile(r"\(\s*\)|\[\s*\]|\"\s*\"|'\s*'")
+_ESCAPED_QUOTE_RE = re.compile(r'(?<!\\)\\+(?=")')
+_BRACKET_OPEN_FOR_CLOSE = {")": "(", "]": "["}
+
+
+def _collapse_empty_wrappers(text: str) -> str:
+    """Collapse nested empty (), [], "", '' pairs (ignoring inner whitespace) in O(N)."""
+    out: list[str] = []
+    non_ws_indices: list[int] = []
+    in_dquote = False
+    in_squote = False
+    for ch in text:
+        bracket_opener = _BRACKET_OPEN_FOR_CLOSE.get(ch)
+        if bracket_opener is not None:
+            if non_ws_indices and out[non_ws_indices[-1]] == bracket_opener:
+                open_idx = non_ws_indices.pop()
+                del out[open_idx:]
+                continue
+        elif ch == '"':
+            if in_dquote:
+                in_dquote = False
+                if non_ws_indices and out[non_ws_indices[-1]] == '"':
+                    open_idx = non_ws_indices.pop()
+                    del out[open_idx:]
+                    continue
+            else:
+                in_dquote = True
+        elif ch == "'":
+            if in_squote:
+                in_squote = False
+                if non_ws_indices and out[non_ws_indices[-1]] == "'":
+                    open_idx = non_ws_indices.pop()
+                    del out[open_idx:]
+                    continue
+            else:
+                in_squote = True
+        if not ch.isspace():
+            non_ws_indices.append(len(out))
+        out.append(ch)
+    return "".join(out)
 
 
 def strip_search_qualifiers(text: str) -> str:
@@ -238,18 +283,38 @@ def strip_search_qualifiers(text: str) -> str:
     but qualifiers; callers must handle that rather than searching on an empty
     term, which would match the entire site.
     """
-    stripped = _WRAPPED_QUALIFIER_RE.sub(" ", text)
-    stripped = _QUALIFIER_RE.sub(" ", stripped)
+    stripped = _ESCAPED_QUOTE_RE.sub("", text)
+    had_qualifier = False
+
+    def _strip_to_fixpoint(value: str) -> tuple[str, bool]:
+        changed_qualifier = False
+        cur = _collapse_empty_wrappers(value)
+        while True:
+            after_wrap = _WRAPPED_QUALIFIER_RE.sub(" ", cur)
+            after_plain = _QUALIFIER_RE.sub(" ", after_wrap)
+            if after_plain != cur:
+                changed_qualifier = True
+            cleaned = _collapse_empty_wrappers(after_plain)
+            if cleaned == cur:
+                return cur, changed_qualifier
+            cur = cleaned
+
+    stripped, found = _strip_to_fixpoint(stripped)
+    had_qualifier = had_qualifier or found
+
+    # Drop an unmatched trailing double quote so an unclosed phrase in `core`
+    # cannot swallow engine-added qualifiers (`created:...`, `is:issue`).
+    if stripped.count('"') % 2 == 1:
+        idx = stripped.rfind('"')
+        stripped = stripped[:idx] + stripped[idx + 1:]
+        stripped, found = _strip_to_fixpoint(stripped)
+        had_qualifier = had_qualifier or found
+
     # Malformed/nested wrappers can leave only punctuation after a qualifier
     # is removed (#969). There is no subject to search in that case. Keep
     # wrappers around actual topic text, including unbalanced ones like "ai (foo".
-    if stripped != text and re.fullmatch(r"[\s()\[\]\"']*", stripped):
+    if had_qualifier and re.fullmatch(r"[\s()\[\]\"'-]*", stripped):
         return ""
-    while True:
-        cleaned = _EMPTY_WRAPPER_RE.sub("", stripped)
-        if cleaned == stripped:
-            break
-        stripped = cleaned
     return " ".join(stripped.split())
 
 
@@ -270,6 +335,10 @@ def search_github(
     to_date: str,
     depth: str = "default",
     token: Optional[str] = None,
+    *,
+    title_only: bool = True,
+    deadline: Optional[float] = None,
+    stopped: Optional[Callable[[], bool]] = None,
 ) -> Dict[str, Any]:
     """Search GitHub Issues and PRs (HTTP fetch only).
 
@@ -320,9 +389,26 @@ def search_github(
         _log("No GitHub token; using the unauthenticated REST tier (low rate limit)")
     _log(f"Searching for '{core}' (raw: '{topic}', since {from_date}, count={count})")
 
+    # Only results whose title names the topic survive the topical floor, so
+    # search titles first: a body search fills the page with popular issues that
+    # merely mention the topic, and the floor then drops all of them. Callers
+    # pass title_only=False as a fallback when planner-expanded queries yield
+    # no title matches.
     base_q = f"is:public {core} created:{from_date}..{to_date}"
+    if title_only:
+        base_q += " in:title"
 
     def _search(qualifier: Optional[str]) -> Optional[Dict[str, Any]]:
+        if stopped is not None and stopped():
+            fetch_failures.append("cancelled")
+            return None
+        req_timeout: float = 30.0
+        if deadline is not None:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                fetch_failures.append("deadline exceeded")
+                return None
+            req_timeout = min(req_timeout, remaining)
         q = f"{base_q} {qualifier}" if qualifier else base_q
         params = {
             "q": q,
@@ -331,7 +417,7 @@ def search_github(
             "per_page": str(min(count, 100)),
         }
         url = f"{SEARCH_URL}?{urllib.parse.urlencode(params)}"
-        return _fetch_json(url, token=resolved_token, timeout=30,
+        return _fetch_json(url, token=resolved_token, timeout=req_timeout,
                            failure_out=fetch_failures)
 
     fetch_failures: List[str] = []
@@ -351,6 +437,14 @@ def search_github(
         seen_ids = set()
         failed_qualifiers: List[str] = []
         for qualifier in ("is:issue", "is:pull-request"):
+            if stopped is not None and stopped():
+                fetch_failures.append("cancelled")
+                failed_qualifiers.append(qualifier)
+                break
+            if deadline is not None and time.monotonic() >= deadline:
+                fetch_failures.append("deadline exceeded")
+                failed_qualifiers.append(qualifier)
+                break
             part = _search(qualifier)
             if part is None:
                 failed_qualifiers.append(qualifier)
@@ -374,10 +468,18 @@ def search_github(
             )
     else:
         data = _search(None)
+    stop_reason = (
+        fetch_failures[-1]
+        if fetch_failures and fetch_failures[-1] in {"cancelled", "deadline exceeded"}
+        else None
+    )
     if not data:
         envelope = {"items": [], "context": {"core": core, "from_date": from_date,
                                              "to_date": to_date, "count": count}}
-        if authed and partition_failure:
+        if stop_reason is not None:
+            envelope["stopped_reason"] = stop_reason
+            envelope["error"] = f"GitHub search timed out ({stop_reason})"
+        elif authed and partition_failure:
             envelope["error"] = partition_failure
         elif authed and fetch_failures:
             # Authenticated transport failures must not be laundered into a
@@ -405,6 +507,8 @@ def search_github(
             "count": count,
         },
     }
+    if stop_reason is not None:
+        envelope["stopped_reason"] = stop_reason
     if partition_failure:
         envelope["error"] = partition_failure
     return envelope
@@ -502,10 +606,21 @@ def parse_github_response(
 def enrich_with_comments(
     items: List[Dict[str, Any]],
     depth: str = "default",
+    *,
+    deadline: Optional[float] = None,
+    stopped: Optional[Callable[[], bool]] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch public comments for top items by reactions and attach to metadata."""
     if not items:
         return items
+    if stopped is not None and stopped():
+        return items
+    req_timeout = 15.0
+    if deadline is not None:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return items
+        req_timeout = min(req_timeout, remaining)
 
     limit = ENRICH_LIMITS.get(depth, ENRICH_LIMITS["default"])
 
@@ -518,23 +633,51 @@ def enrich_with_comments(
 
     _log(f"Enriching top {len(to_enrich)} items with comments")
 
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    executor = ThreadPoolExecutor(max_workers=5)
+    try:
         futures = {
             executor.submit(
                 _fetch_item_comments,
                 items[idx]["url"],
+                timeout=req_timeout,
             ): idx
             for idx in to_enrich
         }
 
-        for future in as_completed(futures):
-            idx = futures[future]
-            try:
-                comments = future.result(timeout=15)
-                items[idx]["metadata"]["top_comments"] = comments
-            except (KeyError, TypeError, OSError) as exc:
-                _log(f"Comment enrichment failed for {items[idx].get('url', '?')}: {type(exc).__name__}: {exc}")
-                items[idx]["metadata"]["top_comments"] = []
+        if deadline is None and stopped is None:
+            for future in as_completed(futures):
+                idx = futures[future]
+                try:
+                    comments = future.result(timeout=15)
+                    items[idx]["metadata"]["top_comments"] = comments
+                except (KeyError, TypeError, OSError) as exc:
+                    _log(f"Comment enrichment failed for {items[idx].get('url', '?')}: {type(exc).__name__}: {exc}")
+                    items[idx]["metadata"]["top_comments"] = []
+        else:
+            pending = set(futures)
+            while pending:
+                if stopped is not None and stopped():
+                    break
+                if deadline is not None:
+                    left = deadline - time.monotonic()
+                    if left <= 0:
+                        break
+                    step = min(0.1, left)
+                else:
+                    step = 0.1
+                done, pending = futures_wait(pending, timeout=step, return_when=FIRST_COMPLETED)
+                for future in done:
+                    idx = futures[future]
+                    try:
+                        comments = future.result(timeout=0)
+                        items[idx]["metadata"]["top_comments"] = comments
+                    except (KeyError, TypeError, OSError) as exc:
+                        _log(f"Comment enrichment failed for {items[idx].get('url', '?')}: {type(exc).__name__}: {exc}")
+                        items[idx]["metadata"]["top_comments"] = []
+            for future in pending:
+                future.cancel()
+    finally:
+        executor.shutdown(wait=(deadline is None and stopped is None), cancel_futures=True)
 
     return items
 
@@ -542,12 +685,14 @@ def enrich_with_comments(
 def _fetch_item_comments(
     issue_url: str,
     max_comments: int = 5,
+    timeout: float = 15,
 ) -> List[Dict[str, Any]]:
     """Fetch comments for a GitHub issue/PR.
 
     Args:
         issue_url: HTML URL like https://github.com/owner/repo/issues/123
         max_comments: Max comments to return
+        timeout: Request timeout in seconds
 
     Returns:
         List of comment dicts with score, excerpt, author.
@@ -561,7 +706,7 @@ def _fetch_item_comments(
     # support reaction sorting, so fetch its largest page and rank locally.
     api_url = f"https://api.github.com/repos/{path}/comments?per_page=100"
 
-    data = _fetch_json(api_url, timeout=15)
+    data = _fetch_json(api_url, timeout=timeout)
     if not data or not isinstance(data, list):
         return []
 
@@ -764,7 +909,7 @@ def refetch_datum(item: schema.SourceItem | None, datum_key: str) -> dict[str, A
         repo = item.container or ""
         if not _REPO_SLUG.fullmatch(repo):
             match = re.match(r"https?://github\.com/([^/]+/[^/#?]+)", item.url)
-            repo = match.group(1).removesuffix(".git") if match else ""
+            repo = _normalize_repo_slug(match.group(1)) if match else ""
         if not _REPO_SLUG.fullmatch(repo):
             raise ValueError("GitHub item has no owner/repository reference")
     headers = {"Accept": "application/vnd.github+json"}
@@ -841,6 +986,14 @@ def search_github_person(
         _log("No PRs found, falling back to keyword search")
         return []
 
+    open_q = urllib.parse.quote(f"{author_query} is:open")
+    open_data = _fetch_json(f"{SEARCH_URL}?q={open_q}&per_page=1", token=resolved_token, timeout=20)
+    open_count = (
+        open_data.get("total_count")
+        if isinstance(open_data, dict) and not open_data.get("incomplete_results")
+        else None
+    )
+
     # Phase 2: Group merged PRs by repo
     repo_pr_counts: Dict[str, int] = {}
     for item in merged_items:
@@ -880,14 +1033,16 @@ def search_github_person(
     idx = 0
 
     # Build velocity summary
-    open_prs = total_prs - merged_count
+    submitted_line = f"- {total_prs} total PRs submitted"
+    if type(open_count) is int and 0 <= open_count <= total_prs:
+        submitted_line += f", {open_count} still open"
     merge_rate = round(100 * merged_count / total_prs) if total_prs > 0 else 0
     num_repos = len(repo_pr_counts)
     velocity_text = (
         f"GitHub Person Profile: @{username}\n\n"
         f"CONTRIBUTION VELOCITY (last {dates.days_ago(from_date, to_date)} days)\n"
         f"- {merged_count} PRs merged across {num_repos} repos ({merge_rate}% merge rate)\n"
-        f"- {total_prs} total PRs submitted, {open_prs} still open\n"
+        f"{submitted_line}\n"
     )
 
     idx += 1
@@ -1364,6 +1519,14 @@ _REPO_URL_PATTERN = re.compile(r"github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)")
 _SKIP_PATHS = {"topics", "search", "orgs", "settings", "features", "about", "pricing", "enterprise", "explore", "marketplace", "sponsors"}
 
 
+def _normalize_repo_slug(match: str) -> str:
+    """Strip trailing sentence punctuation and a literal case-insensitive .git suffix."""
+    slug = (match or "").rstrip(".")
+    if slug.lower().endswith(".git"):
+        slug = slug[:-4]
+    return slug.rstrip(".")
+
+
 def extract_repo_refs(candidates: List[Any]) -> List[str]:
     """Extract unique owner/repo strings from candidate URLs, titles, and snippets."""
     seen: set = set()
@@ -1379,14 +1542,16 @@ def extract_repo_refs(candidates: List[Any]) -> List[str]:
             texts.append(str(evidence))
         for text in texts:
             for match in _REPO_URL_PATTERN.findall(text):
-                # Normalize: strip trailing .git, lowercase
-                repo = match.rstrip(".git").lower()
+                slug = _normalize_repo_slug(match)
+                if not _REPO_SLUG.fullmatch(slug):
+                    continue
+                repo = slug.lower()
                 owner = repo.split("/")[0]
                 if owner in _SKIP_PATHS:
                     continue
                 if repo not in seen:
                     seen.add(repo)
-                    repos.append(match)  # preserve original case
+                    repos.append(slug)  # preserve original case
     return repos
 
 
@@ -1454,7 +1619,10 @@ def apply_star_map(candidates: List[Any], star_map: Dict[str, int]) -> int:
             texts.append(str(evidence))
         combined = " ".join(texts)
         for match in _REPO_URL_PATTERN.findall(combined):
-            repo_lower = match.rstrip(".git").lower()
+            slug = _normalize_repo_slug(match)
+            if not _REPO_SLUG.fullmatch(slug):
+                continue
+            repo_lower = slug.lower()
             if repo_lower in star_map:
                 stars = star_map[repo_lower]
                 stars_str = _format_stars(stars)
@@ -1463,7 +1631,7 @@ def apply_star_map(candidates: List[Any], star_map: Dict[str, int]) -> int:
                     continue
                 if "github_stars" not in c.metadata:
                     c.metadata["github_stars"] = {}
-                c.metadata["github_stars"][match] = stars
+                c.metadata["github_stars"][slug] = stars
                 # Append to evidence if present
                 if hasattr(c, "evidence") and c.evidence and f"(live:" not in c.evidence:
                     c.evidence = c.evidence + f" (live: {stars_str} stars)"
