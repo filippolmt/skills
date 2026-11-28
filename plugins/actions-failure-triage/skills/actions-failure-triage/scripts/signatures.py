@@ -12,7 +12,8 @@ Usage:
     jobs.json: [{"id", "pr", "workflow", "job", "url", "signal"}, ...]
     Prints the groups as JSON, first-seen order: {"workflow", "job", "signature",
     "inspect": {"id", "pr", "url"}, "jobs": [ids], "prs": [numbers]}.
-    Same workflow + job + signal once run-specific noise is masked → one group.
+    Same workflow + job + signal → one group, once passed-step and annotation lines
+    are dropped and run-specific noise is masked.
 """
 import json
 import re
@@ -22,7 +23,10 @@ import sys
 NOISE = [
     (re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z?"), "<time>"),
     (re.compile(r"/tmp/[\w.-]+"), "/tmp/<tmp>"),
-    (re.compile(r"\b[0-9a-f]{7,40}\b"), "<sha>"),
+    # Hex ids, either case: a digit and a letter, so plain words and plain numbers stay.
+    (re.compile(r"\b(?=[0-9a-fA-F]*\d)(?=[0-9a-fA-F]*[a-fA-F])[0-9a-fA-F]{7,40}\b"), "<hex>"),
+    # Summary counters ("Tests: 3 failed, 41 passed"); "test 12 failed" keeps its id.
+    (re.compile(r"(^|[:,(|]\s*)\d+(\s+(?:passed|failed|skipped|pending|todo)\b)", re.I), r"\1<n>\2"),
     (re.compile(r"\b\d+(\.\d+)?\s?(ms|s|m)\b"), "<duration>"),
     (re.compile(r"\b\d{5,}\b"), "<n>"),
 ]
@@ -80,14 +84,20 @@ def extract(log):
     return out[-MAX_LINES:]
 
 
+# The annotation block of a `gh run view` summary printed inside the log: present or not
+# depending on where the step tail starts, and its exit line repeats the job's own ##[error].
+BOILERPLATE = re.compile(r"^(X\s+Process completed with exit code \d+\.?|ANNOTATIONS|[\w-]+: \.github#\d+)$")
+
+
 def signature(signal):
     lines = []
     for line in signal.splitlines():
+        line = line.strip()
+        if not line or PASSING.match(line) or BOILERPLATE.match(line):
+            continue
         for pattern, mask in NOISE:
             line = pattern.sub(mask, line)
-        line = line.strip()
-        if line:
-            lines.append(line)
+        lines.append(line)
     return "\n".join(lines)
 
 
