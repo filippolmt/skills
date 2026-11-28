@@ -1339,8 +1339,8 @@
         "source": "git-subdir",
         "url": "https://github.com/mvanhorn/last30days-skill",
         "path": "skills/last30days",
-        "ref": "v4.8.0",
-        "sha": "3fd946546afddc2096ab955f3abb223ed59f52ce"
+        "ref": "v4.8.1",
+        "sha": "5aabbc227096d3474058d808c3d73f90e8abec70"
       },
       "description": "Research what people actually say about any topic in the last 30 days. Pulls posts and engagement from Reddit, X, YouTube, TikTok, Hacker News, Polymarket, GitHub, and the web. Includes a doctor health check to diagnose broken or missing sources.",
       "author": {
