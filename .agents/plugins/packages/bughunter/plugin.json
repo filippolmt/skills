@@ -1,6 +1,6 @@
 {
   "name": "bughunter",
-  "version": "0.0.0+catalog.9b7fc8dcf599.debedea7029d",
+  "version": "0.0.0+catalog.c50d32fe4e65.198a79ff8c75",
   "description": "Bug-bounty and authorized external red-team toolkit: vulnerability-class and framework hunting skills, enterprise identity and infrastructure assessment, recon/OSINT, triage, validation and report writing, plus slash commands that drive the engagement workflow.",
   "author": {
     "name": "Sachin Sharma",
